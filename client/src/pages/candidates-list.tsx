@@ -19,11 +19,17 @@ import {
   ThumbsUp, 
   Search,
   ArrowLeft,
-  Bot
+  Bot,
+  Send,
+  Copy
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 // Mock Data based on the screenshot
 const CRITERIA = [
@@ -139,6 +145,11 @@ export default function CandidatesList() {
   const [activeCandidates, setActiveCandidates] = useState(CANDIDATES);
   const [shortlistedCandidates, setShortlistedCandidates] = useState<any[]>(MOCK_SHORTLISTED);
   const [location, setLocation] = useState("Johannesburg, Gauteng");
+  
+  // Invite Dialog State
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
+  const [inviteLink, setInviteLink] = useState("");
 
   const removeCriteria = (index: number) => {
     setActiveCriteria(prev => prev.filter((_, i) => i !== index));
@@ -157,8 +168,15 @@ export default function CandidatesList() {
     setActiveCandidates(prev => prev.filter(c => c.id !== id));
   };
 
-  const handleAIContact = (name: string) => {
-    toast.success(`AI Agent initiating contact with ${name}...`);
+  const handleAIContact = (candidate: any) => {
+    setSelectedCandidate(candidate);
+    setInviteLink(`${window.location.origin}/interview/voice?candidate=${encodeURIComponent(candidate.name)}`);
+    setInviteOpen(true);
+  };
+
+  const handleSendInvite = () => {
+    setInviteOpen(false);
+    toast.success(`Interview invitation sent to ${selectedCandidate?.name}`);
   };
 
   const displayList = activeTab === "Candidates" ? activeCandidates : shortlistedCandidates;
@@ -415,7 +433,7 @@ export default function CandidatesList() {
                                     <Button 
                                         size="sm" 
                                         className="h-8 bg-white text-black hover:bg-gray-200 border-0 gap-1.5 font-medium text-xs px-3"
-                                        onClick={() => handleAIContact(candidate.name)}
+                                        onClick={() => handleAIContact(candidate)}
                                     >
                                         <Bot className="h-3 w-3" />
                                         AI Interview Invite
@@ -444,6 +462,54 @@ export default function CandidatesList() {
 
         </div>
       </div>
+
+      {/* Email Invitation Dialog */}
+      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+        <DialogContent className="bg-[#1a1a1a] border-white/10 text-white sm:max-w-[500px]">
+            <DialogHeader>
+                <DialogTitle>Invite to Voice Interview</DialogTitle>
+                <DialogDescription className="text-gray-400">
+                    Customize the email invitation for {selectedCandidate?.name}.
+                </DialogDescription>
+            </DialogHeader>
+            
+            <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                    <Label>Recipient</Label>
+                    <Input value={selectedCandidate?.name || ""} disabled className="bg-black/50 border-white/10" />
+                </div>
+                
+                <div className="grid gap-2">
+                    <Label>Subject</Label>
+                    <Input defaultValue={`Interview Invitation: Senior Back-End Developer Role`} className="bg-black/50 border-white/10" />
+                </div>
+
+                <div className="grid gap-2">
+                    <Label>Message</Label>
+                    <Textarea 
+                        className="min-h-[150px] bg-black/50 border-white/10 font-sans" 
+                        defaultValue={`Dear ${selectedCandidate?.name},
+
+We are impressed with your profile and would like to invite you to an initial voice interview with our AI recruiter, Chit-Chet.
+
+This allows us to get to know you better at your convenience. Please click the link below to start the session:
+
+${inviteLink}
+
+Best regards,
+AHC Recruiting Team`}
+                    />
+                </div>
+            </div>
+
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setInviteOpen(false)} className="border-white/10 hover:bg-white/5">Cancel</Button>
+                <Button onClick={handleSendInvite} className="bg-indigo-600 hover:bg-indigo-500 gap-2">
+                    <Send className="h-4 w-4" /> Send Invitation
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
