@@ -99,13 +99,26 @@ export default function HRDashboard() {
   const getSafeCandidates = () => {
     if (candidatesError) return MOCK_CANDIDATES;
     if (loadingCandidates) return [];
-    if (Array.isArray(candidates)) return candidates;
-    // If we get here, candidates is defined but NOT an array (unexpected API response)
-    console.warn("Unexpected candidates data structure:", candidates);
+    
+    // Critical Check: Ensure it is an array. 
+    // Sometimes 404s return an object that isn't caught as "error" if response parsing fails differently
+    if (candidates && Array.isArray(candidates)) {
+        return candidates;
+    }
+    
+    // Log warning only if we have data that isn't an array
+    if (candidates) {
+        console.warn("Unexpected candidates data structure:", candidates);
+    }
+    
+    // Default to mock data if data is present but invalid, or if we just want a safe fallback
     return MOCK_CANDIDATES;
   };
 
   const displayCandidates = getSafeCandidates();
+
+  // Ensure jobs is an array for the length check
+  const jobCount = Array.isArray(jobs) ? jobs.length : 12;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -126,7 +139,7 @@ export default function HRDashboard() {
         </div>
 
         {/* Connection Error Alert */}
-        {(jobsError || candidatesError || (!loadingCandidates && !Array.isArray(candidates) && candidates)) && (
+        {(jobsError || candidatesError || (!loadingCandidates && candidates && !Array.isArray(candidates))) && (
           <Alert variant="destructive" className="mb-6 border-red-500/20 bg-red-500/10 text-red-200">
             <WifiOff className="h-4 w-4" />
             <AlertTitle>Backend Connection Issue</AlertTitle>
@@ -170,7 +183,7 @@ export default function HRDashboard() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Open Roles</CardTitle>
                   <div className="text-2xl font-bold">
-                    {loadingJobs ? <Loader2 className="w-6 h-6 animate-spin" /> : (Array.isArray(jobs) ? jobs.length : 12)}
+                    {loadingJobs ? <Loader2 className="w-6 h-6 animate-spin" /> : jobCount}
                   </div>
                 </CardHeader>
               </Card>
@@ -224,7 +237,8 @@ export default function HRDashboard() {
                          <p>Syncing with DigitalOcean Backend...</p>
                        </div>
                     ) : (
-                      displayCandidates.map((candidate: any) => (
+                      // Final safety check in render map
+                      (Array.isArray(displayCandidates) ? displayCandidates : MOCK_CANDIDATES).map((candidate: any) => (
                         <div key={candidate.id} className="px-4 py-3 grid grid-cols-12 items-center border-t border-white/5 hover:bg-white/5 transition-colors">
                           <div className="col-span-3 font-medium">{candidate.name || "Unknown Candidate"}</div>
                           <div className="col-span-3 text-sm text-muted-foreground">{candidate.role || "General Application"}</div>
