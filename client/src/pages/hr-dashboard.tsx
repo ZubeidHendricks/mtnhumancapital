@@ -165,14 +165,40 @@ BENEFITS:
     await new Promise(resolve => setTimeout(resolve, 2500));
 
     // Create mock candidates from files
-    const newCandidates = Array.from(files).map((file, index) => ({
-        id: Date.now() + index,
-        full_name: file.name.split('.')[0].replace(/[-_]/g, ' '), // Guess name from filename
-        role: localJobs[0]?.title || "General Application", // Assign to most recent job or general
-        match: Math.floor(Math.random() * (98 - 70 + 1)) + 70, // Random high score
-        stage: "Screening",
-        status: "New"
-    }));
+    const newCandidates = Array.from(files).map((file, index) => {
+        // Improved name cleaning logic
+        let name = file.name.split('.')[0]; // Remove extension
+        
+        // Remove common prefixes/suffixes and artifacts
+        name = name
+            .replace(/resume of/i, '')
+            .replace(/cv of/i, '')
+            .replace(/resume/i, '')
+            .replace(/cv/i, '')
+            .replace(/\(\d+\)/g, '') // Remove (1), (2) etc
+            .replace(/compressed/i, '')
+            .replace(/copy/i, '')
+            .replace(/final/i, '')
+            .replace(/[-_]/g, ' ') // Replace separators with spaces
+            .trim();
+
+        // Capitalize each word
+        name = name.replace(/\b\w/g, (l) => l.toUpperCase());
+
+        // Fallback if name becomes empty
+        if (!name || name.length < 2) {
+            name = "Unknown Candidate";
+        }
+
+        return {
+            id: Date.now() + index,
+            full_name: name,
+            role: localJobs[0]?.title || "General Application", // Assign to most recent job or general
+            match: Math.floor(Math.random() * (98 - 70 + 1)) + 70, // Random high score
+            stage: "Screening",
+            status: "New"
+        };
+    });
 
     setLocalCandidates(prev => [...newCandidates, ...prev]);
     setIsUploading(false);
