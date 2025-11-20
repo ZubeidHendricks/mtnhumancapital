@@ -10,12 +10,14 @@ import RecruitmentAgent from "@/pages/recruitment-agent";
 import IntegrityAgent from "@/pages/integrity-agent";
 import OnboardingAgent from "@/pages/onboarding-agent";
 import HRManagementAgent from "@/pages/hr-management-agent";
+import ExecutiveDashboard from "@/pages/executive-dashboard";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/hr-dashboard" component={HRDashboard} />
+      <Route path="/executive-dashboard" component={ExecutiveDashboard} />
       <Route path="/recruitment-agent" component={RecruitmentAgent} />
       <Route path="/integrity-agent" component={IntegrityAgent} />
       <Route path="/onboarding-agent" component={OnboardingAgent} />

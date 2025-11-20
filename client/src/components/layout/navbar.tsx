@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Cpu } from "lucide-react";
+import { Menu, X, Cpu, LayoutDashboard } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -31,7 +31,7 @@ export function Navbar() {
         </Link>
 
         {/* Desktop Nav */}
-        <div className="hidden md:flex items-center gap-8">
+        <div className="hidden md:flex items-center gap-6">
           {navLinks.map((link) => (
             <a 
               key={link.name} 
@@ -42,14 +42,23 @@ export function Navbar() {
             </a>
           ))}
           
-          {/* HR Portal Button */}
+          <div className="h-6 w-px bg-white/10 mx-2" />
+
+          {/* Dashboard Links */}
           <Link href="/hr-dashboard">
-            <Button variant="outline" className="border-primary/20 hover:bg-primary/10 hover:text-primary">
+            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary hover:bg-primary/10">
               HR Portal
             </Button>
           </Link>
 
-          <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_20px_-5px_hsl(var(--primary)/0.5)]">
+          <Link href="/executive-dashboard">
+            <Button variant="outline" size="sm" className="border-primary/20 hover:bg-primary/10 hover:text-primary gap-2">
+              <LayoutDashboard className="w-4 h-4" />
+              Exec Dashboard
+            </Button>
+          </Link>
+
+          <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_20px_-5px_hsl(var(--primary)/0.5)]">
             Get Started
           </Button>
         </div>
@@ -85,7 +94,10 @@ export function Navbar() {
               ))}
               <div className="h-px bg-white/10 my-2" />
               <Link href="/hr-dashboard">
-                <Button variant="outline" className="w-full justify-start mb-2">HR Portal</Button>
+                <Button variant="ghost" className="w-full justify-start mb-2">HR Portal</Button>
+              </Link>
+               <Link href="/executive-dashboard">
+                <Button variant="outline" className="w-full justify-start mb-2">Exec Dashboard</Button>
               </Link>
               <Button className="w-full bg-primary text-primary-foreground">Get Started</Button>
             </div>
