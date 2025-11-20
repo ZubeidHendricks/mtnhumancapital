@@ -32,7 +32,7 @@ api.interceptors.response.use(
       // If we get a 401, clear the token and redirect to login
       // (In a real app, we might try to refresh the token first)
       localStorage.removeItem("ahc_auth_token");
-      window.location.href = "/"; 
+      window.location.href = "/login"; 
     }
     return Promise.reject(error);
   }
@@ -80,5 +80,42 @@ export const candidateService = {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return response.data;
+  }
+};
+
+// --- AI Agent Services (New) ---
+
+// Chat / RAG Agent
+export const agentService = {
+  sendMessage: async (message: string, context?: any) => {
+    // Matches the POST /api/v1/agent/chat spec
+    const response = await api.post("/agent/chat", { message, context });
+    return response.data; // Expecting { response: "...", actions: [] }
+  },
+  
+  // Recruitment Agent Triggers
+  startRecruitmentRun: async (jobId: string) => {
+    const response = await api.post("/agent/recruitment/start", { job_id: jobId });
+    return response.data; // Returns run_id
+  },
+  
+  getRunStatus: async (runId: string) => {
+    const response = await api.get(`/agent/recruitment/${runId}/status`);
+    return response.data; // Returns { current_step: "sourcing", progress: 0.5 }
+  }
+};
+
+// Interview Services
+export const interviewService = {
+  // Voice (Chit-Chet / Hume)
+  getVoiceConfig: async () => {
+    const response = await api.get("/interview/voice/config");
+    return response.data; // Returns { access_token: "..." }
+  },
+  
+  // Video (Cloned / Tavus)
+  createVideoSession: async (candidateId: string) => {
+    const response = await api.post("/interview/video/session", { candidate_id: candidateId });
+    return response.data; // Returns { session_url: "...", session_id: "..." }
   }
 };
