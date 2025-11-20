@@ -25,9 +25,11 @@ import {
   ShieldCheck,
   Laptop,
   TrendingUp,
-  Loader2
+  Loader2,
+  WifiOff
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // Mock Data as fallback if API fails or for other tabs not yet connected
 const integrityChecks = [
@@ -43,28 +45,59 @@ const onboardingTasks = [
   { id: 4, task: "IT Equipment Setup", assignee: "IT Dept", status: "Pending" },
 ];
 
+// Fallback data in case of API error
+const MOCK_CANDIDATES = [
+  { id: 1, name: "Sarah Jenkins", role: "Senior Project Manager", status: "Interviewing", match: 94, stage: "Screening" },
+  { id: 2, name: "David Chen", role: "Financial Analyst", status: "New", match: 88, stage: "Sourcing" },
+  { id: 3, name: "Marcus Johnson", role: "Operations Lead", status: "Offer Sent", match: 97, stage: "Onboarding" },
+  { id: 4, name: "Emily Davis", role: "UX Designer", status: "Rejected", match: 65, stage: "Archived" },
+];
+
 export default function HRDashboard() {
   const [activeTab, setActiveTab] = useState("recruitment");
 
   // Fetch real data from backend
-  const { data: jobs, isLoading: loadingJobs } = useQuery({
+  const { 
+    data: jobs, 
+    isLoading: loadingJobs, 
+    isError: jobsError 
+  } = useQuery({
     queryKey: ['jobs'],
-    queryFn: jobsService.getAll,
-    // Use placeholder data so the UI doesn't break if the backend isn't reachable in this demo env
+    queryFn: async () => {
+      try {
+        return await jobsService.getAll();
+      } catch (e) {
+        console.error("Failed to fetch jobs:", e);
+        // Return empty array on error to prevent crash, but trigger isError
+        throw e;
+      }
+    },
+    retry: 1,
     placeholderData: [] 
   });
 
-  const { data: candidates, isLoading: loadingCandidates } = useQuery({
+  const { 
+    data: candidates, 
+    isLoading: loadingCandidates,
+    isError: candidatesError
+  } = useQuery({
     queryKey: ['candidates'],
-    queryFn: candidateService.getAll,
-    // Fallback to mock data if backend fails/empty for demo
-    placeholderData: [
-      { id: 1, name: "Sarah Jenkins", role: "Senior Project Manager", status: "Interviewing", match: 94, stage: "Screening" },
-      { id: 2, name: "David Chen", role: "Financial Analyst", status: "New", match: 88, stage: "Sourcing" },
-      { id: 3, name: "Marcus Johnson", role: "Operations Lead", status: "Offer Sent", match: 97, stage: "Onboarding" },
-      { id: 4, name: "Emily Davis", role: "UX Designer", status: "Rejected", match: 65, stage: "Archived" },
-    ]
+    queryFn: async () => {
+      try {
+        return await candidateService.getAll();
+      } catch (e) {
+        console.error("Failed to fetch candidates:", e);
+        throw e;
+      }
+    },
+    retry: 1,
+    // We do NOT use placeholderData here if we want to show the error state
+    // OR we use initialData to fallback to mock data permanently on error
+    // For now, let's handle the error explicitly in UI
   });
+
+  // Use mock data if error occurs
+  const displayCandidates = candidatesError ? MOCK_CANDIDATES : (candidates || []);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -83,6 +116,17 @@ export default function HRDashboard() {
             <Button>Create New Requisition</Button>
           </div>
         </div>
+
+        {/* Connection Error Alert */}
+        {(jobsError || candidatesError) && (
+          <Alert variant="destructive" className="mb-6 border-red-500/20 bg-red-500/10 text-red-200">
+            <WifiOff className="h-4 w-4" />
+            <AlertTitle>Backend Connection Issue</AlertTitle>
+            <AlertDescription>
+              Unable to connect to the AI Backend. Showing cached/mock data for demonstration purposes.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Tabs defaultValue="recruitment" className="space-y-6" onValueChange={setActiveTab}>
           <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:w-[600px] bg-card/50 border border-white/5">
@@ -118,7 +162,7 @@ export default function HRDashboard() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Open Roles</CardTitle>
                   <div className="text-2xl font-bold">
-                    {loadingJobs ? <Loader2 className="w-6 h-6 animate-spin" /> : jobs?.length || 12}
+                    {loadingJobs ? <Loader2 className="w-6 h-6 animate-spin" /> : (jobs?.length || 12)}
                   </div>
                 </CardHeader>
               </Card>
@@ -126,7 +170,7 @@ export default function HRDashboard() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Candidates in Pipeline</CardTitle>
                   <div className="text-2xl font-bold">
-                    {loadingCandidates ? <Loader2 className="w-6 h-6 animate-spin" /> : candidates?.length || 48}
+                    {loadingCandidates ? <Loader2 className="w-6 h-6 animate-spin" /> : (displayCandidates.length || 48)}
                   </div>
                 </CardHeader>
               </Card>
@@ -172,7 +216,7 @@ export default function HRDashboard() {
                          <p>Syncing with DigitalOcean Backend...</p>
                        </div>
                     ) : (
-                      (candidates || []).map((candidate: any) => (
+                      displayCandidates.map((candidate: any) => (
                         <div key={candidate.id} className="px-4 py-3 grid grid-cols-12 items-center border-t border-white/5 hover:bg-white/5 transition-colors">
                           <div className="col-span-3 font-medium">{candidate.name || "Unknown Candidate"}</div>
                           <div className="col-span-3 text-sm text-muted-foreground">{candidate.role || "General Application"}</div>
