@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { jobsService, candidateService } from "@/lib/api";
 import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,18 +24,12 @@ import {
   Sparkles,
   ShieldCheck,
   Laptop,
-  TrendingUp
+  TrendingUp,
+  Loader2
 } from "lucide-react";
 import { motion } from "framer-motion";
 
-// Mock Data based on the provided document
-const candidates = [
-  { id: 1, name: "Sarah Jenkins", role: "Senior Project Manager", status: "Interviewing", match: 94, stage: "Screening" },
-  { id: 2, name: "David Chen", role: "Financial Analyst", status: "New", match: 88, stage: "Sourcing" },
-  { id: 3, name: "Marcus Johnson", role: "Operations Lead", status: "Offer Sent", match: 97, stage: "Onboarding" },
-  { id: 4, name: "Emily Davis", role: "UX Designer", status: "Rejected", match: 65, stage: "Archived" },
-];
-
+// Mock Data as fallback if API fails or for other tabs not yet connected
 const integrityChecks = [
   { id: 1, candidate: "Sarah Jenkins", type: "Criminal Record", status: "Clear", date: "2024-05-10" },
   { id: 2, candidate: "Sarah Jenkins", type: "Credit Check", status: "Clear", date: "2024-05-11" },
@@ -49,6 +45,26 @@ const onboardingTasks = [
 
 export default function HRDashboard() {
   const [activeTab, setActiveTab] = useState("recruitment");
+
+  // Fetch real data from backend
+  const { data: jobs, isLoading: loadingJobs } = useQuery({
+    queryKey: ['jobs'],
+    queryFn: jobsService.getAll,
+    // Use placeholder data so the UI doesn't break if the backend isn't reachable in this demo env
+    placeholderData: [] 
+  });
+
+  const { data: candidates, isLoading: loadingCandidates } = useQuery({
+    queryKey: ['candidates'],
+    queryFn: candidateService.getAll,
+    // Fallback to mock data if backend fails/empty for demo
+    placeholderData: [
+      { id: 1, name: "Sarah Jenkins", role: "Senior Project Manager", status: "Interviewing", match: 94, stage: "Screening" },
+      { id: 2, name: "David Chen", role: "Financial Analyst", status: "New", match: 88, stage: "Sourcing" },
+      { id: 3, name: "Marcus Johnson", role: "Operations Lead", status: "Offer Sent", match: 97, stage: "Onboarding" },
+      { id: 4, name: "Emily Davis", role: "UX Designer", status: "Rejected", match: 65, stage: "Archived" },
+    ]
+  });
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -101,13 +117,17 @@ export default function HRDashboard() {
               <Card className="bg-card/30 border-white/10 backdrop-blur-sm">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Open Roles</CardTitle>
-                  <div className="text-2xl font-bold">12</div>
+                  <div className="text-2xl font-bold">
+                    {loadingJobs ? <Loader2 className="w-6 h-6 animate-spin" /> : jobs?.length || 12}
+                  </div>
                 </CardHeader>
               </Card>
               <Card className="bg-card/30 border-white/10 backdrop-blur-sm">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Candidates in Pipeline</CardTitle>
-                  <div className="text-2xl font-bold">48</div>
+                  <div className="text-2xl font-bold">
+                    {loadingCandidates ? <Loader2 className="w-6 h-6 animate-spin" /> : candidates?.length || 48}
+                  </div>
                 </CardHeader>
               </Card>
               <Card className="bg-card/30 border-white/10 backdrop-blur-sm">
@@ -123,7 +143,9 @@ export default function HRDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle>Candidate Pipeline</CardTitle>
-                    <CardDescription>AI-ranked candidates matched to hiring needs</CardDescription>
+                    <CardDescription>
+                      {loadingCandidates ? "Fetching data from backend..." : "AI-ranked candidates matched to hiring needs"}
+                    </CardDescription>
                   </div>
                   <div className="flex gap-2">
                     <div className="relative">
@@ -144,21 +166,28 @@ export default function HRDashboard() {
                     <div className="col-span-2 text-right">Actions</div>
                   </div>
                   <ScrollArea className="h-[300px]">
-                    {candidates.map((candidate) => (
-                      <div key={candidate.id} className="px-4 py-3 grid grid-cols-12 items-center border-t border-white/5 hover:bg-white/5 transition-colors">
-                        <div className="col-span-3 font-medium">{candidate.name}</div>
-                        <div className="col-span-3 text-sm text-muted-foreground">{candidate.role}</div>
-                        <div className="col-span-2">
-                          <Badge className={`${candidate.match > 90 ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'} border-0`}>
-                            {candidate.match}% Match
-                          </Badge>
+                    {loadingCandidates ? (
+                       <div className="flex flex-col items-center justify-center h-32 gap-2 text-muted-foreground">
+                         <Loader2 className="w-6 h-6 animate-spin" />
+                         <p>Syncing with DigitalOcean Backend...</p>
+                       </div>
+                    ) : (
+                      (candidates || []).map((candidate: any) => (
+                        <div key={candidate.id} className="px-4 py-3 grid grid-cols-12 items-center border-t border-white/5 hover:bg-white/5 transition-colors">
+                          <div className="col-span-3 font-medium">{candidate.name || "Unknown Candidate"}</div>
+                          <div className="col-span-3 text-sm text-muted-foreground">{candidate.role || "General Application"}</div>
+                          <div className="col-span-2">
+                            <Badge className={`${(candidate.match || 0) > 90 ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'} border-0`}>
+                              {candidate.match || 0}% Match
+                            </Badge>
+                          </div>
+                          <div className="col-span-2 text-sm">{candidate.stage || "New"}</div>
+                          <div className="col-span-2 text-right">
+                            <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
+                          </div>
                         </div>
-                        <div className="col-span-2 text-sm">{candidate.stage}</div>
-                        <div className="col-span-2 text-right">
-                          <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
-                        </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </ScrollArea>
                 </div>
               </CardContent>
