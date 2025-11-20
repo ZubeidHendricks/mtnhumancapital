@@ -528,7 +528,7 @@ BENEFITS:
                       // Use explicit array mapping
                       displayCandidates.map((candidate: any) => (
                         <div key={candidate.id || Math.random()} className="px-4 py-3 grid grid-cols-12 items-center border-t border-white/5 hover:bg-white/5 transition-colors">
-                          <div className="col-span-3 font-medium">{candidate.full_name || candidate.name || "Unknown Candidate"}</div>
+                          <div className="col-span-3 font-medium">{candidate.fullName || candidate.name || "Unknown Candidate"}</div>
                           <div className="col-span-3 text-sm text-muted-foreground">{candidate.role || "General Application"}</div>
                           <div className="col-span-2">
                             <Badge className={`${(candidate.match || candidate.overall_score || 0) > 90 ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'} border-0`}>
