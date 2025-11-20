@@ -20,7 +20,8 @@ import {
   MoreHorizontal,
   BrainCircuit,
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  Laptop
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -226,6 +227,25 @@ export default function HRDashboard() {
 
           {/* ONBOARDING TAB */}
           <TabsContent value="onboarding" className="space-y-6">
+            
+             {/* AI Onboarding Banner */}
+            <div className="rounded-lg bg-gradient-to-r from-amber-500/20 to-orange-600/20 border border-amber-500/20 p-6 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold flex items-center gap-2 text-white">
+                  <Laptop className="w-5 h-5 text-amber-400" />
+                  Automate new hire provisioning?
+                </h3>
+                <p className="text-muted-foreground text-sm mt-1">
+                  Use the Onboarding Agent to manage welcome packs, equipment orders, and digital paperwork.
+                </p>
+              </div>
+              <Link href="/onboarding-agent">
+                <Button className="bg-amber-500 text-amber-950 hover:bg-amber-400 shadow-lg shadow-amber-500/20">
+                  Start Onboarding
+                </Button>
+              </Link>
+            </div>
+
              <Card className="border-white/10 bg-card/20">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
