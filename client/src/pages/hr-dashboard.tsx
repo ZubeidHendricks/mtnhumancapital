@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { jobsService, candidateService } from "@/lib/api";
 import { Navbar } from "@/components/layout/navbar";
@@ -65,6 +65,7 @@ export default function HRDashboard() {
   const [activeTab, setActiveTab] = useState("recruitment");
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isCreateJobOpen, setIsCreateJobOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Local state for new creations since we don't have a real backend for POSTs in mockup mode
   const [localJobs, setLocalJobs] = useState<any[]>([]);
@@ -145,6 +146,12 @@ BENEFITS:
     setJobDescription("");
     
     toast.success("Requisition created successfully!");
+  };
+
+  const handleFileUploadClick = () => {
+    if (fileInputRef.current) {
+        fileInputRef.current.click();
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -461,11 +468,11 @@ BENEFITS:
                         
                         <div 
                             className="border-2 border-dashed border-white/10 rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer bg-white/5 relative"
-                            onClick={() => document.getElementById('file-upload')?.click()}
+                            onClick={handleFileUploadClick}
                         >
                           <input 
                             type="file" 
-                            id="file-upload" 
+                            ref={fileInputRef}
                             className="hidden" 
                             multiple 
                             accept=".pdf,.docx,.txt"
