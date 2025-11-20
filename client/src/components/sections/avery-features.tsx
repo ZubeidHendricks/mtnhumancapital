@@ -223,13 +223,13 @@ export function AveryFeatures() {
                     </div>
                     <div className="space-y-2">
                        <div className="bg-white/5 p-3 rounded text-xs font-mono text-gray-400">
-                          > Searching for candidates...
+                          {'>'} Searching for candidates...
                        </div>
                        <div className="bg-white/5 p-3 rounded text-xs font-mono text-gray-400">
-                          > Found 12 matches.
+                          {'>'} Found 12 matches.
                        </div>
                        <div className="bg-primary/10 p-3 rounded text-xs font-mono text-primary border border-primary/20">
-                          > Initiating outreach sequence (3/12 sent)
+                          {'>'} Initiating outreach sequence (3/12 sent)
                        </div>
                     </div>
                  </div>
