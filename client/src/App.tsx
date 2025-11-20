@@ -13,11 +13,13 @@ import HRManagementAgent from "@/pages/hr-management-agent";
 import ExecutiveDashboard from "@/pages/executive-dashboard";
 import InterviewVoice from "@/pages/interview-voice";
 import InterviewVideo from "@/pages/interview-video";
+import CustomerOnboarding from "@/pages/customer-onboarding";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/onboarding" component={CustomerOnboarding} />
       <Route path="/hr-dashboard" component={HRDashboard} />
       <Route path="/executive-dashboard" component={ExecutiveDashboard} />
       <Route path="/recruitment-agent" component={RecruitmentAgent} />

@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Cpu, LayoutDashboard } from "lucide-react";
+import { Menu, X, Cpu, LayoutDashboard, Building2 } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -43,6 +43,13 @@ export function Navbar() {
           ))}
           
           <div className="h-6 w-px bg-white/10 mx-2" />
+
+           {/* New Customer Onboarding Link */}
+           <Link href="/onboarding">
+            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-white hover:bg-white/5">
+              Register Company
+            </Button>
+          </Link>
 
           {/* Dashboard Links */}
           <Link href="/hr-dashboard">
@@ -93,6 +100,9 @@ export function Navbar() {
                 </a>
               ))}
               <div className="h-px bg-white/10 my-2" />
+              <Link href="/onboarding">
+                <Button variant="ghost" className="w-full justify-start mb-2">Register Company</Button>
+              </Link>
               <Link href="/hr-dashboard">
                 <Button variant="ghost" className="w-full justify-start mb-2">HR Portal</Button>
               </Link>
