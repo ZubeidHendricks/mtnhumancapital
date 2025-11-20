@@ -99,9 +99,11 @@ export function Navbar() {
             </Button>
           </Link>
 
-          <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_20px_-5px_hsl(var(--primary)/0.5)]">
-            Get Started
-          </Button>
+          <Link href="/login">
+            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_20px_-5px_hsl(var(--primary)/0.5)]">
+              Sign In
+            </Button>
+          </Link>
         </div>
 
         {/* Mobile Menu Toggle */}
@@ -160,7 +162,9 @@ export function Navbar() {
                <Link href="/executive-dashboard">
                 <Button variant="outline" className="w-full justify-start mb-2">Exec Dashboard</Button>
               </Link>
-              <Button className="w-full bg-primary text-primary-foreground">Get Started</Button>
+              <Link href="/login">
+                <Button className="w-full bg-primary text-primary-foreground">Sign In</Button>
+              </Link>
             </div>
           </motion.div>
         )}
