@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   MapPin, 
   Plus, 
@@ -148,6 +149,7 @@ export default function CandidatesList() {
   const urlParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
   const jobId = urlParams.get('jobId');
 
+  const [activeTab, setActiveTab] = useState("candidates");
   const [activeCriteria, setActiveCriteria] = useState(CRITERIA);
   const [locationFilter, setLocationFilter] = useState("Johannesburg, Gauteng");
   
@@ -201,6 +203,15 @@ export default function CandidatesList() {
     return candidates.filter((c: any) => c.jobId === jobId);
   }, [candidates, jobId]);
 
+  // Separate candidates by tab
+  const regularCandidates = useMemo(() => {
+    return filteredCandidates.filter((c: any) => c.stage !== "Shortlisted");
+  }, [filteredCandidates]);
+
+  const shortlistedCandidates = useMemo(() => {
+    return filteredCandidates.filter((c: any) => c.stage === "Shortlisted");
+  }, [filteredCandidates]);
+
   const removeCriteria = (index: number) => {
     setActiveCriteria(prev => prev.filter((_, i) => i !== index));
   };
@@ -244,8 +255,8 @@ export default function CandidatesList() {
     toast.success(`Interview invitation sent to ${selectedCandidate.email}`);
   };
 
-  // Use real filtered candidates from API
-  const displayList = loadingCandidates ? [] : filteredCandidates;
+  // Use real filtered candidates from API based on active tab
+  const displayList = loadingCandidates ? [] : (activeTab === "candidates" ? regularCandidates : shortlistedCandidates);
 
   // Helper function to get source color based on source type
   const getSourceColor = (source: string) => {
@@ -317,8 +328,12 @@ export default function CandidatesList() {
                         </span>
                     </div>
                     <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>CANDIDATES IN PIPELINE</span>
-                        <span className="text-white">{filteredCandidates.length} candidates</span>
+                        <span>TOTAL CANDIDATES</span>
+                        <span className="text-white">{regularCandidates.length} active</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>SHORTLISTED</span>
+                        <span className="text-white">{shortlistedCandidates.length} candidates</span>
                     </div>
                 </div>
 
@@ -416,47 +431,63 @@ export default function CandidatesList() {
         {/* RIGHT PANEL: CANDIDATES LIST */}
         <div className="flex-1 bg-[#0F0F0F] flex flex-col h-full overflow-hidden">
             
-            {/* Top Bar */}
-            <div className="border-b border-white/10 px-6 h-14 flex items-center gap-8 bg-[#0a0a0a]">
-                <div className="h-full border-b-2 border-white px-2 text-sm font-medium text-white flex items-center">
-                    {currentJob ? `Candidates for ${currentJob.title}` : 'All Candidates'} 
+            {/* Tabs */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+              <div className="border-b border-white/10 px-6 bg-[#0a0a0a]">
+                <TabsList className="h-14 bg-transparent border-0 p-0 gap-8">
+                  <TabsTrigger 
+                    value="candidates" 
+                    className="h-14 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:bg-transparent px-2 text-sm font-medium text-muted-foreground data-[state=active]:text-white data-[state=active]:shadow-none"
+                  >
+                    Candidates
                     <span className="ml-2 text-xs bg-white/10 px-1.5 py-0.5 rounded-full">
-                      {loadingCandidates ? '...' : displayList.length}
+                      {loadingCandidates ? '...' : regularCandidates.length}
                     </span>
-                </div>
-            </div>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="shortlisted" 
+                    className="h-14 rounded-none border-b-2 border-transparent data-[state=active]:border-yellow-400 data-[state=active]:bg-transparent px-2 text-sm font-medium text-muted-foreground data-[state=active]:text-white data-[state=active]:shadow-none"
+                  >
+                    Shortlisted
+                    <span className="ml-2 text-xs bg-yellow-400/20 px-1.5 py-0.5 rounded-full text-yellow-400">
+                      {loadingCandidates ? '...' : shortlistedCandidates.length}
+                    </span>
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
-            {/* Filters Bar */}
-            <div className="px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span className="text-muted-foreground">Stage:</span>
-                        <span className="text-white font-medium flex items-center gap-1 cursor-pointer">
-                            All Stages <ChevronDown className="h-3 w-3" />
-                        </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span className="text-muted-foreground">Match:</span>
-                        <span className="text-green-400 font-medium flex items-center gap-1 cursor-pointer">
-                            All <ChevronDown className="h-3 w-3" />
-                        </span>
-                    </div>
-                </div>
+              <TabsContent value="candidates" className="flex-1 flex flex-col m-0">
+                {/* Filters Bar */}
+                <div className="px-6 py-4 flex items-center justify-between">
+                  <div className="flex items-center gap-6">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span className="text-muted-foreground">Stage:</span>
+                          <span className="text-white font-medium flex items-center gap-1 cursor-pointer">
+                              All Stages <ChevronDown className="h-3 w-3" />
+                          </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span className="text-muted-foreground">Match:</span>
+                          <span className="text-green-400 font-medium flex items-center gap-1 cursor-pointer">
+                              All <ChevronDown className="h-3 w-3" />
+                          </span>
+                      </div>
+                  </div>
 
-                {displayList.length > 0 && (
-                    <Button 
-                        size="sm" 
-                        className="bg-white text-black hover:bg-gray-200 gap-2 font-medium"
-                        onClick={() => toast.success("AI Agent will interview all candidates")}
-                    >
-                        <Bot className="h-4 w-4" />
-                        Interview All ({displayList.length})
-                    </Button>
-                )}
-            </div>
+                  {displayList.length > 0 && (
+                      <Button 
+                          size="sm" 
+                          className="bg-white text-black hover:bg-gray-200 gap-2 font-medium"
+                          onClick={() => toast.success("AI Agent will interview all candidates")}
+                      >
+                          <Bot className="h-4 w-4" />
+                          Interview All ({displayList.length})
+                      </Button>
+                  )}
+              </div>
 
-            {/* List */}
-            <ScrollArea className="flex-1 px-6 pb-6">
+              {/* List */}
+              <ScrollArea className="flex-1 px-6 pb-6">
                 <div className="space-y-1">
                     {loadingCandidates ? (
                         <div className="flex flex-col items-center justify-center h-64 gap-2 text-muted-foreground">
@@ -545,7 +576,126 @@ export default function CandidatesList() {
                         </div>
                     )}
                 </div>
-            </ScrollArea>
+              </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="shortlisted" className="flex-1 flex flex-col m-0">
+                {/* Filters Bar */}
+                <div className="px-6 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span className="text-muted-foreground">Stage:</span>
+                            <span className="text-white font-medium flex items-center gap-1 cursor-pointer">
+                                All Stages <ChevronDown className="h-3 w-3" />
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span className="text-muted-foreground">Match:</span>
+                            <span className="text-green-400 font-medium flex items-center gap-1 cursor-pointer">
+                                All <ChevronDown className="h-3 w-3" />
+                            </span>
+                        </div>
+                    </div>
+
+                    {displayList.length > 0 && (
+                        <Button 
+                            size="sm" 
+                            className="bg-white text-black hover:bg-gray-200 gap-2 font-medium"
+                            onClick={() => toast.success("AI Agent will interview all shortlisted candidates")}
+                        >
+                            <Bot className="h-4 w-4" />
+                            Interview All ({displayList.length})
+                        </Button>
+                    )}
+                </div>
+
+                {/* List */}
+                <ScrollArea className="flex-1 px-6 pb-6">
+                  <div className="space-y-1">
+                      {loadingCandidates ? (
+                          <div className="flex flex-col items-center justify-center h-64 gap-2 text-muted-foreground">
+                              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                              <p>Loading candidates...</p>
+                          </div>
+                      ) : displayList.map((candidate) => (
+                          <motion.div 
+                              key={candidate.id}
+                              layout
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, x: -20 }}
+                              className="group flex items-center justify-between py-3 px-4 hover:bg-white/5 rounded-lg transition-colors border border-transparent hover:border-white/5"
+                          >
+                              {/* Candidate Info */}
+                              <div className="flex items-center gap-4 w-[30%]">
+                                  <Avatar className="h-10 w-10 border border-white/10">
+                                      <AvatarFallback className="bg-indigo-500 text-white text-xs">
+                                          {candidate.fullName?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || 'NA'}
+                                      </AvatarFallback>
+                                  </Avatar>
+                                  <div className="min-w-0">
+                                      <h3 className="text-sm font-bold text-white truncate">{candidate.fullName || 'Unknown'}</h3>
+                                      <p className="text-xs text-muted-foreground truncate">{candidate.role || 'No role specified'}</p>
+                                  </div>
+                              </div>
+
+                              {/* Badges & Source */}
+                              <div className="flex items-center gap-8 flex-1">
+                                  <div className="flex items-center gap-2 min-w-[120px]">
+                                      <span className={`text-[10px] font-medium px-2 py-0.5 rounded flex items-center gap-1.5 ${getSourceColor(candidate.source)}`}>
+                                          <div className="w-1 h-1 rounded-full bg-current" />
+                                          {candidate.source}
+                                      </span>
+                                      <Badge variant="outline" className="text-[10px] h-5 px-2">
+                                          {candidate.match}% Match
+                                      </Badge>
+                                  </div>
+
+                                  {/* Contact Icons */}
+                                  <div className="flex items-center gap-3 opacity-40 group-hover:opacity-100 transition-opacity">
+                                      <Mail className="h-3.5 w-3.5 text-white cursor-pointer hover:text-primary" />
+                                      <Phone className="h-3.5 w-3.5 text-white cursor-pointer hover:text-primary" />
+                                      <Linkedin className="h-3.5 w-3.5 text-white cursor-pointer hover:text-primary" />
+                                  </div>
+                              </div>
+
+                              {/* Actions */}
+                              <div className="flex items-center gap-2">
+                                  <Button 
+                                      size="sm" 
+                                      className="h-8 bg-white text-black hover:bg-gray-200 border-0 gap-1.5 font-medium text-xs px-3"
+                                      onClick={() => handleAIContact(candidate)}
+                                  >
+                                      <Bot className="h-3 w-3" />
+                                      AI Interview
+                                  </Button>
+                                  <Button 
+                                      size="sm" 
+                                      variant="ghost"
+                                      className="h-8 border-0 gap-1.5 font-medium text-xs px-3 text-muted-foreground hover:text-white"
+                                      onClick={() => handleRemoveCandidate(candidate.id)}
+                                  >
+                                      <X className="h-3 w-3" />
+                                      Remove
+                                  </Button>
+                              </div>
+                          </motion.div>
+                      ))}
+                      
+                      {!loadingCandidates && displayList.length === 0 && (
+                          <div className="text-center py-20 text-muted-foreground">
+                              <Briefcase className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                              <p className="text-lg font-medium">No shortlisted candidates yet</p>
+                              <p className="text-sm mt-2">
+                                  Click "Shortlist" on candidates to move them here.
+                              </p>
+                          </div>
+                      )}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+            </Tabs>
 
         </div>
       </div>
