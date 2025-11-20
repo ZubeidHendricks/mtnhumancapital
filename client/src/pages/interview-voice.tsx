@@ -46,14 +46,29 @@ export default function InterviewVoice() {
           console.log("Connected to Hume AI");
           setIsConnected(true);
           setState("listening");
+          
+          // Send session settings to initialize the conversation
+          const sessionSettings = {
+            type: "session_settings",
+            prompt: {
+              text: "You are Chit-Chet, a professional HR interviewer conducting a voice interview for Avatar Human Capital. Ask thoughtful questions about the candidate's experience, technical skills, and cultural fit. Be friendly, encouraging, and professional. Start by greeting the candidate and asking them to introduce themselves."
+            },
+            custom_session_id: `interview-${Date.now()}`
+          };
+          
+          ws.send(JSON.stringify(sessionSettings));
+          console.log("Session settings sent");
           toast.success("Connected to AI interviewer");
         };
 
         ws.onmessage = (event) => {
           try {
             const message = JSON.parse(event.data);
+            console.log("Received message type:", message.type);
             
-            if (message.type === "assistant_message") {
+            if (message.type === "chat_metadata") {
+              console.log("Chat initialized:", message);
+            } else if (message.type === "assistant_message") {
               setState("speaking");
               setTranscripts(prev => [...prev, {
                 role: "ai",
