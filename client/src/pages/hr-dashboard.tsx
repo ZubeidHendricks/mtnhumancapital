@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { jobsService, candidateService } from "@/lib/api";
 import { Navbar } from "@/components/layout/navbar";
@@ -68,7 +68,6 @@ export default function HRDashboard() {
         return await jobsService.getAll();
       } catch (e) {
         console.error("Failed to fetch jobs:", e);
-        // Return empty array on error to prevent crash, but trigger isError
         throw e;
       }
     },
@@ -91,13 +90,22 @@ export default function HRDashboard() {
       }
     },
     retry: 1,
-    // We do NOT use placeholderData here if we want to show the error state
-    // OR we use initialData to fallback to mock data permanently on error
-    // For now, let's handle the error explicitly in UI
   });
 
-  // Use mock data if error occurs
-  const displayCandidates = candidatesError ? MOCK_CANDIDATES : (candidates || []);
+  // Safer data handling logic
+  // 1. If error, use mock
+  // 2. If loading, use empty (will show spinner)
+  // 3. If success but not array (e.g. empty object), use mock or empty
+  const getSafeCandidates = () => {
+    if (candidatesError) return MOCK_CANDIDATES;
+    if (loadingCandidates) return [];
+    if (Array.isArray(candidates)) return candidates;
+    // If we get here, candidates is defined but NOT an array (unexpected API response)
+    console.warn("Unexpected candidates data structure:", candidates);
+    return MOCK_CANDIDATES;
+  };
+
+  const displayCandidates = getSafeCandidates();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -118,7 +126,7 @@ export default function HRDashboard() {
         </div>
 
         {/* Connection Error Alert */}
-        {(jobsError || candidatesError) && (
+        {(jobsError || candidatesError || (!loadingCandidates && !Array.isArray(candidates) && candidates)) && (
           <Alert variant="destructive" className="mb-6 border-red-500/20 bg-red-500/10 text-red-200">
             <WifiOff className="h-4 w-4" />
             <AlertTitle>Backend Connection Issue</AlertTitle>
@@ -162,7 +170,7 @@ export default function HRDashboard() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Open Roles</CardTitle>
                   <div className="text-2xl font-bold">
-                    {loadingJobs ? <Loader2 className="w-6 h-6 animate-spin" /> : (jobs?.length || 12)}
+                    {loadingJobs ? <Loader2 className="w-6 h-6 animate-spin" /> : (Array.isArray(jobs) ? jobs.length : 12)}
                   </div>
                 </CardHeader>
               </Card>
@@ -170,7 +178,7 @@ export default function HRDashboard() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Candidates in Pipeline</CardTitle>
                   <div className="text-2xl font-bold">
-                    {loadingCandidates ? <Loader2 className="w-6 h-6 animate-spin" /> : (displayCandidates.length || 48)}
+                    {loadingCandidates ? <Loader2 className="w-6 h-6 animate-spin" /> : displayCandidates.length}
                   </div>
                 </CardHeader>
               </Card>
