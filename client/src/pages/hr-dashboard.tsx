@@ -21,7 +21,8 @@ import {
   BrainCircuit,
   Sparkles,
   ShieldCheck,
-  Laptop
+  Laptop,
+  TrendingUp
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -287,6 +288,25 @@ export default function HRDashboard() {
 
           {/* PERFORMANCE TAB */}
            <TabsContent value="performance" className="space-y-6">
+            
+             {/* AI Performance Banner */}
+            <div className="rounded-lg bg-gradient-to-r from-indigo-900/20 to-purple-500/20 border border-indigo-500/20 p-6 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold flex items-center gap-2 text-white">
+                  <TrendingUp className="w-5 h-5 text-indigo-400" />
+                  Analyze workforce performance?
+                </h3>
+                <p className="text-muted-foreground text-sm mt-1">
+                  The HR Management Agent tracks KPIs, staff satisfaction, and payroll compliance in real-time.
+                </p>
+              </div>
+              <Link href="/hr-management-agent">
+                <Button className="bg-indigo-500 text-white hover:bg-indigo-400 shadow-lg shadow-indigo-500/20">
+                  View HR Analytics
+                </Button>
+              </Link>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="border-white/10 bg-card/20">
                 <CardHeader>

@@ -9,6 +9,7 @@ import HRDashboard from "@/pages/hr-dashboard";
 import RecruitmentAgent from "@/pages/recruitment-agent";
 import IntegrityAgent from "@/pages/integrity-agent";
 import OnboardingAgent from "@/pages/onboarding-agent";
+import HRManagementAgent from "@/pages/hr-management-agent";
 
 function Router() {
   return (
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/recruitment-agent" component={RecruitmentAgent} />
       <Route path="/integrity-agent" component={IntegrityAgent} />
       <Route path="/onboarding-agent" component={OnboardingAgent} />
+      <Route path="/hr-management-agent" component={HRManagementAgent} />
       <Route component={NotFound} />
     </Switch>
   );
