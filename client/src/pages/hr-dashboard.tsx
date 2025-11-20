@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { jobsService, candidateService } from "@/lib/api";
 import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -67,19 +67,29 @@ export default function HRDashboard() {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isCreateJobOpen, setIsCreateJobOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
 
-  // Local state for new creations since we don't have a real backend for POSTs in mockup mode
-  const [localJobs, setLocalJobs] = useState<any[]>([]);
-  const [localCandidates, setLocalCandidates] = useState<any[]>([]);
 
-  // JD Generation State
   const [isGenerating, setIsGenerating] = useState(false);
   const [jobTitle, setJobTitle] = useState("");
   const [department, setDepartment] = useState("");
   const [jobDescription, setJobDescription] = useState("");
 
-  // File Upload State
   const [isUploading, setIsUploading] = useState(false);
+
+  const createJobMutation = useMutation({
+    mutationFn: jobsService.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+    },
+  });
+
+  const createCandidateMutation = useMutation({
+    mutationFn: candidateService.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['candidates'] });
+    },
+  });
 
   const handleGenerateJD = async () => {
     if (!jobTitle) {
@@ -124,29 +134,32 @@ BENEFITS:
     toast.success("Job Description generated successfully!");
   };
 
-  const handlePublishRequisition = () => {
+  const handlePublishRequisition = async () => {
     if (!jobTitle) {
         toast.error("Please enter a Job Title.");
         return;
     }
 
-    const newJob = {
-        id: Date.now(),
+    try {
+      await createJobMutation.mutateAsync({
         title: jobTitle,
         department: department || "General",
+        description: jobDescription,
         status: "Active",
-        date: new Date().toLocaleDateString()
-    };
-
-    setLocalJobs(prev => [newJob, ...prev]);
-    setIsCreateJobOpen(false);
-    
-    // Reset Form
-    setJobTitle("");
-    setDepartment("");
-    setJobDescription("");
-    
-    toast.success("Requisition created successfully!");
+        salaryMin: 850000,
+        salaryMax: 1200000,
+        location: "Johannesburg, Gauteng"
+      });
+      
+      setIsCreateJobOpen(false);
+      setJobTitle("");
+      setDepartment("");
+      setJobDescription("");
+      toast.success("Requisition created successfully!");
+    } catch (error) {
+      console.error("Failed to create job:", error);
+      toast.error("Failed to create requisition. Please try again.");
+    }
   };
 
   const handleFileUploadClick = () => {
@@ -161,50 +174,48 @@ BENEFITS:
 
     setIsUploading(true);
 
-    // Simulate Processing Delay
     await new Promise(resolve => setTimeout(resolve, 2500));
 
-    // Create mock candidates from files
-    const newCandidates = Array.from(files).map((file, index) => {
-        // Improved name cleaning logic
-        let name = file.name.split('.')[0]; // Remove extension
+    try {
+      for (const file of Array.from(files)) {
+        let name = file.name.split('.')[0];
         
-        // Remove common prefixes/suffixes and artifacts
         name = name
             .replace(/resume of/i, '')
             .replace(/cv of/i, '')
             .replace(/resume/i, '')
             .replace(/cv/i, '')
-            .replace(/\(\d+\)/g, '') // Remove (1), (2) etc
+            .replace(/\(\d+\)/g, '')
             .replace(/compressed/i, '')
             .replace(/copy/i, '')
             .replace(/final/i, '')
-            .replace(/[-_]/g, ' ') // Replace separators with spaces
+            .replace(/[-_]/g, ' ')
             .trim();
 
-        // Capitalize each word
         name = name.replace(/\b\w/g, (l) => l.toUpperCase());
 
-        // Fallback if name becomes empty
         if (!name || name.length < 2) {
             name = "Unknown Candidate";
         }
 
-        return {
-            id: Date.now() + index,
-            full_name: name,
-            role: localJobs[0]?.title || "General Application", // Assign to most recent job or general
-            match: Math.floor(Math.random() * (98 - 70 + 1)) + 70, // Random high score
-            stage: "Screening",
-            status: "New"
-        };
-    });
+        await createCandidateMutation.mutateAsync({
+          fullName: name,
+          role: "Backend Developer",
+          source: "Uploaded",
+          status: "New",
+          stage: "Screening",
+          match: Math.floor(Math.random() * (98 - 70 + 1)) + 70,
+        });
+      }
 
-    setLocalCandidates(prev => [...newCandidates, ...prev]);
-    setIsUploading(false);
-    setIsUploadOpen(false);
-    setIsUploadOpen(false);
-    toast.success(`Processed ${files.length} CVs successfully!`);
+      setIsUploading(false);
+      setIsUploadOpen(false);
+      toast.success(`Processed ${files.length} CVs successfully!`);
+    } catch (error) {
+      console.error("Failed to upload candidates:", error);
+      setIsUploading(false);
+      toast.error("Failed to process CVs. Please try again.");
+    }
   };
 
   // Fetch real data from backend
@@ -243,38 +254,9 @@ BENEFITS:
     retry: 1,
   });
 
-  // Safer data handling logic
-  const getSafeCandidates = () => {
-    if (candidatesError) return MOCK_CANDIDATES;
-    if (loadingCandidates) return [];
-    
-    // Handle Backend Pagination Wrapper { total: 2, candidates: [...] }
-    if (candidates && !Array.isArray(candidates) && candidates.candidates && Array.isArray(candidates.candidates)) {
-        return candidates.candidates;
-    }
-
-    // Critical Check: Ensure it is an array. 
-    if (candidates && Array.isArray(candidates)) {
-        return candidates;
-    }
-    
-    // Log warning only if we have data that isn't an array
-    if (candidates) {
-        console.warn("Unexpected candidates data structure:", candidates);
-    }
-    
-    // Default to mock data if data is present but invalid
-    return MOCK_CANDIDATES;
-  };
-
-  // Merge API candidates with locally created ones
-  const apiCandidates = Array.isArray(getSafeCandidates()) ? getSafeCandidates() : MOCK_CANDIDATES;
-  const displayCandidates = [...localCandidates, ...apiCandidates];
-
-  // Merge API jobs with locally created ones
-  const apiJobs = Array.isArray(jobs) ? jobs : [];
-  // Calculate total job count (API + Local)
-  const jobCount = (apiJobs.length || 12) + localJobs.length;
+  const displayCandidates = candidatesError ? MOCK_CANDIDATES : (Array.isArray(candidates) ? candidates : []);
+  const displayJobs = jobsError ? [] : (Array.isArray(jobs) ? jobs : []);
+  const jobCount = displayJobs.length || 12;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -377,12 +359,12 @@ BENEFITS:
         </div>
 
         {/* Connection Error Alert */}
-        {(jobsError || candidatesError || (!loadingCandidates && candidates && !Array.isArray(candidates) && !candidates.candidates)) && (
+        {(jobsError || candidatesError) && (
           <Alert variant="destructive" className="mb-6 border-red-500/20 bg-red-500/10 text-red-200">
             <WifiOff className="h-4 w-4" />
             <AlertTitle>Backend Connection Issue</AlertTitle>
             <AlertDescription>
-              Unable to connect to the AI Backend. Showing cached/mock data for demonstration purposes.
+              Unable to connect to the Backend. Showing cached/mock data for demonstration purposes.
             </AlertDescription>
           </Alert>
         )}
@@ -440,29 +422,6 @@ BENEFITS:
                 </CardHeader>
               </Card>
             </div>
-
-            {/* Active Jobs List (New) */}
-            {localJobs.length > 0 && (
-                <Card className="border-white/10 bg-card/20">
-                    <CardHeader>
-                        <CardTitle>Recently Created Requisitions</CardTitle>
-                        <CardDescription>Jobs created in this session</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-2">
-                            {localJobs.map((job) => (
-                                <div key={job.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5">
-                                    <div>
-                                        <p className="font-medium">{job.title}</p>
-                                        <p className="text-sm text-muted-foreground">{job.department}</p>
-                                    </div>
-                                    <Badge className="bg-green-500/20 text-green-400">{job.status}</Badge>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
 
             <Card className="border-white/10 bg-card/20">
               <CardHeader>

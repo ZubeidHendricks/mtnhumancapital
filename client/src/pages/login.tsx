@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useMutation } from "@tanstack/react-query";
-import { authService } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,32 +12,17 @@ export default function Login() {
   const [, setLocation] = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-
-  const loginMutation = useMutation({
-    mutationFn: authService.login,
-    onSuccess: (data) => {
-      // Store the token
-      localStorage.setItem("ahc_auth_token", data.access_token);
-      // Redirect to dashboard
-      setLocation("/hr-dashboard");
-    },
-    onError: (err: any) => {
-      console.error("Login failed", err);
-      setError(
-        err.response?.data?.detail || 
-        "Authentication failed. Please check your credentials."
-      );
-    }
-  });
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    loginMutation.mutate({ username: email, password });
+    setIsLoading(true);
+    setTimeout(() => {
+      localStorage.setItem("ahc_auth_token", "demo_token");
+      setLocation("/hr-dashboard");
+    }, 500);
   };
 
-  // For demo purposes, allow bypassing if the backend isn't reachable yet
   const handleDemoLogin = () => {
     localStorage.setItem("ahc_auth_token", "demo_token");
     setLocation("/hr-dashboard");
@@ -71,13 +54,6 @@ export default function Login() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
-              {error && (
-                <Alert variant="destructive" className="bg-red-900/20 border-red-900/50 text-red-200">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-              
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
                 <Input 
@@ -113,9 +89,9 @@ export default function Login() {
               <Button 
                 type="submit" 
                 className="w-full bg-primary hover:bg-primary/90"
-                disabled={loginMutation.isPending}
+                disabled={isLoading}
               >
-                {loginMutation.isPending ? (
+                {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Authenticating...
                   </>
