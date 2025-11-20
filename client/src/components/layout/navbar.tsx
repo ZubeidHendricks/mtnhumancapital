@@ -1,8 +1,16 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Cpu, LayoutDashboard, Building2 } from "lucide-react";
+import { Menu, X, Cpu, LayoutDashboard, Building2, Mic, Video, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -44,12 +52,38 @@ export function Navbar() {
           
           <div className="h-6 w-px bg-white/10 mx-2" />
 
-           {/* New Customer Onboarding Link */}
-           <Link href="/onboarding">
-            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-white hover:bg-white/5">
-              Register Company
-            </Button>
-          </Link>
+          {/* Interview Demos Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-white hover:bg-white/5 gap-1">
+                Live Demos <ChevronDown className="w-3 h-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-zinc-950 border-white/10 text-zinc-200">
+              <DropdownMenuLabel>Candidate Experience</DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-white/10" />
+              <Link href="/interview/voice">
+                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                  <Mic className="w-4 h-4 mr-2 text-indigo-400" />
+                  <span>Voice Interview (Hume)</span>
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/interview/video">
+                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                  <Video className="w-4 h-4 mr-2 text-rose-400" />
+                  <span>Video Interview (Tavus)</span>
+                </DropdownMenuItem>
+              </Link>
+              <DropdownMenuSeparator className="bg-white/10" />
+              <DropdownMenuLabel>Admin Experience</DropdownMenuLabel>
+              <Link href="/onboarding">
+                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                  <Building2 className="w-4 h-4 mr-2 text-green-400" />
+                  <span>Customer Onboarding</span>
+                </DropdownMenuItem>
+              </Link>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Dashboard Links */}
           <Link href="/hr-dashboard">
@@ -100,9 +134,26 @@ export function Navbar() {
                 </a>
               ))}
               <div className="h-px bg-white/10 my-2" />
-              <Link href="/onboarding">
-                <Button variant="ghost" className="w-full justify-start mb-2">Register Company</Button>
+              
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-2">Live Demos</p>
+              <Link href="/interview/voice">
+                <Button variant="ghost" className="w-full justify-start mb-2 gap-2">
+                  <Mic className="w-4 h-4" /> Voice Interview
+                </Button>
               </Link>
+              <Link href="/interview/video">
+                <Button variant="ghost" className="w-full justify-start mb-2 gap-2">
+                  <Video className="w-4 h-4" /> Video Interview
+                </Button>
+              </Link>
+              <Link href="/onboarding">
+                <Button variant="ghost" className="w-full justify-start mb-2 gap-2">
+                   <Building2 className="w-4 h-4" /> Customer Onboarding
+                </Button>
+              </Link>
+
+              <div className="h-px bg-white/10 my-2" />
+              
               <Link href="/hr-dashboard">
                 <Button variant="ghost" className="w-full justify-start mb-2">HR Portal</Button>
               </Link>
