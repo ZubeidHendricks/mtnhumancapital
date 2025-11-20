@@ -98,8 +98,35 @@ const CANDIDATES = [
   }
 ];
 
+const SA_LOCATIONS = [
+  "Cape Town, Western Cape",
+  "Johannesburg, Gauteng",
+  "Durban, Gauteng",
+  "Pretoria, KwaZulu-Natal",
+  "Stellenbosch, Western Cape",
+  "Sandton, Gauteng",
+  "Centurion, Gauteng"
+];
+
 export default function CandidatesList() {
   const [activeTab, setActiveTab] = useState("Candidates");
+  const [activeCriteria, setActiveCriteria] = useState(CRITERIA);
+  const [activeCandidates, setActiveCandidates] = useState(CANDIDATES);
+  const [shortlistedCount, setShortlistedCount] = useState(2);
+  const [location, setLocation] = useState("Johannesburg, Gauteng");
+
+  const removeCriteria = (index: number) => {
+    setActiveCriteria(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleShortlist = (id: number) => {
+    setActiveCandidates(prev => prev.filter(c => c.id !== id));
+    setShortlistedCount(prev => prev + 1);
+  };
+
+  const handleRemoveCandidate = (id: number) => {
+    setActiveCandidates(prev => prev.filter(c => c.id !== id));
+  };
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-foreground flex flex-col">
@@ -133,7 +160,7 @@ export default function CandidatesList() {
                 </div>
                 <div className="flex justify-between text-xs text-muted-foreground">
                     <span>EXPECTED SALARY</span>
-                    <span className="text-white">60.000€ - 90.000€</span>
+                    <span className="text-white">R 850,000 - R 1,200,000</span>
                 </div>
                 <div className="flex justify-between text-xs text-muted-foreground">
                     <span>EXPECTED CANDIDATES</span>
@@ -161,16 +188,33 @@ export default function CandidatesList() {
                     <div className="flex items-center justify-between text-sm text-gray-300">
                         <div className="flex items-center gap-2">
                             <div className="w-4 h-4 rounded-full border-2 border-gray-500"></div>
-                            Paris, France
+                            {location}
                         </div>
                         <X className="h-3 w-3 text-muted-foreground cursor-pointer" />
                     </div>
-                    <div className="flex items-center justify-between text-sm text-gray-300">
-                        <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 rounded-full border-2 border-gray-500"></div>
-                            Search location
+                    
+                    {/* Mock Location Selector */}
+                    <div className="relative group">
+                        <div className="flex items-center justify-between text-sm text-muted-foreground hover:text-white cursor-pointer border border-dashed border-white/10 rounded px-2 py-1 hover:border-white/30">
+                            <div className="flex items-center gap-2">
+                                <Search className="h-3 w-3" />
+                                Add another location...
+                            </div>
+                            <Plus className="h-3 w-3" />
                         </div>
-                        <X className="h-3 w-3 text-muted-foreground cursor-pointer" />
+                        
+                        {/* Dropdown (simulated) */}
+                        <div className="hidden group-hover:block absolute top-full left-0 w-full mt-1 bg-[#1a1a1a] border border-white/10 rounded shadow-xl z-10 max-h-40 overflow-y-auto">
+                            {SA_LOCATIONS.filter(l => l !== location).map(loc => (
+                                <div 
+                                    key={loc} 
+                                    className="px-3 py-2 text-xs text-gray-400 hover:bg-white/10 hover:text-white cursor-pointer"
+                                    onClick={() => setLocation(loc)}
+                                >
+                                    {loc}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground pl-6">
@@ -188,11 +232,14 @@ export default function CandidatesList() {
             <div className="space-y-4">
                 <div className="text-xs font-bold text-muted-foreground tracking-wider">CRITERIA</div>
                 <div className="space-y-2">
-                    {CRITERIA.map((criteria, i) => (
+                    {activeCriteria.map((criteria, i) => (
                         <div key={i} className="flex items-start gap-2 group">
                             <div className={`mt-1 w-2 h-2 rounded-full ${i < 3 ? 'bg-white' : 'bg-yellow-400'}`}></div>
                             <span className="text-sm text-gray-300 flex-1 leading-tight">{criteria}</span>
-                            <X className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 cursor-pointer" />
+                            <X 
+                                className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 cursor-pointer hover:text-white" 
+                                onClick={() => removeCriteria(i)}
+                            />
                         </div>
                     ))}
                 </div>
@@ -222,13 +269,13 @@ export default function CandidatesList() {
                     onClick={() => setActiveTab("Candidates")}
                     className={`h-full border-b-2 px-2 text-sm font-medium transition-colors ${activeTab === "Candidates" ? "border-white text-white" : "border-transparent text-muted-foreground"}`}
                 >
-                    Candidates <span className="ml-1 text-xs bg-white/10 px-1.5 py-0.5 rounded-full">12</span>
+                    Candidates <span className="ml-1 text-xs bg-white/10 px-1.5 py-0.5 rounded-full">{activeCandidates.length}</span>
                 </button>
                 <button 
                     onClick={() => setActiveTab("Shortlisted")}
                     className={`h-full border-b-2 px-2 text-sm font-medium transition-colors ${activeTab === "Shortlisted" ? "border-white text-white" : "border-transparent text-muted-foreground"}`}
                 >
-                    Shortlisted <span className="ml-1 text-xs bg-white/10 px-1.5 py-0.5 rounded-full">2</span>
+                    Shortlisted <span className="ml-1 text-xs bg-white/10 px-1.5 py-0.5 rounded-full">{shortlistedCount}</span>
                 </button>
             </div>
 
@@ -253,11 +300,13 @@ export default function CandidatesList() {
             {/* List */}
             <ScrollArea className="flex-1 px-6 pb-6">
                 <div className="space-y-1">
-                    {CANDIDATES.map((candidate) => (
+                    {activeCandidates.map((candidate) => (
                         <motion.div 
                             key={candidate.id}
+                            layout
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
                             className="group flex items-center justify-between py-3 px-4 hover:bg-white/5 rounded-lg transition-colors border border-transparent hover:border-white/5"
                         >
                             {/* Candidate Info */}
@@ -297,16 +346,38 @@ export default function CandidatesList() {
 
                             {/* Actions */}
                             <div className="flex items-center gap-2">
-                                <Button size="sm" className="h-8 bg-indigo-600 hover:bg-indigo-500 text-white border-0 gap-1.5 font-medium text-xs px-3">
+                                <Button 
+                                    size="sm" 
+                                    className="h-8 bg-indigo-600 hover:bg-indigo-500 text-white border-0 gap-1.5 font-medium text-xs px-3"
+                                    onClick={() => handleShortlist(candidate.id)}
+                                >
                                     <ThumbsUp className="h-3 w-3" />
                                     Shortlist
                                 </Button>
-                                <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-white hover:bg-white/10">
+                                <Button 
+                                    size="icon" 
+                                    variant="ghost" 
+                                    className="h-8 w-8 text-muted-foreground hover:text-white hover:bg-white/10"
+                                    onClick={() => handleRemoveCandidate(candidate.id)}
+                                >
                                     <X className="h-4 w-4" />
                                 </Button>
                             </div>
                         </motion.div>
                     ))}
+                    
+                    {activeCandidates.length === 0 && (
+                        <div className="text-center py-20 text-muted-foreground">
+                            <p>No candidates remaining in this view.</p>
+                            <Button 
+                                variant="link" 
+                                className="text-indigo-400 text-xs"
+                                onClick={() => setActiveCandidates(CANDIDATES)}
+                            >
+                                Reset List
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </ScrollArea>
 
