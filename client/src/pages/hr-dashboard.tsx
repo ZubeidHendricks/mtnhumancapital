@@ -486,22 +486,41 @@ BENEFITS:
           {/* RECRUITMENT TAB */}
           <TabsContent value="recruitment" className="space-y-6">
             
-            {/* AI Agent Banner */}
-            <div className="rounded-lg bg-gradient-to-r from-primary/20 to-purple-500/20 border border-primary/20 p-6 flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-bold flex items-center gap-2 text-white">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                  Need to find candidates fast?
-                </h3>
-                <p className="text-muted-foreground text-sm mt-1">
-                  Launch the AI Recruitment Agent to source, screen, and rank candidates using our RAG-powered engine.
-                </p>
+            {/* Quick Action Banners */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="rounded-lg bg-gradient-to-r from-primary/20 to-purple-500/20 border border-primary/20 p-6 flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold flex items-center gap-2 text-white">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                    Need to find candidates fast?
+                  </h3>
+                  <p className="text-muted-foreground text-sm mt-1">
+                    Launch the AI Recruitment Agent to source, screen, and rank candidates.
+                  </p>
+                </div>
+                <Link href="/recruitment-agent">
+                  <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20">
+                    Launch AI Recruiter
+                  </Button>
+                </Link>
               </div>
-              <Link href="/recruitment-agent">
-                <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20">
-                  Launch AI Recruiter
-                </Button>
-              </Link>
+
+              <div className="rounded-lg bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/20 p-6 flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold flex items-center gap-2 text-white">
+                    <LayoutList className="w-5 h-5 text-blue-400" />
+                    Track candidate progress
+                  </h3>
+                  <p className="text-muted-foreground text-sm mt-1">
+                    Monitor document status and pipeline stages for shortlisted candidates.
+                  </p>
+                </div>
+                <Link href="/candidate-pipeline">
+                  <Button variant="outline" className="border-blue-500/30 hover:bg-blue-500/10 shadow-lg shadow-blue-500/10">
+                    View Pipeline
+                  </Button>
+                </Link>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
