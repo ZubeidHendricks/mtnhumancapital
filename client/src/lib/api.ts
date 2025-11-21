@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { Candidate, InsertCandidate, Job, InsertJob } from "@shared/schema";
+import type { Candidate, InsertCandidate, Job, InsertJob, IntegrityCheck, InsertIntegrityCheck } from "@shared/schema";
 
 const API_URL = "/api";
 
@@ -65,5 +65,31 @@ export const interviewService = {
       candidateName 
     });
     return response.data;
+  }
+};
+
+export const integrityChecksService = {
+  getAll: async (): Promise<IntegrityCheck[]> => {
+    const response = await api.get("/integrity-checks");
+    return response.data;
+  },
+  getById: async (id: string): Promise<IntegrityCheck> => {
+    const response = await api.get(`/integrity-checks/${id}`);
+    return response.data;
+  },
+  getByCandidateId: async (candidateId: string): Promise<IntegrityCheck[]> => {
+    const response = await api.get(`/integrity-checks/candidate/${candidateId}`);
+    return response.data;
+  },
+  create: async (checkData: InsertIntegrityCheck): Promise<IntegrityCheck> => {
+    const response = await api.post("/integrity-checks", checkData);
+    return response.data;
+  },
+  update: async (id: string, checkData: Partial<InsertIntegrityCheck>): Promise<IntegrityCheck> => {
+    const response = await api.patch(`/integrity-checks/${id}`, checkData);
+    return response.data;
+  },
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/integrity-checks/${id}`);
   }
 };

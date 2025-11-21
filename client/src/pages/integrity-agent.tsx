@@ -1,15 +1,18 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/navbar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
-  Send, 
-  Bot, 
-  User, 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { 
   ShieldCheck, 
   FileSignature, 
   Fingerprint, 
@@ -19,334 +22,481 @@ import {
   Loader2, 
   Lock,
   Scale,
-  FileText
+  FileText,
+  Users,
+  Clock,
+  XCircle,
+  Play,
+  User
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { candidateService, integrityChecksService } from "@/lib/api";
+import type { Candidate, IntegrityCheck } from "@shared/schema";
+import { format } from "date-fns";
+import { toast } from "sonner";
 
-// Types for our mock RAG system
-type Message = {
-  id: string;
-  role: "user" | "agent";
-  content: string;
-  timestamp: Date;
-};
-
-type RagStep = {
-  id: string;
-  label: string;
-  status: "pending" | "processing" | "completed";
-  details?: string[];
-  icon: any;
-};
-
-type RetrievedDoc = {
-  id: string;
-  title: string;
-  type: "consent" | "record" | "report";
-  status: "verified" | "flagged" | "pending";
-  snippet: string;
-};
+const checkTypes = [
+  { value: "criminal", label: "Criminal Record Check", icon: Scale },
+  { value: "credit", label: "Credit Bureau Check", icon: FileText },
+  { value: "education", label: "Education Verification", icon: FileSignature },
+  { value: "employment", label: "Employment History", icon: Users },
+  { value: "biometric", label: "Biometric Verification", icon: Fingerprint },
+  { value: "reference", label: "Reference Checks", icon: Search },
+];
 
 export default function IntegrityAgent() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      role: "agent",
-      content: "I am the Integrity Evaluation Agent. I can automate background checks, biometric processing, and risk assessments. Please provide a candidate name to begin the integrity workflow.",
-      timestamp: new Date()
+  const queryClient = useQueryClient();
+  const [selectedCandidateId, setSelectedCandidateId] = useState<string>("");
+  const [selectedCheckType, setSelectedCheckType] = useState<string>("");
+
+  const { data: candidates = [], isLoading: loadingCandidates } = useQuery({
+    queryKey: ["candidates"],
+    queryFn: candidateService.getAll,
+  });
+
+  const { data: allChecks = [], isLoading: loadingChecks } = useQuery({
+    queryKey: ["integrity-checks"],
+    queryFn: integrityChecksService.getAll,
+  });
+
+  const { data: candidateChecks = [] } = useQuery({
+    queryKey: ["integrity-checks", selectedCandidateId],
+    queryFn: () => integrityChecksService.getByCandidateId(selectedCandidateId),
+    enabled: !!selectedCandidateId,
+  });
+
+  const initiateCheckMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedCandidateId || !selectedCheckType) {
+        throw new Error("Please select both a candidate and check type");
+      }
+      
+      return integrityChecksService.create({
+        candidateId: selectedCandidateId,
+        checkType: selectedCheckType,
+        status: "Pending",
+        findings: {
+          initiated: new Date().toISOString(),
+          checkType: selectedCheckType,
+        },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["integrity-checks"] });
+      toast.success("Integrity check initiated successfully");
+      setSelectedCheckType("");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to initiate check");
+    },
+  });
+
+  const simulateCheckMutation = useMutation({
+    mutationFn: async (checkId: string) => {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const mockResults = {
+        criminal: { status: "Completed", result: "Clear", riskScore: 0, findings: { recordStatus: "No criminal record found", lastChecked: new Date().toISOString() } },
+        credit: { status: "Completed", result: "Flagged", riskScore: 25, findings: { score: 650, flags: ["Minor default in 2022"], lastChecked: new Date().toISOString() } },
+        education: { status: "Completed", result: "Verified", riskScore: 0, findings: { degree: "BSc Computer Science", institution: "University of Cape Town", year: 2018 } },
+        employment: { status: "Completed", result: "Verified", riskScore: 5, findings: { verified: 3, unverified: 1, discrepancies: "Minor date mismatch" } },
+        biometric: { status: "Completed", result: "Verified", riskScore: 0, findings: { matchScore: 99.9, verified: true, timestamp: new Date().toISOString() } },
+        reference: { status: "Completed", result: "Verified", riskScore: 10, findings: { contactedReferences: 3, positive: 2, neutral: 1 } },
+      };
+
+      const check = allChecks.find(c => c.id === checkId);
+      if (!check) throw new Error("Check not found");
+
+      const result = mockResults[check.checkType as keyof typeof mockResults] || mockResults.criminal;
+      
+      return integrityChecksService.update(checkId, {
+        ...result,
+        completedAt: new Date(),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["integrity-checks"] });
+      toast.success("Check completed successfully");
+    },
+    onError: () => {
+      toast.error("Failed to complete check");
+    },
+  });
+
+  const selectedCandidate = candidates.find(c => c.id === selectedCandidateId);
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "Completed": return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+      case "Pending": return <Clock className="w-4 h-4 text-yellow-500" />;
+      case "Failed": return <XCircle className="w-4 h-4 text-red-500" />;
+      default: return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />;
     }
-  ]);
-  const [inputValue, setInputValue] = useState("");
-  const [isProcessing, setIsProcessing] = useState(false);
-  
-  // RAG State
-  const [ragSteps, setRagSteps] = useState<RagStep[]>([]);
-  const [retrievedDocs, setRetrievedDocs] = useState<RetrievedDoc[]>([]);
+  };
 
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages]);
-
-  const handleSendMessage = async () => {
-    if (!inputValue.trim()) return;
-
-    const newUserMsg: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: inputValue,
-      timestamp: new Date()
+  const getResultBadge = (result: string | null) => {
+    if (!result) return null;
+    
+    const variants: Record<string, { bg: string; text: string }> = {
+      Clear: { bg: "bg-green-500/10", text: "text-green-500" },
+      Verified: { bg: "bg-green-500/10", text: "text-green-500" },
+      Flagged: { bg: "bg-yellow-500/10", text: "text-yellow-500" },
+      Failed: { bg: "bg-red-500/10", text: "text-red-500" },
     };
-
-    setMessages(prev => [...prev, newUserMsg]);
-    setInputValue("");
-    setIsProcessing(true);
-
-    // Simulate Integrity Workflow
-    // 1. Obtain Consent & Bio -> 2. Run Checks -> 3. Verify & Assess -> 4. Report
     
-    // Step 1: Consent & Biometrics
-    setRagSteps([
-      { id: "1", label: "Procuring Consent & Biometrics", status: "processing", icon: FileSignature, details: ["Requesting digital consent...", "Processing fingerprint hash...", "Validating ID documents..."] }
-    ]);
+    const variant = variants[result] || { bg: "bg-gray-500/10", text: "text-gray-500" };
     
-    await new Promise(r => setTimeout(r, 1500));
-    
-    setRagSteps(prev => [
-      { ...prev[0], status: "completed" },
-      { id: "2", label: "Executing Multi-Source Checks", status: "processing", icon: Search, details: ["Querying Criminal Database...", "Verifying Credit Bureau Data...", "Checking Academic Registry...", "Validating Employment History..."] }
-    ]);
-    
-    setRetrievedDocs([
-      { id: "doc1", title: "Signed_Consent_Form.pdf", type: "consent", status: "verified", snippet: "Digital signature verified. Timestamp: 2024-05-20 09:00 AM" },
-      { id: "doc2", title: "Biometric_Scan_Hash.dat", type: "record", status: "verified", snippet: "Fingerprint match score: 99.9%. ID verified against Home Affairs." }
-    ]);
+    return (
+      <Badge className={`${variant.bg} ${variant.text} border-0`}>
+        {result}
+      </Badge>
+    );
+  };
 
-    await new Promise(r => setTimeout(r, 2000));
-
-    // Step 3: Evaluation
-    setRagSteps(prev => [
-      ...prev.slice(0, 1),
-      { ...prev[1], status: "completed" },
-      { id: "3", label: "Risk Assessment & Evaluation", status: "processing", icon: Scale, details: ["Cross-referencing references...", "Analyzing credit risk score...", "Compiling integrity matrix..."] }
-    ]);
-
-    setRetrievedDocs(prev => [
-      ...prev,
-      { id: "rep1", title: "Criminal_Record_Clearance.pdf", type: "report", status: "verified", snippet: "No criminal record found in national database." },
-      { id: "rep2", title: "Credit_Bureau_Report_v2.pdf", type: "report", status: "flagged", snippet: "Minor credit default flagged in 2022. Risk level: Low." },
-      { id: "rep3", title: "University_Transcript.pdf", type: "record", status: "verified", snippet: "BSc Computer Science confirmed. Graduated 2018." }
-    ]);
-
-    await new Promise(r => setTimeout(r, 2000));
-
-    setRagSteps(prev => prev.map(s => ({ ...s, status: "completed" })));
-    setIsProcessing(false);
-
-    const agentResponse: Message = {
-      id: (Date.now() + 1).toString(),
-      role: "agent",
-      content: "Integrity Evaluation Complete.\n\nI have successfully processed the candidate's biometrics and consent. Background checks returned a **CLEAR** criminal record and verified academic qualifications.\n\nNote: A minor flag was identified in the credit report (Low Risk). \n\nI have compiled the final 'Candidate Assessment Report' with a recommendation to **APPOINT**. Would you like to generate the formal offer?",
-      timestamp: new Date()
-    };
-    setMessages(prev => [...prev, agentResponse]);
+  const getRiskScoreColor = (score: number | null) => {
+    if (score === null || score === undefined) return "text-gray-500";
+    if (score === 0) return "text-green-500";
+    if (score < 30) return "text-yellow-500";
+    if (score < 70) return "text-orange-500";
+    return "text-red-500";
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <Navbar />
       
-      <div className="flex-1 pt-20 container mx-auto px-4 py-6 h-[calc(100vh-80px)]">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
+      <div className="flex-1 pt-20 container mx-auto px-4 py-6">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold flex items-center gap-3">
+            <ShieldCheck className="w-8 h-8 text-primary" />
+            Integrity Evaluation Agent
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Automated background checks, biometric processing, and risk assessments
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* LEFT: Workflow Visualization */}
-          <div className="hidden lg:block lg:col-span-3 flex flex-col gap-6 h-full overflow-hidden">
-            <Card className="bg-card/30 border-white/10 backdrop-blur-sm flex-1 flex flex-col overflow-hidden">
-              <CardHeader className="pb-2">
+          {/* Candidate Selection & Initiate Checks */}
+          <div className="lg:col-span-1 space-y-6">
+            <Card className="bg-card/30 border-white/10 backdrop-blur-sm" data-testid="card-candidate-selection">
+              <CardHeader>
                 <CardTitle className="text-sm font-bold flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-primary" /> 
-                  Integrity Workflow
+                  <Users className="w-4 h-4 text-primary" /> 
+                  Select Candidate
                 </CardTitle>
               </CardHeader>
-              <CardContent className="flex-1 overflow-y-auto pr-2">
-                <div className="space-y-6 relative">
-                  {/* Connecting Line */}
-                  <div className="absolute left-[19px] top-2 bottom-2 w-0.5 bg-white/5 z-0" />
-                  
-                  {ragSteps.length === 0 && (
-                    <div className="text-sm text-muted-foreground text-center py-8 italic">
-                      Waiting for candidate...
-                    </div>
-                  )}
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="text-xs text-muted-foreground mb-2 block">Candidate</label>
+                  <Select value={selectedCandidateId} onValueChange={setSelectedCandidateId}>
+                    <SelectTrigger className="bg-white/5 border-white/10" data-testid="select-candidate">
+                      <SelectValue placeholder="Choose a candidate..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {loadingCandidates ? (
+                        <SelectItem value="loading" disabled>Loading...</SelectItem>
+                      ) : candidates.length === 0 ? (
+                        <SelectItem value="empty" disabled>No candidates found</SelectItem>
+                      ) : (
+                        candidates.map(candidate => (
+                          <SelectItem key={candidate.id} value={candidate.id} data-testid={`option-candidate-${candidate.id}`}>
+                            {candidate.fullName} - {candidate.role || "N/A"}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                  <AnimatePresence>
-                    {ragSteps.map((step, index) => (
-                      <motion.div 
-                        key={step.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        className="relative z-10"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 bg-background ${
-                            step.status === "completed" ? "border-green-500 text-green-500" : 
-                            step.status === "processing" ? "border-primary text-primary animate-pulse" : 
-                            "border-muted text-muted-foreground"
-                          }`}>
-                            {step.status === "completed" ? <CheckCircle2 className="w-5 h-5" /> : <step.icon className="w-5 h-5" />}
-                          </div>
-                          <div className="flex-1 pt-1">
-                            <h4 className={`text-sm font-bold ${step.status === "processing" ? "text-primary" : "text-foreground"}`}>
-                              {step.label}
-                            </h4>
-                            {step.details && (
-                              <motion.ul 
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                className="mt-2 space-y-1"
-                              >
-                                {step.details.map((detail, i) => (
-                                  <li key={i} className="text-xs text-muted-foreground flex items-center gap-1.5">
-                                    <div className="w-1 h-1 rounded-full bg-white/20" />
-                                    {detail}
-                                  </li>
-                                ))}
-                              </motion.ul>
-                            )}
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
+                {selectedCandidate && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-3 rounded-lg bg-white/5 border border-white/10"
+                    data-testid="card-selected-candidate"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <User className="w-4 h-4 text-primary" />
+                      <span className="font-semibold text-sm">{selectedCandidate.fullName}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <div>Email: {selectedCandidate.email || "N/A"}</div>
+                      <div>Phone: {selectedCandidate.phone || "N/A"}</div>
+                      <div>Stage: <Badge variant="outline" className="text-[10px]">{selectedCandidate.stage}</Badge></div>
+                    </div>
+                  </motion.div>
+                )}
+
+                <div>
+                  <label className="text-xs text-muted-foreground mb-2 block">Check Type</label>
+                  <Select value={selectedCheckType} onValueChange={setSelectedCheckType} disabled={!selectedCandidateId}>
+                    <SelectTrigger className="bg-white/5 border-white/10" data-testid="select-check-type">
+                      <SelectValue placeholder="Select check type..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {checkTypes.map(type => {
+                        const Icon = type.icon;
+                        return (
+                          <SelectItem key={type.value} value={type.value} data-testid={`option-check-${type.value}`}>
+                            <div className="flex items-center gap-2">
+                              <Icon className="w-3 h-3" />
+                              {type.label}
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button 
+                  onClick={() => initiateCheckMutation.mutate()}
+                  disabled={!selectedCandidateId || !selectedCheckType || initiateCheckMutation.isPending}
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                  data-testid="button-initiate-check"
+                >
+                  {initiateCheckMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Initiating...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4 mr-2" />
+                      Initiate Check
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card/30 border-white/10 backdrop-blur-sm" data-testid="card-stats">
+              <CardHeader>
+                <CardTitle className="text-sm font-bold">Overview</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                  <div>
+                    <div className="text-xs text-muted-foreground">Total Checks</div>
+                    <div className="text-2xl font-bold" data-testid="text-total-checks">{allChecks.length}</div>
+                  </div>
+                  <ShieldCheck className="w-8 h-8 text-primary opacity-50" />
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                  <div>
+                    <div className="text-xs text-muted-foreground">Pending</div>
+                    <div className="text-2xl font-bold text-yellow-500" data-testid="text-pending-checks">
+                      {allChecks.filter(c => c.status === "Pending").length}
+                    </div>
+                  </div>
+                  <Clock className="w-8 h-8 text-yellow-500 opacity-50" />
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                  <div>
+                    <div className="text-xs text-muted-foreground">Completed</div>
+                    <div className="text-2xl font-bold text-green-500" data-testid="text-completed-checks">
+                      {allChecks.filter(c => c.status === "Completed").length}
+                    </div>
+                  </div>
+                  <CheckCircle2 className="w-8 h-8 text-green-500 opacity-50" />
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* MIDDLE: Chat Interface */}
-          <div className="lg:col-span-6 flex flex-col h-full">
-            <Card className="flex-1 flex flex-col bg-card/50 border-white/10 backdrop-blur-md overflow-hidden">
-              <CardHeader className="border-b border-white/5 py-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
-                    <div>
-                      <CardTitle className="text-base">Integrity Agent</CardTitle>
-                      <CardDescription className="text-xs">Automated Background & Risk Engine</CardDescription>
+          {/* Candidate Checks & Details */}
+          <div className="lg:col-span-2 space-y-6">
+            {selectedCandidateId ? (
+              <Card className="bg-card/30 border-white/10 backdrop-blur-sm" data-testid="card-candidate-checks">
+                <CardHeader>
+                  <CardTitle className="text-sm font-bold flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Lock className="w-4 h-4 text-primary" />
+                      Checks for {selectedCandidate?.fullName}
                     </div>
-                  </div>
-                  <Badge variant="outline" className="bg-primary/5 border-primary/20 text-primary text-[10px]">SECURE CHANNEL</Badge>
-                </div>
-              </CardHeader>
-              
-              <ScrollArea className="flex-1 p-4">
-                <div className="space-y-6 pb-4">
-                  {messages.map((msg) => (
-                    <motion.div 
-                      key={msg.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className={`flex items-start gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
-                    >
-                      <Avatar className={`w-8 h-8 ${msg.role === "agent" ? "border border-primary/50" : "border border-white/10"}`}>
-                        <AvatarImage src={msg.role === "agent" ? "" : "/user.png"} />
-                        <AvatarFallback className={msg.role === "agent" ? "bg-primary/10 text-primary" : "bg-white/10"}>
-                          {msg.role === "agent" ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}
-                        </AvatarFallback>
-                      </Avatar>
-                      
-                      <div className={`rounded-2xl px-4 py-3 max-w-[80%] text-sm leading-relaxed ${
-                        msg.role === "user" 
-                          ? "bg-primary text-primary-foreground rounded-tr-none" 
-                          : "bg-white/5 border border-white/10 rounded-tl-none"
-                      }`}>
-                        <div className="whitespace-pre-wrap">{msg.content}</div>
-                        <div className={`text-[10px] mt-1 opacity-50 ${msg.role === "user" ? "text-primary-foreground" : "text-muted-foreground"}`}>
-                          {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </div>
+                    <Badge variant="outline" className="text-xs">
+                      {candidateChecks.length} {candidateChecks.length === 1 ? 'check' : 'checks'}
+                    </Badge>
+                  </CardTitle>
+                  <CardDescription>Background verification history and results</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[500px] pr-4">
+                    {candidateChecks.length === 0 ? (
+                      <div className="text-center py-12 text-muted-foreground" data-testid="text-no-checks">
+                        <Lock className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                        <p>No integrity checks initiated for this candidate</p>
+                        <p className="text-sm mt-2">Select a check type above to begin</p>
                       </div>
-                    </motion.div>
-                  ))}
-                  
-                  {isProcessing && (
-                    <motion.div 
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="flex items-start gap-3"
-                    >
-                       <Avatar className="w-8 h-8 border border-primary/50">
-                        <AvatarFallback className="bg-primary/10 text-primary">
-                          <Bot className="w-4 h-4" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="bg-white/5 border border-white/10 rounded-2xl rounded-tl-none px-4 py-3 flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                        <span className="text-xs text-muted-foreground">Running verification protocols...</span>
+                    ) : (
+                      <div className="space-y-4">
+                        <AnimatePresence>
+                          {candidateChecks.map((check, index) => {
+                            const checkTypeInfo = checkTypes.find(t => t.value === check.checkType);
+                            const Icon = checkTypeInfo?.icon || FileText;
+                            
+                            return (
+                              <motion.div
+                                key={check.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                                data-testid={`card-check-${check.id}`}
+                              >
+                                <Card className="bg-white/5 border-white/10 hover:border-white/20 transition-colors">
+                                  <CardHeader className="pb-3">
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                          <Icon className="w-5 h-5 text-primary" />
+                                        </div>
+                                        <div>
+                                          <CardTitle className="text-sm">
+                                            {checkTypeInfo?.label || check.checkType}
+                                          </CardTitle>
+                                          <CardDescription className="text-xs mt-1">
+                                            {format(new Date(check.createdAt), "MMM dd, yyyy 'at' HH:mm")}
+                                          </CardDescription>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        {getStatusIcon(check.status)}
+                                        {getResultBadge(check.result)}
+                                      </div>
+                                    </div>
+                                  </CardHeader>
+                                  <CardContent className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2 text-xs">
+                                        <span className="text-muted-foreground">Status:</span>
+                                        <Badge variant="outline" className="text-[10px]" data-testid={`badge-status-${check.id}`}>
+                                          {check.status}
+                                        </Badge>
+                                      </div>
+                                      {check.riskScore !== null && check.riskScore !== undefined && (
+                                        <div className="flex items-center gap-2 text-xs">
+                                          <span className="text-muted-foreground">Risk Score:</span>
+                                          <span className={`font-bold ${getRiskScoreColor(check.riskScore)}`} data-testid={`text-risk-${check.id}`}>
+                                            {check.riskScore}%
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {check.findings && (
+                                      <div className="p-3 rounded-lg bg-black/20 border border-white/5" data-testid={`card-findings-${check.id}`}>
+                                        <div className="text-xs font-semibold text-primary mb-2">Findings:</div>
+                                        <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
+                                          {JSON.stringify(check.findings, null, 2)}
+                                        </pre>
+                                      </div>
+                                    )}
+
+                                    {check.status === "Pending" && (
+                                      <Button
+                                        onClick={() => simulateCheckMutation.mutate(check.id)}
+                                        disabled={simulateCheckMutation.isPending}
+                                        size="sm"
+                                        variant="outline"
+                                        className="w-full text-xs"
+                                        data-testid={`button-simulate-${check.id}`}
+                                      >
+                                        {simulateCheckMutation.isPending ? (
+                                          <>
+                                            <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                                            Processing...
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Play className="w-3 h-3 mr-2" />
+                                            Simulate Check Completion
+                                          </>
+                                        )}
+                                      </Button>
+                                    )}
+
+                                    {check.completedAt && (
+                                      <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                        <CheckCircle2 className="w-3 h-3" />
+                                        Completed: {format(new Date(check.completedAt), "MMM dd, yyyy 'at' HH:mm")}
+                                      </div>
+                                    )}
+                                  </CardContent>
+                                </Card>
+                              </motion.div>
+                            );
+                          })}
+                        </AnimatePresence>
                       </div>
-                    </motion.div>
-                  )}
-                  <div ref={scrollRef} />
-                </div>
-              </ScrollArea>
+                    )}
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="bg-card/30 border-white/10 backdrop-blur-sm" data-testid="card-placeholder">
+                <CardContent className="py-24 text-center">
+                  <ShieldCheck className="w-16 h-16 mx-auto mb-4 opacity-20" />
+                  <h3 className="text-lg font-semibold mb-2">No Candidate Selected</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Select a candidate from the left panel to view their integrity checks
+                  </p>
+                </CardContent>
+              </Card>
+            )}
 
-              <div className="p-4 border-t border-white/5 bg-black/20">
-                <div className="flex gap-2">
-                  <Input 
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                    placeholder="Enter candidate name for integrity check..." 
-                    className="bg-white/5 border-white/10 focus-visible:ring-primary/50"
-                  />
-                  <Button 
-                    onClick={handleSendMessage}
-                    disabled={isProcessing || !inputValue.trim()}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90"
-                  >
-                    <Send className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          {/* RIGHT: Evidence Locker */}
-          <div className="hidden lg:block lg:col-span-3 flex flex-col gap-6 h-full overflow-hidden">
-            <Card className="bg-card/30 border-white/10 backdrop-blur-sm flex-1 flex flex-col overflow-hidden">
-              <CardHeader className="pb-2">
+            {/* All Recent Checks */}
+            <Card className="bg-card/30 border-white/10 backdrop-blur-sm" data-testid="card-all-checks">
+              <CardHeader>
                 <CardTitle className="text-sm font-bold flex items-center gap-2">
-                  <Lock className="w-4 h-4 text-primary" /> 
-                  Evidence Locker
+                  <FileText className="w-4 h-4 text-primary" />
+                  All Recent Checks
                 </CardTitle>
+                <CardDescription>System-wide integrity evaluation activity</CardDescription>
               </CardHeader>
-              <CardContent className="flex-1 overflow-y-auto pr-2">
-                {retrievedDocs.length === 0 ? (
-                   <div className="text-sm text-muted-foreground text-center py-8 italic">
-                      Secure verification pending...
+              <CardContent>
+                <ScrollArea className="h-[300px] pr-4">
+                  {loadingChecks ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="w-8 h-8 animate-spin text-primary" />
                     </div>
-                ) : (
-                  <div className="space-y-3">
-                    <AnimatePresence>
-                      {retrievedDocs.map((doc, index) => (
-                        <motion.div
-                          key={doc.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.1 }}
-                        >
-                          <div className={`p-3 rounded-lg bg-white/5 border transition-colors group cursor-pointer ${
-                            doc.status === "flagged" ? "border-yellow-500/30 hover:border-yellow-500/60" : 
-                            "border-white/5 hover:border-green-500/30"
-                          }`}>
-                            <div className="flex items-start justify-between mb-1">
-                              <div className="flex items-center gap-2">
-                                {doc.type === "consent" ? <FileSignature className="w-3 h-3 text-blue-400" /> : 
-                                 doc.type === "record" ? <Fingerprint className="w-3 h-3 text-purple-400" /> : 
-                                 <FileText className="w-3 h-3 text-orange-400" />}
-                                <Badge variant="secondary" className="text-[10px] h-4 px-1 bg-white/10">{doc.type}</Badge>
+                  ) : allChecks.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground" data-testid="text-no-system-checks">
+                      <AlertTriangle className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                      <p>No integrity checks in the system</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {allChecks.slice(0, 10).map(check => {
+                        const candidate = candidates.find(c => c.id === check.candidateId);
+                        const checkTypeInfo = checkTypes.find(t => t.value === check.checkType);
+                        const Icon = checkTypeInfo?.icon || FileText;
+                        
+                        return (
+                          <div
+                            key={check.id}
+                            className="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors cursor-pointer border border-white/5"
+                            onClick={() => setSelectedCandidateId(check.candidateId)}
+                            data-testid={`row-check-${check.id}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <Icon className="w-4 h-4 text-primary" />
+                              <div>
+                                <div className="text-sm font-medium">{candidate?.fullName || "Unknown"}</div>
+                                <div className="text-xs text-muted-foreground">{checkTypeInfo?.label || check.checkType}</div>
                               </div>
-                              {doc.status === "flagged" ? (
-                                <span className="text-[10px] text-yellow-400 font-bold flex items-center gap-1">
-                                  <AlertTriangle className="w-3 h-3" /> FLAGGED
-                                </span>
-                              ) : (
-                                <span className="text-[10px] text-green-400 font-mono flex items-center gap-1">
-                                  <CheckCircle2 className="w-3 h-3" /> VERIFIED
-                                </span>
-                              )}
                             </div>
-                            <h5 className="text-sm font-medium truncate mb-1 group-hover:text-foreground transition-colors">{doc.title}</h5>
-                            <p className="text-xs text-muted-foreground line-clamp-2 italic">"{doc.snippet}"</p>
+                            <div className="flex items-center gap-2">
+                              {check.result && getResultBadge(check.result)}
+                              {getStatusIcon(check.status)}
+                            </div>
                           </div>
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-                  </div>
-                )}
+                        );
+                      })}
+                    </div>
+                  )}
+                </ScrollArea>
               </CardContent>
             </Card>
           </div>
