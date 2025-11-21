@@ -70,7 +70,9 @@ export const insertCandidateSchema = createInsertSchema(candidates).omit({
   updatedAt: true,
 });
 
-export const insertIntegrityCheckSchema = createInsertSchema(integrityChecks).omit({
+export const insertIntegrityCheckSchema = createInsertSchema(integrityChecks, {
+  completedAt: z.coerce.date().optional().nullable(),
+}).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
