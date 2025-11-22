@@ -111,11 +111,17 @@ export class IntegrityOrchestrator {
         
         // Record the error but continue with other checks
         allFindings[agentType] = {
-          findings: `Error performing ${agentType} check`,
+          findings: `Error performing ${agentType} check: ${error instanceof Error ? error.message : 'Unknown error'}`,
           riskScore: 50, // Default medium risk on error
           details: { error: error instanceof Error ? error.message : "Unknown error" },
           sources: [],
         };
+
+        // Update database with error
+        await this.storage.updateIntegrityCheck(checkId, {
+          findings: allFindings,
+          riskScore: Math.round(overallRiskScore),
+        });
       }
     }
 
@@ -124,7 +130,7 @@ export class IntegrityOrchestrator {
     progress.status = "completed";
 
     const finalCheck = await this.storage.updateIntegrityCheck(checkId, {
-      status: "completed",
+      status: "Completed",
       result: this.generateOverallAssessment(allFindings, overallRiskScore),
       riskScore: Math.round(overallRiskScore),
       findings: allFindings,

@@ -20,7 +20,17 @@ export interface ResearchResult {
 }
 
 export class GroqResearchService {
+  constructor() {
+    if (!process.env.GROQ_API_KEY) {
+      console.warn("⚠ GROQ_API_KEY not set - AI research will fail");
+    }
+  }
+
   async performResearch(task: ResearchTask): Promise<ResearchResult> {
+    if (!process.env.GROQ_API_KEY) {
+      throw new Error("GROQ_API_KEY not configured - cannot perform AI research. Please add GROQ_API_KEY to your environment secrets.");
+    }
+
     const prompt = this.buildPrompt(task);
     
     try {
@@ -44,7 +54,7 @@ export class GroqResearchService {
       return this.parseResponse(response, task);
     } catch (error) {
       console.error("Groq API error:", error);
-      throw new Error("Failed to perform AI research");
+      throw new Error(`Failed to perform AI research: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

@@ -592,7 +592,7 @@ export default function IntegrityAgent() {
                                     <div className="p-2 rounded bg-black/20 border border-white/5">
                                       <div className="text-[10px] font-semibold text-primary mb-1">Key Findings:</div>
                                       <pre className="text-[10px] text-muted-foreground whitespace-pre-wrap font-mono">
-                                        {JSON.stringify(check.findings as Record<string, any>, null, 2)}
+                                        {String(JSON.stringify(check.findings, null, 2))}
                                       </pre>
                                     </div>
                                   )}
