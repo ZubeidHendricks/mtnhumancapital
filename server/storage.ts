@@ -7,10 +7,13 @@ import {
   type InsertCandidate,
   type IntegrityCheck,
   type InsertIntegrityCheck,
+  type RecruitmentSession,
+  type InsertRecruitmentSession,
   users,
   jobs,
   candidates,
-  integrityChecks
+  integrityChecks,
+  recruitmentSessions
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -38,6 +41,15 @@ export interface IStorage {
   createIntegrityCheck(check: InsertIntegrityCheck): Promise<IntegrityCheck>;
   updateIntegrityCheck(id: string, check: Partial<InsertIntegrityCheck>): Promise<IntegrityCheck | undefined>;
   deleteIntegrityCheck(id: string): Promise<boolean>;
+  
+  getAllRecruitmentSessions(): Promise<RecruitmentSession[]>;
+  getRecruitmentSession(id: string): Promise<RecruitmentSession | undefined>;
+  getRecruitmentSessionsByJobId(jobId: string): Promise<RecruitmentSession[]>;
+  createRecruitmentSession(session: InsertRecruitmentSession): Promise<RecruitmentSession>;
+  updateRecruitmentSession(id: string, session: Partial<InsertRecruitmentSession>): Promise<RecruitmentSession | undefined>;
+  deleteRecruitmentSession(id: string): Promise<boolean>;
+  getJobById(id: string): Promise<Job | undefined>;
+  getCandidateById(id: string): Promise<Candidate | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -154,6 +166,49 @@ export class DatabaseStorage implements IStorage {
   async deleteIntegrityCheck(id: string): Promise<boolean> {
     const result = await db.delete(integrityChecks).where(eq(integrityChecks.id, id));
     return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async getAllRecruitmentSessions(): Promise<RecruitmentSession[]> {
+    return await db.select().from(recruitmentSessions).orderBy(desc(recruitmentSessions.createdAt));
+  }
+
+  async getRecruitmentSession(id: string): Promise<RecruitmentSession | undefined> {
+    const [session] = await db.select().from(recruitmentSessions).where(eq(recruitmentSessions.id, id));
+    return session || undefined;
+  }
+
+  async getRecruitmentSessionsByJobId(jobId: string): Promise<RecruitmentSession[]> {
+    return await db.select().from(recruitmentSessions).where(eq(recruitmentSessions.jobId, jobId)).orderBy(desc(recruitmentSessions.createdAt));
+  }
+
+  async createRecruitmentSession(insertSession: InsertRecruitmentSession): Promise<RecruitmentSession> {
+    const [session] = await db
+      .insert(recruitmentSessions)
+      .values(insertSession)
+      .returning();
+    return session;
+  }
+
+  async updateRecruitmentSession(id: string, updates: Partial<InsertRecruitmentSession>): Promise<RecruitmentSession | undefined> {
+    const [session] = await db
+      .update(recruitmentSessions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(recruitmentSessions.id, id))
+      .returning();
+    return session || undefined;
+  }
+
+  async deleteRecruitmentSession(id: string): Promise<boolean> {
+    const result = await db.delete(recruitmentSessions).where(eq(recruitmentSessions.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async getJobById(id: string): Promise<Job | undefined> {
+    return this.getJob(id);
+  }
+
+  async getCandidateById(id: string): Promise<Candidate | undefined> {
+    return this.getCandidate(id);
   }
 }
 

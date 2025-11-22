@@ -1,9 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertCandidateSchema, insertJobSchema, insertIntegrityCheckSchema } from "@shared/schema";
+import { insertCandidateSchema, insertJobSchema, insertIntegrityCheckSchema, insertRecruitmentSessionSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { IntegrityOrchestrator } from "./integrity-orchestrator";
+import { RecruitmentOrchestrator } from "./recruitment-orchestrator";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/candidates", async (req, res) => {
@@ -421,6 +422,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error starting integrity check execution:", error);
       res.status(500).json({ message: "Failed to start integrity check execution" });
+    }
+  });
+
+  app.get("/api/recruitment-sessions", async (req, res) => {
+    try {
+      const sessions = await storage.getAllRecruitmentSessions();
+      res.json(sessions);
+    } catch (error) {
+      console.error("Error fetching recruitment sessions:", error);
+      res.status(500).json({ message: "Failed to fetch recruitment sessions" });
+    }
+  });
+
+  app.get("/api/recruitment-sessions/job/:jobId", async (req, res) => {
+    try {
+      const sessions = await storage.getRecruitmentSessionsByJobId(req.params.jobId);
+      res.json(sessions);
+    } catch (error) {
+      console.error("Error fetching job recruitment sessions:", error);
+      res.status(500).json({ message: "Failed to fetch job recruitment sessions" });
+    }
+  });
+
+  app.get("/api/recruitment-sessions/:id", async (req, res) => {
+    try {
+      const session = await storage.getRecruitmentSession(req.params.id);
+      if (!session) {
+        return res.status(404).json({ message: "Recruitment session not found" });
+      }
+      res.json(session);
+    } catch (error) {
+      console.error("Error fetching recruitment session:", error);
+      res.status(500).json({ message: "Failed to fetch recruitment session" });
+    }
+  });
+
+  app.post("/api/recruitment-sessions", async (req, res) => {
+    try {
+      const { jobId, maxCandidates, minMatchScore } = req.body;
+      
+      if (!jobId) {
+        return res.status(400).json({ message: "Job ID is required" });
+      }
+
+      const session = await storage.createRecruitmentSession({
+        jobId,
+        status: "Running",
+        candidatesFound: 0,
+        candidatesAdded: 0,
+      });
+
+      const orchestrator = new RecruitmentOrchestrator(storage);
+      
+      orchestrator.executeRecruitment(session.id, jobId, {
+        maxCandidates: maxCandidates || 20,
+        minMatchScore: minMatchScore || 60,
+      })
+        .catch(error => {
+          console.error(`Error executing recruitment ${session.id}:`, error);
+        });
+
+      res.status(201).json({
+        message: "Recruitment session started",
+        session,
+      });
+    } catch (error) {
+      console.error("Error creating recruitment session:", error);
+      res.status(500).json({ message: "Failed to create recruitment session" });
     }
   });
 

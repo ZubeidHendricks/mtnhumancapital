@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, jsonb, vector } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -53,6 +53,21 @@ export const integrityChecks = pgTable("integrity_checks", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const recruitmentSessions = pgTable("recruitment_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  jobId: varchar("job_id").notNull().references(() => jobs.id),
+  status: text("status").notNull().default("Running"),
+  searchQuery: text("search_query"),
+  candidatesFound: integer("candidates_found").notNull().default(0),
+  candidatesAdded: integer("candidates_added").notNull().default(0),
+  searchCriteria: jsonb("search_criteria"),
+  results: jsonb("results"),
+  embedding: vector("embedding", { dimensions: 1536 }),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -78,6 +93,15 @@ export const insertIntegrityCheckSchema = createInsertSchema(integrityChecks, {
   updatedAt: true,
 });
 
+export const insertRecruitmentSessionSchema = createInsertSchema(recruitmentSessions, {
+  completedAt: z.coerce.date().optional().nullable(),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  embedding: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -89,3 +113,6 @@ export type Candidate = typeof candidates.$inferSelect;
 
 export type InsertIntegrityCheck = z.infer<typeof insertIntegrityCheckSchema>;
 export type IntegrityCheck = typeof integrityChecks.$inferSelect;
+
+export type InsertRecruitmentSession = z.infer<typeof insertRecruitmentSessionSchema>;
+export type RecruitmentSession = typeof recruitmentSessions.$inferSelect;
