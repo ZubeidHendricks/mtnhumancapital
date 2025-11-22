@@ -282,7 +282,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const agent = getOrCreateConversation(sessionId);
       const response = await agent.chat(message);
 
-      res.json(response);
+      res.json({
+        ...response,
+        jobSpec: agent.getJobSpec(), // Always return current collected data
+      });
     } catch (error) {
       console.error("Error in job creation conversation:", error);
       res.status(500).json({ message: "Failed to process conversation" });
@@ -291,7 +294,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/jobs/conversation/create", async (req, res) => {
     try {
-      const { sessionId } = req.body;
+      const { sessionId, isDraft = false } = req.body;
 
       if (!sessionId) {
         return res.status(400).json({ message: "Session ID is required" });
@@ -300,15 +303,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const agent = getOrCreateConversation(sessionId);
       const jobSpec = agent.getJobSpec();
 
-      // Validate required fields
-      if (!jobSpec.title || !jobSpec.department) {
-        return res.status(400).json({ message: "Missing required job information" });
+      // Validate required fields (title and department required for active jobs, but drafts can be partial)
+      if (!isDraft && (!jobSpec.title || !jobSpec.department)) {
+        return res.status(400).json({ message: "Missing required job information (title and department required)" });
       }
-
-      // Create the job with collected data
+      
+      // Create the job with collected data (use placeholders for missing required fields)
       const job = await storage.createJob({
-        title: jobSpec.title,
-        department: jobSpec.department,
+        title: jobSpec.title || "Untitled Job (Draft)",
+        department: jobSpec.department || "Unspecified",
         description: jobSpec.description,
         location: jobSpec.location,
         employmentType: jobSpec.employmentType,
@@ -322,18 +325,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         certificationsRequired: jobSpec.certificationsRequired,
         physicalRequirements: jobSpec.physicalRequirements,
         equipmentExperience: jobSpec.equipmentExperience as any,
-        status: "Active",
+        status: isDraft ? "Draft" : "Active",
       });
 
-      // Generate embedding in background
-      embeddingService.generateJobEmbedding(jobSpec).then(async (embedding) => {
-        await storage.updateJob(job.id, {
-          requirementsEmbedding: embedding as any,
+      // Generate embedding in background (skip for drafts since they might be incomplete)
+      if (!isDraft) {
+        const embeddingJobSpec = {
+          ...jobSpec,
+          title: jobSpec.title || "Untitled Job",
+          department: jobSpec.department || "Unspecified",
+        };
+        
+        embeddingService.generateJobEmbedding(embeddingJobSpec).then(async (embedding) => {
+          await storage.updateJob(job.id, {
+            requirementsEmbedding: embedding as any,
+          });
+          console.log(`✓ Generated embedding for job ${job.id}: ${job.title}`);
+        }).catch((error) => {
+          console.error(`✗ Failed to generate embedding for job ${job.id}:`, error);
         });
-        console.log(`✓ Generated embedding for job ${job.id}: ${job.title}`);
-      }).catch((error) => {
-        console.error(`✗ Failed to generate embedding for job ${job.id}:`, error);
-      });
+      }
 
       // Clean up conversation
       deleteConversation(sessionId);
