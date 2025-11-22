@@ -5,6 +5,10 @@ import { insertCandidateSchema, insertJobSchema, insertIntegrityCheckSchema, ins
 import { fromZodError } from "zod-validation-error";
 import { IntegrityOrchestrator } from "./integrity-orchestrator";
 import { RecruitmentOrchestrator } from "./recruitment-orchestrator";
+import { cvParser } from "./cv-parser";
+import multer from "multer";
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/candidates", async (req, res) => {
@@ -75,6 +79,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting candidate:", error);
       res.status(500).json({ message: "Failed to delete candidate" });
+    }
+  });
+
+  app.post("/api/candidates/:id/upload-cv", upload.single("cv"), async (req, res) => {
+    try {
+      const candidateId = req.params.id;
+      const file = req.file;
+
+      if (!file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      if (file.mimetype !== "application/pdf") {
+        return res.status(400).json({ message: "Only PDF files are supported" });
+      }
+
+      console.log(`Processing CV upload for candidate ${candidateId}...`);
+
+      const cvData = await cvParser.parsePDFCV(file.buffer);
+
+      const updatedCandidate = await storage.updateCandidate(candidateId, {
+        fullName: cvData.fullName,
+        email: cvData.email || undefined,
+        phone: cvData.phone || undefined,
+        role: cvData.role || undefined,
+        location: cvData.location || undefined,
+        summary: cvData.summary || undefined,
+        yearsOfExperience: cvData.yearsOfExperience || undefined,
+        skills: cvData.skills,
+        education: cvData.education as any,
+        experience: cvData.experience as any,
+        languages: cvData.languages || undefined,
+        certifications: cvData.certifications || undefined,
+        linkedinUrl: cvData.linkedinUrl || undefined,
+        cvUrl: `cv_${candidateId}_${Date.now()}.pdf`,
+      });
+
+      res.json({
+        message: "CV uploaded and parsed successfully",
+        candidate: updatedCandidate,
+        parsedData: cvData,
+      });
+    } catch (error) {
+      console.error("Error uploading CV:", error);
+      res.status(500).json({ 
+        message: "Failed to upload CV",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 
