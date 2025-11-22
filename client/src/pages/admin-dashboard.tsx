@@ -46,8 +46,37 @@ export default function AdminDashboard() {
     },
   });
 
+  const createDefaultTenantMutation = useMutation({
+    mutationFn: async () => {
+      const response = await api.post("/tenant-config", {
+        companyName: "My Company",
+        subdomain: "company",
+        primaryColor: "#0ea5e9",
+        industry: "Technology",
+        modulesEnabled: {
+          recruitment: true,
+          integrity: true,
+          onboarding: true,
+          hr_management: true
+        },
+        apiKeysConfigured: {},
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-config"] });
+      toast.success("Default configuration created");
+    },
+    onError: () => {
+      toast.error("Failed to create default configuration");
+    },
+  });
+
   const updateTenantMutation = useMutation({
     mutationFn: async (updates: any) => {
+      if (!tenantConfig?.id) {
+        throw new Error("Tenant configuration not loaded");
+      }
       const response = await api.patch(`/tenant-config/${tenantConfig.id}`, updates);
       return response.data;
     },
@@ -55,8 +84,8 @@ export default function AdminDashboard() {
       queryClient.invalidateQueries({ queryKey: ["tenant-config"] });
       toast.success("Tenant configuration updated");
     },
-    onError: () => {
-      toast.error("Failed to update tenant configuration");
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to update tenant configuration");
     },
   });
 
@@ -458,9 +487,26 @@ export default function AdminDashboard() {
                 </div>
               </div>
             ) : (
-              <div className="p-8 text-center text-muted-foreground">
-                <p className="mb-4">No tenant configuration found</p>
-                <p className="text-xs">Complete customer onboarding first to configure modules</p>
+              <div className="p-8 text-center space-y-4">
+                <div className="text-muted-foreground">
+                  <p className="mb-2">No tenant configuration found</p>
+                  <p className="text-xs">Create a default configuration to get started</p>
+                </div>
+                <Button 
+                  onClick={() => createDefaultTenantMutation.mutate()}
+                  disabled={createDefaultTenantMutation.isPending}
+                  className="mx-auto"
+                  data-testid="button-create-default-config"
+                >
+                  {createDefaultTenantMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    "Create Default Configuration"
+                  )}
+                </Button>
               </div>
             )}
           </CardContent>
