@@ -72,8 +72,8 @@ export class IntegrityOrchestrator {
         // Perform real AI research
         const researchTask: ResearchTask = {
           candidateName: candidate.fullName,
-          candidateRole: candidate.role,
-          candidateLocation: candidate.metadata?.location as string,
+          candidateRole: candidate.role || "Unknown",
+          candidateLocation: (candidate.metadata as any)?.location || candidate.location || "South Africa",
           checkType: agentType,
           context: {
             skills: candidate.skills,
