@@ -1,360 +1,288 @@
-import { useState, useRef, useEffect } from "react";
-import { Navbar } from "@/components/layout/navbar";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
-import { 
-  Send, 
-  Bot, 
-  User, 
-  FileText, 
-  Search, 
-  Database, 
-  BrainCircuit, 
-  Sparkles, 
-  CheckCircle2, 
-  Loader2, 
-  ArrowRight,
-  FileSearch,
-  Users,
-  Mic
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { VoiceInterviewerModal } from "@/components/voice-agent/voice-interviewer-modal";
-
-// Types for our mock RAG system
-type Message = {
-  id: string;
-  role: "user" | "agent";
-  content: string;
-  timestamp: Date;
-};
-
-type RagStep = {
-  id: string;
-  label: string;
-  status: "pending" | "processing" | "completed";
-  details?: string[];
-  icon: any;
-};
-
-type RetrievedDoc = {
-  id: string;
-  title: string;
-  type: "template" | "candidate" | "policy";
-  relevance: number; // 0-100
-  snippet: string;
-};
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Loader2, Users, Target, TrendingUp, CheckCircle, AlertCircle, Search, Sparkles } from "lucide-react";
+import { api } from "@/lib/api";
+import type { Job, RecruitmentSession } from "@shared/schema";
 
 export default function RecruitmentAgent() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      role: "agent",
-      content: "Hello. I am your AI Recruitment Agent. I can help you define hiring needs, compile job descriptions from our library, and source candidates. What role are you looking to fill today?",
-      timestamp: new Date()
-    }
-  ]);
-  const [inputValue, setInputValue] = useState("");
-  const [isProcessing, setIsProcessing] = useState(false);
-  
-  // RAG State
-  const [ragSteps, setRagSteps] = useState<RagStep[]>([]);
-  const [retrievedDocs, setRetrievedDocs] = useState<RetrievedDoc[]>([]);
+  const [selectedJobId, setSelectedJobId] = useState<string>("");
+  const [maxCandidates, setMaxCandidates] = useState(20);
+  const [minMatchScore, setMinMatchScore] = useState(60);
+  const [pollingSessions, setPollingSessions] = useState<Set<string>>(new Set());
+  const queryClient = useQueryClient();
 
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const { data: jobs, isLoading: jobsLoading } = useQuery<Job[]>({
+    queryKey: ["jobs"],
+    queryFn: async () => {
+      const response = await api.get("/jobs");
+      return response.data;
+    },
+  });
+
+  const { data: sessions, isLoading: sessionsLoading } = useQuery<RecruitmentSession[]>({
+    queryKey: ["recruitment-sessions"],
+    queryFn: async () => {
+      const response = await api.get("/recruitment-sessions");
+      return response.data;
+    },
+    refetchInterval: 3000,
+  });
+
+  const startRecruitmentMutation = useMutation({
+    mutationFn: async (params: { jobId: string; maxCandidates: number; minMatchScore: number }) => {
+      const response = await api.post("/recruitment-sessions", params);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["recruitment-sessions"] });
+      setPollingSessions(prev => new Set(prev).add(data.session.id));
+    },
+  });
+
+  const handleStartRecruitment = () => {
+    if (!selectedJobId) return;
+    startRecruitmentMutation.mutate({
+      jobId: selectedJobId,
+      maxCandidates,
+      minMatchScore,
+    });
+  };
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: "smooth" });
+    if (sessions && Array.isArray(sessions)) {
+      const runningSessions = sessions.filter(s => s.status === "Running");
+      if (runningSessions.length === 0) {
+        setPollingSessions(new Set());
+      }
     }
-  }, [messages]);
+  }, [sessions]);
 
-  const handleSendMessage = async () => {
-    if (!inputValue.trim()) return;
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Running":
+        return "bg-blue-500";
+      case "Completed":
+        return "bg-green-500";
+      case "Failed":
+        return "bg-red-500";
+      default:
+        return "bg-gray-500";
+    }
+  };
 
-    const newUserMsg: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: inputValue,
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, newUserMsg]);
-    setInputValue("");
-    setIsProcessing(true);
-
-    // Simulate RAG Workflow based on the document provided
-    // 1. Determine Needs -> 2. Compile JD -> 3. Find Candidates -> 4. Assess
-    
-    // Step 1: Analyze Request
-    setRagSteps([
-      { id: "1", label: "Analyzing Hiring Needs", status: "processing", icon: BrainCircuit, details: ["Extracting role requirements...", "Identifying seniority level..."] }
-    ]);
-    
-    await new Promise(r => setTimeout(r, 1500));
-    
-    // Step 2: Retrieve Context (JD Libraries)
-    setRagSteps(prev => [
-      { ...prev[0], status: "completed" },
-      { id: "2", label: "Retrieving JD Templates", status: "processing", icon: Database, details: ["Searching 'Senior Project Manager' templates...", "Accessing Industry Standards Library..."] }
-    ]);
-    setRetrievedDocs([
-      { id: "doc1", title: "Project_Manager_L3_Template.pdf", type: "template", relevance: 98, snippet: "Requires 5+ years experience in Agile methodologies..." },
-      { id: "doc2", title: "IT_Dept_Hiring_Policy_v2.docx", type: "policy", relevance: 85, snippet: "All senior roles require technical assessment..." }
-    ]);
-
-    await new Promise(r => setTimeout(r, 2000));
-
-    // Step 3: Source Candidates (External Portals)
-    setRagSteps(prev => [
-      ...prev.slice(0, 1),
-      { ...prev[1], status: "completed" },
-      { id: "3", label: "Sourcing Candidates", status: "processing", icon: Search, details: ["Connecting to LinkedIn API...", "Scanning internal talent pool...", "Filtering for 'PMP Certification'..."] }
-    ]);
-
-    await new Promise(r => setTimeout(r, 2500));
-
-    // Step 4: Assess & Match
-    setRagSteps(prev => [
-      ...prev.slice(0, 2),
-      { ...prev[2], status: "completed" },
-      { id: "4", label: " AI Assessment & Matching", status: "processing", icon: Sparkles, details: ["Ranking top 50 candidates...", "Evaluating cultural fit...", "Generating match scores..."] }
-    ]);
-    
-    // Add some "Candidate" docs
-    setRetrievedDocs(prev => [
-      ...prev,
-      { id: "cand1", title: "Sarah_Jenkins_Resume.pdf", type: "candidate", relevance: 94, snippet: "PMP Certified, 7 years at TechCorp..." },
-      { id: "cand2", title: "Michael_Wong_CV.pdf", type: "candidate", relevance: 89, snippet: "Senior PM with fintech experience..." }
-    ]);
-
-    await new Promise(r => setTimeout(r, 1500));
-
-    setRagSteps(prev => prev.map(s => ({ ...s, status: "completed" })));
-    setIsProcessing(false);
-
-    const agentResponse: Message = {
-      id: (Date.now() + 1).toString(),
-      role: "agent",
-      content: "I've analyzed your request for a Senior Project Manager. Using our Job Description Library, I've compiled a standardized JD and cross-referenced it with our hiring policies.\n\nI also scanned external portals and our internal database. I found 2 highly relevant candidates who match the criteria (PMP certified, 5+ years experience).\n\nWould you like to review the drafted JD or see the candidate profiles?",
-      timestamp: new Date()
-    };
-    setMessages(prev => [...prev, agentResponse]);
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "Running":
+        return <Loader2 className="h-4 w-4 animate-spin" />;
+      case "Completed":
+        return <CheckCircle className="h-4 w-4" />;
+      case "Failed":
+        return <AlertCircle className="h-4 w-4" />;
+      default:
+        return null;
+    }
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <Navbar />
-      
-      <div className="flex-1 pt-20 container mx-auto px-4 py-6 h-[calc(100vh-80px)]">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
-          
-          {/* LEFT: RAG Context & Process Visualization */}
-          <div className="hidden lg:block lg:col-span-3 flex flex-col gap-6 h-full overflow-hidden">
-            {/* Process Steps */}
-            <Card className="bg-card/30 border-white/10 backdrop-blur-sm flex-1 flex flex-col overflow-hidden">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-bold flex items-center gap-2">
-                  <BrainCircuit className="w-4 h-4 text-primary" /> 
-                  Agent Workflow
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1 overflow-y-auto pr-2">
-                <div className="space-y-6 relative">
-                  {/* Connecting Line */}
-                  <div className="absolute left-[19px] top-2 bottom-2 w-0.5 bg-white/5 z-0" />
-                  
-                  {ragSteps.length === 0 && (
-                    <div className="text-sm text-muted-foreground text-center py-8 italic">
-                      Waiting for task...
-                    </div>
-                  )}
-
-                  <AnimatePresence>
-                    {ragSteps.map((step, index) => (
-                      <motion.div 
-                        key={step.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        className="relative z-10"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 bg-background ${
-                            step.status === "completed" ? "border-green-500 text-green-500" : 
-                            step.status === "processing" ? "border-primary text-primary animate-pulse" : 
-                            "border-muted text-muted-foreground"
-                          }`}>
-                            {step.status === "completed" ? <CheckCircle2 className="w-5 h-5" /> : <step.icon className="w-5 h-5" />}
-                          </div>
-                          <div className="flex-1 pt-1">
-                            <h4 className={`text-sm font-bold ${step.status === "processing" ? "text-primary" : "text-foreground"}`}>
-                              {step.label}
-                            </h4>
-                            {step.details && (
-                              <motion.ul 
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                className="mt-2 space-y-1"
-                              >
-                                {step.details.map((detail, i) => (
-                                  <li key={i} className="text-xs text-muted-foreground flex items-center gap-1.5">
-                                    <div className="w-1 h-1 rounded-full bg-white/20" />
-                                    {detail}
-                                  </li>
-                                ))}
-                              </motion.ul>
-                            )}
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </div>
-              </CardContent>
-            </Card>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent flex items-center gap-3">
+              <Sparkles className="h-10 w-10 text-purple-600" />
+              AI Recruitment Agent
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Intelligent candidate sourcing powered by LLaMA 3.1 70B via Groq
+            </p>
           </div>
-
-          {/* MIDDLE: Chat Interface */}
-          <div className="lg:col-span-6 flex flex-col h-full">
-            <Card className="flex-1 flex flex-col bg-card/50 border-white/10 backdrop-blur-md overflow-hidden">
-              <CardHeader className="border-b border-white/5 py-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    <div>
-                      <CardTitle className="text-base">Recruitment Assistant</CardTitle>
-                      <CardDescription className="text-xs">Powered by AHC Agentic Engine</CardDescription>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <VoiceInterviewerModal />
-                    <Badge variant="outline" className="bg-primary/5 border-primary/20 text-primary text-[10px]">RAG ENABLED</Badge>
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <ScrollArea className="flex-1 p-4">
-                <div className="space-y-6 pb-4">
-                  {messages.map((msg) => (
-                    <motion.div 
-                      key={msg.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className={`flex items-start gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
-                    >
-                      <Avatar className={`w-8 h-8 ${msg.role === "agent" ? "border border-primary/50" : "border border-white/10"}`}>
-                        <AvatarImage src={msg.role === "agent" ? "" : "/user.png"} />
-                        <AvatarFallback className={msg.role === "agent" ? "bg-primary/10 text-primary" : "bg-white/10"}>
-                          {msg.role === "agent" ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}
-                        </AvatarFallback>
-                      </Avatar>
-                      
-                      <div className={`rounded-2xl px-4 py-3 max-w-[80%] text-sm leading-relaxed ${
-                        msg.role === "user" 
-                          ? "bg-primary text-primary-foreground rounded-tr-none" 
-                          : "bg-white/5 border border-white/10 rounded-tl-none"
-                      }`}>
-                        <div className="whitespace-pre-wrap">{msg.content}</div>
-                        <div className={`text-[10px] mt-1 opacity-50 ${msg.role === "user" ? "text-primary-foreground" : "text-muted-foreground"}`}>
-                          {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                  
-                  {isProcessing && (
-                    <motion.div 
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="flex items-start gap-3"
-                    >
-                       <Avatar className="w-8 h-8 border border-primary/50">
-                        <AvatarFallback className="bg-primary/10 text-primary">
-                          <Bot className="w-4 h-4" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="bg-white/5 border border-white/10 rounded-2xl rounded-tl-none px-4 py-3 flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                        <span className="text-xs text-muted-foreground">Processing request...</span>
-                      </div>
-                    </motion.div>
-                  )}
-                  <div ref={scrollRef} />
-                </div>
-              </ScrollArea>
-
-              <div className="p-4 border-t border-white/5 bg-black/20">
-                <div className="flex gap-2">
-                  <Input 
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                    placeholder="Describe the role you want to hire for..." 
-                    className="bg-white/5 border-white/10 focus-visible:ring-primary/50"
-                  />
-                  <Button 
-                    onClick={handleSendMessage}
-                    disabled={isProcessing || !inputValue.trim()}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90"
-                  >
-                    <Send className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          {/* RIGHT: Retrieved Documents & Results */}
-          <div className="hidden lg:block lg:col-span-3 flex flex-col gap-6 h-full overflow-hidden">
-            <Card className="bg-card/30 border-white/10 backdrop-blur-sm flex-1 flex flex-col overflow-hidden">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-bold flex items-center gap-2">
-                  <FileSearch className="w-4 h-4 text-primary" /> 
-                  Retrieved Context
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1 overflow-y-auto pr-2">
-                {retrievedDocs.length === 0 ? (
-                   <div className="text-sm text-muted-foreground text-center py-8 italic">
-                      No documents retrieved yet.
-                    </div>
-                ) : (
-                  <div className="space-y-3">
-                    <AnimatePresence>
-                      {retrievedDocs.map((doc, index) => (
-                        <motion.div
-                          key={doc.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.1 }}
-                        >
-                          <div className="p-3 rounded-lg bg-white/5 border border-white/5 hover:border-primary/30 transition-colors group cursor-pointer">
-                            <div className="flex items-start justify-between mb-1">
-                              <div className="flex items-center gap-2">
-                                {doc.type === "candidate" ? <Users className="w-3 h-3 text-blue-400" /> : <FileText className="w-3 h-3 text-yellow-400" />}
-                                <Badge variant="secondary" className="text-[10px] h-4 px-1 bg-white/10">{doc.type}</Badge>
-                              </div>
-                              <span className="text-[10px] text-green-400 font-mono">{doc.relevance}% Match</span>
-                            </div>
-                            <h5 className="text-sm font-medium truncate mb-1 group-hover:text-primary transition-colors">{doc.title}</h5>
-                            <p className="text-xs text-muted-foreground line-clamp-2 italic">"{doc.snippet}"</p>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
         </div>
+
+        <Card className="border-2 border-purple-200 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50">
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-6 w-6 text-purple-600" />
+              Start New Recruitment Session
+            </CardTitle>
+            <CardDescription>
+              AI agents will analyze the job, search for candidates, and rank them automatically
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="job-select">Select Job Position</Label>
+              <Select value={selectedJobId} onValueChange={setSelectedJobId}>
+                <SelectTrigger id="job-select" data-testid="select-job">
+                  <SelectValue placeholder="Choose a job posting" />
+                </SelectTrigger>
+                <SelectContent>
+                  {jobsLoading ? (
+                    <SelectItem value="loading" disabled>Loading jobs...</SelectItem>
+                  ) : jobs && Array.isArray(jobs) && jobs.length > 0 ? (
+                    jobs.map((job) => (
+                      <SelectItem key={job.id} value={job.id}>
+                        {job.title} - {job.department}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="none" disabled>No jobs available</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="max-candidates">Max Candidates</Label>
+                <Input
+                  id="max-candidates"
+                  data-testid="input-max-candidates"
+                  type="number"
+                  value={maxCandidates}
+                  onChange={(e) => setMaxCandidates(Number(e.target.value))}
+                  min={5}
+                  max={50}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="min-match">Min Match Score (%)</Label>
+                <Input
+                  id="min-match"
+                  data-testid="input-min-match"
+                  type="number"
+                  value={minMatchScore}
+                  onChange={(e) => setMinMatchScore(Number(e.target.value))}
+                  min={0}
+                  max={100}
+                />
+              </div>
+            </div>
+
+            <Button
+              onClick={handleStartRecruitment}
+              disabled={!selectedJobId || startRecruitmentMutation.isPending}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+              data-testid="button-start-recruitment"
+            >
+              {startRecruitmentMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Starting AI Agents...
+                </>
+              ) : (
+                <>
+                  <Search className="mr-2 h-4 w-4" />
+                  Start AI Recruitment
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-6 w-6 text-blue-600" />
+              Recruitment Sessions
+            </CardTitle>
+            <CardDescription>
+              Track AI agent progress and results
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {sessionsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+              </div>
+            ) : sessions && Array.isArray(sessions) && sessions.length > 0 ? (
+              <div className="space-y-4">
+                {sessions.map((session) => {
+                  const job = jobs && Array.isArray(jobs) ? jobs.find(j => j.id === session.jobId) : undefined;
+                  const results = session.results as any;
+                  
+                  return (
+                    <Card key={session.id} className="border-l-4" style={{ borderLeftColor: getStatusColor(session.status).replace('bg-', '#') }}>
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <CardTitle className="text-lg flex items-center gap-2">
+                              {job?.title || "Unknown Job"}
+                              <Badge className={getStatusColor(session.status)}>
+                                <div className="flex items-center gap-1">
+                                  {getStatusIcon(session.status)}
+                                  <span>{session.status}</span>
+                                </div>
+                              </Badge>
+                            </CardTitle>
+                            <CardDescription>
+                              {session.searchQuery || "No search query"}
+                            </CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-3 gap-4 mb-4">
+                          <div className="text-center p-4 bg-blue-50 rounded-lg">
+                            <div className="text-2xl font-bold text-blue-600">
+                              {session.candidatesFound}
+                            </div>
+                            <div className="text-sm text-gray-600">Found</div>
+                          </div>
+                          <div className="text-center p-4 bg-green-50 rounded-lg">
+                            <div className="text-2xl font-bold text-green-600">
+                              {session.candidatesAdded}
+                            </div>
+                            <div className="text-sm text-gray-600">Added</div>
+                          </div>
+                          <div className="text-center p-4 bg-purple-50 rounded-lg">
+                            <div className="text-2xl font-bold text-purple-600">
+                              {session.candidatesAdded > 0 
+                                ? Math.round((session.candidatesAdded / session.candidatesFound) * 100) 
+                                : 0}%
+                            </div>
+                            <div className="text-sm text-gray-600">Match Rate</div>
+                          </div>
+                        </div>
+
+                        {results?.step && (
+                          <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
+                            <strong>Current Step:</strong> {results.step.replace(/_/g, ' ').toUpperCase()}
+                          </div>
+                        )}
+
+                        {results?.requirements && (
+                          <div className="mt-3 text-sm">
+                            <strong>Skills Required:</strong>{" "}
+                            {results.requirements.skills?.join(", ") || "None"}
+                          </div>
+                        )}
+
+                        <div className="text-xs text-gray-500 mt-3">
+                          Started: {new Date(session.createdAt).toLocaleString()}
+                          {session.completedAt && (
+                            <> | Completed: {new Date(session.completedAt).toLocaleString()}</>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-gray-500">
+                <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>No recruitment sessions yet. Start one above!</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
