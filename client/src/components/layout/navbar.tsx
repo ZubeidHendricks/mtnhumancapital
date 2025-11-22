@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Cpu, LayoutDashboard, Building2, Mic, Video, ChevronDown, UserSearch, Shield, Settings } from "lucide-react";
+import { Menu, X, Cpu, LayoutDashboard, Building2, Mic, Video, ChevronDown, UserSearch, Shield, Settings, Users, Briefcase } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -72,35 +72,19 @@ export function Navbar() {
           
           <div className="h-6 w-px bg-white/10 mx-2" />
 
-          {/* Interview Demos Dropdown */}
+          {/* Features Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-white hover:bg-white/5 gap-1">
-                Live Demos <ChevronDown className="w-3 h-3" />
+                Features <ChevronDown className="w-3 h-3" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-zinc-950 border-white/10 text-zinc-200">
-              <DropdownMenuLabel>Candidate Experience</DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-white/10" />
-              <Link href="/interview/voice">
-                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
-                  <Mic className="w-4 h-4 mr-2 text-indigo-400" />
-                  <span>Voice Interview (Chit-Chet)</span>
-                </DropdownMenuItem>
-              </Link>
-              <Link href="/interview/video">
-                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
-                  <Video className="w-4 h-4 mr-2 text-rose-400" />
-                  <span>Video Interview (Cloned)</span>
-                </DropdownMenuItem>
-              </Link>
-              <DropdownMenuSeparator className="bg-white/10" />
-              <DropdownMenuLabel>Admin Experience</DropdownMenuLabel>
               {isModuleEnabled("recruitment") && (
                 <Link href="/recruitment-agent">
                   <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
                     <UserSearch className="w-4 h-4 mr-2 text-purple-400" />
-                    <span>AI Recruitment Agent</span>
+                    <span>AI Recruitment</span>
                   </DropdownMenuItem>
                 </Link>
               )}
@@ -108,43 +92,80 @@ export function Navbar() {
                 <Link href="/integrity-agent">
                   <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
                     <Shield className="w-4 h-4 mr-2 text-blue-400" />
-                    <span>AI Integrity Checks</span>
+                    <span>Integrity Checks</span>
                   </DropdownMenuItem>
                 </Link>
               )}
-              <Link href="/onboarding">
+              {isModuleEnabled("onboarding") && (
+                <Link href="/onboarding">
+                  <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                    <Building2 className="w-4 h-4 mr-2 text-green-400" />
+                    <span>Employee Onboarding</span>
+                  </DropdownMenuItem>
+                </Link>
+              )}
+              {isModuleEnabled("hr_management") && (
+                <Link href="/hr-dashboard">
+                  <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                    <Users className="w-4 h-4 mr-2 text-amber-400" />
+                    <span>HR Management</span>
+                  </DropdownMenuItem>
+                </Link>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Interviews Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-white hover:bg-white/5 gap-1">
+                Interviews <ChevronDown className="w-3 h-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-zinc-950 border-white/10 text-zinc-200">
+              <Link href="/interview/voice">
                 <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
-                  <Building2 className="w-4 h-4 mr-2 text-green-400" />
-                  <span>Customer Onboarding</span>
+                  <Mic className="w-4 h-4 mr-2 text-indigo-400" />
+                  <span>Voice Interview</span>
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/interview/video">
+                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                  <Video className="w-4 h-4 mr-2 text-rose-400" />
+                  <span>Video Interview</span>
                 </DropdownMenuItem>
               </Link>
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Dashboard Links */}
-          <Link href="/hr-dashboard">
-            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary hover:bg-primary/10">
-              HR Portal
-            </Button>
-          </Link>
+          {/* Dashboards Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-white hover:bg-white/5 gap-1">
+                Dashboards <ChevronDown className="w-3 h-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-zinc-950 border-white/10 text-zinc-200">
+              <Link href="/candidate-pipeline">
+                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                  <Briefcase className="w-4 h-4 mr-2 text-cyan-400" />
+                  <span>Candidate Pipeline</span>
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/executive-dashboard">
+                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                  <LayoutDashboard className="w-4 h-4 mr-2 text-emerald-400" />
+                  <span>Executive Dashboard</span>
+                </DropdownMenuItem>
+              </Link>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-          <Link href="/candidate-pipeline">
-            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary hover:bg-primary/10">
-              Pipeline
-            </Button>
-          </Link>
-
+          {/* Admin Link */}
           <Link href="/admin-dashboard">
             <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary hover:bg-primary/10">
               <Settings className="w-4 h-4 mr-1" />
               Admin
-            </Button>
-          </Link>
-
-          <Link href="/executive-dashboard">
-            <Button variant="outline" size="sm" className="border-primary/20 hover:bg-primary/10 hover:text-primary gap-2">
-              <LayoutDashboard className="w-4 h-4" />
-              Exec Dashboard
             </Button>
           </Link>
 
@@ -186,17 +207,7 @@ export function Navbar() {
               ))}
               <div className="h-px bg-white/10 my-2" />
               
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-2">Live Demos</p>
-              <Link href="/interview/voice">
-                <Button variant="ghost" className="w-full justify-start mb-2 gap-2">
-                  <Mic className="w-4 h-4" /> Voice Interview
-                </Button>
-              </Link>
-              <Link href="/interview/video">
-                <Button variant="ghost" className="w-full justify-start mb-2 gap-2">
-                  <Video className="w-4 h-4" /> Video Interview
-                </Button>
-              </Link>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-2">Features</p>
               {isModuleEnabled("recruitment") && (
                 <Link href="/recruitment-agent">
                   <Button variant="ghost" className="w-full justify-start mb-2 gap-2">
@@ -211,19 +222,55 @@ export function Navbar() {
                   </Button>
                 </Link>
               )}
-              <Link href="/onboarding">
+              {isModuleEnabled("onboarding") && (
+                <Link href="/onboarding">
+                  <Button variant="ghost" className="w-full justify-start mb-2 gap-2">
+                    <Building2 className="w-4 h-4" /> Employee Onboarding
+                  </Button>
+                </Link>
+              )}
+              {isModuleEnabled("hr_management") && (
+                <Link href="/hr-dashboard">
+                  <Button variant="ghost" className="w-full justify-start mb-2 gap-2">
+                    <Users className="w-4 h-4" /> HR Management
+                  </Button>
+                </Link>
+              )}
+
+              <div className="h-px bg-white/10 my-2" />
+              
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-2">Interviews</p>
+              <Link href="/interview/voice">
                 <Button variant="ghost" className="w-full justify-start mb-2 gap-2">
-                   <Building2 className="w-4 h-4" /> Customer Onboarding
+                  <Mic className="w-4 h-4" /> Voice Interview
+                </Button>
+              </Link>
+              <Link href="/interview/video">
+                <Button variant="ghost" className="w-full justify-start mb-2 gap-2">
+                  <Video className="w-4 h-4" /> Video Interview
                 </Button>
               </Link>
 
               <div className="h-px bg-white/10 my-2" />
               
-              <Link href="/hr-dashboard">
-                <Button variant="ghost" className="w-full justify-start mb-2">HR Portal</Button>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-2">Dashboards</p>
+              <Link href="/candidate-pipeline">
+                <Button variant="ghost" className="w-full justify-start mb-2 gap-2">
+                  <Briefcase className="w-4 h-4" /> Candidate Pipeline
+                </Button>
               </Link>
-               <Link href="/executive-dashboard">
-                <Button variant="outline" className="w-full justify-start mb-2">Exec Dashboard</Button>
+              <Link href="/executive-dashboard">
+                <Button variant="ghost" className="w-full justify-start mb-2 gap-2">
+                  <LayoutDashboard className="w-4 h-4" /> Executive Dashboard
+                </Button>
+              </Link>
+
+              <div className="h-px bg-white/10 my-2" />
+              
+              <Link href="/admin-dashboard">
+                <Button variant="ghost" className="w-full justify-start mb-2 gap-2">
+                  <Settings className="w-4 h-4" /> Admin Settings
+                </Button>
               </Link>
               <Link href="/login">
                 <Button className="w-full bg-primary text-primary-foreground">Sign In</Button>
