@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertCandidateSchema, insertJobSchema, insertIntegrityCheckSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
+import { IntegrityOrchestrator } from "./integrity-orchestrator";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/candidates", async (req, res) => {
@@ -385,6 +386,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting integrity check:", error);
       res.status(500).json({ message: "Failed to delete integrity check" });
+    }
+  });
+
+  app.post("/api/integrity-checks/:id/execute", async (req, res) => {
+    try {
+      const checkId = req.params.id;
+      
+      // Get the integrity check
+      const check = await storage.getIntegrityCheck(checkId);
+      if (!check) {
+        return res.status(404).json({ message: "Integrity check not found" });
+      }
+
+      // Execute the check with real AI agents
+      const orchestrator = new IntegrityOrchestrator(storage);
+      
+      // Start execution in background (don't await)
+      orchestrator.executeIntegrityCheck(checkId, check.candidateId)
+        .catch(error => {
+          console.error(`Error executing integrity check ${checkId}:`, error);
+          storage.updateIntegrityCheck(checkId, {
+            status: "failed",
+            result: `Check failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          });
+        });
+
+      // Return immediately with pending status
+      res.json({
+        message: "Integrity check execution started",
+        checkId,
+        status: "in_progress"
+      });
+    } catch (error) {
+      console.error("Error starting integrity check execution:", error);
+      res.status(500).json({ message: "Failed to start integrity check execution" });
     }
   });
 

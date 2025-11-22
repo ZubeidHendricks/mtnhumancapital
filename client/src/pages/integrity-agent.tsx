@@ -173,67 +173,83 @@ export default function IntegrityAgent() {
     setWorkflowSteps(steps);
     setCurrentStepIndex(0);
 
-    toast.success("Starting comprehensive integrity evaluation...");
+    toast.success("Starting AI-powered integrity evaluation...");
 
-    for (let i = 0; i < checkTypes.length; i++) {
-      const checkType = checkTypes[i];
-      setCurrentStepIndex(i);
-      
-      setWorkflowSteps(prev => prev.map((step, idx) => 
-        idx === i ? { ...step, status: "processing" as const } : step
-      ));
+    try {
+      // Create a master integrity check
+      const masterCheck = await integrityChecksService.create({
+        candidateId: selectedCandidateId,
+        checkType: "comprehensive",
+        status: "In Progress",
+        findings: {
+          initiated: new Date().toISOString(),
+          agents: checkTypes.map(t => t.value),
+        },
+      });
 
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Execute the real AI-powered check
+      await integrityChecksService.execute(masterCheck.id);
 
-      try {
-        const createdCheck = await integrityChecksService.create({
-          candidateId: selectedCandidateId,
-          checkType: checkType.value,
-          status: "Pending",
-          findings: {
-            initiated: new Date().toISOString(),
-            checkType: checkType.value,
-          },
-        });
+      // Poll for progress updates
+      const pollInterval = setInterval(async () => {
+        try {
+          const updatedCheck = await integrityChecksService.getById(masterCheck.id);
+          
+          // Update workflow visualization based on findings
+          if (updatedCheck.findings && typeof updatedCheck.findings === 'object') {
+            const findings = updatedCheck.findings as Record<string, any>;
+            
+            checkTypes.forEach((checkType, i) => {
+              const agentFindings = findings[checkType.value];
+              
+              if (agentFindings) {
+                setCurrentStepIndex(i);
+                setWorkflowSteps(prev => prev.map((step, idx) => 
+                  idx === i ? { 
+                    ...step, 
+                    status: "completed" as const,
+                    details: [
+                      checkType.description,
+                      `✓ ${agentFindings.findings?.substring(0, 80) || 'Analysis complete'} - Risk: ${agentFindings.riskScore || 0}%`
+                    ]
+                  } : step
+                ));
+              }
+            });
+          }
 
-        await new Promise(resolve => setTimeout(resolve, 1500));
+          // Check if completed
+          if (updatedCheck.status === "Completed" || updatedCheck.completedAt) {
+            clearInterval(pollInterval);
+            setIsRunningEvaluation(false);
+            setCurrentStepIndex(checkTypes.length - 1);
+            await refetchCandidateChecks();
+            queryClient.invalidateQueries({ queryKey: ["integrity-checks"] });
+            toast.success("AI integrity evaluation completed!");
+          } else if (updatedCheck.status === "Failed") {
+            clearInterval(pollInterval);
+            setIsRunningEvaluation(false);
+            toast.error("Integrity evaluation failed");
+          }
+        } catch (error) {
+          console.error("Error polling check status:", error);
+        }
+      }, 2000); // Poll every 2 seconds
 
-        const result = mockCheckResults[checkType.value as keyof typeof mockCheckResults];
-        
-        await integrityChecksService.update(createdCheck.id, {
-          ...result,
-          completedAt: new Date(),
-        });
+      // Set timeout to stop polling after 5 minutes
+      setTimeout(() => {
+        clearInterval(pollInterval);
+        if (isRunningEvaluation) {
+          setIsRunningEvaluation(false);
+          toast.error("Evaluation timeout - please check results manually");
+        }
+      }, 300000);
 
-        setWorkflowSteps(prev => prev.map((step, idx) => 
-          idx === i ? { 
-            ...step, 
-            status: "completed" as const,
-            checkId: createdCheck.id,
-            details: [
-              checkType.description,
-              `✓ ${result.result} - Risk Score: ${result.riskScore}%`
-            ]
-          } : step
-        ));
-
-        await refetchCandidateChecks();
-        queryClient.invalidateQueries({ queryKey: ["integrity-checks"] });
-
-      } catch (error) {
-        setWorkflowSteps(prev => prev.map((step, idx) => 
-          idx === i ? { 
-            ...step, 
-            status: "failed" as const,
-            details: [checkType.description, "✗ Check failed"]
-          } : step
-        ));
-        toast.error(`Failed to complete ${checkType.label}`);
-      }
+    } catch (error) {
+      setIsRunningEvaluation(false);
+      toast.error("Failed to start integrity evaluation");
+      console.error("Evaluation error:", error);
     }
-
-    setIsRunningEvaluation(false);
-    toast.success("Integrity evaluation completed!");
   };
 
   const getStatusIcon = (status: string) => {

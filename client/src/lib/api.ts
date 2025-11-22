@@ -91,5 +91,9 @@ export const integrityChecksService = {
   },
   delete: async (id: string): Promise<void> => {
     await api.delete(`/integrity-checks/${id}`);
+  },
+  execute: async (id: string): Promise<{ message: string; checkId: string; status: string }> => {
+    const response = await api.post(`/integrity-checks/${id}/execute`);
+    return response.data;
   }
 };
