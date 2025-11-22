@@ -1,6 +1,7 @@
 import Groq from "groq-sdk";
 import type { IStorage } from "./storage";
 import type { Candidate, OnboardingWorkflow } from "@shared/schema";
+import { EmailService } from "./email-service";
 
 interface OnboardingTask {
   id: string;
@@ -23,9 +24,11 @@ interface OnboardingDocument {
 export class OnboardingOrchestrator {
   private groq: Groq | null = null;
   private storage: IStorage;
+  private emailService: EmailService;
 
   constructor(storage: IStorage) {
     this.storage = storage;
+    this.emailService = new EmailService(storage);
     
     const apiKey = process.env.GROQ_API_KEY;
     if (apiKey) {
@@ -99,6 +102,12 @@ export class OnboardingOrchestrator {
       console.error("Error processing onboarding workflow:", error);
     });
 
+    await this.emailService.notifyHRForOnboardingStart(
+      candidate.fullName,
+      candidate.email || "N/A",
+      candidate.role || "N/A"
+    );
+
     return workflow;
   }
 
@@ -116,10 +125,11 @@ export class OnboardingOrchestrator {
       await this.processPaperwork(workflowId, candidate, tasks, documents);
       await new Promise(r => setTimeout(r, 1000));
       
-      await this.processProvisioning(workflowId, candidate, tasks, documents);
+      const provisioningCredentials = await this.processProvisioning(workflowId, candidate, tasks, documents);
+      await this.notifyITAfterProvisioning(candidate, provisioningCredentials || {});
       await new Promise(r => setTimeout(r, 1000));
       
-      await this.processOrientation(workflowId, candidate, tasks, documents);
+      const orientationResult = await this.processOrientation(workflowId, candidate, tasks, documents);
 
       const finalTasks = tasks.map(t => ({ ...t, status: "completed" as const }));
       await this.storage.updateOnboardingWorkflow(workflowId, {
@@ -127,6 +137,12 @@ export class OnboardingOrchestrator {
         status: "Completed",
         completedAt: new Date(),
       });
+
+      await this.emailService.notifyHRForOnboardingCompletion(
+        candidate.fullName,
+        candidate.email || "N/A",
+        orientationResult?.orientationDate || "TBD"
+      );
     } catch (error) {
       console.error("Workflow processing error:", error);
       await this.storage.updateOnboardingWorkflow(workflowId, {
@@ -255,7 +271,7 @@ export class OnboardingOrchestrator {
     candidate: Candidate,
     tasks: OnboardingTask[],
     documents: OnboardingDocument[]
-  ): Promise<void> {
+  ): Promise<any> {
     const taskIndex = tasks.findIndex(t => t.id === "provisioning");
     if (taskIndex === -1) return;
 
@@ -301,7 +317,7 @@ export class OnboardingOrchestrator {
         await this.storage.updateOnboardingWorkflow(workflowId, {
           tasks: tasks as any,
         });
-        return;
+        return credentials;
       }
     }
 
@@ -330,6 +346,20 @@ export class OnboardingOrchestrator {
       documents: documents as any,
       provisioningData: credentials as any,
     });
+
+    return credentials;
+  }
+
+  private async notifyITAfterProvisioning(candidate: Candidate, credentials: any): Promise<void> {
+    try {
+      await this.emailService.notifyITForProvisioning(
+        candidate.fullName,
+        candidate.email || "N/A",
+        credentials
+      );
+    } catch (error) {
+      console.error("Failed to send IT notification:", error);
+    }
   }
 
   private async processOrientation(
@@ -337,7 +367,7 @@ export class OnboardingOrchestrator {
     candidate: Candidate,
     tasks: OnboardingTask[],
     documents: OnboardingDocument[]
-  ): Promise<void> {
+  ): Promise<{ orientationDate: string; teamMeeting: string; modulesAssigned: string[] } | undefined> {
     const taskIndex = tasks.findIndex(t => t.id === "orientation");
     if (taskIndex === -1) return;
 
@@ -351,17 +381,21 @@ export class OnboardingOrchestrator {
     nextMonday.setDate(nextMonday.getDate() + ((1 + 7 - nextMonday.getDay()) % 7 || 7));
     nextMonday.setHours(9, 0, 0, 0);
 
-    tasks[taskIndex].status = "completed";
-    tasks[taskIndex].result = {
-      orientationDate: nextMonday.toISOString(),
+    const result = {
+      orientationDate: nextMonday.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
       teamMeeting: "Scheduled",
       modulesAssigned: ["Company Culture", "Systems Training", "Safety Guidelines"]
     };
+
+    tasks[taskIndex].status = "completed";
+    tasks[taskIndex].result = result;
 
     await this.storage.updateOnboardingWorkflow(workflowId, {
       tasks: tasks as any,
       documents: documents as any,
     });
+
+    return result;
   }
 
   async getWorkflowStatus(workflowId: string): Promise<OnboardingWorkflow | undefined> {

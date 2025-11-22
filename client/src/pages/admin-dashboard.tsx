@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/navbar";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Shield, Key, Settings, CheckCircle2, XCircle, Bell, Loader2, AlertCircle } from "lucide-react";
+import { Shield, Key, Settings, CheckCircle2, XCircle, Bell, Loader2, AlertCircle, Mail } from "lucide-react";
 import { api } from "@/lib/api";
 import type { SystemSetting } from "@shared/schema";
 import { toast } from "sonner";
@@ -76,6 +76,116 @@ export default function AdminDashboard() {
       description: "Default interval for document reminders (hours)",
     });
     setReminderInterval("");
+  };
+
+  const EmailConfigField = ({ 
+    label, 
+    description, 
+    settingKey, 
+    currentValue, 
+    updateMutation, 
+    testId 
+  }: { 
+    label: string; 
+    description: string; 
+    settingKey: string; 
+    currentValue: string; 
+    updateMutation: any; 
+    testId: string;
+  }) => {
+    const [email, setEmail] = useState("");
+    const [isEditing, setIsEditing] = useState(false);
+
+    useEffect(() => {
+      if (currentValue) {
+        setEmail(currentValue);
+        setIsEditing(false);
+      } else {
+        setIsEditing(true);
+      }
+    }, [currentValue]);
+
+    const saveEmail = async () => {
+      if (!email) {
+        toast.error("Please enter an email address");
+        return;
+      }
+      
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        toast.error("Please enter a valid email address");
+        return;
+      }
+
+      await updateMutation.mutateAsync({
+        key: settingKey,
+        value: email,
+        category: "notifications",
+        description: description,
+      });
+      setIsEditing(false);
+    };
+
+    return (
+      <div className="p-4 rounded-lg bg-black/20 border border-white/5">
+        <Label className="text-sm font-semibold text-white mb-2 block">
+          {label}
+        </Label>
+        <p className="text-xs text-muted-foreground mb-3">
+          {description}
+        </p>
+        {!isEditing && currentValue ? (
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-white flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-green-500" />
+              {currentValue}
+            </p>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setIsEditing(true)}
+              data-testid={`button-edit-${testId}`}
+            >
+              Edit
+            </Button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <Input
+              type="email"
+              placeholder="email@company.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="bg-black/40 border-white/10 text-white"
+              data-testid={`input-${testId}`}
+            />
+            <Button 
+              onClick={saveEmail}
+              disabled={!email || updateMutation.isPending}
+              data-testid={`button-save-${testId}`}
+            >
+              {updateMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "Save"
+              )}
+            </Button>
+            {currentValue && (
+              <Button 
+                variant="ghost"
+                onClick={() => {
+                  setEmail(currentValue);
+                  setIsEditing(false);
+                }}
+                data-testid={`button-cancel-${testId}`}
+              >
+                Cancel
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+    );
   };
 
   const featureToggles = [
@@ -202,6 +312,59 @@ export default function AdminDashboard() {
                       Current: {getSetting("reminder_default_interval_hours")} hours
                     </p>
                   )}
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Email Configuration */}
+        <Card className="bg-black/40 border-white/10" data-testid="card-email-config">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Mail className="w-5 h-5 text-primary" />
+              Email Notifications
+            </CardTitle>
+            <CardDescription>
+              Configure email addresses for automated notifications
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {settingsLoading ? (
+              <div className="flex items-center justify-center p-8">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : (
+              <>
+                <EmailConfigField
+                  label="IT Department Email"
+                  description="Receives notifications for equipment provisioning and access requests"
+                  settingKey="it_email"
+                  currentValue={getSetting("it_email")}
+                  updateMutation={updateSettingMutation}
+                  testId="it-email"
+                />
+                
+                <EmailConfigField
+                  label="HR Admin Email"
+                  description="Receives notifications for onboarding tasks and document submissions"
+                  settingKey="hr_admin_email"
+                  currentValue={getSetting("hr_admin_email")}
+                  updateMutation={updateSettingMutation}
+                  testId="hr-admin-email"
+                />
+
+                <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 mt-4">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-blue-400 mt-0.5 shrink-0" />
+                    <div className="text-sm">
+                      <p className="text-blue-300 font-semibold">Email Service Integration</p>
+                      <p className="text-blue-200/80 mt-1">
+                        For production email delivery, connect SendGrid or Resend via the Secrets tab. 
+                        Currently using console logging for notifications.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </>
             )}
