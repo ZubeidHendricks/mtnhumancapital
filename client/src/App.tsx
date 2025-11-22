@@ -15,6 +15,7 @@ import InterviewVoice from "@/pages/interview-voice";
 import InterviewVideo from "@/pages/interview-video";
 import CustomerOnboarding from "@/pages/customer-onboarding";
 import CandidatesList from "@/pages/candidates-list";
+import CandidateDetail from "@/pages/candidate-detail";
 import ShortlistedCandidates from "@/pages/shortlisted-candidates";
 import CandidatePipeline from "@/pages/candidate-pipeline";
 
@@ -33,6 +34,7 @@ function Router() {
       <Route path="/interview/voice" component={InterviewVoice} />
       <Route path="/interview/video" component={InterviewVideo} />
       <Route path="/candidates-list" component={CandidatesList} />
+      <Route path="/candidates/:id" component={CandidateDetail} />
       <Route path="/shortlisted-candidates" component={ShortlistedCandidates} />
       <Route path="/candidate-pipeline" component={CandidatePipeline} />
       <Route component={NotFound} />

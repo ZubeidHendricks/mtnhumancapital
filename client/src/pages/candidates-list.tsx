@@ -504,17 +504,17 @@ export default function CandidatesList() {
                             className="group flex items-center justify-between py-3 px-4 hover:bg-white/5 rounded-lg transition-colors border border-transparent hover:border-white/5"
                         >
                             {/* Candidate Info */}
-                            <div className="flex items-center gap-4 w-[30%]">
+                            <Link href={`/candidates/${candidate.id}`} className="flex items-center gap-4 w-[30%] cursor-pointer">
                                 <Avatar className="h-10 w-10 border border-white/10">
                                     <AvatarFallback className="bg-indigo-500 text-white text-xs">
                                         {candidate.fullName?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || 'NA'}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div className="min-w-0">
-                                    <h3 className="text-sm font-bold text-white truncate">{candidate.fullName || 'Unknown'}</h3>
+                                    <h3 className="text-sm font-bold text-white truncate hover:underline">{candidate.fullName || 'Unknown'}</h3>
                                     <p className="text-xs text-muted-foreground truncate">{candidate.role || 'No role specified'}</p>
                                 </div>
-                            </div>
+                            </Link>
 
                             {/* Badges & Source */}
                             <div className="flex items-center gap-8 flex-1">
@@ -627,17 +627,17 @@ export default function CandidatesList() {
                               className="group flex items-center justify-between py-3 px-4 hover:bg-white/5 rounded-lg transition-colors border border-transparent hover:border-white/5"
                           >
                               {/* Candidate Info */}
-                              <div className="flex items-center gap-4 w-[30%]">
+                              <Link href={`/candidates/${candidate.id}`} className="flex items-center gap-4 w-[30%] cursor-pointer">
                                   <Avatar className="h-10 w-10 border border-white/10">
                                       <AvatarFallback className="bg-indigo-500 text-white text-xs">
                                           {candidate.fullName?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || 'NA'}
                                       </AvatarFallback>
                                   </Avatar>
                                   <div className="min-w-0">
-                                      <h3 className="text-sm font-bold text-white truncate">{candidate.fullName || 'Unknown'}</h3>
+                                      <h3 className="text-sm font-bold text-white truncate hover:underline">{candidate.fullName || 'Unknown'}</h3>
                                       <p className="text-xs text-muted-foreground truncate">{candidate.role || 'No role specified'}</p>
                                   </div>
-                              </div>
+                              </Link>
 
                               {/* Badges & Source */}
                               <div className="flex items-center gap-8 flex-1">
