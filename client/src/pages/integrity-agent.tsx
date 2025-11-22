@@ -136,6 +136,15 @@ export default function IntegrityAgent() {
   const [workflowSteps, setWorkflowSteps] = useState<WorkflowStep[]>([]);
   const [currentStepIndex, setCurrentStepIndex] = useState(-1);
 
+  // Auto-select candidate from URL query parameter
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const candidateId = params.get('candidateId');
+    if (candidateId && !selectedCandidateId) {
+      setSelectedCandidateId(candidateId);
+    }
+  }, []);
+
   const { data: candidates = [], isLoading: loadingCandidates } = useQuery({
     queryKey: ["candidates"],
     queryFn: candidateService.getAll,

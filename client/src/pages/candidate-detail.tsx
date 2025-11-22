@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Mail, Phone, MapPin, Briefcase, Calendar, Award, Languages, FileText, Upload } from "lucide-react";
+import { ArrowLeft, Mail, Phone, MapPin, Briefcase, Calendar, Award, Languages, FileText, Upload, ShieldCheck } from "lucide-react";
 import type { Candidate } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
@@ -111,28 +111,38 @@ export default function CandidateDetail() {
           </Button>
         </Link>
         
-        <div className="relative">
-          <input
-            type="file"
-            accept="application/pdf"
-            onChange={handleFileUpload}
-            className="hidden"
-            id="cv-upload"
-            data-testid="input-cv-file"
-          />
-          <label htmlFor="cv-upload">
-            <Button 
-              variant="outline" 
-              disabled={uploading}
-              data-testid="button-upload-cv"
-              asChild
-            >
-              <span>
-                <Upload className="h-4 w-4 mr-2" />
-                {uploading ? "Uploading..." : "Upload CV"}
-              </span>
+        <div className="flex items-center gap-2">
+          <Link href={`/integrity-agent?candidateId=${candidate.id}`}>
+            <Button variant="default" size="sm" data-testid="button-integrity-check">
+              <ShieldCheck className="h-4 w-4 mr-2" />
+              Run Integrity Check
             </Button>
-          </label>
+          </Link>
+          
+          <div className="relative">
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={handleFileUpload}
+              className="hidden"
+              id="cv-upload"
+              data-testid="input-cv-file"
+            />
+            <label htmlFor="cv-upload">
+              <Button 
+                variant="outline" 
+                size="sm"
+                disabled={uploading}
+                data-testid="button-upload-cv"
+                asChild
+              >
+                <span>
+                  <Upload className="h-4 w-4 mr-2" />
+                  {uploading ? "Uploading..." : "Upload CV"}
+                </span>
+              </Button>
+            </label>
+          </div>
         </div>
       </div>
 
