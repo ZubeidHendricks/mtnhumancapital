@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Link } from "wouter";
+import { JobCreationChat } from "@/components/job-creation-chat";
 import { 
   Users, 
   UserPlus, 
@@ -381,84 +382,19 @@ BENEFITS:
             
             <Dialog open={isCreateJobOpen} onOpenChange={setIsCreateJobOpen}>
               <DialogTrigger asChild>
-                <Button>Create New Requisition</Button>
+                <Button data-testid="button-create-job-dialog">
+                  Create New Requisition
+                </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px] bg-card border-white/10">
-                <DialogHeader>
-                  <DialogTitle>Create New Job Requisition</DialogTitle>
-                  <DialogDescription>
-                    Define the role requirements. Our AI will automatically generate a job description and start sourcing.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="title">Job Title</Label>
-                      <Input 
-                        id="title" 
-                        placeholder="e.g. Senior Product Designer" 
-                        className="bg-background/50 border-white/10" 
-                        value={jobTitle}
-                        onChange={(e) => setJobTitle(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="department">Department</Label>
-                      <Input 
-                        id="department" 
-                        placeholder="e.g. Engineering" 
-                        className="bg-background/50 border-white/10"
-                        value={department}
-                        onChange={(e) => setDepartment(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                        <Label htmlFor="description">Key Responsibilities & Requirements</Label>
-                        <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-6 text-xs text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
-                            onClick={handleGenerateJD}
-                            disabled={isGenerating}
-                        >
-                            {isGenerating ? (
-                                <>
-                                    <Loader2 className="w-3 h-3 mr-1 animate-spin" /> Generating...
-                                </>
-                            ) : (
-                                <>
-                                    <Wand2 className="w-3 h-3 mr-1" /> Auto-Generate with AI
-                                </>
-                            )}
-                        </Button>
-                    </div>
-                    <Textarea 
-                      id="description" 
-                      placeholder="Paste raw requirements here or type a brief summary. AI will expand this into a full JD." 
-                      className="min-h-[200px] bg-background/50 border-white/10 font-mono text-sm"
-                      value={jobDescription}
-                      onChange={(e) => setJobDescription(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center space-x-2">
-                      <input type="checkbox" id="remote" className="rounded border-white/20 bg-background/50" />
-                      <Label htmlFor="remote">Remote Eligible</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input type="checkbox" id="urgent" className="rounded border-white/20 bg-background/50" />
-                      <Label htmlFor="urgent">Urgent Hire</Label>
-                    </div>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsCreateJobOpen(false)}>Cancel</Button>
-                  <Button onClick={handlePublishRequisition} className="bg-primary text-primary-foreground">
-                    Publish Requisition
-                  </Button>
-                </DialogFooter>
+              <DialogContent className="sm:max-w-[700px] max-h-[90vh] bg-card border-white/10 p-0">
+                <JobCreationChat 
+                  onJobCreated={() => {
+                    setIsCreateJobOpen(false);
+                    queryClient.invalidateQueries({ queryKey: ['jobs'] });
+                    toast.success("Job created successfully! AI will start sourcing candidates.");
+                  }}
+                  onCancel={() => setIsCreateJobOpen(false)}
+                />
               </DialogContent>
             </Dialog>
           </div>

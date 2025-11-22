@@ -7,6 +7,7 @@ import { IntegrityOrchestrator } from "./integrity-orchestrator";
 import { RecruitmentOrchestrator } from "./recruitment-orchestrator";
 import { cvParser } from "./cv-parser";
 import { embeddingService } from "./embedding-service";
+import { getOrCreateConversation, deleteConversation } from "./job-creation-agent";
 import multer from "multer";
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -266,6 +267,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting job:", error);
       res.status(500).json({ message: "Failed to delete job" });
+    }
+  });
+
+  // AI-Powered Conversational Job Creation
+  app.post("/api/jobs/conversation/chat", async (req, res) => {
+    try {
+      const { sessionId, message } = req.body;
+
+      if (!sessionId || !message) {
+        return res.status(400).json({ message: "Session ID and message are required" });
+      }
+
+      const agent = getOrCreateConversation(sessionId);
+      const response = await agent.chat(message);
+
+      res.json(response);
+    } catch (error) {
+      console.error("Error in job creation conversation:", error);
+      res.status(500).json({ message: "Failed to process conversation" });
+    }
+  });
+
+  app.post("/api/jobs/conversation/create", async (req, res) => {
+    try {
+      const { sessionId } = req.body;
+
+      if (!sessionId) {
+        return res.status(400).json({ message: "Session ID is required" });
+      }
+
+      const agent = getOrCreateConversation(sessionId);
+      const jobSpec = agent.getJobSpec();
+
+      // Validate required fields
+      if (!jobSpec.title || !jobSpec.department) {
+        return res.status(400).json({ message: "Missing required job information" });
+      }
+
+      // Create the job with collected data
+      const job = await storage.createJob({
+        title: jobSpec.title,
+        department: jobSpec.department,
+        description: jobSpec.description,
+        location: jobSpec.location,
+        employmentType: jobSpec.employmentType,
+        shiftStructure: jobSpec.shiftStructure,
+        salaryMin: jobSpec.salaryMin,
+        salaryMax: jobSpec.salaryMax,
+        payRateUnit: jobSpec.payRateUnit,
+        minYearsExperience: jobSpec.minYearsExperience,
+        licenseRequirements: jobSpec.licenseRequirements,
+        vehicleTypes: jobSpec.vehicleTypes,
+        certificationsRequired: jobSpec.certificationsRequired,
+        physicalRequirements: jobSpec.physicalRequirements,
+        equipmentExperience: jobSpec.equipmentExperience as any,
+        status: "Active",
+      });
+
+      // Generate embedding in background
+      embeddingService.generateJobEmbedding(jobSpec).then(async (embedding) => {
+        await storage.updateJob(job.id, {
+          requirementsEmbedding: embedding as any,
+        });
+        console.log(`✓ Generated embedding for job ${job.id}: ${job.title}`);
+      }).catch((error) => {
+        console.error(`✗ Failed to generate embedding for job ${job.id}:`, error);
+      });
+
+      // Clean up conversation
+      deleteConversation(sessionId);
+
+      res.status(201).json(job);
+    } catch (error) {
+      console.error("Error creating job from conversation:", error);
+      res.status(500).json({ message: "Failed to create job" });
+    }
+  });
+
+  app.delete("/api/jobs/conversation/:sessionId", async (req, res) => {
+    try {
+      deleteConversation(req.params.sessionId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting conversation:", error);
+      res.status(500).json({ message: "Failed to delete conversation" });
     }
   });
 

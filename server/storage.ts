@@ -88,7 +88,7 @@ export class DatabaseStorage implements IStorage {
     return job;
   }
 
-  async updateJob(id: string, updates: Partial<InsertJob>): Promise<Job | undefined> {
+  async updateJob(id: string, updates: Partial<InsertJob> & { requirementsEmbedding?: any }): Promise<Job | undefined> {
     const [job] = await db
       .update(jobs)
       .set({ ...updates, updatedAt: new Date() })
