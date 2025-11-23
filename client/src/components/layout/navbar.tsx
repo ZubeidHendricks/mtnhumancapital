@@ -44,17 +44,15 @@ export function Navbar() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-background/80 backdrop-blur-md">
-      <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-        {/* Logo */}
+      <div className="container mx-auto px-6 flex items-center justify-between">
+        {/* Logo - Brand guideline: 20mm minimum height with clearspace = height/2 */}
         <Link href="/">
-          <div className="flex items-center gap-2 group cursor-pointer">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20 group-hover:border-primary/50 transition-colors">
-              <Cpu className="w-6 h-6 text-primary" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-display font-bold text-xl tracking-tight leading-none">AHC</span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-widest leading-none">Avatar Human Capital</span>
-            </div>
+          <div className="flex items-center group cursor-pointer py-10 px-10">
+            <img 
+              src="/logos/light-logo.png" 
+              alt="Avatar Human Capital" 
+              className="h-20 w-auto object-contain"
+            />
           </div>
         </Link>
 

@@ -43,49 +43,50 @@
   --color-chart-4: hsl(var(--chart-4));
   --color-chart-5: hsl(var(--chart-5));
 
-  --font-sans: 'Inter', sans-serif;
-  --font-display: 'Space Grotesk', sans-serif;
+  --font-sans: 'Aptos', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-display: 'Aptos', 'Segoe UI', system-ui, -apple-system, sans-serif;
   
   --radius: 0.5rem;
 }
 
 :root {
-  /* Dark Theme Default */
-  --background: 222 47% 11%; /* Dark Navy */
+  /* Dark Theme Default - Avatar Human Capital Brand */
+  --background: 0 0% 0%; /* Pure Black */
   --foreground: 210 40% 98%;
 
-  --card: 222 47% 13%;
+  --card: 209 78% 21%; /* Incremental Blue */
   --card-foreground: 210 40% 98%;
 
-  --popover: 222 47% 11%;
+  --popover: 209 78% 21%; /* Incremental Blue */
   --popover-foreground: 210 40% 98%;
 
-  --primary: 199 89% 48%; /* Electric Blue/Cyan */
-  --primary-foreground: 222 47% 11%;
+  --primary: 196 100% 47%; /* Cyan C - Brand Color #00AEEF */
+  --primary-foreground: 0 0% 100%;
 
-  --secondary: 217 33% 17%;
-  --secondary-foreground: 210 40% 98%;
+  --secondary: 30 100% 50%; /* Orange Juice - Brand Accent #FF7F00 */
+  --secondary-foreground: 0 0% 100%;
 
-  --muted: 217 33% 17%;
+  --muted: 209 78% 21%; /* Incremental Blue */
   --muted-foreground: 215 20% 65%;
 
-  --accent: 199 89% 48%;
-  --accent-foreground: 222 47% 11%;
+  --accent: 196 100% 47%; /* Cyan C */
+  --accent-foreground: 0 0% 100%;
 
   --destructive: 0 62% 30%;
   --destructive-foreground: 210 40% 98%;
 
-  --border: 217 33% 20%;
-  --input: 217 33% 20%;
-  --ring: 199 89% 48%;
+  --border: 0 0% 15%;
+  --input: 0 0% 15%;
+  --ring: 196 100% 47%; /* Cyan C */
 
   --radius: 0.5rem;
   
-  --chart-1: 199 89% 48%;
-  --chart-2: 160 84% 39%;
-  --chart-3: 30 80% 55%;
-  --chart-4: 280 65% 60%;
-  --chart-5: 340 75% 55%;
+  /* Chart Colors using Brand Palette */
+  --chart-1: 196 100% 47%; /* Cyan C */
+  --chart-2: 30 100% 50%; /* Orange Juice */
+  --chart-3: 209 78% 21%; /* Incremental Blue */
+  --chart-4: 0 0% 92%; /* Plaster */
+  --chart-5: 160 84% 39%;
 }
 
 @layer base {

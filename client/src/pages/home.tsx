@@ -88,7 +88,7 @@ export default function Home() {
           <div className="container mx-auto px-6 text-center">
             <h2 className="text-4xl font-bold mb-6">Ready to Transform Your Operations?</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto mb-10 text-lg">
-              Join the future of human capital and operational management with AHC's intelligent advisory solutions.
+              Join the future of human capital and operational management with Avatar Human Capital's intelligent advisory solutions.
             </p>
             <form className="max-w-md mx-auto flex gap-2">
               <input 
@@ -109,9 +109,12 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
             
             <div className="md:col-span-2">
-              <div className="flex items-center gap-2 mb-6">
-                <Cpu className="w-6 h-6 text-primary" />
-                <span className="font-display font-bold text-xl tracking-tight">AHC</span>
+              <div className="flex items-center mb-6 py-8 px-8">
+                <img 
+                  src="/logos/light-logo.png" 
+                  alt="Avatar Human Capital" 
+                  className="h-16 w-auto object-contain"
+                />
               </div>
               <p className="text-muted-foreground max-w-xs">
                 Avatar Human Capital. <br/>
