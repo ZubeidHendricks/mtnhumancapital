@@ -109,11 +109,11 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
             
             <div className="md:col-span-2">
-              <div className="flex items-center mb-6 py-8 px-8">
+              <div className="flex items-center mb-6 py-10 px-10">
                 <img 
                   src="/logos/light-logo.png" 
                   alt="Avatar Human Capital" 
-                  className="h-16 w-auto object-contain"
+                  className="h-20 w-auto object-contain"
                 />
               </div>
               <p className="text-muted-foreground max-w-xs">
