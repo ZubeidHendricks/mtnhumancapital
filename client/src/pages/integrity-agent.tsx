@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/navbar";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/ui/back-button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -309,6 +310,7 @@ export default function IntegrityAgent() {
       
       <div className="flex-1 pt-20 container mx-auto px-4 py-6 h-[calc(100vh-80px)]">
         <div className="mb-6">
+          <BackButton fallbackPath="/hr-dashboard" className="mb-4" />
           <h1 className="text-3xl font-bold flex items-center gap-3">
             <ShieldCheck className="w-8 h-8 text-primary" />
             Integrity Evaluation Agent

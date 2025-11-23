@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { useRoute, Link, useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/ui/back-button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Mail, Phone, MapPin, Briefcase, Calendar, Award, Languages, FileText, Upload, ShieldCheck } from "lucide-react";
+import { Mail, Phone, MapPin, Briefcase, Calendar, Award, Languages, FileText, Upload, ShieldCheck } from "lucide-react";
 import type { Candidate } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
@@ -104,12 +105,7 @@ export default function CandidateDetail() {
   return (
     <div className="container mx-auto py-8 px-4 max-w-6xl">
       <div className="mb-6 flex items-center justify-between">
-        <Link href="/candidates-list">
-          <Button variant="ghost" size="sm" data-testid="button-back">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Candidates
-          </Button>
-        </Link>
+        <BackButton fallbackPath="/candidates-list" label="Back to Candidates" />
         
         <div className="flex items-center gap-2">
           <Link href={`/integrity-agent?candidateId=${candidate.id}`}>
