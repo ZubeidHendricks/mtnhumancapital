@@ -407,11 +407,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const tokenData = await tokenResponse.json();
       console.log("Successfully obtained Hume AI access token");
+
+      // Create or retrieve EVI configuration
+      console.log("Creating/retrieving EVI configuration...");
+      const configResponse = await fetch("https://api.hume.ai/v0/evi/configs", {
+        method: "POST",
+        headers: {
+          "X-Hume-Api-Key": HUMAI_API_KEY,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          name: "Avatar HR Interview Bot",
+          evi_version: "2",
+          voice: {
+            name: "ITO"
+          },
+          language_model: {
+            model_provider: "OPEN_AI",
+            model_resource: "gpt-3.5-turbo"
+          },
+          ellm_model: {
+            allow_short_responses: false
+          },
+          event_messages: {
+            on_new_chat: {
+              enabled: true,
+              text: "Hello! I'm Chit-Chet, your AI interviewer from Avatar Human Capital. I'm here to learn about your experience and qualifications. Could you please start by introducing yourself?"
+            }
+          },
+          timeouts: {
+            inactivity: 600000
+          }
+        })
+      });
+
+      let configId = "default";
+      
+      if (configResponse.ok) {
+        const configData = await configResponse.json();
+        configId = configData.id;
+        console.log("Successfully created EVI config:", configId);
+      } else {
+        // Try to list existing configs and use the first one
+        console.log("Config creation failed, trying to list existing configs...");
+        const listResponse = await fetch("https://api.hume.ai/v0/evi/configs", {
+          headers: {
+            "X-Hume-Api-Key": HUMAI_API_KEY
+          }
+        });
+        
+        if (listResponse.ok) {
+          const configsList = await listResponse.json();
+          if (configsList.configs_page && configsList.configs_page.length > 0) {
+            configId = configsList.configs_page[0].id;
+            console.log("Using existing config:", configId);
+          } else {
+            console.warn("No existing configs found, will use default");
+          }
+        }
+      }
       
       res.json({ 
         accessToken: tokenData.access_token,
         websocketUrl: "wss://api.hume.ai/v0/evi/chat",
-        configId: "default"
+        configId: configId
       });
     } catch (error) {
       console.error("Error getting Hume AI config:", error);

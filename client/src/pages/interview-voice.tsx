@@ -38,9 +38,13 @@ export default function InterviewVoice() {
 
     const connectToHume = async () => {
       try {
-        const ws = new WebSocket(
-          `wss://api.hume.ai/v0/evi/chat?access_token=${voiceConfig.accessToken}`
-        );
+        // Use config_id if available, otherwise use default chat endpoint
+        const wsUrl = voiceConfig.configId 
+          ? `wss://api.hume.ai/v0/evi/chat?config_id=${voiceConfig.configId}&access_token=${voiceConfig.accessToken}`
+          : `wss://api.hume.ai/v0/evi/chat?access_token=${voiceConfig.accessToken}`;
+        
+        console.log("Connecting to Hume AI with URL:", wsUrl.replace(voiceConfig.accessToken, '[TOKEN]'));
+        const ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
           console.log("Connected to Hume AI");
