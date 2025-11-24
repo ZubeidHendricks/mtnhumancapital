@@ -54,6 +54,18 @@ export const candidateService = {
   }
 };
 
+export const tavusService = {
+  createPersona: async (personaData: { 
+    personaName?: string; 
+    systemPrompt: string; 
+    context?: string; 
+    replicaId?: string;
+  }): Promise<{ personaId: string; personaName: string; createdAt: string }> => {
+    const response = await api.post("/tavus/persona", personaData);
+    return response.data;
+  },
+};
+
 export const interviewService = {
   getVoiceConfig: async (): Promise<{ accessToken: string; websocketUrl: string; configId?: string }> => {
     const response = await api.get("/interview/voice/config");

@@ -20,6 +20,7 @@ import CandidateDetail from "@/pages/candidate-detail";
 import ShortlistedCandidates from "@/pages/shortlisted-candidates";
 import CandidatePipeline from "@/pages/candidate-pipeline";
 import AdminDashboard from "@/pages/admin-dashboard";
+import PersonaManagement from "@/pages/persona-management";
 
 function Router() {
   return (
@@ -30,6 +31,7 @@ function Router() {
       <Route path="/hr-dashboard" component={HRDashboard} />
       <Route path="/executive-dashboard" component={ExecutiveDashboard} />
       <Route path="/admin-dashboard" component={AdminDashboard} />
+      <Route path="/persona-management" component={PersonaManagement} />
       <Route path="/recruitment-agent" component={RecruitmentAgent} />
       <Route path="/integrity-agent" component={IntegrityAgent} />
       <Route path="/onboarding-agent" component={OnboardingAgent} />

@@ -9,10 +9,11 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Shield, Key, Settings, CheckCircle2, XCircle, Bell, Loader2, AlertCircle, Mail } from "lucide-react";
+import { Shield, Key, Settings, CheckCircle2, XCircle, Bell, Loader2, AlertCircle, Mail, Sparkles } from "lucide-react";
 import { api } from "@/lib/api";
 import type { SystemSetting } from "@shared/schema";
 import { toast } from "sonner";
+import { useLocation } from "wouter";
 
 interface EnvSecret {
   key: string;
@@ -22,6 +23,7 @@ interface EnvSecret {
 
 export default function AdminDashboard() {
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
 
   const { data: settings = [], isLoading: settingsLoading } = useQuery<SystemSetting[]>({
     queryKey: ["system-settings"],
@@ -270,6 +272,14 @@ export default function AdminDashboard() {
             </h1>
             <p className="text-sm text-muted-foreground mt-1">Configure system features and manage API integrations</p>
           </div>
+          <Button 
+            onClick={() => navigate("/persona-management")}
+            className="bg-purple-600 hover:bg-purple-700"
+            data-testid="button-persona-management"
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            AI Personas
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
