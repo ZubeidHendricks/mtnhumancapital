@@ -57,36 +57,48 @@ export default function InterviewVoice() {
           };
           
           ws.send(JSON.stringify(sessionSettings));
-          console.log("Session settings sent");
+          console.log("Session settings sent:", sessionSettings);
           toast.success("Connected to AI interviewer");
         };
 
         ws.onmessage = (event) => {
           try {
             const message = JSON.parse(event.data);
-            console.log("Received message type:", message.type);
+            console.log("Received message:", message);
             
             if (message.type === "chat_metadata") {
               console.log("Chat initialized:", message);
             } else if (message.type === "assistant_message") {
+              console.log("Assistant message received:", message);
               setState("speaking");
-              setTranscripts(prev => [...prev, {
-                role: "ai",
-                text: message.message?.content || "",
-                emotion: message.models?.prosody?.scores?.[0]?.name || "Neutral"
-              }]);
-              setCurrentEmotion(message.models?.prosody?.scores?.[0]?.name || "Neutral");
+              if (message.message?.content) {
+                setTranscripts(prev => [...prev, {
+                  role: "ai",
+                  text: message.message.content,
+                  emotion: message.models?.prosody?.scores?.[0]?.name || "Neutral"
+                }]);
+                setCurrentEmotion(message.models?.prosody?.scores?.[0]?.name || "Neutral");
+              }
             } else if (message.type === "user_message") {
-              setTranscripts(prev => [...prev, {
-                role: "user",
-                text: message.message?.content || ""
-              }]);
+              console.log("User message received:", message);
+              if (message.message?.content) {
+                setTranscripts(prev => [...prev, {
+                  role: "user",
+                  text: message.message.content
+                }]);
+              }
               setState("processing");
             } else if (message.type === "audio_output") {
-              playAudio(message.data);
+              console.log("Audio output received, length:", message.data?.length);
+              if (message.data) {
+                playAudio(message.data);
+              }
+            } else if (message.type === "error") {
+              console.error("Hume AI error:", message);
+              toast.error(`AI Error: ${message.message || 'Unknown error'}`);
             }
           } catch (err) {
-            console.error("Error parsing message:", err);
+            console.error("Error parsing message:", err, event.data);
           }
         };
 
@@ -96,10 +108,13 @@ export default function InterviewVoice() {
           setState("idle");
         };
 
-        ws.onclose = () => {
-          console.log("Disconnected from Hume AI");
+        ws.onclose = (event) => {
+          console.log("Disconnected from Hume AI. Code:", event.code, "Reason:", event.reason);
           setIsConnected(false);
           setState("idle");
+          if (event.code !== 1000) {
+            toast.error(`Connection closed: ${event.reason || 'Unknown reason'}`);
+          }
         };
 
         socketRef.current = ws;
