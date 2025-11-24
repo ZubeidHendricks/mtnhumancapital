@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { Candidate, InsertCandidate, Job, InsertJob, IntegrityCheck, InsertIntegrityCheck } from "@shared/schema";
+import type { Candidate, InsertCandidate, Job, InsertJob, IntegrityCheck, InsertIntegrityCheck, Interview } from "@shared/schema";
 
 const API_URL = "/api";
 
@@ -59,12 +59,32 @@ export const interviewService = {
     const response = await api.get("/interview/voice/config");
     return response.data;
   },
-  createVideoSession: async (candidateId?: string, candidateName?: string, jobRole?: string): Promise<{ sessionUrl: string; sessionId: string; status: string; candidateId?: string; candidateName?: string }> => {
+  createVideoSession: async (candidateId?: string, candidateName?: string, jobRole?: string): Promise<{ sessionUrl: string; sessionId: string; status: string; candidateId?: string; candidateName?: string; interviewId?: string }> => {
     const response = await api.post("/interview/video/session", { 
       candidateId, 
       candidateName,
       jobRole
     });
+    return response.data;
+  },
+  getAll: async (): Promise<Interview[]> => {
+    const response = await api.get("/interviews");
+    return response.data;
+  },
+  getById: async (id: string): Promise<Interview> => {
+    const response = await api.get(`/interviews/${id}`);
+    return response.data;
+  },
+  getByCandidateId: async (candidateId: string): Promise<Interview[]> => {
+    const response = await api.get(`/candidates/${candidateId}/interviews`);
+    return response.data;
+  },
+  getByJobId: async (jobId: string): Promise<Interview[]> => {
+    const response = await api.get(`/jobs/${jobId}/interviews`);
+    return response.data;
+  },
+  update: async (id: string, updates: Partial<Interview>): Promise<Interview> => {
+    const response = await api.patch(`/interviews/${id}`, updates);
     return response.data;
   }
 };

@@ -144,7 +144,7 @@ export const tenantConfig = pgTable("tenant_config", {
 
 export const interviews = pgTable("interviews", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  candidateId: varchar("candidate_id").notNull().references(() => candidates.id),
+  candidateId: varchar("candidate_id").references(() => candidates.id),
   jobId: varchar("job_id").references(() => jobs.id),
   type: text("type").notNull(), // 'voice' | 'video'
   provider: text("provider").notNull(), // 'tavus' | 'hume'
@@ -255,3 +255,41 @@ export const insertTenantConfigSchema = createInsertSchema(tenantConfig).omit({
 
 export type InsertTenantConfig = z.infer<typeof insertTenantConfigSchema>;
 export type TenantConfig = typeof tenantConfig.$inferSelect;
+
+export const insertInterviewSchema = createInsertSchema(interviews, {
+  candidateId: z.string().nullable().optional(),
+  jobId: z.string().nullable().optional(),
+  scheduledAt: z.coerce.date().optional().nullable(),
+  startedAt: z.coerce.date().optional().nullable(),
+  endedAt: z.coerce.date().optional().nullable(),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateInterviewSchema = z.object({
+  status: z.enum(["scheduled", "in_progress", "completed", "cancelled", "failed"]).optional(),
+  sessionId: z.string().nullable().optional(),
+  conversationUrl: z.string().nullable().optional(),
+  transcriptUrl: z.string().nullable().optional(),
+  recordingUrl: z.string().nullable().optional(),
+  durationMinutes: z.number().int().positive().nullable().optional(),
+  metadata: z.any().optional(),
+  scheduledAt: z.coerce.date().nullable().optional(),
+  startedAt: z.coerce.date().nullable().optional(),
+  endedAt: z.coerce.date().nullable().optional(),
+});
+
+export type InsertInterview = z.infer<typeof insertInterviewSchema>;
+export type UpdateInterview = z.infer<typeof updateInterviewSchema>;
+export type Interview = typeof interviews.$inferSelect;
+
+export const insertInterviewAssessmentSchema = createInsertSchema(interviewAssessments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertInterviewAssessment = z.infer<typeof insertInterviewAssessmentSchema>;
+export type InterviewAssessment = typeof interviewAssessments.$inferSelect;

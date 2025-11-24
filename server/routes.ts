@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertCandidateSchema, insertJobSchema, insertIntegrityCheckSchema, insertRecruitmentSessionSchema } from "@shared/schema";
+import { insertCandidateSchema, insertJobSchema, insertIntegrityCheckSchema, insertRecruitmentSessionSchema, insertInterviewSchema, updateInterviewSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { IntegrityOrchestrator } from "./integrity-orchestrator";
 import { RecruitmentOrchestrator } from "./recruitment-orchestrator";
@@ -552,16 +552,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Save interview record to database
+      const interview = await storage.createInterview({
+        candidateId: candidateId || null,
+        jobId: null,
+        type: "video",
+        provider: "tavus",
+        status: "in_progress",
+        sessionId: data.conversation_id || null,
+        conversationUrl: data.conversation_url,
+        metadata: {
+          jobRole: role,
+          candidateName,
+          persona: "Jane Smith",
+          tavusData: data
+        },
+        startedAt: new Date()
+      });
+      
       res.json({
         sessionUrl: data.conversation_url,
         sessionId: data.conversation_id || "unknown",
         status: data.status || "created",
         candidateId,
-        candidateName
+        candidateName,
+        interviewId: interview.id
       });
     } catch (error) {
       console.error("Error creating Tavus session:", error);
       res.status(500).json({ message: "Failed to create video session" });
+    }
+  });
+
+  // Interview routes
+  app.get("/api/interviews", async (req, res) => {
+    try {
+      const interviews = await storage.getAllInterviews();
+      res.json(interviews);
+    } catch (error) {
+      console.error("Error fetching interviews:", error);
+      res.status(500).json({ message: "Failed to fetch interviews" });
+    }
+  });
+
+  app.get("/api/interviews/:id", async (req, res) => {
+    try {
+      const interview = await storage.getInterview(req.params.id);
+      if (!interview) {
+        return res.status(404).json({ message: "Interview not found" });
+      }
+      res.json(interview);
+    } catch (error) {
+      console.error("Error fetching interview:", error);
+      res.status(500).json({ message: "Failed to fetch interview" });
+    }
+  });
+
+  app.get("/api/candidates/:candidateId/interviews", async (req, res) => {
+    try {
+      const interviews = await storage.getInterviewsByCandidateId(req.params.candidateId);
+      res.json(interviews);
+    } catch (error) {
+      console.error("Error fetching candidate interviews:", error);
+      res.status(500).json({ message: "Failed to fetch candidate interviews" });
+    }
+  });
+
+  app.get("/api/jobs/:jobId/interviews", async (req, res) => {
+    try {
+      const interviews = await storage.getInterviewsByJobId(req.params.jobId);
+      res.json(interviews);
+    } catch (error) {
+      console.error("Error fetching job interviews:", error);
+      res.status(500).json({ message: "Failed to fetch job interviews" });
+    }
+  });
+
+  app.post("/api/interviews", async (req, res) => {
+    try {
+      const result = insertInterviewSchema.safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      
+      const interview = await storage.createInterview(result.data);
+      res.status(201).json(interview);
+    } catch (error) {
+      console.error("Error creating interview:", error);
+      res.status(500).json({ message: "Failed to create interview" });
+    }
+  });
+
+  app.patch("/api/interviews/:id", async (req, res) => {
+    try {
+      const result = updateInterviewSchema.safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      
+      const interview = await storage.updateInterview(req.params.id, result.data);
+      if (!interview) {
+        return res.status(404).json({ message: "Interview not found" });
+      }
+      res.json(interview);
+    } catch (error) {
+      console.error("Error updating interview:", error);
+      res.status(500).json({ message: "Failed to update interview" });
     }
   });
 

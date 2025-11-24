@@ -15,6 +15,10 @@ import {
   type InsertOnboardingWorkflow,
   type TenantConfig,
   type InsertTenantConfig,
+  type Interview,
+  type InsertInterview,
+  type InterviewAssessment,
+  type InsertInterviewAssessment,
   users,
   jobs,
   candidates,
@@ -22,7 +26,9 @@ import {
   recruitmentSessions,
   systemSettings,
   onboardingWorkflows,
-  tenantConfig
+  tenantConfig,
+  interviews,
+  interviewAssessments
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, lte } from "drizzle-orm";
@@ -76,6 +82,18 @@ export interface IStorage {
   getTenantConfig(): Promise<TenantConfig | undefined>;
   createTenantConfig(config: InsertTenantConfig): Promise<TenantConfig>;
   updateTenantConfig(id: string, config: Partial<InsertTenantConfig>): Promise<TenantConfig | undefined>;
+  
+  getAllInterviews(): Promise<Interview[]>;
+  getInterview(id: string): Promise<Interview | undefined>;
+  getInterviewsByCandidateId(candidateId: string): Promise<Interview[]>;
+  getInterviewsByJobId(jobId: string): Promise<Interview[]>;
+  createInterview(interview: InsertInterview): Promise<Interview>;
+  updateInterview(id: string, interview: Partial<InsertInterview>): Promise<Interview | undefined>;
+  deleteInterview(id: string): Promise<boolean>;
+  
+  getInterviewAssessment(interviewId: string): Promise<InterviewAssessment | undefined>;
+  createInterviewAssessment(assessment: InsertInterviewAssessment): Promise<InterviewAssessment>;
+  updateInterviewAssessment(id: string, assessment: Partial<InsertInterviewAssessment>): Promise<InterviewAssessment | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -343,6 +361,67 @@ export class DatabaseStorage implements IStorage {
       .where(eq(tenantConfig.id, id))
       .returning();
     return config || undefined;
+  }
+
+  async getAllInterviews(): Promise<Interview[]> {
+    return await db.select().from(interviews).orderBy(desc(interviews.createdAt));
+  }
+
+  async getInterview(id: string): Promise<Interview | undefined> {
+    const [interview] = await db.select().from(interviews).where(eq(interviews.id, id));
+    return interview || undefined;
+  }
+
+  async getInterviewsByCandidateId(candidateId: string): Promise<Interview[]> {
+    return await db.select().from(interviews).where(eq(interviews.candidateId, candidateId)).orderBy(desc(interviews.createdAt));
+  }
+
+  async getInterviewsByJobId(jobId: string): Promise<Interview[]> {
+    return await db.select().from(interviews).where(eq(interviews.jobId, jobId)).orderBy(desc(interviews.createdAt));
+  }
+
+  async createInterview(insertInterview: InsertInterview): Promise<Interview> {
+    const [interview] = await db
+      .insert(interviews)
+      .values(insertInterview)
+      .returning();
+    return interview;
+  }
+
+  async updateInterview(id: string, updates: Partial<InsertInterview>): Promise<Interview | undefined> {
+    const [interview] = await db
+      .update(interviews)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(interviews.id, id))
+      .returning();
+    return interview || undefined;
+  }
+
+  async deleteInterview(id: string): Promise<boolean> {
+    const result = await db.delete(interviews).where(eq(interviews.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async getInterviewAssessment(interviewId: string): Promise<InterviewAssessment | undefined> {
+    const [assessment] = await db.select().from(interviewAssessments).where(eq(interviewAssessments.interviewId, interviewId));
+    return assessment || undefined;
+  }
+
+  async createInterviewAssessment(insertAssessment: InsertInterviewAssessment): Promise<InterviewAssessment> {
+    const [assessment] = await db
+      .insert(interviewAssessments)
+      .values(insertAssessment)
+      .returning();
+    return assessment;
+  }
+
+  async updateInterviewAssessment(id: string, updates: Partial<InsertInterviewAssessment>): Promise<InterviewAssessment | undefined> {
+    const [assessment] = await db
+      .update(interviewAssessments)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(interviewAssessments.id, id))
+      .returning();
+    return assessment || undefined;
   }
 }
 
