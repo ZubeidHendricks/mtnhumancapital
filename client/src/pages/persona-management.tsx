@@ -75,7 +75,7 @@ This is an initial screening interview to assess the candidate's potential fit f
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-black">
       <Navbar />
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         <BackButton />
@@ -85,15 +85,15 @@ This is an initial screening interview to assess the candidate's potential fit f
             <Sparkles className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Persona Management</h1>
-            <p className="text-gray-600">Create custom AI personas for Tavus video interviews</p>
+            <h1 className="text-3xl font-bold text-white">Persona Management</h1>
+            <p className="text-gray-400">Create custom AI personas for Tavus video interviews</p>
           </div>
         </div>
 
         {createdPersona && (
-          <Alert className="mb-6 border-green-200 bg-green-50" data-testid="alert-persona-created">
-            <CheckCircle2 className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800">
+          <Alert className="mb-6 border-green-500/30 bg-green-500/10" data-testid="alert-persona-created">
+            <CheckCircle2 className="h-4 w-4 text-green-400" />
+            <AlertDescription className="text-green-100">
               <div className="flex items-center justify-between">
                 <div>
                   <strong>Persona Created Successfully!</strong>
@@ -121,13 +121,13 @@ This is an initial screening interview to assess the candidate's potential fit f
         )}
 
         <div className="grid gap-6">
-          <Card>
+          <Card className="bg-black/40 border-white/10">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-white">
                 <User className="h-5 w-5" />
                 Create New Persona
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-gray-400">
                 Define the personality, behavior, and context for your AI interviewer
               </CardDescription>
             </CardHeader>
@@ -146,7 +146,7 @@ This is an initial screening interview to assess the candidate's potential fit f
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="personaName">
+                  <Label htmlFor="personaName" className="text-white">
                     Persona Name <span className="text-gray-500 text-sm">(optional)</span>
                   </Label>
                   <Input
@@ -154,13 +154,14 @@ This is an initial screening interview to assess the candidate's potential fit f
                     value={personaName}
                     onChange={(e) => setPersonaName(e.target.value)}
                     placeholder="e.g., Jane Smith - HR Interviewer"
+                    className="bg-black/40 border-white/10 text-white placeholder:text-gray-500"
                     data-testid="input-persona-name"
                   />
                   <p className="text-xs text-gray-500">A friendly name to identify this persona</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="replicaId">
+                  <Label htmlFor="replicaId" className="text-white">
                     Replica ID <span className="text-gray-500 text-sm">(optional)</span>
                   </Label>
                   <Input
@@ -168,13 +169,14 @@ This is an initial screening interview to assess the candidate's potential fit f
                     value={replicaId}
                     onChange={(e) => setReplicaId(e.target.value)}
                     placeholder="e.g., r9d30b0e55ac"
+                    className="bg-black/40 border-white/10 text-white placeholder:text-gray-500"
                     data-testid="input-replica-id"
                   />
                   <p className="text-xs text-gray-500">The default replica to use with this persona</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="systemPrompt">
+                  <Label htmlFor="systemPrompt" className="text-white">
                     System Prompt <span className="text-red-500">*</span>
                   </Label>
                   <Textarea
@@ -182,7 +184,7 @@ This is an initial screening interview to assess the candidate's potential fit f
                     value={systemPrompt}
                     onChange={(e) => setSystemPrompt(e.target.value)}
                     placeholder="You are an experienced HR interviewer who..."
-                    className="min-h-[300px] font-mono text-sm"
+                    className="min-h-[300px] font-mono text-sm bg-black/40 border-white/10 text-white placeholder:text-gray-500"
                     required
                     data-testid="input-system-prompt"
                   />
@@ -192,7 +194,7 @@ This is an initial screening interview to assess the candidate's potential fit f
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="context">
+                  <Label htmlFor="context" className="text-white">
                     Context <span className="text-gray-500 text-sm">(optional)</span>
                   </Label>
                   <Textarea
@@ -200,7 +202,7 @@ This is an initial screening interview to assess the candidate's potential fit f
                     value={context}
                     onChange={(e) => setContext(e.target.value)}
                     placeholder="Additional background information, case study details, or specific scenarios..."
-                    className="min-h-[200px] font-mono text-sm"
+                    className="min-h-[200px] font-mono text-sm bg-black/40 border-white/10 text-white placeholder:text-gray-500"
                     data-testid="input-context"
                   />
                   <p className="text-xs text-gray-500">
@@ -230,18 +232,18 @@ This is an initial screening interview to assess the candidate's potential fit f
             </CardContent>
           </Card>
 
-          <Card className="bg-blue-50 border-blue-200">
+          <Card className="bg-primary/5 border-primary/20">
             <CardHeader>
-              <CardTitle className="text-blue-900 text-lg">How to Use</CardTitle>
+              <CardTitle className="text-primary text-lg">How to Use</CardTitle>
             </CardHeader>
-            <CardContent className="text-sm text-blue-800 space-y-2">
+            <CardContent className="text-sm text-gray-300 space-y-2">
               <ol className="list-decimal list-inside space-y-2">
                 <li>Create a persona using the form above or load the Jane Smith template</li>
                 <li>Copy the generated Persona ID from the success message</li>
-                <li>Update your <code className="bg-blue-100 px-1 py-0.5 rounded">TAVUS_PERSONA_ID</code> secret in the Replit Secrets tab</li>
+                <li>Update your <code className="bg-black/40 px-1 py-0.5 rounded text-primary">TAVUS_PERSONA_ID</code> secret in the Replit Secrets tab</li>
                 <li>All new video interviews will use this persona automatically</li>
               </ol>
-              <p className="mt-4 text-xs">
+              <p className="mt-4 text-xs text-gray-400">
                 <strong>Tip:</strong> The system prompt defines how the AI behaves, while context provides specific information about the interview scenario.
               </p>
             </CardContent>
