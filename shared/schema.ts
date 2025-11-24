@@ -142,6 +142,40 @@ export const tenantConfig = pgTable("tenant_config", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const interviews = pgTable("interviews", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  candidateId: varchar("candidate_id").notNull().references(() => candidates.id),
+  jobId: varchar("job_id").references(() => jobs.id),
+  type: text("type").notNull(), // 'voice' | 'video'
+  provider: text("provider").notNull(), // 'tavus' | 'hume'
+  status: text("status").notNull().default("scheduled"), // 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'failed'
+  sessionId: text("session_id"),
+  conversationUrl: text("conversation_url"),
+  transcriptUrl: text("transcript_url"),
+  recordingUrl: text("recording_url"),
+  durationMinutes: integer("duration_minutes"),
+  metadata: jsonb("metadata"), // Provider-specific data
+  scheduledAt: timestamp("scheduled_at"),
+  startedAt: timestamp("started_at"),
+  endedAt: timestamp("ended_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const interviewAssessments = pgTable("interview_assessments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  interviewId: varchar("interview_id").notNull().references(() => interviews.id),
+  summary: text("summary"),
+  rubricScores: jsonb("rubric_scores"), // { communication: 4, problemSolving: 5, ... }
+  strengths: text("strengths").array(),
+  improvements: text("improvements").array(),
+  recommendation: text("recommendation"), // 'hire' | 'reject' | 'maybe' | 'advance'
+  reviewerType: text("reviewer_type").notNull(), // 'ai' | 'human'
+  reviewerId: varchar("reviewer_id"), // User ID if human reviewer
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
