@@ -441,15 +441,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       });
 
-      let configId = "default";
+      let configId: string | null = null;
       
       if (configResponse.ok) {
         const configData = await configResponse.json();
         configId = configData.id;
         console.log("Successfully created EVI config:", configId);
       } else {
+        const errorText = await configResponse.text();
+        console.error("Config creation failed:", configResponse.status, errorText);
+        
         // Try to list existing configs and use the first one
-        console.log("Config creation failed, trying to list existing configs...");
+        console.log("Trying to list existing configs...");
         const listResponse = await fetch("https://api.hume.ai/v0/evi/configs", {
           headers: {
             "X-Hume-Api-Key": HUMAI_API_KEY
@@ -458,20 +461,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (listResponse.ok) {
           const configsList = await listResponse.json();
+          console.log("Configs list response:", JSON.stringify(configsList));
           if (configsList.configs_page && configsList.configs_page.length > 0) {
             configId = configsList.configs_page[0].id;
             console.log("Using existing config:", configId);
           } else {
-            console.warn("No existing configs found, will use default");
+            console.warn("No existing configs found");
           }
+        } else {
+          const listError = await listResponse.text();
+          console.error("List configs failed:", listResponse.status, listError);
         }
       }
       
-      res.json({ 
+      // Only include configId if we have a valid one
+      const response: any = { 
         accessToken: tokenData.access_token,
-        websocketUrl: "wss://api.hume.ai/v0/evi/chat",
-        configId: configId
-      });
+        websocketUrl: "wss://api.hume.ai/v0/evi/chat"
+      };
+      
+      if (configId) {
+        response.configId = configId;
+      }
+      
+      res.json(response);
     } catch (error) {
       console.error("Error getting Hume AI config:", error);
       res.status(500).json({ message: `Failed to connect to Hume AI: ${error instanceof Error ? error.message : 'Unknown error'}` });
