@@ -62,6 +62,49 @@ const talentPipelineData = [
   { stage: "Hired", count: 2, color: "#0c5f7a" },
 ];
 
+const employerTypeData = [
+  { name: "Tool & Machinery Retail", value: 18, color: "#1e3a5f" },
+  { name: "Hardware Retail", value: 28, color: "#c75d2f" },
+  { name: "Tool Retail", value: 8, color: "#2d5f3b" },
+  { name: "Machinery Retail", value: 6, color: "#4a90a4" },
+  { name: "Engineering Supply", value: 15, color: "#8b4789" },
+  { name: "Industrial Supply", value: 12, color: "#3d6b3d" },
+  { name: "Engineering Supplier", value: 9, color: "#d17a3f" },
+  { name: "Industrial Tools Distributor", value: 5, color: "#2e6b6f" },
+  { name: "Industrial Supplier", value: 7, color: "#5a8c5a" },
+  { name: "Auto Spares Retail", value: 11, color: "#1f4f5f" },
+  { name: "Auto Spares", value: 14, color: "#a64d79" },
+  { name: "Auto Electrical", value: 6, color: "#4d7f4d" },
+  { name: "DIY Retail", value: 10, color: "#c47f5f" },
+  { name: "Workshop/Repairs", value: 8, color: "#e8b4b8" },
+  { name: "Machinery Repairs", value: 5, color: "#a8c8d8" },
+  { name: "Repairs Center", value: 4, color: "#d4a4d4" },
+  { name: "Retail Service", value: 9, color: "#c4b4c8" },
+];
+
+const fitScoreData = [
+  { candidateId: "C1", score: 5 },
+  { candidateId: "C2", score: 5 },
+  { candidateId: "C3", score: 5 },
+  { candidateId: "C4", score: 5 },
+  { candidateId: "C5", score: 5 },
+  { candidateId: "C6", score: 4 },
+  { candidateId: "C7", score: 5 },
+  { candidateId: "C8", score: 5 },
+  { candidateId: "C9", score: 4 },
+  { candidateId: "C10", score: 5 },
+  { candidateId: "C11", score: 5 },
+  { candidateId: "C12", score: 4 },
+  { candidateId: "C13", score: 5 },
+  { candidateId: "C14", score: 4 },
+  { candidateId: "C15", score: 5 },
+  { candidateId: "C16", score: 5 },
+  { candidateId: "C17", score: 4 },
+  { candidateId: "C18", score: 5 },
+  { candidateId: "C19", score: 5 },
+  { candidateId: "C20", score: 5 },
+];
+
 export default function RecruitmentDashboard() {
   const { data: candidates, isLoading: loadingCandidates } = useQuery({
     queryKey: ['candidates'],
@@ -343,6 +386,107 @@ export default function RecruitmentDashboard() {
             <CardContent>
               <div className="text-3xl font-bold text-blue-400">{jobHealthData[3].value}</div>
               <p className="text-xs text-gray-500 mt-1">Successfully filled</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Additional Analytics Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+          {/* Employer Type Share */}
+          <Card className="bg-black/40 border-white/10">
+            <CardHeader>
+              <CardTitle>Employer Type Share</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={350}>
+                <PieChart>
+                  <Pie
+                    data={employerTypeData}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={120}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {employerTypeData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: "#111", border: "1px solid #333", borderRadius: "8px" }}
+                  />
+                  <Legend 
+                    layout="vertical" 
+                    align="right" 
+                    verticalAlign="middle"
+                    wrapperStyle={{ fontSize: "10px", maxHeight: "350px", overflowY: "auto" }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Fit Scores */}
+          <Card className="bg-black/40 border-white/10">
+            <CardHeader>
+              <CardTitle>Fit Scores</CardTitle>
+              <CardDescription className="text-gray-400">
+                Candidate suitability ratings
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={fitScoreData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                  <XAxis dataKey="candidateId" stroke="#888" />
+                  <YAxis domain={[0, 6]} stroke="#888" />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: "#111", border: "1px solid #333", borderRadius: "8px" }}
+                    labelStyle={{ color: "#fff" }}
+                  />
+                  <Bar dataKey="score" fill="#0c5f7a" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* WhatsApp Integration */}
+          <Card className="bg-black/40 border-white/10">
+            <CardHeader>
+              <CardTitle>WhatsApp</CardTitle>
+              <CardDescription className="text-gray-400">
+                Messaging integration status
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="h-[350px] flex flex-col justify-center gap-4">
+                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-6 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <CheckCircle2 className="h-8 w-8 text-white" />
+                    </div>
+                    <p className="text-green-400 font-semibold">Connected</p>
+                  </div>
+                </div>
+
+                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-6 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <CheckCircle2 className="h-8 w-8 text-white" />
+                    </div>
+                    <p className="text-green-400 font-semibold">Active</p>
+                  </div>
+                </div>
+
+                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-6 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <CheckCircle2 className="h-8 w-8 text-white" />
+                    </div>
+                    <p className="text-green-400 font-semibold">Synced</p>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
