@@ -7,7 +7,7 @@ import { eq } from "drizzle-orm";
 declare global {
   namespace Express {
     interface Request {
-      tenant?: typeof tenantConfig.$inferSelect;
+      tenant: typeof tenantConfig.$inferSelect;
     }
   }
 }

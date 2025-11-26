@@ -15,7 +15,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/candidates", async (req, res) => {
     try {
-      const candidates = await storage.getAllCandidates();
+      const candidates = await storage.getAllCandidates(req.tenant.id);
       res.json(candidates);
     } catch (error) {
       console.error("Error fetching candidates:", error);
@@ -25,7 +25,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/candidates/:id", async (req, res) => {
     try {
-      const candidate = await storage.getCandidate(req.params.id);
+      const candidate = await storage.getCandidate(req.tenant.id, req.params.id);
       if (!candidate) {
         return res.status(404).json({ message: "Candidate not found" });
       }
@@ -44,7 +44,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: validationError.message });
       }
       
-      const candidate = await storage.createCandidate(result.data);
+      const candidate = await storage.createCandidate(req.tenant.id, result.data);
       res.status(201).json(candidate);
     } catch (error) {
       console.error("Error creating candidate:", error);
@@ -60,7 +60,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: validationError.message });
       }
       
-      const candidate = await storage.updateCandidate(req.params.id, result.data);
+      const candidate = await storage.updateCandidate(req.tenant.id, req.params.id, result.data);
       if (!candidate) {
         return res.status(404).json({ message: "Candidate not found" });
       }
@@ -73,7 +73,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/candidates/:id", async (req, res) => {
     try {
-      const success = await storage.deleteCandidate(req.params.id);
+      const success = await storage.deleteCandidate(req.tenant.id, req.params.id);
       if (!success) {
         return res.status(404).json({ message: "Candidate not found" });
       }
@@ -101,7 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const cvData = await cvParser.parsePDFCV(file.buffer);
 
-      const updatedCandidate = await storage.updateCandidate(candidateId, {
+      const updatedCandidate = await storage.updateCandidate(req.tenant.id, candidateId, {
         fullName: cvData.fullName,
         email: cvData.email || undefined,
         phone: cvData.phone || undefined,
@@ -151,7 +151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             continue;
           }
           
-          const candidate = await storage.createCandidate(result.data);
+          const candidate = await storage.createCandidate(req.tenant.id, result.data);
           imported.push(candidate);
         } catch (error) {
           failed.push({ data: candidateData, error: error instanceof Error ? error.message : "Unknown error" });
@@ -172,7 +172,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/jobs", async (req, res) => {
     try {
-      const jobs = await storage.getAllJobs();
+      const jobs = await storage.getAllJobs(req.tenant.id);
       res.json(jobs);
     } catch (error) {
       console.error("Error fetching jobs:", error);
@@ -182,7 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/jobs/:id", async (req, res) => {
     try {
-      const job = await storage.getJob(req.params.id);
+      const job = await storage.getJob(req.tenant.id, req.params.id);
       if (!job) {
         return res.status(404).json({ message: "Job not found" });
       }
@@ -202,7 +202,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Create job first without embedding
-      const job = await storage.createJob(result.data);
+      const job = await storage.createJob(req.tenant.id, result.data);
       
       // Generate embedding in the background (don't block response)
       embeddingService.generateJobEmbedding({
@@ -223,7 +223,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         payRateUnit: job.payRateUnit,
       }).then(async (embedding) => {
         // Update job with embedding
-        await storage.updateJob(job.id, {
+        await storage.updateJob(req.tenant.id, job.id, {
           requirementsEmbedding: embedding as any,
         });
         console.log(`✓ Generated embedding for job ${job.id}: ${job.title}`);
@@ -246,7 +246,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: validationError.message });
       }
       
-      const job = await storage.updateJob(req.params.id, result.data);
+      const job = await storage.updateJob(req.tenant.id, req.params.id, result.data);
       if (!job) {
         return res.status(404).json({ message: "Job not found" });
       }
@@ -259,7 +259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/jobs/:id", async (req, res) => {
     try {
-      const success = await storage.deleteJob(req.params.id);
+      const success = await storage.deleteJob(req.tenant.id, req.params.id);
       if (!success) {
         return res.status(404).json({ message: "Job not found" });
       }
@@ -309,7 +309,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Create the job with collected data (use placeholders for missing required fields)
-      const job = await storage.createJob({
+      const job = await storage.createJob(req.tenant.id, {
         title: jobSpec.title || "Untitled Job (Draft)",
         department: jobSpec.department || "Unspecified",
         description: jobSpec.description,
@@ -337,7 +337,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
         
         embeddingService.generateJobEmbedding(embeddingJobSpec).then(async (embedding) => {
-          await storage.updateJob(job.id, {
+          await storage.updateJob(req.tenant.id, job.id, {
             requirementsEmbedding: embedding as any,
           });
           console.log(`✓ Generated embedding for job ${job.id}: ${job.title}`);
@@ -651,7 +651,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Save interview record to database
-      const interview = await storage.createInterview({
+      const interview = await storage.createInterview(req.tenant.id, {
         candidateId: candidateId || null,
         jobId: null,
         type: "video",
@@ -685,7 +685,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Interview routes
   app.get("/api/interviews", async (req, res) => {
     try {
-      const interviews = await storage.getAllInterviews();
+      const interviews = await storage.getAllInterviews(req.tenant.id);
       res.json(interviews);
     } catch (error) {
       console.error("Error fetching interviews:", error);
@@ -695,7 +695,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/interviews/:id", async (req, res) => {
     try {
-      const interview = await storage.getInterview(req.params.id);
+      const interview = await storage.getInterview(req.tenant.id, req.params.id);
       if (!interview) {
         return res.status(404).json({ message: "Interview not found" });
       }
@@ -708,7 +708,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/candidates/:candidateId/interviews", async (req, res) => {
     try {
-      const interviews = await storage.getInterviewsByCandidateId(req.params.candidateId);
+      const interviews = await storage.getInterviewsByCandidateId(req.tenant.id, req.params.candidateId);
       res.json(interviews);
     } catch (error) {
       console.error("Error fetching candidate interviews:", error);
@@ -718,7 +718,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/jobs/:jobId/interviews", async (req, res) => {
     try {
-      const interviews = await storage.getInterviewsByJobId(req.params.jobId);
+      const interviews = await storage.getInterviewsByJobId(req.tenant.id, req.params.jobId);
       res.json(interviews);
     } catch (error) {
       console.error("Error fetching job interviews:", error);
@@ -734,7 +734,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: validationError.message });
       }
       
-      const interview = await storage.createInterview(result.data);
+      const interview = await storage.createInterview(req.tenant.id, result.data);
       res.status(201).json(interview);
     } catch (error) {
       console.error("Error creating interview:", error);
@@ -750,7 +750,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: validationError.message });
       }
       
-      const interview = await storage.updateInterview(req.params.id, result.data);
+      const interview = await storage.updateInterview(req.tenant.id, req.params.id, result.data);
       if (!interview) {
         return res.status(404).json({ message: "Interview not found" });
       }
@@ -763,7 +763,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/integrity-checks", async (req, res) => {
     try {
-      const checks = await storage.getAllIntegrityChecks();
+      const checks = await storage.getAllIntegrityChecks(req.tenant.id);
       res.json(checks);
     } catch (error) {
       console.error("Error fetching integrity checks:", error);
@@ -773,7 +773,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/integrity-checks/candidate/:candidateId", async (req, res) => {
     try {
-      const checks = await storage.getIntegrityChecksByCandidateId(req.params.candidateId);
+      const checks = await storage.getIntegrityChecksByCandidateId(req.tenant.id, req.params.candidateId);
       res.json(checks);
     } catch (error) {
       console.error("Error fetching candidate integrity checks:", error);
@@ -783,7 +783,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/integrity-checks/:id", async (req, res) => {
     try {
-      const check = await storage.getIntegrityCheck(req.params.id);
+      const check = await storage.getIntegrityCheck(req.tenant.id, req.params.id);
       if (!check) {
         return res.status(404).json({ message: "Integrity check not found" });
       }
@@ -802,7 +802,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: validationError.message });
       }
       
-      const check = await storage.createIntegrityCheck(result.data);
+      const check = await storage.createIntegrityCheck(req.tenant.id, result.data);
       res.status(201).json(check);
     } catch (error) {
       console.error("Error creating integrity check:", error);
@@ -818,7 +818,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: validationError.message });
       }
       
-      const check = await storage.updateIntegrityCheck(req.params.id, result.data);
+      const check = await storage.updateIntegrityCheck(req.tenant.id, req.params.id, result.data);
       if (!check) {
         return res.status(404).json({ message: "Integrity check not found" });
       }
@@ -831,7 +831,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/integrity-checks/:id", async (req, res) => {
     try {
-      const success = await storage.deleteIntegrityCheck(req.params.id);
+      const success = await storage.deleteIntegrityCheck(req.tenant.id, req.params.id);
       if (!success) {
         return res.status(404).json({ message: "Integrity check not found" });
       }
@@ -847,7 +847,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const checkId = req.params.id;
       
       // Get the integrity check
-      const check = await storage.getIntegrityCheck(checkId);
+      const check = await storage.getIntegrityCheck(req.tenant.id, checkId);
       if (!check) {
         return res.status(404).json({ message: "Integrity check not found" });
       }
@@ -859,7 +859,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       orchestrator.executeIntegrityCheck(checkId, check.candidateId)
         .catch(error => {
           console.error(`Error executing integrity check ${checkId}:`, error);
-          storage.updateIntegrityCheck(checkId, {
+          storage.updateIntegrityCheck(req.tenant.id, checkId, {
             status: "failed",
             result: `Check failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
           });
@@ -867,7 +867,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Set up initial reminder (24 hours from now)
       const nextReminderAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-      await storage.updateIntegrityCheck(checkId, {
+      await storage.updateIntegrityCheck(req.tenant.id, checkId, {
         nextReminderAt,
         reminderEnabled: 1,
       });
@@ -915,7 +915,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const reminderService = new ReminderService(storage);
       await reminderService.configureReminder(req.params.id, config);
       
-      const check = await storage.getIntegrityCheck(req.params.id);
+      const check = await storage.getIntegrityCheck(req.tenant.id, req.params.id);
       res.json(check);
     } catch (error) {
       console.error("Error configuring reminder:", error);
@@ -1104,7 +1104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/recruitment-sessions", async (req, res) => {
     try {
-      const sessions = await storage.getAllRecruitmentSessions();
+      const sessions = await storage.getAllRecruitmentSessions(req.tenant.id);
       res.json(sessions);
     } catch (error) {
       console.error("Error fetching recruitment sessions:", error);
@@ -1114,7 +1114,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/recruitment-sessions/job/:jobId", async (req, res) => {
     try {
-      const sessions = await storage.getRecruitmentSessionsByJobId(req.params.jobId);
+      const sessions = await storage.getRecruitmentSessionsByJobId(req.tenant.id, req.params.jobId);
       res.json(sessions);
     } catch (error) {
       console.error("Error fetching job recruitment sessions:", error);
@@ -1124,7 +1124,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/recruitment-sessions/:id", async (req, res) => {
     try {
-      const session = await storage.getRecruitmentSession(req.params.id);
+      const session = await storage.getRecruitmentSession(req.tenant.id, req.params.id);
       if (!session) {
         return res.status(404).json({ message: "Recruitment session not found" });
       }
@@ -1143,7 +1143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Job ID is required" });
       }
 
-      const session = await storage.createRecruitmentSession({
+      const session = await storage.createRecruitmentSession(req.tenant.id, {
         jobId,
         status: "Running",
         candidatesFound: 0,
@@ -1203,7 +1203,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/onboarding/workflows", async (req, res) => {
     try {
-      const workflows = await storage.getAllOnboardingWorkflows();
+      const workflows = await storage.getAllOnboardingWorkflows(req.tenant.id);
       res.json(workflows);
     } catch (error) {
       console.error("Error fetching onboarding workflows:", error);
@@ -1213,7 +1213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/onboarding/workflows/:id", async (req, res) => {
     try {
-      const workflow = await storage.getOnboardingWorkflow(req.params.id);
+      const workflow = await storage.getOnboardingWorkflow(req.tenant.id, req.params.id);
       
       if (!workflow) {
         return res.status(404).json({ message: "Onboarding workflow not found" });
