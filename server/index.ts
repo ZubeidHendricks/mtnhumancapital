@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { resolveTenant } from "./tenant-middleware";
+import { seedDefaultTenant } from "./seed-default-tenant";
 
 const app = express();
 
@@ -17,8 +18,8 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: false }));
 
-// Apply tenant resolution middleware to all requests
-app.use(resolveTenant);
+// Apply tenant resolution middleware ONLY to API routes to avoid blocking static assets
+app.use('/api', resolveTenant);
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -51,6 +52,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Ensure default tenant exists before starting server
+  await seedDefaultTenant();
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
