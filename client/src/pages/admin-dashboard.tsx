@@ -459,7 +459,7 @@ export default function AdminDashboard() {
                 {[
                   { key: "recruitment", label: "Recruitment & Selection", desc: "Job management, sourcing, screening, interviews" },
                   { key: "integrity", label: "Integrity Evaluation", desc: "Background verification, risk assessment" },
-                  { key: "onboarding", label: "Employee Onboarding", desc: "Welcome, docs, IT provisioning, orientation" },
+                  { key: "onboarding", label: "Company Onboarding", desc: "Welcome, docs, IT provisioning, orientation" },
                   { key: "hr_management", label: "HR Management", desc: "Performance, training, payroll, relations" },
                 ].map((module) => (
                   <div key={module.key} className="flex items-center justify-between p-4 rounded-lg bg-black/20 border border-white/5">

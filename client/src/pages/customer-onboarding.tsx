@@ -241,7 +241,7 @@ export default function CustomerOnboarding() {
                     {[
                       { id: "recruitment", title: "Recruitment & Selection", desc: "Job Mgmt, Sourcing, Screening, Interviews", icon: UserPlus },
                       { id: "integrity", title: "Integrity Evaluation (IE)", desc: "Background Verification, Risk Assessment", icon: ShieldCheck },
-                      { id: "onboarding", title: "Employee Onboarding", desc: "Welcome, Docs, IT Provisioning, Orientation", icon: CheckCircle2 },
+                      { id: "onboarding", title: "Company Onboarding", desc: "Welcome, Docs, IT Provisioning, Orientation", icon: CheckCircle2 },
                       { id: "hr_management", title: "HR Management", desc: "Performance, Training, Payroll (Zoho), Relations", icon: LayoutDashboard },
                     ].map((module) => (
                       <div key={module.id} className="flex items-center justify-between p-4 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors">

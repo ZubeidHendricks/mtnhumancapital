@@ -98,7 +98,7 @@ export function Navbar() {
                 <Link href="/onboarding">
                   <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
                     <Building2 className="w-4 h-4 mr-2 text-green-400" />
-                    <span>Employee Onboarding</span>
+                    <span>Company Onboarding</span>
                   </DropdownMenuItem>
                 </Link>
               )}
@@ -154,12 +154,6 @@ export function Navbar() {
                 <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
                   <Briefcase className="w-4 h-4 mr-2 text-cyan-400" />
                   <span>Candidate Pipeline</span>
-                </DropdownMenuItem>
-              </Link>
-              <Link href="/executive-dashboard">
-                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
-                  <LayoutDashboard className="w-4 h-4 mr-2 text-emerald-400" />
-                  <span>Executive Dashboard</span>
                 </DropdownMenuItem>
               </Link>
             </DropdownMenuContent>
@@ -229,7 +223,7 @@ export function Navbar() {
               {isModuleEnabled("onboarding") && (
                 <Link href="/onboarding">
                   <Button variant="ghost" className="w-full justify-start mb-2 gap-2">
-                    <Building2 className="w-4 h-4" /> Employee Onboarding
+                    <Building2 className="w-4 h-4" /> Company Onboarding
                   </Button>
                 </Link>
               )}
@@ -261,11 +255,6 @@ export function Navbar() {
               <Link href="/candidate-pipeline">
                 <Button variant="ghost" className="w-full justify-start mb-2 gap-2">
                   <Briefcase className="w-4 h-4" /> Candidate Pipeline
-                </Button>
-              </Link>
-              <Link href="/executive-dashboard">
-                <Button variant="ghost" className="w-full justify-start mb-2 gap-2">
-                  <LayoutDashboard className="w-4 h-4" /> Executive Dashboard
                 </Button>
               </Link>
 
