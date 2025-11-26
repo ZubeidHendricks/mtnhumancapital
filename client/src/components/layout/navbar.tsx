@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Cpu, LayoutDashboard, Building2, Mic, Video, ChevronDown, UserSearch, Shield, Settings, Users, Briefcase, TrendingUp } from "lucide-react";
+import { Menu, X, Cpu, LayoutDashboard, Building2, Mic, Video, ChevronDown, UserSearch, Shield, Settings, Users, Briefcase, TrendingUp, FileText } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -141,13 +141,35 @@ export function Navbar() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Admin Link */}
-          <Link href="/admin-dashboard">
-            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary hover:bg-primary/10">
-              <Settings className="w-4 h-4 mr-1" />
-              Admin
-            </Button>
-          </Link>
+          {/* Admin Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-white hover:bg-white/5 gap-1">
+                <Settings className="w-4 h-4 mr-1" />
+                Admin <ChevronDown className="w-3 h-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-zinc-950 border-white/10 text-zinc-200">
+              <Link href="/admin-dashboard">
+                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                  <Settings className="w-4 h-4 mr-2 text-purple-400" />
+                  <span>System Administration</span>
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/tenant-requests">
+                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                  <FileText className="w-4 h-4 mr-2 text-blue-400" />
+                  <span>Tenant Requests</span>
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/persona-management">
+                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                  <Users className="w-4 h-4 mr-2 text-green-400" />
+                  <span>Persona Management</span>
+                </DropdownMenuItem>
+              </Link>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <Link href="/login">
             <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_20px_-5px_hsl(var(--primary)/0.5)]">
@@ -242,11 +264,25 @@ export function Navbar() {
 
               <div className="h-px bg-white/10 my-2" />
               
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-2">Admin</p>
               <Link href="/admin-dashboard">
                 <Button variant="ghost" className="w-full justify-start mb-2 gap-2">
-                  <Settings className="w-4 h-4" /> Admin Settings
+                  <Settings className="w-4 h-4" /> System Administration
                 </Button>
               </Link>
+              <Link href="/tenant-requests">
+                <Button variant="ghost" className="w-full justify-start mb-2 gap-2">
+                  <FileText className="w-4 h-4" /> Tenant Requests
+                </Button>
+              </Link>
+              <Link href="/persona-management">
+                <Button variant="ghost" className="w-full justify-start mb-2 gap-2">
+                  <Users className="w-4 h-4" /> Persona Management
+                </Button>
+              </Link>
+              
+              <div className="h-px bg-white/10 my-2" />
+              
               <Link href="/login">
                 <Button className="w-full bg-primary text-primary-foreground">Sign In</Button>
               </Link>
