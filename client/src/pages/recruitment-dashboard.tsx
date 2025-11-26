@@ -1,9 +1,16 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { candidateService } from "@/lib/api";
+import { candidateService, jobsService } from "@/lib/api";
 import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { 
   LineChart, 
   Line, 
@@ -106,9 +113,17 @@ const fitScoreData = [
 ];
 
 export default function RecruitmentDashboard() {
+  const [selectedModal, setSelectedModal] = useState<string | null>(null);
+
   const { data: candidates, isLoading: loadingCandidates } = useQuery({
     queryKey: ['candidates'],
     queryFn: candidateService.getAll,
+    retry: 1,
+  });
+
+  const { data: jobs, isLoading: loadingJobs } = useQuery({
+    queryKey: ['jobs'],
+    queryFn: jobsService.getAll,
     retry: 1,
   });
 
@@ -139,12 +154,17 @@ export default function RecruitmentDashboard() {
   const totalRevenue = monthlyData.reduce((sum, m) => sum + m.revenue, 0);
   const avgRevenuePerPlacement = totalRevenue / totalPlacements;
 
-  const totalJobHealth = jobHealthData.reduce((sum, j) => sum + j.value, 0);
+  // Filter active jobs only
+  const activeJobs = useMemo(() => 
+    jobs?.filter(j => j.status === "Active") || [], 
+    [jobs]
+  );
   
   // Calculate metrics from live data
   const totalCandidates = candidates?.length || 0;
   const totalShortlisted = candidates?.filter(c => c.stage === "Shortlisted").length || 0;
   const totalLost = candidates?.filter(c => c.stage === "Lost" || c.status === "Rejected").length || 0;
+  const totalHired = candidates?.filter(c => c.stage === "Hired").length || 0;
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -165,8 +185,11 @@ export default function RecruitmentDashboard() {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
-          <Card className="bg-[#0c5f7a] border-none">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+          <Card 
+            className="bg-[#0c5f7a] border-none cursor-pointer hover:bg-[#0d6f8f] transition-colors" 
+            onClick={() => setSelectedModal('revenue')}
+          >
             <CardHeader className="pb-2">
               <CardTitle className="text-xs font-normal text-white/80">Total Revenue YTD</CardTitle>
             </CardHeader>
@@ -175,16 +198,24 @@ export default function RecruitmentDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-[#0c5f7a] border-none">
+          <Card 
+            className="bg-[#0c5f7a] border-none cursor-pointer hover:bg-[#0d6f8f] transition-colors"
+            onClick={() => setSelectedModal('jobs')}
+          >
             <CardHeader className="pb-2">
               <CardTitle className="text-xs font-normal text-white/80">Active Job Searches</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{totalJobHealth}</div>
+              <div className="text-2xl font-bold text-white">
+                {loadingJobs ? "—" : activeJobs.length}
+              </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-[#0c5f7a] border-none">
+          <Card 
+            className="bg-[#0c5f7a] border-none cursor-pointer hover:bg-[#0d6f8f] transition-colors"
+            onClick={() => setSelectedModal('candidates')}
+          >
             <CardHeader className="pb-2">
               <CardTitle className="text-xs font-normal text-white/80">Total Candidates</CardTitle>
             </CardHeader>
@@ -193,7 +224,10 @@ export default function RecruitmentDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-[#0c5f7a] border-none">
+          <Card 
+            className="bg-[#0c5f7a] border-none cursor-pointer hover:bg-[#0d6f8f] transition-colors"
+            onClick={() => setSelectedModal('shortlisted')}
+          >
             <CardHeader className="pb-2">
               <CardTitle className="text-xs font-normal text-white/80">Total Shortlisted</CardTitle>
             </CardHeader>
@@ -202,16 +236,22 @@ export default function RecruitmentDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-[#0c5f7a] border-none">
+          <Card 
+            className="bg-[#0c5f7a] border-none cursor-pointer hover:bg-[#0d6f8f] transition-colors"
+            onClick={() => setSelectedModal('placements')}
+          >
             <CardHeader className="pb-2">
               <CardTitle className="text-xs font-normal text-white/80">Total Placements</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{totalPlacements}</div>
+              <div className="text-2xl font-bold text-white">{totalHired}</div>
             </CardContent>
           </Card>
 
-          <Card className="bg-[#0c5f7a] border-none">
+          <Card 
+            className="bg-[#0c5f7a] border-none cursor-pointer hover:bg-[#0d6f8f] transition-colors"
+            onClick={() => setSelectedModal('lost')}
+          >
             <CardHeader className="pb-2">
               <CardTitle className="text-xs font-normal text-white/80">Total Lost</CardTitle>
             </CardHeader>
@@ -275,7 +315,7 @@ export default function RecruitmentDashboard() {
                 Job Search Health
               </CardTitle>
               <CardDescription className="text-gray-400">
-                Distribution of job search statuses ({totalJobHealth} total jobs)
+                Distribution of job search statuses (illustrative data)
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -391,7 +431,7 @@ export default function RecruitmentDashboard() {
         </div>
 
         {/* Additional Analytics Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
           {/* Employer Type Share */}
           <Card className="bg-black/40 border-white/10">
             <CardHeader>
@@ -449,48 +489,185 @@ export default function RecruitmentDashboard() {
               </ResponsiveContainer>
             </CardContent>
           </Card>
+        </div>
+      </main>
 
-          {/* WhatsApp Integration */}
-          <Card className="bg-black/40 border-white/10">
-            <CardHeader>
-              <CardTitle>WhatsApp</CardTitle>
-              <CardDescription className="text-gray-400">
-                Messaging integration status
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="h-[350px] flex flex-col justify-center gap-4">
-                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-6 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <CheckCircle2 className="h-8 w-8 text-white" />
+      {/* Modals for detailed views */}
+      <Dialog open={selectedModal === 'revenue'} onOpenChange={() => setSelectedModal(null)}>
+        <DialogContent className="bg-black border-white/10 text-white max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Revenue Details</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Monthly revenue breakdown
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-4 text-sm font-semibold border-b border-white/10 pb-2">
+              <div>Month</div>
+              <div>Placements</div>
+              <div>Revenue</div>
+            </div>
+            {monthlyData.map((month) => (
+              <div key={month.month} className="grid grid-cols-3 gap-4 text-sm">
+                <div>{month.month}</div>
+                <div>{month.placements}</div>
+                <div>R{(month.revenue / 1000).toFixed(0)}k</div>
+              </div>
+            ))}
+            <div className="pt-4 border-t border-white/10 font-bold">
+              <div className="grid grid-cols-3 gap-4">
+                <div>Total</div>
+                <div>{totalPlacements}</div>
+                <div>R{(totalRevenue / 1000000).toFixed(2)}m</div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={selectedModal === 'jobs'} onOpenChange={() => setSelectedModal(null)}>
+        <DialogContent className="bg-black border-white/10 text-white max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Active Job Searches</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              {activeJobs.length} active job openings
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {activeJobs.length > 0 ? (
+              activeJobs.map((job) => (
+                <div key={job.id} className="p-4 bg-white/5 rounded-lg border border-white/10">
+                  <h3 className="font-semibold text-lg">{job.title}</h3>
+                  <p className="text-sm text-gray-400 mt-1">{job.location || 'Location not specified'}</p>
+                  <p className="text-sm text-gray-400">{job.department} • {job.status}</p>
+                  {job.description && (
+                    <p className="text-sm mt-2 line-clamp-2">{job.description}</p>
+                  )}
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-400 text-center py-8">No active jobs found</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={selectedModal === 'candidates'} onOpenChange={() => setSelectedModal(null)}>
+        <DialogContent className="bg-black border-white/10 text-white max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>All Candidates</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              {totalCandidates} candidates in the system
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {candidates && candidates.length > 0 ? (
+              candidates.map((candidate) => (
+                <div key={candidate.id} className="p-4 bg-white/5 rounded-lg border border-white/10">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-semibold">{candidate.fullName}</h3>
+                      <p className="text-sm text-gray-400">{candidate.email}</p>
+                      {candidate.phone && <p className="text-sm text-gray-400">{candidate.phone}</p>}
                     </div>
-                    <p className="text-green-400 font-semibold">Connected</p>
+                    <div className="text-right">
+                      <Badge className="bg-purple-500/20 text-purple-300">{candidate.stage}</Badge>
+                      <p className="text-xs text-gray-500 mt-1">{candidate.status}</p>
+                    </div>
                   </div>
                 </div>
+              ))
+            ) : (
+              <p className="text-gray-400 text-center py-8">No candidates found</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
-                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-6 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <CheckCircle2 className="h-8 w-8 text-white" />
-                    </div>
-                    <p className="text-green-400 font-semibold">Active</p>
+      <Dialog open={selectedModal === 'shortlisted'} onOpenChange={() => setSelectedModal(null)}>
+        <DialogContent className="bg-black border-white/10 text-white max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Shortlisted Candidates</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              {totalShortlisted} candidates in shortlist stage
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {candidates?.filter(c => c.stage === "Shortlisted").map((candidate) => (
+              <div key={candidate.id} className="p-4 bg-white/5 rounded-lg border border-white/10">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-semibold">{candidate.fullName}</h3>
+                    <p className="text-sm text-gray-400">{candidate.email}</p>
+                    {candidate.phone && <p className="text-sm text-gray-400">{candidate.phone}</p>}
                   </div>
+                  <Badge className="bg-blue-500/20 text-blue-300">{candidate.status}</Badge>
                 </div>
+              </div>
+            ))}
+            {totalShortlisted === 0 && (
+              <p className="text-gray-400 text-center py-8">No shortlisted candidates</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
-                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-6 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <CheckCircle2 className="h-8 w-8 text-white" />
-                    </div>
-                    <p className="text-green-400 font-semibold">Synced</p>
+      <Dialog open={selectedModal === 'placements'} onOpenChange={() => setSelectedModal(null)}>
+        <DialogContent className="bg-black border-white/10 text-white max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Successful Placements</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              {totalHired} candidates successfully hired
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {candidates?.filter(c => c.stage === "Hired").map((candidate) => (
+              <div key={candidate.id} className="p-4 bg-white/5 rounded-lg border border-white/10">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-semibold">{candidate.fullName}</h3>
+                    <p className="text-sm text-gray-400">{candidate.email}</p>
+                  </div>
+                  <Badge className="bg-green-500/20 text-green-300">Hired</Badge>
+                </div>
+              </div>
+            ))}
+            {totalHired === 0 && (
+              <p className="text-gray-400 text-center py-8">No placements yet</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={selectedModal === 'lost'} onOpenChange={() => setSelectedModal(null)}>
+        <DialogContent className="bg-black border-white/10 text-white max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Lost Candidates</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              {totalLost} candidates marked as lost or rejected
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {candidates?.filter(c => c.stage === "Lost" || c.status === "Rejected").map((candidate) => (
+              <div key={candidate.id} className="p-4 bg-white/5 rounded-lg border border-white/10">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-semibold">{candidate.fullName}</h3>
+                    <p className="text-sm text-gray-400">{candidate.email}</p>
+                  </div>
+                  <div className="text-right">
+                    <Badge className="bg-red-500/20 text-red-300">{candidate.stage}</Badge>
+                    <p className="text-xs text-gray-500 mt-1">{candidate.status}</p>
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </main>
+            ))}
+            {totalLost === 0 && (
+              <p className="text-gray-400 text-center py-8">No lost candidates</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
