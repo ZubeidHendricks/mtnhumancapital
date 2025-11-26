@@ -38,58 +38,58 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   
-  getAllJobs(): Promise<Job[]>;
-  getJob(id: string): Promise<Job | undefined>;
-  createJob(job: InsertJob): Promise<Job>;
-  updateJob(id: string, job: Partial<InsertJob>): Promise<Job | undefined>;
-  deleteJob(id: string): Promise<boolean>;
+  getAllJobs(tenantId: string): Promise<Job[]>;
+  getJob(tenantId: string, id: string): Promise<Job | undefined>;
+  createJob(tenantId: string, job: InsertJob): Promise<Job>;
+  updateJob(tenantId: string, id: string, job: Partial<InsertJob>): Promise<Job | undefined>;
+  deleteJob(tenantId: string, id: string): Promise<boolean>;
   
-  getAllCandidates(): Promise<Candidate[]>;
-  getCandidate(id: string): Promise<Candidate | undefined>;
-  createCandidate(candidate: InsertCandidate): Promise<Candidate>;
-  updateCandidate(id: string, candidate: Partial<InsertCandidate>): Promise<Candidate | undefined>;
-  deleteCandidate(id: string): Promise<boolean>;
+  getAllCandidates(tenantId: string): Promise<Candidate[]>;
+  getCandidate(tenantId: string, id: string): Promise<Candidate | undefined>;
+  createCandidate(tenantId: string, candidate: InsertCandidate): Promise<Candidate>;
+  updateCandidate(tenantId: string, id: string, candidate: Partial<InsertCandidate>): Promise<Candidate | undefined>;
+  deleteCandidate(tenantId: string, id: string): Promise<boolean>;
   
-  getAllIntegrityChecks(): Promise<IntegrityCheck[]>;
-  getIntegrityCheck(id: string): Promise<IntegrityCheck | undefined>;
-  getIntegrityChecksByCandidateId(candidateId: string): Promise<IntegrityCheck[]>;
-  getChecksNeedingReminders(now: Date): Promise<IntegrityCheck[]>;
-  createIntegrityCheck(check: InsertIntegrityCheck): Promise<IntegrityCheck>;
-  updateIntegrityCheck(id: string, check: Partial<InsertIntegrityCheck>): Promise<IntegrityCheck | undefined>;
-  deleteIntegrityCheck(id: string): Promise<boolean>;
+  getAllIntegrityChecks(tenantId: string): Promise<IntegrityCheck[]>;
+  getIntegrityCheck(tenantId: string, id: string): Promise<IntegrityCheck | undefined>;
+  getIntegrityChecksByCandidateId(tenantId: string, candidateId: string): Promise<IntegrityCheck[]>;
+  getChecksNeedingReminders(tenantId: string, now: Date): Promise<IntegrityCheck[]>;
+  createIntegrityCheck(tenantId: string, check: InsertIntegrityCheck): Promise<IntegrityCheck>;
+  updateIntegrityCheck(tenantId: string, id: string, check: Partial<InsertIntegrityCheck>): Promise<IntegrityCheck | undefined>;
+  deleteIntegrityCheck(tenantId: string, id: string): Promise<boolean>;
   
-  getAllRecruitmentSessions(): Promise<RecruitmentSession[]>;
-  getRecruitmentSession(id: string): Promise<RecruitmentSession | undefined>;
-  getRecruitmentSessionsByJobId(jobId: string): Promise<RecruitmentSession[]>;
-  createRecruitmentSession(session: InsertRecruitmentSession): Promise<RecruitmentSession>;
-  updateRecruitmentSession(id: string, session: Partial<InsertRecruitmentSession>): Promise<RecruitmentSession | undefined>;
-  deleteRecruitmentSession(id: string): Promise<boolean>;
-  getJobById(id: string): Promise<Job | undefined>;
-  getCandidateById(id: string): Promise<Candidate | undefined>;
+  getAllRecruitmentSessions(tenantId: string): Promise<RecruitmentSession[]>;
+  getRecruitmentSession(tenantId: string, id: string): Promise<RecruitmentSession | undefined>;
+  getRecruitmentSessionsByJobId(tenantId: string, jobId: string): Promise<RecruitmentSession[]>;
+  createRecruitmentSession(tenantId: string, session: InsertRecruitmentSession): Promise<RecruitmentSession>;
+  updateRecruitmentSession(tenantId: string, id: string, session: Partial<InsertRecruitmentSession>): Promise<RecruitmentSession | undefined>;
+  deleteRecruitmentSession(tenantId: string, id: string): Promise<boolean>;
+  getJobById(tenantId: string, id: string): Promise<Job | undefined>;
+  getCandidateById(tenantId: string, id: string): Promise<Candidate | undefined>;
   
   getAllSystemSettings(): Promise<SystemSetting[]>;
   getSystemSetting(key: string): Promise<SystemSetting | undefined>;
   upsertSystemSetting(key: string, value: string, category?: string, description?: string): Promise<SystemSetting>;
   deleteSystemSetting(key: string): Promise<boolean>;
   
-  getAllOnboardingWorkflows(): Promise<OnboardingWorkflow[]>;
-  getOnboardingWorkflow(id: string): Promise<OnboardingWorkflow | undefined>;
-  getOnboardingWorkflowByCandidateId(candidateId: string): Promise<OnboardingWorkflow | undefined>;
-  createOnboardingWorkflow(workflow: InsertOnboardingWorkflow): Promise<OnboardingWorkflow>;
-  updateOnboardingWorkflow(id: string, workflow: Partial<InsertOnboardingWorkflow>): Promise<OnboardingWorkflow | undefined>;
-  deleteOnboardingWorkflow(id: string): Promise<boolean>;
+  getAllOnboardingWorkflows(tenantId: string): Promise<OnboardingWorkflow[]>;
+  getOnboardingWorkflow(tenantId: string, id: string): Promise<OnboardingWorkflow | undefined>;
+  getOnboardingWorkflowByCandidateId(tenantId: string, candidateId: string): Promise<OnboardingWorkflow | undefined>;
+  createOnboardingWorkflow(tenantId: string, workflow: InsertOnboardingWorkflow): Promise<OnboardingWorkflow>;
+  updateOnboardingWorkflow(tenantId: string, id: string, workflow: Partial<InsertOnboardingWorkflow>): Promise<OnboardingWorkflow | undefined>;
+  deleteOnboardingWorkflow(tenantId: string, id: string): Promise<boolean>;
   
   getTenantConfig(): Promise<TenantConfig | undefined>;
   createTenantConfig(config: InsertTenantConfig): Promise<TenantConfig>;
   updateTenantConfig(id: string, config: Partial<InsertTenantConfig>): Promise<TenantConfig | undefined>;
   
-  getAllInterviews(): Promise<Interview[]>;
-  getInterview(id: string): Promise<Interview | undefined>;
-  getInterviewsByCandidateId(candidateId: string): Promise<Interview[]>;
-  getInterviewsByJobId(jobId: string): Promise<Interview[]>;
-  createInterview(interview: InsertInterview): Promise<Interview>;
-  updateInterview(id: string, interview: Partial<InsertInterview>): Promise<Interview | undefined>;
-  deleteInterview(id: string): Promise<boolean>;
+  getAllInterviews(tenantId: string): Promise<Interview[]>;
+  getInterview(tenantId: string, id: string): Promise<Interview | undefined>;
+  getInterviewsByCandidateId(tenantId: string, candidateId: string): Promise<Interview[]>;
+  getInterviewsByJobId(tenantId: string, jobId: string): Promise<Interview[]>;
+  createInterview(tenantId: string, interview: InsertInterview): Promise<Interview>;
+  updateInterview(tenantId: string, id: string, interview: Partial<InsertInterview>): Promise<Interview | undefined>;
+  deleteInterview(tenantId: string, id: string): Promise<boolean>;
   
   getInterviewAssessment(interviewId: string): Promise<InterviewAssessment | undefined>;
   createInterviewAssessment(assessment: InsertInterviewAssessment): Promise<InterviewAssessment>;
@@ -115,153 +115,154 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async getAllJobs(): Promise<Job[]> {
-    return await db.select().from(jobs).orderBy(desc(jobs.createdAt));
+  async getAllJobs(tenantId: string): Promise<Job[]> {
+    return await db.select().from(jobs).where(eq(jobs.tenantId, tenantId)).orderBy(desc(jobs.createdAt));
   }
 
-  async getJob(id: string): Promise<Job | undefined> {
-    const [job] = await db.select().from(jobs).where(eq(jobs.id, id));
+  async getJob(tenantId: string, id: string): Promise<Job | undefined> {
+    const [job] = await db.select().from(jobs).where(and(eq(jobs.id, id), eq(jobs.tenantId, tenantId)));
     return job || undefined;
   }
 
-  async createJob(insertJob: InsertJob): Promise<Job> {
+  async createJob(tenantId: string, insertJob: InsertJob): Promise<Job> {
     const [job] = await db
       .insert(jobs)
-      .values(insertJob)
+      .values({ ...insertJob, tenantId })
       .returning();
     return job;
   }
 
-  async updateJob(id: string, updates: Partial<InsertJob> & { requirementsEmbedding?: any }): Promise<Job | undefined> {
+  async updateJob(tenantId: string, id: string, updates: Partial<InsertJob> & { requirementsEmbedding?: any }): Promise<Job | undefined> {
     const [job] = await db
       .update(jobs)
       .set({ ...updates, updatedAt: new Date() })
-      .where(eq(jobs.id, id))
+      .where(and(eq(jobs.id, id), eq(jobs.tenantId, tenantId)))
       .returning();
     return job || undefined;
   }
 
-  async deleteJob(id: string): Promise<boolean> {
-    const result = await db.delete(jobs).where(eq(jobs.id, id));
+  async deleteJob(tenantId: string, id: string): Promise<boolean> {
+    const result = await db.delete(jobs).where(and(eq(jobs.id, id), eq(jobs.tenantId, tenantId)));
     return result.rowCount ? result.rowCount > 0 : false;
   }
 
-  async getAllCandidates(): Promise<Candidate[]> {
-    return await db.select().from(candidates).orderBy(desc(candidates.createdAt));
+  async getAllCandidates(tenantId: string): Promise<Candidate[]> {
+    return await db.select().from(candidates).where(eq(candidates.tenantId, tenantId)).orderBy(desc(candidates.createdAt));
   }
 
-  async getCandidate(id: string): Promise<Candidate | undefined> {
-    const [candidate] = await db.select().from(candidates).where(eq(candidates.id, id));
+  async getCandidate(tenantId: string, id: string): Promise<Candidate | undefined> {
+    const [candidate] = await db.select().from(candidates).where(and(eq(candidates.id, id), eq(candidates.tenantId, tenantId)));
     return candidate || undefined;
   }
 
-  async createCandidate(insertCandidate: InsertCandidate): Promise<Candidate> {
+  async createCandidate(tenantId: string, insertCandidate: InsertCandidate): Promise<Candidate> {
     const [candidate] = await db
       .insert(candidates)
-      .values(insertCandidate)
+      .values({ ...insertCandidate, tenantId })
       .returning();
     return candidate;
   }
 
-  async updateCandidate(id: string, updates: Partial<InsertCandidate>): Promise<Candidate | undefined> {
+  async updateCandidate(tenantId: string, id: string, updates: Partial<InsertCandidate>): Promise<Candidate | undefined> {
     const [candidate] = await db
       .update(candidates)
       .set({ ...updates, updatedAt: new Date() })
-      .where(eq(candidates.id, id))
+      .where(and(eq(candidates.id, id), eq(candidates.tenantId, tenantId)))
       .returning();
     return candidate || undefined;
   }
 
-  async deleteCandidate(id: string): Promise<boolean> {
-    const result = await db.delete(candidates).where(eq(candidates.id, id));
+  async deleteCandidate(tenantId: string, id: string): Promise<boolean> {
+    const result = await db.delete(candidates).where(and(eq(candidates.id, id), eq(candidates.tenantId, tenantId)));
     return result.rowCount ? result.rowCount > 0 : false;
   }
 
-  async getAllIntegrityChecks(): Promise<IntegrityCheck[]> {
-    return await db.select().from(integrityChecks).orderBy(desc(integrityChecks.createdAt));
+  async getAllIntegrityChecks(tenantId: string): Promise<IntegrityCheck[]> {
+    return await db.select().from(integrityChecks).where(eq(integrityChecks.tenantId, tenantId)).orderBy(desc(integrityChecks.createdAt));
   }
 
-  async getIntegrityCheck(id: string): Promise<IntegrityCheck | undefined> {
-    const [check] = await db.select().from(integrityChecks).where(eq(integrityChecks.id, id));
+  async getIntegrityCheck(tenantId: string, id: string): Promise<IntegrityCheck | undefined> {
+    const [check] = await db.select().from(integrityChecks).where(and(eq(integrityChecks.id, id), eq(integrityChecks.tenantId, tenantId)));
     return check || undefined;
   }
 
-  async getIntegrityChecksByCandidateId(candidateId: string): Promise<IntegrityCheck[]> {
-    return await db.select().from(integrityChecks).where(eq(integrityChecks.candidateId, candidateId)).orderBy(desc(integrityChecks.createdAt));
+  async getIntegrityChecksByCandidateId(tenantId: string, candidateId: string): Promise<IntegrityCheck[]> {
+    return await db.select().from(integrityChecks).where(and(eq(integrityChecks.candidateId, candidateId), eq(integrityChecks.tenantId, tenantId))).orderBy(desc(integrityChecks.createdAt));
   }
 
-  async getChecksNeedingReminders(now: Date): Promise<IntegrityCheck[]> {
+  async getChecksNeedingReminders(tenantId: string, now: Date): Promise<IntegrityCheck[]> {
     return await db.select().from(integrityChecks).where(
       and(
+        eq(integrityChecks.tenantId, tenantId),
         eq(integrityChecks.reminderEnabled, 1),
         lte(integrityChecks.nextReminderAt, now)
       )
     );
   }
 
-  async createIntegrityCheck(insertCheck: InsertIntegrityCheck): Promise<IntegrityCheck> {
+  async createIntegrityCheck(tenantId: string, insertCheck: InsertIntegrityCheck): Promise<IntegrityCheck> {
     const [check] = await db
       .insert(integrityChecks)
-      .values(insertCheck)
+      .values({ ...insertCheck, tenantId })
       .returning();
     return check;
   }
 
-  async updateIntegrityCheck(id: string, updates: Partial<InsertIntegrityCheck>): Promise<IntegrityCheck | undefined> {
+  async updateIntegrityCheck(tenantId: string, id: string, updates: Partial<InsertIntegrityCheck>): Promise<IntegrityCheck | undefined> {
     const [check] = await db
       .update(integrityChecks)
       .set({ ...updates, updatedAt: new Date() })
-      .where(eq(integrityChecks.id, id))
+      .where(and(eq(integrityChecks.id, id), eq(integrityChecks.tenantId, tenantId)))
       .returning();
     return check || undefined;
   }
 
-  async deleteIntegrityCheck(id: string): Promise<boolean> {
-    const result = await db.delete(integrityChecks).where(eq(integrityChecks.id, id));
+  async deleteIntegrityCheck(tenantId: string, id: string): Promise<boolean> {
+    const result = await db.delete(integrityChecks).where(and(eq(integrityChecks.id, id), eq(integrityChecks.tenantId, tenantId)));
     return result.rowCount ? result.rowCount > 0 : false;
   }
 
-  async getAllRecruitmentSessions(): Promise<RecruitmentSession[]> {
-    return await db.select().from(recruitmentSessions).orderBy(desc(recruitmentSessions.createdAt));
+  async getAllRecruitmentSessions(tenantId: string): Promise<RecruitmentSession[]> {
+    return await db.select().from(recruitmentSessions).where(eq(recruitmentSessions.tenantId, tenantId)).orderBy(desc(recruitmentSessions.createdAt));
   }
 
-  async getRecruitmentSession(id: string): Promise<RecruitmentSession | undefined> {
-    const [session] = await db.select().from(recruitmentSessions).where(eq(recruitmentSessions.id, id));
+  async getRecruitmentSession(tenantId: string, id: string): Promise<RecruitmentSession | undefined> {
+    const [session] = await db.select().from(recruitmentSessions).where(and(eq(recruitmentSessions.id, id), eq(recruitmentSessions.tenantId, tenantId)));
     return session || undefined;
   }
 
-  async getRecruitmentSessionsByJobId(jobId: string): Promise<RecruitmentSession[]> {
-    return await db.select().from(recruitmentSessions).where(eq(recruitmentSessions.jobId, jobId)).orderBy(desc(recruitmentSessions.createdAt));
+  async getRecruitmentSessionsByJobId(tenantId: string, jobId: string): Promise<RecruitmentSession[]> {
+    return await db.select().from(recruitmentSessions).where(and(eq(recruitmentSessions.jobId, jobId), eq(recruitmentSessions.tenantId, tenantId))).orderBy(desc(recruitmentSessions.createdAt));
   }
 
-  async createRecruitmentSession(insertSession: InsertRecruitmentSession): Promise<RecruitmentSession> {
+  async createRecruitmentSession(tenantId: string, insertSession: InsertRecruitmentSession): Promise<RecruitmentSession> {
     const [session] = await db
       .insert(recruitmentSessions)
-      .values(insertSession)
+      .values({ ...insertSession, tenantId })
       .returning();
     return session;
   }
 
-  async updateRecruitmentSession(id: string, updates: Partial<InsertRecruitmentSession>): Promise<RecruitmentSession | undefined> {
+  async updateRecruitmentSession(tenantId: string, id: string, updates: Partial<InsertRecruitmentSession>): Promise<RecruitmentSession | undefined> {
     const [session] = await db
       .update(recruitmentSessions)
       .set({ ...updates, updatedAt: new Date() })
-      .where(eq(recruitmentSessions.id, id))
+      .where(and(eq(recruitmentSessions.id, id), eq(recruitmentSessions.tenantId, tenantId)))
       .returning();
     return session || undefined;
   }
 
-  async deleteRecruitmentSession(id: string): Promise<boolean> {
-    const result = await db.delete(recruitmentSessions).where(eq(recruitmentSessions.id, id));
+  async deleteRecruitmentSession(tenantId: string, id: string): Promise<boolean> {
+    const result = await db.delete(recruitmentSessions).where(and(eq(recruitmentSessions.id, id), eq(recruitmentSessions.tenantId, tenantId)));
     return result.rowCount ? result.rowCount > 0 : false;
   }
 
-  async getJobById(id: string): Promise<Job | undefined> {
-    return this.getJob(id);
+  async getJobById(tenantId: string, id: string): Promise<Job | undefined> {
+    return this.getJob(tenantId, id);
   }
 
-  async getCandidateById(id: string): Promise<Candidate | undefined> {
-    return this.getCandidate(id);
+  async getCandidateById(tenantId: string, id: string): Promise<Candidate | undefined> {
+    return this.getCandidate(tenantId, id);
   }
 
   async getAllSystemSettings(): Promise<SystemSetting[]> {
@@ -297,33 +298,33 @@ export class DatabaseStorage implements IStorage {
     return result.rowCount ? result.rowCount > 0 : false;
   }
 
-  async getAllOnboardingWorkflows(): Promise<OnboardingWorkflow[]> {
-    return await db.select().from(onboardingWorkflows).orderBy(desc(onboardingWorkflows.createdAt));
+  async getAllOnboardingWorkflows(tenantId: string): Promise<OnboardingWorkflow[]> {
+    return await db.select().from(onboardingWorkflows).where(eq(onboardingWorkflows.tenantId, tenantId)).orderBy(desc(onboardingWorkflows.createdAt));
   }
 
-  async getOnboardingWorkflow(id: string): Promise<OnboardingWorkflow | undefined> {
-    const [workflow] = await db.select().from(onboardingWorkflows).where(eq(onboardingWorkflows.id, id));
+  async getOnboardingWorkflow(tenantId: string, id: string): Promise<OnboardingWorkflow | undefined> {
+    const [workflow] = await db.select().from(onboardingWorkflows).where(and(eq(onboardingWorkflows.id, id), eq(onboardingWorkflows.tenantId, tenantId)));
     return workflow || undefined;
   }
 
-  async getOnboardingWorkflowByCandidateId(candidateId: string): Promise<OnboardingWorkflow | undefined> {
-    const [workflow] = await db.select().from(onboardingWorkflows).where(eq(onboardingWorkflows.candidateId, candidateId)).orderBy(desc(onboardingWorkflows.createdAt));
+  async getOnboardingWorkflowByCandidateId(tenantId: string, candidateId: string): Promise<OnboardingWorkflow | undefined> {
+    const [workflow] = await db.select().from(onboardingWorkflows).where(and(eq(onboardingWorkflows.candidateId, candidateId), eq(onboardingWorkflows.tenantId, tenantId))).orderBy(desc(onboardingWorkflows.createdAt));
     return workflow || undefined;
   }
 
-  async createOnboardingWorkflow(insertWorkflow: InsertOnboardingWorkflow): Promise<OnboardingWorkflow> {
+  async createOnboardingWorkflow(tenantId: string, insertWorkflow: InsertOnboardingWorkflow): Promise<OnboardingWorkflow> {
     const cleanedWorkflow = Object.fromEntries(
       Object.entries(insertWorkflow).filter(([_, v]) => v !== null && v !== undefined)
     ) as any;
     
     const [workflow] = await db
       .insert(onboardingWorkflows)
-      .values(cleanedWorkflow)
+      .values({ ...cleanedWorkflow, tenantId })
       .returning();
     return workflow;
   }
 
-  async updateOnboardingWorkflow(id: string, updates: Partial<InsertOnboardingWorkflow>): Promise<OnboardingWorkflow | undefined> {
+  async updateOnboardingWorkflow(tenantId: string, id: string, updates: Partial<InsertOnboardingWorkflow>): Promise<OnboardingWorkflow | undefined> {
     const cleanedUpdates = Object.fromEntries(
       Object.entries(updates).filter(([_, v]) => v !== null && v !== undefined)
     ) as any;
@@ -331,13 +332,13 @@ export class DatabaseStorage implements IStorage {
     const [workflow] = await db
       .update(onboardingWorkflows)
       .set({ ...cleanedUpdates, updatedAt: new Date() })
-      .where(eq(onboardingWorkflows.id, id))
+      .where(and(eq(onboardingWorkflows.id, id), eq(onboardingWorkflows.tenantId, tenantId)))
       .returning();
     return workflow || undefined;
   }
 
-  async deleteOnboardingWorkflow(id: string): Promise<boolean> {
-    const result = await db.delete(onboardingWorkflows).where(eq(onboardingWorkflows.id, id));
+  async deleteOnboardingWorkflow(tenantId: string, id: string): Promise<boolean> {
+    const result = await db.delete(onboardingWorkflows).where(and(eq(onboardingWorkflows.id, id), eq(onboardingWorkflows.tenantId, tenantId)));
     return result.rowCount ? result.rowCount > 0 : false;
   }
 
@@ -363,42 +364,42 @@ export class DatabaseStorage implements IStorage {
     return config || undefined;
   }
 
-  async getAllInterviews(): Promise<Interview[]> {
-    return await db.select().from(interviews).orderBy(desc(interviews.createdAt));
+  async getAllInterviews(tenantId: string): Promise<Interview[]> {
+    return await db.select().from(interviews).where(eq(interviews.tenantId, tenantId)).orderBy(desc(interviews.createdAt));
   }
 
-  async getInterview(id: string): Promise<Interview | undefined> {
-    const [interview] = await db.select().from(interviews).where(eq(interviews.id, id));
+  async getInterview(tenantId: string, id: string): Promise<Interview | undefined> {
+    const [interview] = await db.select().from(interviews).where(and(eq(interviews.id, id), eq(interviews.tenantId, tenantId)));
     return interview || undefined;
   }
 
-  async getInterviewsByCandidateId(candidateId: string): Promise<Interview[]> {
-    return await db.select().from(interviews).where(eq(interviews.candidateId, candidateId)).orderBy(desc(interviews.createdAt));
+  async getInterviewsByCandidateId(tenantId: string, candidateId: string): Promise<Interview[]> {
+    return await db.select().from(interviews).where(and(eq(interviews.candidateId, candidateId), eq(interviews.tenantId, tenantId))).orderBy(desc(interviews.createdAt));
   }
 
-  async getInterviewsByJobId(jobId: string): Promise<Interview[]> {
-    return await db.select().from(interviews).where(eq(interviews.jobId, jobId)).orderBy(desc(interviews.createdAt));
+  async getInterviewsByJobId(tenantId: string, jobId: string): Promise<Interview[]> {
+    return await db.select().from(interviews).where(and(eq(interviews.jobId, jobId), eq(interviews.tenantId, tenantId))).orderBy(desc(interviews.createdAt));
   }
 
-  async createInterview(insertInterview: InsertInterview): Promise<Interview> {
+  async createInterview(tenantId: string, insertInterview: InsertInterview): Promise<Interview> {
     const [interview] = await db
       .insert(interviews)
-      .values(insertInterview)
+      .values({ ...insertInterview, tenantId })
       .returning();
     return interview;
   }
 
-  async updateInterview(id: string, updates: Partial<InsertInterview>): Promise<Interview | undefined> {
+  async updateInterview(tenantId: string, id: string, updates: Partial<InsertInterview>): Promise<Interview | undefined> {
     const [interview] = await db
       .update(interviews)
       .set({ ...updates, updatedAt: new Date() })
-      .where(eq(interviews.id, id))
+      .where(and(eq(interviews.id, id), eq(interviews.tenantId, tenantId)))
       .returning();
     return interview || undefined;
   }
 
-  async deleteInterview(id: string): Promise<boolean> {
-    const result = await db.delete(interviews).where(eq(interviews.id, id));
+  async deleteInterview(tenantId: string, id: string): Promise<boolean> {
+    const result = await db.delete(interviews).where(and(eq(interviews.id, id), eq(interviews.tenantId, tenantId)));
     return result.rowCount ? result.rowCount > 0 : false;
   }
 
