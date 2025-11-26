@@ -1063,6 +1063,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get current tenant based on subdomain (attached by middleware)
+  app.get("/api/tenant/current", async (req, res) => {
+    try {
+      if (!req.tenant) {
+        return res.status(404).json({ message: "No tenant found for this domain" });
+      }
+      res.json(req.tenant);
+    } catch (error) {
+      console.error("Error fetching current tenant:", error);
+      res.status(500).json({ message: "Failed to fetch tenant" });
+    }
+  });
+
   app.get("/api/env-status", async (req, res) => {
     try {
       const requiredSecrets = [
