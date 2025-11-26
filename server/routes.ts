@@ -856,7 +856,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const orchestrator = new IntegrityOrchestrator(storage);
       
       // Start execution in background (don't await)
-      orchestrator.executeIntegrityCheck(checkId, check.candidateId)
+      orchestrator.executeIntegrityCheck(req.tenant.id, checkId, check.candidateId)
         .catch(error => {
           console.error(`Error executing integrity check ${checkId}:`, error);
           storage.updateIntegrityCheck(req.tenant.id, checkId, {
@@ -889,7 +889,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { ReminderService } = await import("./reminder-service");
       const reminderService = new ReminderService(storage);
       
-      await reminderService.sendReminder(req.params.id);
+      await reminderService.sendReminder(req.tenant.id, req.params.id);
       res.json({ message: "Reminder sent successfully" });
     } catch (error) {
       console.error("Error sending reminder:", error);
@@ -913,7 +913,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const { ReminderService } = await import("./reminder-service");
       const reminderService = new ReminderService(storage);
-      await reminderService.configureReminder(req.params.id, config);
+      await reminderService.configureReminder(req.tenant.id, req.params.id, config);
       
       const check = await storage.getIntegrityCheck(req.tenant.id, req.params.id);
       res.json(check);
@@ -923,13 +923,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/reminders/check-all", async (req, res) => {
+  // Scoped to current tenant only - triggers reminder checks for this tenant's integrity checks
+  // Background job in index.ts runs checkAndSendReminders() for ALL tenants hourly
+  app.post("/api/reminders/check-current-tenant", async (req, res) => {
     try {
       const { ReminderService} = await import("./reminder-service");
       const reminderService = new ReminderService(storage);
+      const now = new Date();
       
-      await reminderService.checkAndSendReminders();
-      res.json({ message: "Reminders checked and sent successfully" });
+      // Get reminders only for current tenant
+      const checksNeedingReminders = await storage.getChecksNeedingReminders(req.tenant.id, now);
+      
+      for (const check of checksNeedingReminders) {
+        try {
+          await reminderService.sendReminder(req.tenant.id, check.id);
+        } catch (error) {
+          console.error(`Failed to send reminder for check ${check.id}:`, error);
+        }
+      }
+      
+      res.json({ 
+        message: `Reminders checked for tenant ${req.tenant.companyName}`,
+        remindersSent: checksNeedingReminders.length 
+      });
     } catch (error) {
       console.error("Error checking reminders:", error);
       res.status(500).json({ message: "Failed to check reminders" });
@@ -1152,7 +1168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const orchestrator = new RecruitmentOrchestrator(storage);
       
-      orchestrator.executeRecruitment(session.id, jobId, {
+      orchestrator.executeRecruitment(req.tenant.id, session.id, jobId, {
         maxCandidates: maxCandidates || 20,
         minMatchScore: minMatchScore || 60,
       })
@@ -1175,7 +1191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { OnboardingOrchestrator } = await import("./onboarding-orchestrator");
       const orchestrator = new OnboardingOrchestrator(storage);
       
-      const workflow = await orchestrator.startOnboarding(req.params.candidateId);
+      const workflow = await orchestrator.startOnboarding(req.tenant.id, req.params.candidateId);
       
       res.status(201).json({
         message: "Onboarding workflow started",
@@ -1192,7 +1208,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { OnboardingOrchestrator } = await import("./onboarding-orchestrator");
       const orchestrator = new OnboardingOrchestrator(storage);
       
-      const workflow = await orchestrator.getWorkflowByCandidateId(req.params.candidateId);
+      const workflow = await orchestrator.getWorkflowByCandidateId(req.tenant.id, req.params.candidateId);
       
       res.json(workflow || null);
     } catch (error) {

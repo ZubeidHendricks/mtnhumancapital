@@ -18,6 +18,7 @@ export class RecruitmentOrchestrator {
   }
 
   async executeRecruitment(
+    tenantId: string,
     sessionId: string,
     jobId: string,
     options: {
@@ -31,12 +32,12 @@ export class RecruitmentOrchestrator {
 
     try {
       // Step 1: Get job details
-      const job = await this.storage.getJobById(jobId);
+      const job = await this.storage.getJobById(tenantId, jobId);
       if (!job) {
         throw new Error(`Job ${jobId} not found`);
       }
 
-      await this.updateSession(sessionId, {
+      await this.updateSession(tenantId, sessionId, {
         status: "Running",
         results: { step: "analyzing_job" },
       });
@@ -45,7 +46,7 @@ export class RecruitmentOrchestrator {
       console.log(`Analyzing job requirements...`);
       const requirements = await recruitmentAgents.analyzeJobRequirements(job);
 
-      await this.updateSession(sessionId, {
+      await this.updateSession(tenantId, sessionId, {
         searchQuery: requirements.searchQuery,
         searchCriteria: requirements as any,
         results: { step: "searching_candidates", requirements },
@@ -55,7 +56,7 @@ export class RecruitmentOrchestrator {
       console.log(`Searching for candidates...`);
       const candidateProfiles = await recruitmentAgents.searchCandidates(requirements, maxCandidates);
 
-      await this.updateSession(sessionId, {
+      await this.updateSession(tenantId, sessionId, {
         candidatesFound: candidateProfiles.length,
         results: { step: "ranking_candidates", candidatesFound: candidateProfiles.length },
       });
@@ -97,7 +98,7 @@ export class RecruitmentOrchestrator {
               },
             };
 
-            await this.storage.createCandidate(candidateData);
+            await this.storage.createCandidate(tenantId, candidateData);
             addedCount++;
           }
         } catch (error) {
@@ -106,7 +107,7 @@ export class RecruitmentOrchestrator {
       }
 
       // Step 5: Finalize session
-      const finalSession = await this.updateSession(sessionId, {
+      const finalSession = await this.updateSession(tenantId, sessionId, {
         status: "Completed",
         candidatesAdded: addedCount,
         results: {
@@ -130,7 +131,7 @@ export class RecruitmentOrchestrator {
     } catch (error) {
       console.error(`Recruitment session ${sessionId} failed:`, error);
       
-      await this.updateSession(sessionId, {
+      await this.updateSession(tenantId, sessionId, {
         status: "Failed",
         results: {
           step: "failed",
@@ -142,7 +143,7 @@ export class RecruitmentOrchestrator {
     }
   }
 
-  private async updateSession(sessionId: string, updates: any): Promise<RecruitmentSession | null> {
-    return await this.storage.updateRecruitmentSession(sessionId, updates);
+  private async updateSession(tenantId: string, sessionId: string, updates: any): Promise<RecruitmentSession | undefined> {
+    return await this.storage.updateRecruitmentSession(tenantId, sessionId, updates);
   }
 }

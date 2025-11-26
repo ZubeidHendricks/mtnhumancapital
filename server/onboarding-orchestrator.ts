@@ -36,13 +36,13 @@ export class OnboardingOrchestrator {
     }
   }
 
-  async startOnboarding(candidateId: string, restart: boolean = false): Promise<OnboardingWorkflow> {
-    const candidate = await this.storage.getCandidate(candidateId);
+  async startOnboarding(tenantId: string, candidateId: string, restart: boolean = false): Promise<OnboardingWorkflow> {
+    const candidate = await this.storage.getCandidate(tenantId, candidateId);
     if (!candidate) {
       throw new Error("Candidate not found");
     }
 
-    const existing = await this.storage.getOnboardingWorkflowByCandidateId(candidateId);
+    const existing = await this.storage.getOnboardingWorkflowByCandidateId(tenantId, candidateId);
     
     if (existing && !restart) {
       if (existing.status === "In Progress") {
@@ -55,7 +55,7 @@ export class OnboardingOrchestrator {
     }
 
     if (restart && existing) {
-      await this.storage.deleteOnboardingWorkflow(existing.id);
+      await this.storage.deleteOnboardingWorkflow(tenantId, existing.id);
     }
 
     const initialTasks: OnboardingTask[] = [
@@ -89,7 +89,7 @@ export class OnboardingOrchestrator {
       }
     ];
 
-    const workflow = await this.storage.createOnboardingWorkflow({
+    const workflow = await this.storage.createOnboardingWorkflow(tenantId, {
       candidateId,
       status: "In Progress",
       currentStep: "welcome",
@@ -98,7 +98,7 @@ export class OnboardingOrchestrator {
       provisioningData: {} as any,
     });
 
-    this.processWorkflow(workflow.id, candidate).catch(error => {
+    this.processWorkflow(tenantId, workflow.id, candidate).catch(error => {
       console.error("Error processing onboarding workflow:", error);
     });
 
@@ -111,28 +111,28 @@ export class OnboardingOrchestrator {
     return workflow;
   }
 
-  private async processWorkflow(workflowId: string, candidate: Candidate): Promise<void> {
+  private async processWorkflow(tenantId: string, workflowId: string, candidate: Candidate): Promise<void> {
     try {
-      const workflow = await this.storage.getOnboardingWorkflow(workflowId);
+      const workflow = await this.storage.getOnboardingWorkflow(tenantId, workflowId);
       if (!workflow) return;
 
       const tasks = (workflow.tasks as OnboardingTask[]) || [];
       const documents: OnboardingDocument[] = (workflow.documents as OnboardingDocument[]) || [];
 
-      await this.processWelcomePackage(workflowId, candidate, tasks, documents);
+      await this.processWelcomePackage(tenantId, workflowId, candidate, tasks, documents);
       await new Promise(r => setTimeout(r, 1000));
       
-      await this.processPaperwork(workflowId, candidate, tasks, documents);
+      await this.processPaperwork(tenantId, workflowId, candidate, tasks, documents);
       await new Promise(r => setTimeout(r, 1000));
       
-      const provisioningCredentials = await this.processProvisioning(workflowId, candidate, tasks, documents);
+      const provisioningCredentials = await this.processProvisioning(tenantId, workflowId, candidate, tasks, documents);
       await this.notifyITAfterProvisioning(candidate, provisioningCredentials || {});
       await new Promise(r => setTimeout(r, 1000));
       
-      const orientationResult = await this.processOrientation(workflowId, candidate, tasks, documents);
+      const orientationResult = await this.processOrientation(tenantId, workflowId, candidate, tasks, documents);
 
       const finalTasks = tasks.map(t => ({ ...t, status: "completed" as const }));
-      await this.storage.updateOnboardingWorkflow(workflowId, {
+      await this.storage.updateOnboardingWorkflow(tenantId, workflowId, {
         tasks: finalTasks as any,
         status: "Completed",
         completedAt: new Date(),
@@ -145,13 +145,14 @@ export class OnboardingOrchestrator {
       );
     } catch (error) {
       console.error("Workflow processing error:", error);
-      await this.storage.updateOnboardingWorkflow(workflowId, {
+      await this.storage.updateOnboardingWorkflow(tenantId, workflowId, {
         status: "Failed",
       });
     }
   }
 
   private async processWelcomePackage(
+    tenantId: string,
     workflowId: string,
     candidate: Candidate,
     tasks: OnboardingTask[],
@@ -161,7 +162,7 @@ export class OnboardingOrchestrator {
     if (taskIndex === -1) return;
 
     tasks[taskIndex].status = "processing";
-    await this.storage.updateOnboardingWorkflow(workflowId, {
+    await this.storage.updateOnboardingWorkflow(tenantId, workflowId, {
       currentStep: "welcome",
       tasks: tasks as any,
     });
@@ -213,13 +214,14 @@ export class OnboardingOrchestrator {
     tasks[taskIndex].status = "completed";
     tasks[taskIndex].result = { message: welcomeMessage, aiGenerated };
 
-    await this.storage.updateOnboardingWorkflow(workflowId, {
+    await this.storage.updateOnboardingWorkflow(tenantId, workflowId, {
       tasks: tasks as any,
       documents: documents as any,
     });
   }
 
   private async processPaperwork(
+    tenantId: string,
     workflowId: string,
     candidate: Candidate,
     tasks: OnboardingTask[],
@@ -229,7 +231,7 @@ export class OnboardingOrchestrator {
     if (taskIndex === -1) return;
 
     tasks[taskIndex].status = "processing";
-    await this.storage.updateOnboardingWorkflow(workflowId, {
+    await this.storage.updateOnboardingWorkflow(tenantId, workflowId, {
       currentStep: "paperwork",
       tasks: tasks as any,
     });
@@ -260,13 +262,14 @@ export class OnboardingOrchestrator {
 
     tasks[taskIndex].status = "completed";
 
-    await this.storage.updateOnboardingWorkflow(workflowId, {
+    await this.storage.updateOnboardingWorkflow(tenantId, workflowId, {
       tasks: tasks as any,
       documents: documents as any,
     });
   }
 
   private async processProvisioning(
+    tenantId: string,
     workflowId: string,
     candidate: Candidate,
     tasks: OnboardingTask[],
@@ -276,7 +279,7 @@ export class OnboardingOrchestrator {
     if (taskIndex === -1) return;
 
     tasks[taskIndex].status = "processing";
-    await this.storage.updateOnboardingWorkflow(workflowId, {
+    await this.storage.updateOnboardingWorkflow(tenantId, workflowId, {
       currentStep: "provisioning",
       tasks: tasks as any,
     });
@@ -314,7 +317,7 @@ export class OnboardingOrchestrator {
         console.error("AI provisioning generation failed, using fallback:", error);
         tasks[taskIndex].status = "failed";
         tasks[taskIndex].result = { error: "AI generation failed", fallback: credentials };
-        await this.storage.updateOnboardingWorkflow(workflowId, {
+        await this.storage.updateOnboardingWorkflow(tenantId, workflowId, {
           tasks: tasks as any,
         });
         return credentials;
@@ -341,7 +344,7 @@ export class OnboardingOrchestrator {
     tasks[taskIndex].status = "completed";
     tasks[taskIndex].result = credentials;
 
-    await this.storage.updateOnboardingWorkflow(workflowId, {
+    await this.storage.updateOnboardingWorkflow(tenantId, workflowId, {
       tasks: tasks as any,
       documents: documents as any,
       provisioningData: credentials as any,
@@ -363,6 +366,7 @@ export class OnboardingOrchestrator {
   }
 
   private async processOrientation(
+    tenantId: string,
     workflowId: string,
     candidate: Candidate,
     tasks: OnboardingTask[],
@@ -372,7 +376,7 @@ export class OnboardingOrchestrator {
     if (taskIndex === -1) return;
 
     tasks[taskIndex].status = "processing";
-    await this.storage.updateOnboardingWorkflow(workflowId, {
+    await this.storage.updateOnboardingWorkflow(tenantId, workflowId, {
       currentStep: "orientation",
       tasks: tasks as any,
     });
@@ -390,7 +394,7 @@ export class OnboardingOrchestrator {
     tasks[taskIndex].status = "completed";
     tasks[taskIndex].result = result;
 
-    await this.storage.updateOnboardingWorkflow(workflowId, {
+    await this.storage.updateOnboardingWorkflow(tenantId, workflowId, {
       tasks: tasks as any,
       documents: documents as any,
     });
@@ -398,11 +402,11 @@ export class OnboardingOrchestrator {
     return result;
   }
 
-  async getWorkflowStatus(workflowId: string): Promise<OnboardingWorkflow | undefined> {
-    return await this.storage.getOnboardingWorkflow(workflowId);
+  async getWorkflowStatus(tenantId: string, workflowId: string): Promise<OnboardingWorkflow | undefined> {
+    return await this.storage.getOnboardingWorkflow(tenantId, workflowId);
   }
 
-  async getWorkflowByCandidateId(candidateId: string): Promise<OnboardingWorkflow | undefined> {
-    return await this.storage.getOnboardingWorkflowByCandidateId(candidateId);
+  async getWorkflowByCandidateId(tenantId: string, candidateId: string): Promise<OnboardingWorkflow | undefined> {
+    return await this.storage.getOnboardingWorkflowByCandidateId(tenantId, candidateId);
   }
 }

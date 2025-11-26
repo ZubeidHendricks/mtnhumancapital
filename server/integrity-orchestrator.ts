@@ -29,6 +29,7 @@ export class IntegrityOrchestrator {
   }
 
   async executeIntegrityCheck(
+    tenantId: string,
     checkId: string,
     candidateId: string,
     onProgress?: (progress: OrchestrationProgress) => void
@@ -36,7 +37,7 @@ export class IntegrityOrchestrator {
     console.log(`Starting integrity check ${checkId} for candidate ${candidateId}`);
 
     // Get candidate details
-    const candidate = await this.storage.getCandidateById(candidateId);
+    const candidate = await this.storage.getCandidateById(tenantId, candidateId);
     if (!candidate) {
       throw new Error(`Candidate ${candidateId} not found`);
     }
@@ -64,7 +65,7 @@ export class IntegrityOrchestrator {
         timestamp: new Date().toISOString(),
       };
       
-      await this.storage.updateIntegrityCheck(checkId, {
+      await this.storage.updateIntegrityCheck(tenantId, checkId, {
         status: "in_progress",
         result: `Running ${agentType} check...`,
         findings: { 
@@ -110,7 +111,7 @@ export class IntegrityOrchestrator {
         overallRiskScore += result.riskScore / this.agentSequence.length;
 
         // Update check with intermediate results (deep merge, preserve progress)
-        await this.storage.updateIntegrityCheck(checkId, {
+        await this.storage.updateIntegrityCheck(tenantId, checkId, {
           findings: {
             ...allFindings,
             _progress: {
@@ -140,7 +141,7 @@ export class IntegrityOrchestrator {
         };
 
         // Update database with error (preserve progress)
-        await this.storage.updateIntegrityCheck(checkId, {
+        await this.storage.updateIntegrityCheck(tenantId, checkId, {
           findings: {
             ...allFindings,
             _progress: {
@@ -163,7 +164,7 @@ export class IntegrityOrchestrator {
     const finalFindings = { ...allFindings };
     delete (finalFindings as any)._progress;
     
-    const finalCheck = await this.storage.updateIntegrityCheck(checkId, {
+    const finalCheck = await this.storage.updateIntegrityCheck(tenantId, checkId, {
       status: "Completed",
       result: this.generateOverallAssessment(finalFindings, overallRiskScore),
       riskScore: Math.round(overallRiskScore),

@@ -17,25 +17,39 @@ export class ReminderService {
   async checkAndSendReminders(): Promise<void> {
     const now = new Date();
     
-    // Get all active integrity checks that need reminders
-    const checksNeedingReminders = await this.storage.getChecksNeedingReminders(now);
+    // Get ALL tenants to process reminders for each
+    const allTenants = await this.storage.getAllTenantConfigs();
+    if (allTenants.length === 0) {
+      console.warn('No tenant configs found');
+      return;
+    }
     
-    for (const check of checksNeedingReminders) {
+    // Iterate through each tenant and check reminders
+    for (const tenant of allTenants) {
       try {
-        await this.sendReminder(check.id);
+        // Get active integrity checks that need reminders for this tenant
+        const checksNeedingReminders = await this.storage.getChecksNeedingReminders(tenant.id, now);
+        
+        for (const check of checksNeedingReminders) {
+          try {
+            await this.sendReminder(tenant.id, check.id);
+          } catch (error) {
+            console.error(`[Tenant ${tenant.companyName}] Failed to send reminder for check ${check.id}:`, error);
+          }
+        }
       } catch (error) {
-        console.error(`Failed to send reminder for check ${check.id}:`, error);
+        console.error(`[Tenant ${tenant.companyName}] Failed to process reminders:`, error);
       }
     }
   }
 
-  async sendReminder(checkId: string): Promise<void> {
-    const check = await this.storage.getIntegrityCheck(checkId);
+  async sendReminder(tenantId: string, checkId: string): Promise<void> {
+    const check = await this.storage.getIntegrityCheck(tenantId, checkId);
     if (!check) {
       throw new Error(`Check ${checkId} not found`);
     }
 
-    const candidate = await this.storage.getCandidateById(check.candidateId);
+    const candidate = await this.storage.getCandidateById(tenantId, check.candidateId);
     if (!candidate) {
       throw new Error(`Candidate ${check.candidateId} not found`);
     }
@@ -60,7 +74,7 @@ export class ReminderService {
 
     if (missingDocuments.length === 0) {
       // No missing documents, disable reminders
-      await this.storage.updateIntegrityCheck(checkId, {
+      await this.storage.updateIntegrityCheck(tenantId, checkId, {
         reminderEnabled: 0,
       });
       return;
@@ -81,7 +95,7 @@ export class ReminderService {
       : 24; // Safe default
     const nextReminderAt = new Date(now.getTime() + intervalHours * 60 * 60 * 1000);
 
-    await this.storage.updateIntegrityCheck(checkId, {
+    await this.storage.updateIntegrityCheck(tenantId, checkId, {
       remindersSent: (check.remindersSent || 0) + 1,
       lastReminderAt: now,
       nextReminderAt: nextReminderAt,
@@ -174,8 +188,8 @@ Reminders sent: ${(check.remindersSent || 0) + 1}`;
     console.log(message);
   }
 
-  async configureReminder(checkId: string, config: Partial<ReminderConfig>): Promise<void> {
-    const check = await this.storage.getIntegrityCheck(checkId);
+  async configureReminder(tenantId: string, checkId: string, config: Partial<ReminderConfig>): Promise<void> {
+    const check = await this.storage.getIntegrityCheck(tenantId, checkId);
     if (!check) {
       throw new Error(`Check ${checkId} not found`);
     }
@@ -196,7 +210,7 @@ Reminders sent: ${(check.remindersSent || 0) + 1}`;
       }
     }
 
-    await this.storage.updateIntegrityCheck(checkId, updates);
+    await this.storage.updateIntegrityCheck(tenantId, checkId, updates);
 
     // Recalculate next reminder time if enabled or interval changed
     const shouldReschedule = config.enabled === true || 
@@ -207,7 +221,7 @@ Reminders sent: ${(check.remindersSent || 0) + 1}`;
       const now = new Date();
       const nextReminderAt = new Date(now.getTime() + currentInterval * 60 * 60 * 1000);
       
-      await this.storage.updateIntegrityCheck(checkId, {
+      await this.storage.updateIntegrityCheck(tenantId, checkId, {
         nextReminderAt: nextReminderAt,
       });
     }

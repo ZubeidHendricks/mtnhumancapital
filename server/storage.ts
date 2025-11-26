@@ -80,6 +80,7 @@ export interface IStorage {
   deleteOnboardingWorkflow(tenantId: string, id: string): Promise<boolean>;
   
   getTenantConfig(): Promise<TenantConfig | undefined>;
+  getAllTenantConfigs(): Promise<TenantConfig[]>;
   createTenantConfig(config: InsertTenantConfig): Promise<TenantConfig>;
   updateTenantConfig(id: string, config: Partial<InsertTenantConfig>): Promise<TenantConfig | undefined>;
   
@@ -91,9 +92,9 @@ export interface IStorage {
   updateInterview(tenantId: string, id: string, interview: Partial<InsertInterview>): Promise<Interview | undefined>;
   deleteInterview(tenantId: string, id: string): Promise<boolean>;
   
-  getInterviewAssessment(interviewId: string): Promise<InterviewAssessment | undefined>;
-  createInterviewAssessment(assessment: InsertInterviewAssessment): Promise<InterviewAssessment>;
-  updateInterviewAssessment(id: string, assessment: Partial<InsertInterviewAssessment>): Promise<InterviewAssessment | undefined>;
+  getInterviewAssessment(tenantId: string, interviewId: string): Promise<InterviewAssessment | undefined>;
+  createInterviewAssessment(tenantId: string, assessment: InsertInterviewAssessment): Promise<InterviewAssessment>;
+  updateInterviewAssessment(tenantId: string, id: string, assessment: Partial<InsertInterviewAssessment>): Promise<InterviewAssessment | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -156,6 +157,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCandidate(tenantId: string, insertCandidate: InsertCandidate): Promise<Candidate> {
+    // Cross-tenant FK validation: if jobId provided, verify it belongs to same tenant
+    if (insertCandidate.jobId) {
+      const job = await this.getJob(tenantId, insertCandidate.jobId);
+      if (!job) {
+        throw new Error(`Job ${insertCandidate.jobId} not found in tenant ${tenantId}`);
+      }
+    }
+    
     const [candidate] = await db
       .insert(candidates)
       .values({ ...insertCandidate, tenantId })
@@ -164,6 +173,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateCandidate(tenantId: string, id: string, updates: Partial<InsertCandidate>): Promise<Candidate | undefined> {
+    // Cross-tenant FK validation: if jobId being updated, verify it belongs to same tenant
+    if (updates.jobId) {
+      const job = await this.getJob(tenantId, updates.jobId);
+      if (!job) {
+        throw new Error(`Job ${updates.jobId} not found in tenant ${tenantId}`);
+      }
+    }
+    
     const [candidate] = await db
       .update(candidates)
       .set({ ...updates, updatedAt: new Date() })
@@ -201,6 +218,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createIntegrityCheck(tenantId: string, insertCheck: InsertIntegrityCheck): Promise<IntegrityCheck> {
+    // Cross-tenant FK validation: verify candidateId belongs to same tenant
+    const candidate = await this.getCandidate(tenantId, insertCheck.candidateId);
+    if (!candidate) {
+      throw new Error(`Candidate ${insertCheck.candidateId} not found in tenant ${tenantId}`);
+    }
+    
     const [check] = await db
       .insert(integrityChecks)
       .values({ ...insertCheck, tenantId })
@@ -209,6 +232,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateIntegrityCheck(tenantId: string, id: string, updates: Partial<InsertIntegrityCheck>): Promise<IntegrityCheck | undefined> {
+    // Cross-tenant FK validation: if candidateId being changed, verify it belongs to same tenant
+    if (updates.candidateId) {
+      const candidate = await this.getCandidate(tenantId, updates.candidateId);
+      if (!candidate) {
+        throw new Error(`Candidate ${updates.candidateId} not found in tenant ${tenantId}`);
+      }
+    }
+    
     const [check] = await db
       .update(integrityChecks)
       .set({ ...updates, updatedAt: new Date() })
@@ -236,6 +267,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createRecruitmentSession(tenantId: string, insertSession: InsertRecruitmentSession): Promise<RecruitmentSession> {
+    // Cross-tenant FK validation: verify jobId belongs to same tenant
+    const job = await this.getJob(tenantId, insertSession.jobId);
+    if (!job) {
+      throw new Error(`Job ${insertSession.jobId} not found in tenant ${tenantId}`);
+    }
+    
     const [session] = await db
       .insert(recruitmentSessions)
       .values({ ...insertSession, tenantId })
@@ -244,6 +281,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateRecruitmentSession(tenantId: string, id: string, updates: Partial<InsertRecruitmentSession>): Promise<RecruitmentSession | undefined> {
+    // Cross-tenant FK validation: if jobId being changed, verify it belongs to same tenant
+    if (updates.jobId) {
+      const job = await this.getJob(tenantId, updates.jobId);
+      if (!job) {
+        throw new Error(`Job ${updates.jobId} not found in tenant ${tenantId}`);
+      }
+    }
+    
     const [session] = await db
       .update(recruitmentSessions)
       .set({ ...updates, updatedAt: new Date() })
@@ -313,6 +358,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createOnboardingWorkflow(tenantId: string, insertWorkflow: InsertOnboardingWorkflow): Promise<OnboardingWorkflow> {
+    // Cross-tenant FK validation: verify candidateId belongs to same tenant
+    const candidate = await this.getCandidate(tenantId, insertWorkflow.candidateId);
+    if (!candidate) {
+      throw new Error(`Candidate ${insertWorkflow.candidateId} not found in tenant ${tenantId}`);
+    }
+    
     const cleanedWorkflow = Object.fromEntries(
       Object.entries(insertWorkflow).filter(([_, v]) => v !== null && v !== undefined)
     ) as any;
@@ -325,6 +376,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateOnboardingWorkflow(tenantId: string, id: string, updates: Partial<InsertOnboardingWorkflow>): Promise<OnboardingWorkflow | undefined> {
+    // Cross-tenant FK validation: if candidateId being changed, verify it belongs to same tenant
+    if (updates.candidateId) {
+      const candidate = await this.getCandidate(tenantId, updates.candidateId);
+      if (!candidate) {
+        throw new Error(`Candidate ${updates.candidateId} not found in tenant ${tenantId}`);
+      }
+    }
+    
     const cleanedUpdates = Object.fromEntries(
       Object.entries(updates).filter(([_, v]) => v !== null && v !== undefined)
     ) as any;
@@ -345,6 +404,10 @@ export class DatabaseStorage implements IStorage {
   async getTenantConfig(): Promise<TenantConfig | undefined> {
     const [config] = await db.select().from(tenantConfig).orderBy(desc(tenantConfig.createdAt)).limit(1);
     return config || undefined;
+  }
+
+  async getAllTenantConfigs(): Promise<TenantConfig[]> {
+    return await db.select().from(tenantConfig).orderBy(desc(tenantConfig.createdAt));
   }
 
   async createTenantConfig(insertConfig: InsertTenantConfig): Promise<TenantConfig> {
@@ -382,6 +445,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createInterview(tenantId: string, insertInterview: InsertInterview): Promise<Interview> {
+    // Cross-tenant FK validation: verify candidateId and jobId belong to same tenant
+    if (insertInterview.candidateId) {
+      const candidate = await this.getCandidate(tenantId, insertInterview.candidateId);
+      if (!candidate) {
+        throw new Error(`Candidate ${insertInterview.candidateId} not found in tenant ${tenantId}`);
+      }
+    }
+    
+    if (insertInterview.jobId) {
+      const job = await this.getJob(tenantId, insertInterview.jobId);
+      if (!job) {
+        throw new Error(`Job ${insertInterview.jobId} not found in tenant ${tenantId}`);
+      }
+    }
+    
     const [interview] = await db
       .insert(interviews)
       .values({ ...insertInterview, tenantId })
@@ -390,6 +468,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateInterview(tenantId: string, id: string, updates: Partial<InsertInterview>): Promise<Interview | undefined> {
+    // Cross-tenant FK validation: if candidateId or jobId being changed, verify they belong to same tenant
+    if (updates.candidateId) {
+      const candidate = await this.getCandidate(tenantId, updates.candidateId);
+      if (!candidate) {
+        throw new Error(`Candidate ${updates.candidateId} not found in tenant ${tenantId}`);
+      }
+    }
+    
+    if (updates.jobId) {
+      const job = await this.getJob(tenantId, updates.jobId);
+      if (!job) {
+        throw new Error(`Job ${updates.jobId} not found in tenant ${tenantId}`);
+      }
+    }
+    
     const [interview] = await db
       .update(interviews)
       .set({ ...updates, updatedAt: new Date() })
@@ -403,12 +496,24 @@ export class DatabaseStorage implements IStorage {
     return result.rowCount ? result.rowCount > 0 : false;
   }
 
-  async getInterviewAssessment(interviewId: string): Promise<InterviewAssessment | undefined> {
+  async getInterviewAssessment(tenantId: string, interviewId: string): Promise<InterviewAssessment | undefined> {
+    // Cross-tenant validation: verify interview belongs to tenant before accessing assessment
+    const interview = await this.getInterview(tenantId, interviewId);
+    if (!interview) {
+      throw new Error(`Interview ${interviewId} not found in tenant ${tenantId}`);
+    }
+    
     const [assessment] = await db.select().from(interviewAssessments).where(eq(interviewAssessments.interviewId, interviewId));
     return assessment || undefined;
   }
 
-  async createInterviewAssessment(insertAssessment: InsertInterviewAssessment): Promise<InterviewAssessment> {
+  async createInterviewAssessment(tenantId: string, insertAssessment: InsertInterviewAssessment): Promise<InterviewAssessment> {
+    // Cross-tenant validation: verify interview belongs to tenant before creating assessment
+    const interview = await this.getInterview(tenantId, insertAssessment.interviewId);
+    if (!interview) {
+      throw new Error(`Interview ${insertAssessment.interviewId} not found in tenant ${tenantId}`);
+    }
+    
     const [assessment] = await db
       .insert(interviewAssessments)
       .values(insertAssessment)
@@ -416,7 +521,18 @@ export class DatabaseStorage implements IStorage {
     return assessment;
   }
 
-  async updateInterviewAssessment(id: string, updates: Partial<InsertInterviewAssessment>): Promise<InterviewAssessment | undefined> {
+  async updateInterviewAssessment(tenantId: string, id: string, updates: Partial<InsertInterviewAssessment>): Promise<InterviewAssessment | undefined> {
+    // Cross-tenant validation: get existing assessment and verify its interview belongs to tenant
+    const existing = await db.select().from(interviewAssessments).where(eq(interviewAssessments.id, id));
+    if (!existing || existing.length === 0) {
+      return undefined;
+    }
+    
+    const interview = await this.getInterview(tenantId, existing[0].interviewId);
+    if (!interview) {
+      throw new Error(`Interview ${existing[0].interviewId} not found in tenant ${tenantId}`);
+    }
+    
     const [assessment] = await db
       .update(interviewAssessments)
       .set({ ...updates, updatedAt: new Date() })
