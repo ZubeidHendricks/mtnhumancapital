@@ -25,17 +25,17 @@ export async function resolveTenant(req: Request, res: Response, next: NextFunct
     const parts = hostname.split('.');
     
     // Handle different scenarios:
-    // - localhost -> use query param or default to 'company'
+    // - localhost -> use query param or default to 'pps'
     // - subdomain.domain.com -> use subdomain
     if (hostname === 'localhost' || hostname.startsWith('127.0.0.1') || hostname.endsWith('.replit.dev')) {
       // Development: allow ?tenant=subdomain override
-      subdomain = (req.query.tenant as string) || 'company';
+      subdomain = (req.query.tenant as string) || 'pps';
     } else if (parts.length >= 3) {
       // Production: extract subdomain from hostname
       subdomain = parts[0];
     } else {
-      // Default subdomain
-      subdomain = 'company';
+      // Default subdomain for production domains without subdomain (e.g., avatarhuman.capital)
+      subdomain = 'pps';
     }
 
     // Look up tenant by subdomain
