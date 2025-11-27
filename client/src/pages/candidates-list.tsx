@@ -37,113 +37,30 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-// Mock Data based on the screenshot
-const CRITERIA = [
-  "Software architecture for complex enterprises and platforms",
-  "React and Redux",
-  "Strong communication skills",
-  "5+ years of project management experience",
-  "3+ years of experience in B2B SaaS",
-  "Ability to work in team",
-  "API development and integration expertise",
-  "CSS Flexbox and Grid"
-];
-
-const CANDIDATES = [
-  {
-    id: 1,
-    name: "Sarah Summers",
-    role: "Head of Development at Salt",
-    avatar: "/avatars/01.png",
-    source: "Recruited",
-    sourceColor: "text-blue-400 bg-blue-400/10",
-    match: "High",
-    status: "inbound"
-  },
-  {
-    id: 2,
-    name: "Alex Winters",
-    role: "Senior Backend Engineer at TechCorp",
-    avatar: "/avatars/02.png",
-    source: "Recruited",
-    sourceColor: "text-blue-400 bg-blue-400/10",
-    match: "High",
-    status: "inbound"
-  },
-  {
-    id: 3,
-    name: "Frank Springs",
-    role: "Tech Lead at StartupIO",
-    avatar: "/avatars/03.png",
-    source: "Manually added",
-    sourceColor: "text-yellow-400 bg-yellow-400/10",
-    match: "Medium",
-    status: "outbound"
-  },
-  {
-    id: 4,
-    name: "Sarah Summers",
-    role: "Head of Development at Salt",
-    avatar: "/avatars/04.png",
-    source: "Headhunter",
-    sourceColor: "text-red-400 bg-red-400/10",
-    match: "High",
-    status: "inbound"
-  },
-  {
-    id: 5,
-    name: "Jelmer Peerbolte",
-    role: "Full Stack Dev at Agency",
-    avatar: "/avatars/05.png",
-    source: "Recruitee",
-    sourceColor: "text-blue-400 bg-blue-400/10",
-    match: "Good",
-    status: "inbound"
-  },
-  {
-    id: 6,
-    name: "Avery Public",
-    role: "Software Engineer at BigTech",
-    avatar: "/avatars/06.png",
-    source: "AHC Public",
-    sourceColor: "text-purple-400 bg-purple-400/10",
-    match: "High",
-    status: "inbound"
-  }
-];
-
-const MOCK_SHORTLISTED = [
-    {
-        id: 101,
-        name: "Zubeid Hendricks",
-        role: "Senior Backend Developer",
-        avatar: "",
-        source: "Uploaded",
-        sourceColor: "text-green-400 bg-green-400/10",
-        match: "Very High",
-        status: "shortlisted"
-    },
-    {
-        id: 102,
-        name: "Thandiwe Nkosi",
-        role: "Tech Lead",
-        avatar: "",
-        source: "Referral",
-        sourceColor: "text-purple-400 bg-purple-400/10",
-        match: "High",
-        status: "shortlisted"
+// Helper to extract unique values from candidates
+function extractUniqueSkills(candidates: any[]): string[] {
+  const skillsSet = new Set<string>();
+  candidates?.forEach(c => {
+    if (c.skills && Array.isArray(c.skills)) {
+      c.skills.forEach((skill: string) => skillsSet.add(skill));
     }
-];
+  });
+  return Array.from(skillsSet).slice(0, 12);
+}
 
-const SA_LOCATIONS = [
-  "Cape Town, Western Cape",
-  "Johannesburg, Gauteng",
-  "Durban, Gauteng",
-  "Pretoria, KwaZulu-Natal",
-  "Stellenbosch, Western Cape",
-  "Sandton, Gauteng",
-  "Centurion, Gauteng"
-];
+function extractUniqueLocations(candidates: any[]): string[] {
+  const locationsSet = new Set<string>();
+  candidates?.forEach(c => {
+    if (c.location) {
+      locationsSet.add(c.location);
+    }
+    const metadata = c.metadata as any;
+    if (metadata?.location) {
+      locationsSet.add(metadata.location);
+    }
+  });
+  return Array.from(locationsSet);
+}
 
 export default function CandidatesList() {
   const [location] = useLocation();
@@ -151,8 +68,8 @@ export default function CandidatesList() {
   const jobId = urlParams.get('jobId');
 
   const [activeTab, setActiveTab] = useState("candidates");
-  const [activeCriteria, setActiveCriteria] = useState(CRITERIA);
-  const [locationFilter, setLocationFilter] = useState("Johannesburg, Gauteng");
+  const [activeCriteria, setActiveCriteria] = useState<string[]>([]);
+  const [locationFilter, setLocationFilter] = useState<string | null>(null);
   
   // Invite Dialog State
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -199,12 +116,49 @@ export default function CandidatesList() {
     return jobs.find((job: any) => job.id === jobId);
   }, [jobId, jobs]);
 
-  // Filter candidates by jobId if present
+  // Extract unique skills and locations from all candidates
+  const allSkills = useMemo(() => extractUniqueSkills(candidates || []), [candidates]);
+  const allLocations = useMemo(() => extractUniqueLocations(candidates || []), [candidates]);
+
+  // Note: Skills filter starts empty - users add skills to filter by
+  // This ensures all candidates are shown initially
+
+  // Filter candidates by jobId, location, and skills
   const filteredCandidates = useMemo(() => {
     if (!candidates) return [];
-    if (!jobId) return candidates;
-    return candidates.filter((c: any) => c.jobId === jobId);
-  }, [candidates, jobId]);
+    
+    let filtered = candidates;
+    
+    // Filter by jobId if present
+    if (jobId) {
+      filtered = filtered.filter((c: any) => c.jobId === jobId);
+    }
+    
+    // Filter by location if selected
+    if (locationFilter) {
+      filtered = filtered.filter((c: any) => {
+        const candidateLocation = c.location || (c.metadata as any)?.location || '';
+        return candidateLocation.toLowerCase().includes(locationFilter.toLowerCase());
+      });
+    }
+    
+    // Filter by active criteria/skills if any are selected
+    if (activeCriteria.length > 0) {
+      filtered = filtered.filter((c: any) => {
+        // Candidates without skills don't match any skill filter
+        if (!c.skills || !Array.isArray(c.skills) || c.skills.length === 0) return false;
+        // Check if candidate has at least one of the selected skills
+        return activeCriteria.some(criteria => 
+          c.skills.some((skill: string) => 
+            skill.toLowerCase().includes(criteria.toLowerCase()) ||
+            criteria.toLowerCase().includes(skill.toLowerCase())
+          )
+        );
+      });
+    }
+    
+    return filtered;
+  }, [candidates, jobId, locationFilter, activeCriteria]);
 
   // Separate candidates by tab
   const regularCandidates = useMemo(() => {
@@ -354,78 +308,112 @@ export default function CandidatesList() {
 
             {/* Location */}
             <div className="space-y-4">
-                <div className="text-xs font-bold text-muted-foreground tracking-wider">LOCATION</div>
+                <div className="text-xs font-bold text-muted-foreground tracking-wider">LOCATION FILTER</div>
                 <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm text-gray-300">
-                        <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 rounded-full border-2 border-gray-500"></div>
-                            {locationFilter}
-                        </div>
-                        <X className="h-3 w-3 text-muted-foreground cursor-pointer" />
-                    </div>
+                    {locationFilter && (
+                      <div className="flex items-center justify-between text-sm text-gray-300">
+                          <div className="flex items-center gap-2">
+                              <MapPin className="w-4 h-4 text-primary" />
+                              {locationFilter}
+                          </div>
+                          <X 
+                            className="h-3 w-3 text-muted-foreground cursor-pointer hover:text-white" 
+                            onClick={() => setLocationFilter(null)}
+                            data-testid="button-clear-location"
+                          />
+                      </div>
+                    )}
                     
-                    {/* Mock Location Selector */}
+                    {/* Location Selector */}
                     <div className="relative group">
                         <div className="flex items-center justify-between text-sm text-muted-foreground hover:text-white cursor-pointer border border-dashed border-white/10 rounded px-2 py-1 hover:border-white/30">
                             <div className="flex items-center gap-2">
                                 <Search className="h-3 w-3" />
-                                Add another location...
+                                {locationFilter ? 'Change location...' : 'Filter by location...'}
                             </div>
-                            <Plus className="h-3 w-3" />
+                            <ChevronDown className="h-3 w-3" />
                         </div>
                         
-                        {/* Dropdown (simulated) */}
+                        {/* Dropdown */}
                         <div className="hidden group-hover:block absolute top-full left-0 w-full mt-1 bg-[#1a1a1a] border border-white/10 rounded shadow-xl z-10 max-h-40 overflow-y-auto">
-                            {SA_LOCATIONS.filter(l => l !== locationFilter).map(loc => (
-                                <div 
-                                    key={loc} 
-                                    className="px-3 py-2 text-xs text-gray-400 hover:bg-white/10 hover:text-white cursor-pointer"
-                                    onClick={() => setLocationFilter(loc)}
-                                >
-                                    {loc}
-                                </div>
-                            ))}
+                            {allLocations.length === 0 ? (
+                              <div className="px-3 py-2 text-xs text-gray-500">No locations found</div>
+                            ) : (
+                              allLocations.filter(l => l !== locationFilter).map(loc => (
+                                  <div 
+                                      key={loc} 
+                                      className="px-3 py-2 text-xs text-gray-400 hover:bg-white/10 hover:text-white cursor-pointer"
+                                      onClick={() => setLocationFilter(loc)}
+                                      data-testid={`location-option-${loc}`}
+                                  >
+                                      <MapPin className="h-3 w-3 inline mr-2" />
+                                      {loc}
+                                  </div>
+                              ))
+                            )}
                         </div>
                     </div>
                 </div>
-                <div className="flex items-center justify-between text-xs text-muted-foreground pl-6">
-                    <span>50km</span>
-                    <div className="flex flex-col gap-0.5">
-                        <div className="h-0.5 w-2 bg-gray-600"></div>
-                        <div className="h-0.5 w-2 bg-gray-600"></div>
-                    </div>
-                </div>
+                {locationFilter && (
+                  <div className="text-xs text-muted-foreground">
+                      Showing {filteredCandidates.length} candidates in {locationFilter}
+                  </div>
+                )}
             </div>
 
             <Separator className="bg-white/10" />
 
             {/* Criteria */}
             <div className="space-y-4">
-                <div className="text-xs font-bold text-muted-foreground tracking-wider">CRITERIA</div>
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-bold text-muted-foreground tracking-wider">SKILLS FILTER</div>
+                  {activeCriteria.length > 0 && (
+                    <button 
+                      className="text-[10px] text-primary hover:underline"
+                      onClick={() => setActiveCriteria([])}
+                      data-testid="button-clear-all-skills"
+                    >
+                      Clear all
+                    </button>
+                  )}
+                </div>
                 <div className="space-y-2">
-                    {activeCriteria.map((criteria, i) => (
-                        <div key={i} className="flex items-start gap-2 group">
-                            <div className={`mt-1 w-2 h-2 rounded-full ${i < 3 ? 'bg-white' : 'bg-yellow-400'}`}></div>
-                            <span className="text-sm text-gray-300 flex-1 leading-tight">{criteria}</span>
-                            <X 
-                                className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 cursor-pointer hover:text-white" 
-                                onClick={() => removeCriteria(i)}
-                            />
-                        </div>
-                    ))}
+                    {activeCriteria.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">No skills selected. Add skills below to filter candidates.</p>
+                    ) : (
+                      activeCriteria.map((criteria, i) => (
+                          <div key={i} className="flex items-start gap-2 group" data-testid={`skill-filter-${i}`}>
+                              <Check className="mt-0.5 w-3 h-3 text-primary" />
+                              <span className="text-sm text-gray-300 flex-1 leading-tight">{criteria}</span>
+                              <X 
+                                  className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 cursor-pointer hover:text-white" 
+                                  onClick={() => removeCriteria(i)}
+                                  data-testid={`button-remove-skill-${i}`}
+                              />
+                          </div>
+                      ))
+                    )}
                 </div>
                 
-                <div className="pt-2">
-                   <div className="text-[10px] text-muted-foreground mb-2">YOU MIGHT WANT TO ADD</div>
-                   <div className="flex gap-2">
-                        <Badge variant="secondary" className="bg-white/5 hover:bg-white/10 text-gray-400 text-xs font-normal cursor-pointer border-white/10">
-                            CSS Flexbox and Grid <Plus className="h-3 w-3 ml-1 text-indigo-400" />
-                        </Badge>
-                        <Badge variant="secondary" className="bg-white/5 hover:bg-white/10 text-gray-400 text-xs font-normal cursor-pointer border-white/10">
-                            JS <Plus className="h-3 w-3 ml-1 text-indigo-400" />
-                        </Badge>
-                   </div>
-                </div>
+                {/* Suggested skills from candidates */}
+                {allSkills.filter(s => !activeCriteria.includes(s)).length > 0 && (
+                  <div className="pt-2">
+                     <div className="text-[10px] text-muted-foreground mb-2">AVAILABLE SKILLS</div>
+                     <div className="flex flex-wrap gap-2">
+                          {allSkills.filter(s => !activeCriteria.includes(s)).slice(0, 6).map((skill, i) => (
+                            <Badge 
+                              key={i}
+                              variant="secondary" 
+                              className="bg-white/5 hover:bg-white/10 text-gray-400 text-xs font-normal cursor-pointer border-white/10"
+                              onClick={() => setActiveCriteria(prev => [...prev, skill])}
+                              data-testid={`button-add-skill-${i}`}
+                            >
+                                {skill} <Plus className="h-3 w-3 ml-1 text-indigo-400" />
+                            </Badge>
+                          ))}
+                     </div>
+                  </div>
+                )}
             </div>
 
           </div>
