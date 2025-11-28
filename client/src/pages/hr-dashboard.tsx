@@ -104,6 +104,7 @@ export default function HRDashboard() {
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [jobSpecViewMode, setJobSpecViewMode] = useState<"grid" | "list">("grid");
+  const [selectedJobSpec, setSelectedJobSpec] = useState<JobSpecDocument | null>(null);
   const [jobTitle, setJobTitle] = useState("");
   const [department, setDepartment] = useState("");
   const [jobDescription, setJobDescription] = useState("");
@@ -383,16 +384,23 @@ BENEFITS:
     originalFilename: string;
     status: string;
     createdAt: string;
+    fileSize: number;
+    rawText?: string;
     extractedData?: {
       title?: string;
+      jobTitle?: string;
       company?: string;
       department?: string;
       location?: string;
       employmentType?: string;
       salaryRange?: string;
+      salary?: string;
       experienceRequired?: string;
       requiredSkills?: string[];
       qualifications?: string[];
+      benefits?: string[];
+      responsibilities?: string[];
+      description?: string;
     };
     linkedJobId?: string;
   }
@@ -1102,7 +1110,13 @@ BENEFITS:
                                 {new Date(doc.createdAt).toLocaleDateString()}
                               </span>
                               <div className="flex items-center gap-1">
-                                <Button variant="ghost" size="sm" className="h-7 px-2 text-zinc-400" data-testid={`button-view-job-${doc.id}`}>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-7 px-2 text-zinc-400" 
+                                  data-testid={`button-view-job-${doc.id}`}
+                                  onClick={() => setSelectedJobSpec(doc)}
+                                >
                                   <Eye className="h-3.5 w-3.5" />
                                 </Button>
                               </div>
@@ -1166,7 +1180,12 @@ BENEFITS:
                                 </td>
                                 <td className="px-4 py-3 text-right">
                                   <div className="flex items-center justify-end gap-1">
-                                    <Button variant="ghost" size="sm" className="h-7 px-2 text-zinc-400">
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm" 
+                                      className="h-7 px-2 text-zinc-400"
+                                      onClick={() => setSelectedJobSpec(doc)}
+                                    >
                                       <Eye className="h-3.5 w-3.5" />
                                     </Button>
                                   </div>
@@ -1529,6 +1548,214 @@ BENEFITS:
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Job Spec Detail Modal */}
+      <Dialog open={!!selectedJobSpec} onOpenChange={() => setSelectedJobSpec(null)}>
+        <DialogContent className="max-w-3xl bg-zinc-900 border-zinc-700 max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Briefcase className="h-5 w-5 text-purple-400" />
+              {selectedJobSpec?.originalFilename}
+            </DialogTitle>
+            <DialogDescription>
+              Uploaded on {selectedJobSpec && new Date(selectedJobSpec.createdAt).toLocaleString()}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedJobSpec && (
+            <div className="space-y-6">
+              {(() => {
+                const data = selectedJobSpec.extractedData as any;
+                const formatFileSize = (bytes: number) => {
+                  if (bytes === 0) return '0 Bytes';
+                  const k = 1024;
+                  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                  const i = Math.floor(Math.log(bytes) / Math.log(k));
+                  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+                };
+                return (
+                  <>
+                    {/* Header with Status */}
+                    <div className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <Badge className={
+                          selectedJobSpec.status === "processed" 
+                            ? "bg-green-500/20 text-green-400 border-green-500/30" 
+                            : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+                        }>
+                          {selectedJobSpec.status === "processed" ? <CheckCircle2 className="h-3 w-3 mr-1" /> : <AlertCircle className="h-3 w-3 mr-1" />}
+                          <span className="capitalize">{selectedJobSpec.status}</span>
+                        </Badge>
+                        <span className="text-zinc-400 text-sm">{formatFileSize(selectedJobSpec.fileSize || 0)}</span>
+                      </div>
+                      {selectedJobSpec.linkedJobId && (
+                        <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Job Created
+                        </Badge>
+                      )}
+                    </div>
+
+                    {data && (
+                      <>
+                        {/* Job Information */}
+                        <div className="space-y-3">
+                          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                            <Briefcase className="h-5 w-5 text-purple-400" />
+                            Job Information
+                          </h3>
+                          <div className="grid grid-cols-2 gap-4 p-4 bg-zinc-800/30 rounded-lg">
+                            <div>
+                              <p className="text-xs text-zinc-500 mb-1">Job Title</p>
+                              <p className="text-white font-medium">{data.title || data.jobTitle || "N/A"}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-zinc-500 mb-1">Company</p>
+                              <p className="text-purple-400">{data.company || "N/A"}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-zinc-500 mb-1">Department</p>
+                              <p className="text-white">{data.department || "N/A"}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-zinc-500 mb-1">Location</p>
+                              <p className="text-white">{data.location || "N/A"}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-zinc-500 mb-1">Employment Type</p>
+                              <p className="text-white">{data.employmentType || "N/A"}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-zinc-500 mb-1">Salary Range</p>
+                              <p className="text-green-400">{data.salaryRange || data.salary || "N/A"}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Experience Required */}
+                        {data.experienceRequired && (
+                          <div className="space-y-3">
+                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                              <Clock className="h-5 w-5 text-blue-400" />
+                              Experience Required
+                            </h3>
+                            <p className="text-zinc-300 text-sm leading-relaxed p-4 bg-zinc-800/30 rounded-lg">
+                              {data.experienceRequired}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Job Description */}
+                        {data.description && (
+                          <div className="space-y-3">
+                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                              <FileText className="h-5 w-5 text-amber-400" />
+                              Job Description
+                            </h3>
+                            <p className="text-zinc-300 text-sm leading-relaxed p-4 bg-zinc-800/30 rounded-lg whitespace-pre-wrap">
+                              {data.description}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Required Skills */}
+                        {data.requiredSkills && data.requiredSkills.length > 0 && (
+                          <div className="space-y-3">
+                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                              <Award className="h-5 w-5 text-blue-400" />
+                              Required Skills ({data.requiredSkills.length})
+                            </h3>
+                            <div className="flex flex-wrap gap-2 p-4 bg-zinc-800/30 rounded-lg">
+                              {data.requiredSkills.map((skill: string, i: number) => (
+                                <Badge key={i} className="bg-purple-500/20 text-purple-300 border-purple-500/30">
+                                  {skill}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Responsibilities */}
+                        {data.responsibilities && data.responsibilities.length > 0 && (
+                          <div className="space-y-3">
+                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                              <Target className="h-5 w-5 text-green-400" />
+                              Responsibilities ({data.responsibilities.length})
+                            </h3>
+                            <div className="p-4 bg-zinc-800/30 rounded-lg">
+                              <ul className="space-y-2">
+                                {data.responsibilities.map((resp: string, i: number) => (
+                                  <li key={i} className="flex items-start gap-2 text-sm text-zinc-300">
+                                    <span className="text-green-400 mt-1">•</span>
+                                    {resp}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Qualifications */}
+                        {data.qualifications && data.qualifications.length > 0 && (
+                          <div className="space-y-3">
+                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                              <GraduationCap className="h-5 w-5 text-orange-400" />
+                              Qualifications ({data.qualifications.length})
+                            </h3>
+                            <div className="p-4 bg-zinc-800/30 rounded-lg">
+                              <ul className="space-y-2">
+                                {data.qualifications.map((qual: string, i: number) => (
+                                  <li key={i} className="flex items-start gap-2 text-sm text-zinc-300">
+                                    <span className="text-orange-400 mt-1">•</span>
+                                    {qual}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Benefits */}
+                        {data.benefits && data.benefits.length > 0 && (
+                          <div className="space-y-3">
+                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                              <Star className="h-5 w-5 text-yellow-400" />
+                              Benefits ({data.benefits.length})
+                            </h3>
+                            <div className="flex flex-wrap gap-2 p-4 bg-zinc-800/30 rounded-lg">
+                              {data.benefits.map((benefit: string, i: number) => (
+                                <Badge key={i} variant="outline" className="text-xs border-yellow-500/30 text-yellow-300">
+                                  {benefit}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {/* Raw Text Preview */}
+                    {selectedJobSpec.rawText && (
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-zinc-400" />
+                          Raw Text Preview
+                        </h3>
+                        <ScrollArea className="h-40 p-3 bg-zinc-800/50 rounded-lg">
+                          <p className="text-xs text-zinc-500 whitespace-pre-wrap">
+                            {selectedJobSpec.rawText.slice(0, 2000)}
+                            {selectedJobSpec.rawText.length > 2000 && "..."}
+                          </p>
+                        </ScrollArea>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
