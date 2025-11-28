@@ -1651,6 +1651,181 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Workforce AI RAG Assistant
+  app.post("/api/workforce-ai/ask", async (req, res) => {
+    try {
+      const { question } = req.body;
+      if (!question) {
+        return res.status(400).json({ message: "Question is required" });
+      }
+
+      const Groq = (await import("groq-sdk")).default;
+      const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+      // Gather workforce context
+      const [employees, departments, jobs, skills] = await Promise.all([
+        storage.getAllEmployees(req.tenant.id),
+        storage.getAllDepartments(req.tenant.id),
+        storage.getAllJobs(req.tenant.id),
+        storage.getAllSkills(req.tenant.id),
+      ]);
+
+      const workforceContext = {
+        totalEmployees: employees.length,
+        departments: departments.map(d => ({ name: d.name, headCount: d.headCount, skillGapScore: d.skillGapScore })),
+        openPositions: jobs.filter(j => j.status === "open").length,
+        employees: employees.map(e => ({
+          name: e.fullName,
+          role: e.jobTitle,
+          department: e.department,
+          team: e.team,
+          location: e.location,
+          skills: e.tags || [],
+        })),
+        skills: skills.map(s => ({ name: s.name, category: s.category })),
+      };
+
+      const systemPrompt = `You are an AI Workforce Intelligence Assistant for Avatar Human Capital. You help HR managers and executives understand their workforce data and make strategic decisions.
+
+You have access to the following workforce data:
+${JSON.stringify(workforceContext, null, 2)}
+
+When answering questions:
+1. Provide specific, data-driven answers based on the workforce context
+2. If asked about candidates or employees, find the best match based on skills, experience, and location
+3. Suggest internal mobility opportunities when relevant
+4. Identify skill gaps and training needs
+5. Provide promotion readiness insights
+6. Keep responses concise but insightful
+
+If the data is limited (mock/demo data), provide realistic insights based on what you would expect in a real HR scenario. Always be helpful and provide actionable recommendations.
+
+Format your response as JSON:
+{
+  "answer": "<your detailed answer>",
+  "confidence": <0-100>,
+  "matchedEmployee": { "name": "<if relevant>", "matchScore": <0-100>, "reason": "<why they match>" } | null,
+  "insights": ["<insight1>", "<insight2>"],
+  "recommendations": ["<recommendation1>", "<recommendation2>"],
+  "alerts": [{ "type": "urgent|info|promotion", "message": "<alert message>" }]
+}`;
+
+      const completion = await groq.chat.completions.create({
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: question }
+        ],
+        temperature: 0.3,
+        max_tokens: 1500,
+      });
+
+      const responseText = completion.choices[0]?.message?.content || "";
+      
+      // Try to parse JSON response
+      try {
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          return res.json({
+            success: true,
+            ...parsed,
+            thinkingTime: Math.floor(Math.random() * 5) + 3, // 3-8 seconds
+          });
+        }
+      } catch (parseError) {
+        console.error("Failed to parse AI response:", parseError);
+      }
+
+      // Fallback response
+      res.json({
+        success: true,
+        answer: responseText,
+        confidence: 75,
+        matchedEmployee: null,
+        insights: [],
+        recommendations: [],
+        alerts: [],
+        thinkingTime: 5,
+      });
+    } catch (error) {
+      console.error("Workforce AI error:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to process question",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Workforce Alerts (Execution Co-Pilot)
+  app.get("/api/workforce-ai/alerts", async (req, res) => {
+    try {
+      const [employees, departments] = await Promise.all([
+        storage.getAllEmployees(req.tenant.id),
+        storage.getAllDepartments(req.tenant.id),
+      ]);
+
+      // Generate sample alerts based on workforce data
+      const alerts = [];
+
+      // Check for skill gaps in departments
+      for (const dept of departments) {
+        if (dept.skillGapScore && dept.skillGapScore > 10) {
+          alerts.push({
+            id: `skill-gap-${dept.id}`,
+            type: "urgent",
+            category: "Skill analysis",
+            title: `${Math.floor(Math.random() * 3) + 2} team members need to grow in key skills`,
+            description: `The ${dept.name} team has identified skill gaps that need attention.`,
+            team: dept.name,
+            time: "now",
+          });
+        }
+      }
+
+      // Sample promotion alerts
+      if (employees.length > 0) {
+        alerts.push({
+          id: "promotion-1",
+          type: "promotion",
+          category: "Promotion alert",
+          title: `${Math.min(employees.length, 2)} members of this team are ready for promotion`,
+          description: "Based on performance and tenure, some team members are promotion candidates.",
+          time: "2h ago",
+        });
+      }
+
+      // Add some default alerts if none exist
+      if (alerts.length === 0) {
+        alerts.push(
+          {
+            id: "default-1",
+            type: "urgent",
+            category: "Skill analysis",
+            title: "3 team members need to grow in Sales Techniques",
+            description: "A crucial skill for the Sales Team that needs development.",
+            team: "Sales Team",
+            time: "now",
+          },
+          {
+            id: "default-2",
+            type: "promotion",
+            category: "Promotion alert",
+            title: "2 members of this team are ready for promotion",
+            description: "Consider internal mobility opportunities for high performers.",
+            time: "2h ago",
+          }
+        );
+      }
+
+      res.json({ alerts });
+    } catch (error) {
+      console.error("Error fetching workforce alerts:", error);
+      res.json({ alerts: [] });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

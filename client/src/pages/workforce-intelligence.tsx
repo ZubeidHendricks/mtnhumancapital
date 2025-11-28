@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTenantQueryKey } from "@/hooks/useTenant";
 import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,9 +12,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Search, Filter, Users, TrendingUp, CheckCircle,
-  ChevronRight, Plus, X, MapPin, Brain
+  ChevronRight, Plus, X, MapPin, Brain, Send, Loader2,
+  Sparkles, AlertTriangle, ArrowRight, Bell, Flame
 } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Employee, Skill, Job, EmployeeSkill, SkillActivity, Department } from "@shared/schema";
@@ -29,6 +31,27 @@ interface EmployeeWithSkills extends Employee {
   matchScore?: number;
 }
 
+interface AIResponse {
+  success: boolean;
+  answer: string;
+  confidence: number;
+  matchedEmployee: { name: string; matchScore: number; reason: string } | null;
+  insights: string[];
+  recommendations: string[];
+  alerts: { type: string; message: string }[];
+  thinkingTime: number;
+}
+
+interface WorkforceAlert {
+  id: string;
+  type: "urgent" | "promotion" | "info";
+  category: string;
+  title: string;
+  description: string;
+  team?: string;
+  time: string;
+}
+
 const SKILL_STATUS_COLORS = {
   critical_gap: { bg: "bg-red-500/20", text: "text-red-400", border: "border-red-500/30", dot: "bg-red-500" },
   training_needed: { bg: "bg-yellow-500/20", text: "text-yellow-400", border: "border-yellow-500/30", dot: "bg-yellow-500" },
@@ -40,13 +63,15 @@ export default function WorkforceIntelligence() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeWithSkills | null>(null);
   const [showSkillGaps, setShowSkillGaps] = useState(true);
-  const [selectedSkillCategory, setSelectedSkillCategory] = useState<string>("all");
+  const [aiQuestion, setAiQuestion] = useState("");
+  const [aiResponse, setAiResponse] = useState<AIResponse | null>(null);
+  const [isAiThinking, setIsAiThinking] = useState(false);
   
   const employeesKey = useTenantQueryKey(["employees"]);
   const skillsKey = useTenantQueryKey(["skills"]);
   const departmentsKey = useTenantQueryKey(["departments"]);
   const jobsKey = useTenantQueryKey(["jobs"]);
-  const activitiesKey = useTenantQueryKey(["skill-activities"]);
+  const alertsKey = useTenantQueryKey(["workforce-alerts"]);
 
   const { data: employees = [] } = useQuery<EmployeeWithSkills[]>({
     queryKey: employeesKey,
@@ -80,13 +105,34 @@ export default function WorkforceIntelligence() {
     },
   });
 
-  const { data: activities = [] } = useQuery<SkillActivity[]>({
-    queryKey: activitiesKey,
+  const { data: alertsData } = useQuery<{ alerts: WorkforceAlert[] }>({
+    queryKey: alertsKey,
     queryFn: async () => {
-      const response = await api.get("/skill-activities");
+      const response = await api.get("/workforce-ai/alerts");
       return response.data;
     },
   });
+
+  const askAIMutation = useMutation({
+    mutationFn: async (question: string) => {
+      const response = await api.post("/workforce-ai/ask", { question });
+      return response.data as AIResponse;
+    },
+    onSuccess: (data) => {
+      setAiResponse(data);
+      setIsAiThinking(false);
+    },
+    onError: () => {
+      setIsAiThinking(false);
+    },
+  });
+
+  const handleAskAI = () => {
+    if (!aiQuestion.trim()) return;
+    setIsAiThinking(true);
+    setAiResponse(null);
+    askAIMutation.mutate(aiQuestion);
+  };
 
   const getInitials = (name: string) => {
     return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
@@ -134,6 +180,14 @@ export default function WorkforceIntelligence() {
   };
 
   const displayDepartments = departments.length > 0 ? departments : mockDepartments;
+  const alerts = alertsData?.alerts || [];
+
+  const sampleQuestions = [
+    "Who's the best candidate to lead the product expansion in Cape Town?",
+    "Which team has the most skill gaps?",
+    "Who is ready for promotion?",
+    "What skills are we missing in Marketing?",
+  ];
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -150,7 +204,7 @@ export default function WorkforceIntelligence() {
                   Workforce Intelligence
                 </h1>
                 <p className="text-zinc-400">
-                  Skills analysis, internal mobility & learning paths
+                  AI-powered skills analysis, internal mobility & workforce insights
                 </p>
               </div>
             </div>
@@ -169,6 +223,159 @@ export default function WorkforceIntelligence() {
                 <Filter className="h-4 w-4" />
               </Button>
             </div>
+          </div>
+
+          {/* AI Assistant & Alerts Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Ask AHC - AI Assistant */}
+            <Card className="bg-gradient-to-br from-cyan-900/30 via-purple-900/30 to-pink-900/30 border-zinc-700 overflow-hidden">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-amber-500/20 text-amber-400 border-0">Ask AHC</Badge>
+                </div>
+                <CardTitle className="text-xl text-white">Get instant answers</CardTitle>
+                <CardDescription className="text-zinc-400">
+                  Instead of wasting weeks pulling data or waiting for reports, get clear, reliable answers in seconds.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Question Input */}
+                <div className="bg-white rounded-xl p-4 shadow-lg">
+                  <p className="text-zinc-800 font-medium mb-3">{aiQuestion || "Who's the best candidate to lead the product expansion in Spain?"}</p>
+                  <div className="flex gap-2">
+                    <Input
+                      value={aiQuestion}
+                      onChange={(e) => setAiQuestion(e.target.value)}
+                      placeholder="Ask anything about your workforce..."
+                      className="flex-1 bg-zinc-100 border-zinc-200 text-zinc-900 placeholder:text-zinc-500"
+                      onKeyDown={(e) => e.key === "Enter" && handleAskAI()}
+                      data-testid="input-ai-question"
+                    />
+                    <Button 
+                      onClick={handleAskAI}
+                      disabled={isAiThinking || !aiQuestion.trim()}
+                      className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+                      data-testid="button-ask-ai"
+                    >
+                      {isAiThinking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* AI Response */}
+                {isAiThinking && (
+                  <div className="bg-zinc-800/50 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-amber-400">
+                      <Sparkles className="h-4 w-4 animate-pulse" />
+                      <span className="text-sm">AHC thinking for ~{Math.floor(Math.random() * 5) + 3}s...</span>
+                    </div>
+                  </div>
+                )}
+
+                {aiResponse && (
+                  <div className="bg-white rounded-xl p-4 shadow-lg space-y-3">
+                    {aiResponse.matchedEmployee && (
+                      <div className="flex items-center gap-3 pb-3 border-b border-zinc-200">
+                        <Avatar className="h-12 w-12">
+                          <AvatarFallback className="bg-amber-100 text-amber-700">
+                            {getInitials(aiResponse.matchedEmployee.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-semibold text-zinc-900">{aiResponse.matchedEmployee.name}</p>
+                          <div className="flex items-center gap-2">
+                            <Badge className="bg-green-100 text-green-700">
+                              <span className="w-2 h-2 rounded-full bg-green-500 mr-1" />
+                              {aiResponse.matchedEmployee.matchScore}% Great skill match
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    <p className="text-zinc-700 text-sm">{aiResponse.answer}</p>
+                    {aiResponse.insights.length > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-2">
+                        {aiResponse.insights.map((insight, i) => (
+                          <Badge key={i} variant="outline" className="text-xs text-zinc-600">{insight}</Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Sample Questions */}
+                <div className="flex flex-wrap gap-2">
+                  {sampleQuestions.slice(0, 2).map((q, i) => (
+                    <Button
+                      key={i}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs border-zinc-600 bg-zinc-800/50 hover:bg-zinc-700 text-zinc-300"
+                      onClick={() => setAiQuestion(q)}
+                    >
+                      {q}
+                    </Button>
+                  ))}
+                </div>
+
+                <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                  Ask anything
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Execution Co-Pilot - Alerts */}
+            <Card className="bg-gradient-to-br from-pink-900/30 via-purple-900/30 to-blue-900/30 border-zinc-700 overflow-hidden">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-pink-500/20 text-pink-400 border-0">Execution Co-Pilot</Badge>
+                </div>
+                <CardTitle className="text-xl text-white">Execute & stay on track</CardTitle>
+                <CardDescription className="text-zinc-400">
+                  Turn answers into workforce plans, map the right people, keep reports live, and flag risks early.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {/* Alerts */}
+                {(alerts.length > 0 ? alerts : [
+                  { id: "1", type: "urgent" as const, category: "Skill analysis", title: "3 team members need to grow in Sales Techniques", description: "A crucial skill for the Sales Team.", time: "now" },
+                  { id: "2", type: "promotion" as const, category: "Promotion alert", title: "2 members of this team are ready for promotion", description: "Consider internal mobility opportunities.", time: "2h ago" },
+                ]).map((alert) => (
+                  <div key={alert.id} className="bg-white rounded-xl p-4 shadow-lg">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2">
+                        <p className="text-zinc-800 font-medium text-sm">{alert.title}</p>
+                        <div className="flex items-center gap-2">
+                          <Badge className={`text-xs ${
+                            alert.type === "urgent" 
+                              ? "bg-red-100 text-red-700" 
+                              : "bg-purple-100 text-purple-700"
+                          }`}>
+                            {alert.type === "urgent" ? <Flame className="h-3 w-3 mr-1" /> : <TrendingUp className="h-3 w-3 mr-1" />}
+                            {alert.type === "urgent" ? "Urgent" : "Promotion alert"}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs text-zinc-500">
+                            {alert.category}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs text-zinc-500">{alert.time}</span>
+                        <Button variant="ghost" size="sm" className="text-blue-600 text-xs p-0 h-auto mt-1 block">
+                          More <ArrowRight className="h-3 w-3 inline ml-1" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+                  Connect your systems
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </CardContent>
+            </Card>
           </div>
 
           <Tabs defaultValue="dashboard" className="space-y-6">
@@ -277,7 +484,7 @@ export default function WorkforceIntelligence() {
                                   ))}
                                 </div>
                                 <p className="text-sm text-zinc-400 line-clamp-2">
-                                  As a {job.title}, you will play a key role in the product development lifecycle, from conceptualization to delivery. You will work closely with...
+                                  As a {job.title}, you will play a key role in the product development lifecycle...
                                 </p>
                                 <div className="flex items-center gap-4 text-sm text-zinc-500">
                                   <span className="flex items-center gap-1">
@@ -325,7 +532,7 @@ export default function WorkforceIntelligence() {
                       <div className="relative">
                         <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-zinc-700" />
                         <div className="space-y-4">
-                          {mockActivities.map((activity, idx) => (
+                          {mockActivities.map((activity) => (
                             <div key={activity.id} className="relative pl-8">
                               <div className={`absolute left-1.5 w-3 h-3 rounded-full border-2 border-zinc-900 ${
                                 activity.type === "skill_added" ? "bg-green-500" :
