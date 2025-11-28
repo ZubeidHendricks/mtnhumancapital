@@ -2924,6 +2924,193 @@ Format your response as JSON:
     }
   });
 
+  // Upload ZIP file containing Job Specs - extracts and processes all PDFs
+  app.post("/api/documents/upload/job-specs-zip", upload.single("file"), async (req, res) => {
+    try {
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      // Validate it's a ZIP file
+      if (file.mimetype !== "application/zip" && 
+          file.mimetype !== "application/x-zip-compressed" && 
+          !file.originalname.toLowerCase().endsWith('.zip')) {
+        return res.status(400).json({ message: "Only ZIP files are supported" });
+      }
+
+      console.log(`Processing Job Specs ZIP file: ${file.originalname} (${file.size} bytes)`);
+
+      // Extract ZIP contents
+      const zip = new AdmZip(file.buffer);
+      const zipEntries = zip.getEntries();
+      
+      // Filter for PDF, DOC, DOCX, TXT files
+      const docEntries = zipEntries.filter(entry => 
+        !entry.isDirectory && 
+        (entry.entryName.toLowerCase().endsWith('.pdf') ||
+         entry.entryName.toLowerCase().endsWith('.doc') ||
+         entry.entryName.toLowerCase().endsWith('.docx') ||
+         entry.entryName.toLowerCase().endsWith('.txt')) &&
+        !entry.entryName.startsWith('__MACOSX') &&
+        !entry.entryName.includes('/.')
+      );
+
+      if (docEntries.length === 0) {
+        return res.status(400).json({ message: "No supported documents (PDF, DOC, DOCX, TXT) found in the ZIP archive" });
+      }
+
+      console.log(`Found ${docEntries.length} documents in ZIP`);
+
+      // Create batch for this ZIP upload
+      const batch = await storage.createDocumentBatch(req.tenant.id, {
+        name: `Job Specs ZIP: ${file.originalname} - ${new Date().toLocaleDateString()}`,
+        type: "job_specs",
+        status: "processing",
+        totalDocuments: docEntries.length,
+        processedDocuments: 0,
+        failedDocuments: 0,
+      });
+
+      const results: Array<{ filename: string; status: string; jobId?: string; error?: string }> = [];
+
+      // Import Groq for AI parsing
+      const Groq = (await import("groq-sdk")).default;
+      const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+      // Process each document from the ZIP
+      for (const entry of docEntries) {
+        const docFilename = entry.entryName.split('/').pop() || entry.entryName;
+        
+        try {
+          console.log(`Processing job spec: ${docFilename}`);
+          const docBuffer = entry.getData();
+          
+          // Create document record
+          const doc = await storage.createDocument(req.tenant.id, {
+            batchId: batch.id,
+            filename: `${Date.now()}-${docFilename}`,
+            originalFilename: docFilename,
+            mimeType: docFilename.endsWith('.pdf') ? "application/pdf" : "text/plain",
+            fileSize: docBuffer.length,
+            filePath: `/uploads/${batch.id}/${docFilename}`,
+            type: "job_spec",
+            status: "processing",
+          });
+
+          // Extract text from document
+          let rawText = "";
+          if (docFilename.toLowerCase().endsWith('.pdf')) {
+            const parser = new PDFParse({ data: docBuffer });
+            const pdfData = await parser.getText();
+            rawText = pdfData.text;
+            await parser.destroy();
+          } else {
+            rawText = docBuffer.toString("utf-8");
+          }
+          
+          // Sanitize text for PostgreSQL
+          rawText = rawText.replace(/\x00/g, '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+
+          // Use Groq to extract job details
+          const completion = await groq.chat.completions.create({
+            model: "llama-3.3-70b-versatile",
+            messages: [
+              {
+                role: "system",
+                content: `You are an expert HR document parser. Extract job details from the provided text and return a JSON object with these fields:
+                - title: job title (string)
+                - company: company/organization name (string or null)
+                - department: department name (string)
+                - description: full job description (string)
+                - location: work location, city/region (string or null)
+                - employmentType: one of "Full-time", "Part-time", "Contract", "Temporary", "Internship"
+                - salaryMin: minimum salary as number or null
+                - salaryMax: maximum salary as number or null
+                - salaryRange: formatted salary range string like "R25,000 - R35,000/month" or null
+                - minYearsExperience: minimum years of experience as number or null
+                - experienceRequired: experience requirements as text (e.g., "3-5 years in logistics")
+                - requiredSkills: array of required skills/competencies (e.g., ["Project Management", "Excel", "Communication"])
+                - qualifications: array of required education/qualifications
+                - licenseRequirements: array of required licenses/certifications
+                - physicalRequirements: physical requirements description or null
+                - benefits: array of benefits offered or null
+                - reportingTo: who this role reports to or null
+                Return ONLY valid JSON, no other text.`
+              },
+              {
+                role: "user",
+                content: `Extract job details from this document:\n\n${rawText.slice(0, 8000)}`
+              }
+            ],
+            temperature: 0.1,
+            max_tokens: 2000,
+          });
+
+          const responseText = completion.choices[0]?.message?.content || "{}";
+          let jobData: Record<string, unknown>;
+          try {
+            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+            jobData = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
+          } catch {
+            jobData = {};
+          }
+
+          // Create job from extracted data
+          const job = await storage.createJob(req.tenant.id, {
+            title: (jobData.title as string) || docFilename.replace(/\.(pdf|doc|docx|txt)$/i, ""),
+            department: (jobData.department as string) || "Unassigned",
+            description: (jobData.description as string) || rawText.slice(0, 2000),
+            location: (jobData.location as string) || undefined,
+            employmentType: (jobData.employmentType as string) || "full_time",
+            salaryMin: (jobData.salaryMin as number) || undefined,
+            salaryMax: (jobData.salaryMax as number) || undefined,
+            minYearsExperience: (jobData.minYearsExperience as number) || undefined,
+            licenseRequirements: (jobData.licenseRequirements as string[]) || undefined,
+            physicalRequirements: (jobData.physicalRequirements as string) || undefined,
+            status: "Active",
+          });
+
+          // Update document with extracted data
+          await storage.updateDocument(req.tenant.id, doc.id, {
+            status: "processed",
+            rawText,
+            extractedData: jobData,
+            linkedJobId: job.id,
+          });
+
+          results.push({ filename: docFilename, status: "success", jobId: job.id });
+          console.log(`Successfully processed job spec: ${docFilename}`);
+        } catch (fileError: unknown) {
+          const errorMessage = fileError instanceof Error ? fileError.message : "Unknown error";
+          console.error(`Error processing ${docFilename}:`, fileError);
+          results.push({ filename: docFilename, status: "failed", error: errorMessage });
+        }
+      }
+
+      // Update batch status
+      const successCount = results.filter(r => r.status === "success").length;
+      const failCount = results.filter(r => r.status === "failed").length;
+      await storage.updateDocumentBatch(req.tenant.id, batch.id, {
+        status: failCount === docEntries.length ? "failed" : successCount === docEntries.length ? "completed" : "partially_completed",
+        processedDocuments: successCount,
+        failedDocuments: failCount,
+      });
+
+      res.status(201).json({
+        batchId: batch.id,
+        zipFilename: file.originalname,
+        totalDocsFound: docEntries.length,
+        processed: successCount,
+        failed: failCount,
+        results,
+      });
+    } catch (error) {
+      console.error("Error processing Job Specs ZIP file:", error);
+      res.status(500).json({ message: "Failed to process ZIP file" });
+    }
+  });
+
   // Reprocess a failed document
   app.post("/api/documents/:id/reprocess", async (req, res) => {
     try {

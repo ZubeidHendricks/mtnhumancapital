@@ -215,6 +215,44 @@ export default function DocumentAutomation() {
     },
   });
 
+  const jobSpecZipUploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      
+      const res = await fetch("/api/documents/upload/job-specs-zip", {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "ZIP upload failed");
+      }
+      
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: documentsKey });
+      queryClient.invalidateQueries({ queryKey: batchesKey });
+      queryClient.invalidateQueries({ queryKey: jobSpecsKey });
+      
+      if (data.failed > 0) {
+        toast.warning(`Extracted ${data.totalDocsFound} job specs from ZIP: ${data.processed} processed, ${data.failed} failed`);
+      } else {
+        toast.success(`Successfully processed ${data.processed} job specs from ZIP file`);
+      }
+      
+      setIsUploading(false);
+      setUploadProgress(0);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+      setIsUploading(false);
+      setUploadProgress(0);
+    },
+  });
+
   const handleZipUpload = useCallback(async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
     const zipFile = fileArray.find(f => f.name.toLowerCase().endsWith('.zip'));
@@ -236,6 +274,28 @@ export default function DocumentAutomation() {
     clearInterval(progressInterval);
     setUploadProgress(100);
   }, [zipUploadMutation]);
+
+  const handleJobSpecZipUpload = useCallback(async (files: FileList | File[]) => {
+    const fileArray = Array.from(files);
+    const zipFile = fileArray.find(f => f.name.toLowerCase().endsWith('.zip'));
+    
+    if (!zipFile) {
+      toast.error("Please select a ZIP file");
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(10);
+
+    const progressInterval = setInterval(() => {
+      setUploadProgress(prev => Math.min(prev + 5, 90));
+    }, 500);
+
+    await jobSpecZipUploadMutation.mutateAsync(zipFile);
+    
+    clearInterval(progressInterval);
+    setUploadProgress(100);
+  }, [jobSpecZipUploadMutation]);
 
   const handleFileUpload = useCallback(async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
@@ -462,50 +522,91 @@ export default function DocumentAutomation() {
             </div>
 
             {/* ZIP Upload Section */}
-            <Card className="bg-zinc-900/50 border-zinc-700">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-full bg-green-500/20">
-                    <FileArchive className="h-6 w-6 text-green-400" />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="bg-zinc-900/50 border-zinc-700">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-full bg-blue-500/20">
+                      <FileArchive className="h-6 w-6 text-blue-400" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg text-white">Bulk CV Upload</CardTitle>
+                      <CardDescription>Upload a ZIP file containing multiple CVs</CardDescription>
+                    </div>
                   </div>
-                  <div>
-                    <CardTitle className="text-lg text-white">Upload ZIP Archive</CardTitle>
-                    <CardDescription>Upload a ZIP file containing multiple CVs for bulk processing</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-6 border border-dashed border-blue-500/30 rounded-lg bg-blue-500/5">
+                    <Users className="h-10 w-10 text-blue-400 mx-auto mb-3" />
+                    <p className="text-zinc-400 mb-2 text-sm">Upload ZIP with CV PDFs</p>
+                    <p className="text-xs text-zinc-500 mb-4">All PDFs will be extracted and candidates created</p>
+                    <label>
+                      <input
+                        type="file"
+                        accept=".zip,application/zip,application/x-zip-compressed"
+                        className="hidden"
+                        onChange={(e) => e.target.files && handleZipUpload(e.target.files)}
+                        disabled={isUploading}
+                      />
+                      <Button 
+                        variant="outline" 
+                        className="border-blue-500/50 text-blue-400 hover:bg-blue-500/10"
+                        disabled={isUploading}
+                        asChild
+                        data-testid="button-browse-cv-zip"
+                      >
+                        <span>
+                          <FileArchive className="h-4 w-4 mr-2" />
+                          Select CV ZIP
+                        </span>
+                      </Button>
+                    </label>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 border border-dashed border-green-500/30 rounded-lg bg-green-500/5">
-                  <FolderArchive className="h-12 w-12 text-green-400 mx-auto mb-4" />
-                  <p className="text-zinc-400 mb-2">Upload a ZIP file with multiple CV PDFs</p>
-                  <p className="text-sm text-zinc-500 mb-4">All PDF files inside will be extracted and processed</p>
-                  <label>
-                    <input
-                      type="file"
-                      accept=".zip,application/zip,application/x-zip-compressed"
-                      className="hidden"
-                      onChange={(e) => e.target.files && handleZipUpload(e.target.files)}
-                      disabled={isUploading}
-                    />
-                    <Button 
-                      variant="outline" 
-                      className="border-green-500/50 text-green-400 hover:bg-green-500/10"
-                      disabled={isUploading}
-                      asChild
-                      data-testid="button-browse-zip-file"
-                    >
-                      <span>
-                        <FileArchive className="h-4 w-4 mr-2" />
-                        Select ZIP File
-                      </span>
-                    </Button>
-                  </label>
-                </div>
-                <p className="text-xs text-zinc-500 mt-4 text-center">
-                  Perfect for bulk importing: Package all CVs in a ZIP and upload once
-                </p>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-zinc-900/50 border-zinc-700">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-full bg-purple-500/20">
+                      <FileArchive className="h-6 w-6 text-purple-400" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg text-white">Bulk Job Specs Upload</CardTitle>
+                      <CardDescription>Upload a ZIP file containing multiple job specs</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-6 border border-dashed border-purple-500/30 rounded-lg bg-purple-500/5">
+                    <Briefcase className="h-10 w-10 text-purple-400 mx-auto mb-3" />
+                    <p className="text-zinc-400 mb-2 text-sm">Upload ZIP with job spec documents</p>
+                    <p className="text-xs text-zinc-500 mb-4">PDF, DOC, DOCX, TXT files will be processed</p>
+                    <label>
+                      <input
+                        type="file"
+                        accept=".zip,application/zip,application/x-zip-compressed"
+                        className="hidden"
+                        onChange={(e) => e.target.files && handleJobSpecZipUpload(e.target.files)}
+                        disabled={isUploading}
+                      />
+                      <Button 
+                        variant="outline" 
+                        className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
+                        disabled={isUploading}
+                        asChild
+                        data-testid="button-browse-job-spec-zip"
+                      >
+                        <span>
+                          <FileArchive className="h-4 w-4 mr-2" />
+                          Select Job Specs ZIP
+                        </span>
+                      </Button>
+                    </label>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
             {isUploading && (
               <Card className="bg-zinc-900/50 border-zinc-700">
