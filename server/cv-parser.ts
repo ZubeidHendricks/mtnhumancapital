@@ -118,7 +118,25 @@ Return ONLY the JSON object, no explanations.`;
         throw new Error("No JSON found in LLM response");
       }
 
-      const parsedData = JSON.parse(jsonMatch[0]);
+      // Clean up common JSON issues from LLM output
+      let jsonString = jsonMatch[0];
+      // Fix empty values like `: ,` or `: }` or `: ]`
+      jsonString = jsonString.replace(/:\s*,/g, ': null,');
+      jsonString = jsonString.replace(/:\s*}/g, ': null}');
+      jsonString = jsonString.replace(/:\s*]/g, ': null]');
+      // Fix trailing commas before } or ]
+      jsonString = jsonString.replace(/,\s*}/g, '}');
+      jsonString = jsonString.replace(/,\s*]/g, ']');
+      
+      let parsedData;
+      try {
+        parsedData = JSON.parse(jsonString);
+      } catch (parseError) {
+        console.error("JSON parse error, attempting recovery:", parseError);
+        // Try a more aggressive cleanup
+        jsonString = jsonString.replace(/[\x00-\x1F\x7F]/g, ' '); // Remove control characters
+        parsedData = JSON.parse(jsonString);
+      }
       
       // Validate against schema
       const validated = CVDataSchema.parse(parsedData);
