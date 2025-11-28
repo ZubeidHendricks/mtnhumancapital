@@ -13,33 +13,42 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
 
-// CV Data Schema - use nullish() to accept both null and undefined
+// CV Data Schema - use nullish() and coercion to handle AI variations
+// Helper to coerce numbers to strings
+const stringOrNumber = z.union([z.string(), z.number()]).transform(val => 
+  val === null || val === undefined ? null : String(val)
+).nullish();
+
 const EducationSchema = z.object({
-  degree: z.string(),
-  institution: z.string(),
-  year: z.string().nullish(),
+  degree: z.string().nullish().transform(val => val || "Unknown Degree"),
+  institution: z.string().nullish().transform(val => val || "Unknown Institution"),
+  year: stringOrNumber,
   location: z.string().nullish(),
 });
 
 const ExperienceSchema = z.object({
-  title: z.string(),
-  company: z.string(),
-  duration: z.string(),
+  title: z.string().nullish().transform(val => val || "Unknown Role"),
+  company: z.string().nullish().transform(val => val || "Unknown Company"),
+  duration: z.string().nullish().transform(val => val || "Not specified"),
   location: z.string().nullish(),
-  responsibilities: z.array(z.string()),
+  responsibilities: z.array(z.string()).nullish().transform(val => val || []),
 });
 
 const CVDataSchema = z.object({
-  fullName: z.string(),
+  fullName: z.string().nullish().transform(val => val || "Unknown"),
   email: z.string().nullish(),
   phone: z.string().nullish(),
   location: z.string().nullish(),
   summary: z.string().nullish(),
   role: z.string().nullish(),
-  yearsOfExperience: z.number().nullish(),
-  skills: z.array(z.string()),
-  education: z.array(EducationSchema),
-  experience: z.array(ExperienceSchema),
+  yearsOfExperience: z.union([z.number(), z.string()]).nullish().transform(val => {
+    if (val === null || val === undefined) return null;
+    const num = Number(val);
+    return isNaN(num) ? null : num;
+  }),
+  skills: z.array(z.string()).nullish().transform(val => val || []),
+  education: z.array(EducationSchema).nullish().transform(val => val || []),
+  experience: z.array(ExperienceSchema).nullish().transform(val => val || []),
   languages: z.array(z.string()).nullish(),
   certifications: z.array(z.string()).nullish(),
   linkedinUrl: z.string().nullish(),
