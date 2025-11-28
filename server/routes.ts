@@ -12,6 +12,7 @@ import { getOrCreateConversation, deleteConversation } from "./job-creation-agen
 import { requireAdmin } from "./admin-middleware";
 import multer from "multer";
 import { PDFParse } from "pdf-parse";
+import AdmZip from "adm-zip";
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -2619,6 +2620,158 @@ Format your response as JSON:
     } catch (error) {
       console.error("Error uploading CVs:", error);
       res.status(500).json({ message: "Failed to process CV uploads" });
+    }
+  });
+
+  // Upload ZIP file containing CVs - extracts and processes all PDFs
+  app.post("/api/documents/upload/cvs-zip", upload.single("file"), async (req, res) => {
+    try {
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      // Validate it's a ZIP file
+      if (file.mimetype !== "application/zip" && 
+          file.mimetype !== "application/x-zip-compressed" && 
+          !file.originalname.toLowerCase().endsWith('.zip')) {
+        return res.status(400).json({ message: "Only ZIP files are supported" });
+      }
+
+      console.log(`Processing ZIP file: ${file.originalname} (${file.size} bytes)`);
+
+      // Extract ZIP contents
+      const zip = new AdmZip(file.buffer);
+      const zipEntries = zip.getEntries();
+      
+      // Filter for PDF files only
+      const pdfEntries = zipEntries.filter(entry => 
+        !entry.isDirectory && 
+        entry.entryName.toLowerCase().endsWith('.pdf') &&
+        !entry.entryName.startsWith('__MACOSX') && // Ignore macOS metadata
+        !entry.entryName.includes('/.') // Ignore hidden files
+      );
+
+      if (pdfEntries.length === 0) {
+        return res.status(400).json({ message: "No PDF files found in the ZIP archive" });
+      }
+
+      console.log(`Found ${pdfEntries.length} PDF files in ZIP`);
+
+      // Create batch for this ZIP upload
+      const batch = await storage.createDocumentBatch(req.tenant.id, {
+        name: `ZIP Upload: ${file.originalname} - ${new Date().toLocaleDateString()}`,
+        type: "cvs",
+        status: "processing",
+        totalDocuments: pdfEntries.length,
+        processedDocuments: 0,
+        failedDocuments: 0,
+      });
+
+      const results: Array<{ filename: string; status: string; candidateId?: string; error?: string }> = [];
+
+      // Process each PDF from the ZIP
+      for (const entry of pdfEntries) {
+        const pdfFilename = entry.entryName.split('/').pop() || entry.entryName;
+        
+        try {
+          console.log(`Processing: ${pdfFilename}`);
+          const pdfBuffer = entry.getData();
+          
+          // Create document record
+          const doc = await storage.createDocument(req.tenant.id, {
+            batchId: batch.id,
+            filename: `${Date.now()}-${pdfFilename}`,
+            originalFilename: pdfFilename,
+            mimeType: "application/pdf",
+            fileSize: pdfBuffer.length,
+            filePath: `/uploads/${batch.id}/${pdfFilename}`,
+            type: "cv",
+            status: "processing",
+          });
+
+          // Extract text from PDF
+          const parser = new PDFParse({ data: pdfBuffer });
+          const pdfData = await parser.getText();
+          let rawText = pdfData.text;
+          await parser.destroy();
+          
+          // Sanitize text for PostgreSQL
+          rawText = rawText.replace(/\x00/g, '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+
+          // Parse CV with AI
+          const parsedData = await cvParser.parseCV(rawText);
+          
+          // Create candidate
+          const candidate = await storage.createCandidate(req.tenant.id, {
+            fullName: parsedData.fullName || "Unknown",
+            email: parsedData.email || undefined,
+            phone: parsedData.phone || undefined,
+            role: parsedData.role || undefined,
+            location: parsedData.location || undefined,
+            yearsOfExperience: parsedData.yearsOfExperience || undefined,
+            skills: parsedData.skills || [],
+            education: parsedData.education || [],
+            experience: parsedData.experience || [],
+            languages: parsedData.languages || undefined,
+            certifications: parsedData.certifications || undefined,
+            linkedinUrl: parsedData.linkedinUrl || undefined,
+            summary: parsedData.summary || undefined,
+            source: "ZIP Upload",
+            status: "New",
+            stage: "Screening",
+            match: 0,
+          });
+
+          // Extract profile photo
+          let photoUrl: string | null = null;
+          try {
+            photoUrl = await cvParser.extractProfilePhoto(pdfBuffer, candidate.id);
+            if (photoUrl) {
+              await storage.updateCandidate(req.tenant.id, candidate.id, { photoUrl });
+              console.log(`Photo extracted for ${pdfFilename}`);
+            }
+          } catch (photoError) {
+            console.warn(`Could not extract photo from ${pdfFilename}:`, photoError);
+          }
+
+          // Update document
+          await storage.updateDocument(req.tenant.id, doc.id, {
+            status: "processed",
+            rawText,
+            extractedData: { ...parsedData, photoUrl },
+            linkedCandidateId: candidate.id,
+          });
+
+          results.push({ filename: pdfFilename, status: "success", candidateId: candidate.id });
+          console.log(`Successfully processed: ${pdfFilename}`);
+        } catch (fileError: unknown) {
+          const errorMessage = fileError instanceof Error ? fileError.message : "Unknown error";
+          console.error(`Error processing ${pdfFilename}:`, fileError);
+          results.push({ filename: pdfFilename, status: "failed", error: errorMessage });
+        }
+      }
+
+      // Update batch status
+      const successCount = results.filter(r => r.status === "success").length;
+      const failCount = results.filter(r => r.status === "failed").length;
+      await storage.updateDocumentBatch(req.tenant.id, batch.id, {
+        status: failCount === pdfEntries.length ? "failed" : successCount === pdfEntries.length ? "completed" : "partially_completed",
+        processedDocuments: successCount,
+        failedDocuments: failCount,
+      });
+
+      res.status(201).json({
+        batchId: batch.id,
+        zipFilename: file.originalname,
+        totalPdfsFound: pdfEntries.length,
+        processed: successCount,
+        failed: failCount,
+        results,
+      });
+    } catch (error) {
+      console.error("Error processing ZIP file:", error);
+      res.status(500).json({ message: "Failed to process ZIP file" });
     }
   });
 

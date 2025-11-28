@@ -33,7 +33,9 @@ import {
   Languages,
   Sparkles,
   ArrowRight,
-  ExternalLink
+  ExternalLink,
+  FolderArchive,
+  FileArchive
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -155,6 +157,66 @@ export default function DocumentAutomation() {
       toast.success("Document deleted");
     },
   });
+
+  const zipUploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      
+      const res = await fetch("/api/documents/upload/cvs-zip", {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "ZIP upload failed");
+      }
+      
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: documentsKey });
+      queryClient.invalidateQueries({ queryKey: batchesKey });
+      queryClient.invalidateQueries({ queryKey: cvsKey });
+      
+      if (data.failed > 0) {
+        toast.warning(`Extracted ${data.totalPdfsFound} CVs from ZIP: ${data.processed} processed, ${data.failed} failed`);
+      } else {
+        toast.success(`Successfully processed ${data.processed} CVs from ZIP file`);
+      }
+      
+      setIsUploading(false);
+      setUploadProgress(0);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+      setIsUploading(false);
+      setUploadProgress(0);
+    },
+  });
+
+  const handleZipUpload = useCallback(async (files: FileList | File[]) => {
+    const fileArray = Array.from(files);
+    const zipFile = fileArray.find(f => f.name.toLowerCase().endsWith('.zip'));
+    
+    if (!zipFile) {
+      toast.error("Please select a ZIP file");
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(10);
+
+    const progressInterval = setInterval(() => {
+      setUploadProgress(prev => Math.min(prev + 5, 90));
+    }, 500);
+
+    await zipUploadMutation.mutateAsync(zipFile);
+    
+    clearInterval(progressInterval);
+    setUploadProgress(100);
+  }, [zipUploadMutation]);
 
   const handleFileUpload = useCallback(async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
@@ -375,6 +437,52 @@ export default function DocumentAutomation() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* ZIP Upload Section */}
+            <Card className="bg-zinc-900/50 border-zinc-700">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-full bg-green-500/20">
+                    <FileArchive className="h-6 w-6 text-green-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg text-white">Upload ZIP Archive</CardTitle>
+                    <CardDescription>Upload a ZIP file containing multiple CVs for bulk processing</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 border border-dashed border-green-500/30 rounded-lg bg-green-500/5">
+                  <FolderArchive className="h-12 w-12 text-green-400 mx-auto mb-4" />
+                  <p className="text-zinc-400 mb-2">Upload a ZIP file with multiple CV PDFs</p>
+                  <p className="text-sm text-zinc-500 mb-4">All PDF files inside will be extracted and processed</p>
+                  <label>
+                    <input
+                      type="file"
+                      accept=".zip,application/zip,application/x-zip-compressed"
+                      className="hidden"
+                      onChange={(e) => e.target.files && handleZipUpload(e.target.files)}
+                      disabled={isUploading}
+                    />
+                    <Button 
+                      variant="outline" 
+                      className="border-green-500/50 text-green-400 hover:bg-green-500/10"
+                      disabled={isUploading}
+                      asChild
+                      data-testid="button-browse-zip-file"
+                    >
+                      <span>
+                        <FileArchive className="h-4 w-4 mr-2" />
+                        Select ZIP File
+                      </span>
+                    </Button>
+                  </label>
+                </div>
+                <p className="text-xs text-zinc-500 mt-4 text-center">
+                  Perfect for bulk importing: Package all CVs in a ZIP and upload once
+                </p>
+              </CardContent>
+            </Card>
 
             {isUploading && (
               <Card className="bg-zinc-900/50 border-zinc-700">
