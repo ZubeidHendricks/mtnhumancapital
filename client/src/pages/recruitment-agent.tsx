@@ -33,17 +33,52 @@ const AGENT_STEPS = [
 
 const AGENT_MESSAGES = [
   { agent: "Job Analyzer", message: "Parsing job requirements and extracting key skills...", type: "analyzing" },
-  { agent: "Job Analyzer", message: "Identified 8 required skills and 5 preferred qualifications", type: "analyzing" },
-  { agent: "Talent Scout", message: "Initiating search across candidate database...", type: "sourcing" },
-  { agent: "Talent Scout", message: "Found 47 potential candidates matching criteria", type: "sourcing" },
-  { agent: "Talent Scout", message: "Filtering by experience level and location...", type: "sourcing" },
-  { agent: "Screening AI", message: "Beginning deep profile analysis with LLaMA 3.1 70B...", type: "screening" },
-  { agent: "Screening AI", message: "Analyzing work history and skill alignment...", type: "screening" },
-  { agent: "Screening AI", message: "Evaluating cultural fit indicators...", type: "screening" },
+  { agent: "Job Analyzer", message: "Identified required skills and qualifications", type: "analyzing" },
+  { agent: "LinkedIn Specialist", message: "Generating boolean search strings for LinkedIn...", type: "sourcing" },
+  { agent: "LinkedIn Specialist", message: "Searching passive candidates at target employers...", type: "sourcing" },
+  { agent: "PNet Specialist", message: "Querying PNet CV database with filter criteria...", type: "sourcing" },
+  { agent: "PNet Specialist", message: "Filtering by availability and salary expectations...", type: "sourcing" },
+  { agent: "Indeed Specialist", message: "Searching Indeed resume database...", type: "sourcing" },
+  { agent: "Indeed Specialist", message: "Found diverse candidate pool for screening...", type: "sourcing" },
+  { agent: "Screening AI", message: "Beginning deep profile analysis with LLaMA 3.3 70B...", type: "screening" },
+  { agent: "Screening AI", message: "Evaluating skill alignment and experience match...", type: "screening" },
   { agent: "Ranking Engine", message: "Calculating composite match scores...", type: "ranking" },
-  { agent: "Ranking Engine", message: "Applying weighted criteria to final rankings...", type: "ranking" },
-  { agent: "System", message: "Recruitment session complete! Top candidates identified.", type: "complete" },
+  { agent: "Ranking Engine", message: "Applying screening criteria to final rankings...", type: "ranking" },
+  { agent: "System", message: "Sourcing complete! Top candidates ready for review.", type: "complete" },
 ];
+
+const SOURCING_SPECIALISTS = [
+  { 
+    name: "LinkedIn Specialist", 
+    platform: "LinkedIn",
+    icon: Linkedin,
+    color: "bg-blue-600",
+    description: "Passive candidates from professional network" 
+  },
+  { 
+    name: "PNet Specialist", 
+    platform: "PNet",
+    icon: FileSearch,
+    color: "bg-green-600",
+    description: "Active job seekers from SA's largest portal" 
+  },
+  { 
+    name: "Indeed Specialist", 
+    platform: "Indeed",
+    icon: Search,
+    color: "bg-purple-600",
+    description: "Diverse candidates from resume database" 
+  },
+];
+
+interface SourcingResult {
+  specialist: string;
+  status: string;
+  candidatesFound: number;
+  candidatesSaved: number;
+  searchQuery: string;
+  timestamp: string;
+}
 
 export default function RecruitmentAgent() {
   const [selectedJobId, setSelectedJobId] = useState<string>("");
@@ -55,6 +90,9 @@ export default function RecruitmentAgent() {
   const [expandedSession, setExpandedSession] = useState<string | null>(null);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [showCandidateDialog, setShowCandidateDialog] = useState(false);
+  const [sourcingResults, setSourcingResults] = useState<SourcingResult[]>([]);
+  const [isSourcing, setIsSourcing] = useState(false);
+  const [activeSpecialist, setActiveSpecialist] = useState<string | null>(null);
   
   const queryClient = useQueryClient();
   const jobsKey = useTenantQueryKey(['jobs']);
@@ -94,6 +132,58 @@ export default function RecruitmentAgent() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: recruitmentSessionsKey });
       simulateAgentActivity();
+    },
+  });
+
+  const runAllSpecialistsMutation = useMutation({
+    mutationFn: async (params: { jobId: string; candidatesPerSpecialist: number; minMatchScore: number }) => {
+      const response = await api.post(`/sourcing/run-all/${params.jobId}`, {
+        candidatesPerSpecialist: params.candidatesPerSpecialist,
+        minMatchScore: params.minMatchScore,
+        autoSave: true,
+      });
+      return response.data;
+    },
+    onMutate: () => {
+      setIsSourcing(true);
+      setActiveSpecialist("all");
+      setSourcingResults([]);
+      simulateAgentActivity();
+    },
+    onSuccess: (data) => {
+      setIsSourcing(false);
+      setActiveSpecialist(null);
+      setSourcingResults(data.results || []);
+      queryClient.invalidateQueries({ queryKey: candidatesKey });
+    },
+    onError: () => {
+      setIsSourcing(false);
+      setActiveSpecialist(null);
+    },
+  });
+
+  const runSingleSpecialistMutation = useMutation({
+    mutationFn: async (params: { specialistName: string; jobId: string; limit: number; minMatchScore: number }) => {
+      const response = await api.post(`/sourcing/run/${encodeURIComponent(params.specialistName)}/${params.jobId}`, {
+        limit: params.limit,
+        minMatchScore: params.minMatchScore,
+        autoSave: true,
+      });
+      return response.data;
+    },
+    onMutate: (params) => {
+      setIsSourcing(true);
+      setActiveSpecialist(params.specialistName);
+    },
+    onSuccess: (data) => {
+      setIsSourcing(false);
+      setActiveSpecialist(null);
+      setSourcingResults(prev => [...prev, data.result]);
+      queryClient.invalidateQueries({ queryKey: candidatesKey });
+    },
+    onError: () => {
+      setIsSourcing(false);
+      setActiveSpecialist(null);
     },
   });
 
@@ -312,6 +402,95 @@ export default function RecruitmentAgent() {
                       <>
                         <Zap className="mr-2 h-4 w-4" />
                         Deploy AI Agents
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Sourcing Specialists */}
+              <Card className="bg-zinc-900/50 border-zinc-800">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Users className="h-5 w-5 text-blue-400" />
+                    Sourcing Specialists
+                  </CardTitle>
+                  <CardDescription>AI agents specialized for each job board</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {SOURCING_SPECIALISTS.map((specialist) => {
+                    const IconComponent = specialist.icon;
+                    const isActive = activeSpecialist === specialist.name || activeSpecialist === "all";
+                    const result = sourcingResults.find(r => r.specialist === specialist.name);
+                    
+                    return (
+                      <div 
+                        key={specialist.name}
+                        className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
+                          isActive 
+                            ? 'bg-purple-500/10 border-purple-500/50' 
+                            : result?.status === 'success'
+                              ? 'bg-green-500/10 border-green-500/30'
+                              : 'bg-zinc-800/50 border-zinc-700/50 hover:border-zinc-600'
+                        }`}
+                        data-testid={`specialist-${specialist.platform.toLowerCase()}`}
+                      >
+                        <div className={`p-2 rounded-lg ${specialist.color}`}>
+                          {isActive ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <IconComponent className="h-4 w-4" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{specialist.name}</p>
+                          <p className="text-xs text-zinc-500">{specialist.description}</p>
+                          {result && (
+                            <p className="text-xs text-green-400 mt-1">
+                              Found {result.candidatesFound} candidates, saved {result.candidatesSaved}
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => runSingleSpecialistMutation.mutate({
+                            specialistName: specialist.name,
+                            jobId: selectedJobId,
+                            limit: 10,
+                            minMatchScore,
+                          })}
+                          disabled={!selectedJobId || isSourcing}
+                          className="shrink-0"
+                          data-testid={`button-run-${specialist.platform.toLowerCase()}`}
+                        >
+                          {isActive ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    );
+                  })}
+                  
+                  <Separator className="my-3 bg-zinc-700" />
+                  
+                  <Button
+                    onClick={() => runAllSpecialistsMutation.mutate({
+                      jobId: selectedJobId,
+                      candidatesPerSpecialist: 7,
+                      minMatchScore,
+                    })}
+                    disabled={!selectedJobId || isSourcing}
+                    className="w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-500 hover:to-green-500"
+                    data-testid="button-run-all-specialists"
+                  >
+                    {isSourcing && activeSpecialist === "all" ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        All Specialists Working...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Run All Specialists
                       </>
                     )}
                   </Button>

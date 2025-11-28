@@ -1,10 +1,11 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertCandidateSchema, insertJobSchema, insertIntegrityCheckSchema, insertRecruitmentSessionSchema, insertInterviewSchema, updateInterviewSchema, insertTenantRequestSchema, updateTenantRequestSchema } from "@shared/schema";
+import { insertCandidateSchema, insertJobSchema, insertIntegrityCheckSchema, insertRecruitmentSessionSchema, insertInterviewSchema, updateInterviewSchema, insertTenantRequestSchema, updateTenantRequestSchema, type InsertCandidate } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { IntegrityOrchestrator } from "./integrity-orchestrator";
 import { RecruitmentOrchestrator } from "./recruitment-orchestrator";
+import { sourcingOrchestrator, type SpecialistCandidate } from "./sourcing-specialists";
 import { cvParser } from "./cv-parser";
 import { embeddingService } from "./embedding-service";
 import { getOrCreateConversation, deleteConversation } from "./job-creation-agent";
@@ -1227,6 +1228,194 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating recruitment session:", error);
       res.status(500).json({ message: "Failed to create recruitment session" });
+    }
+  });
+
+  // ===== Sourcing Specialist Routes =====
+  
+  app.get("/api/sourcing/specialists", async (req, res) => {
+    try {
+      const specialists = sourcingOrchestrator.getSpecialists();
+      res.json(specialists);
+    } catch (error) {
+      console.error("Error fetching specialists:", error);
+      res.status(500).json({ message: "Failed to fetch sourcing specialists" });
+    }
+  });
+
+  app.post("/api/sourcing/run-all/:jobId", async (req, res) => {
+    try {
+      const { candidatesPerSpecialist = 7, minMatchScore = 60, autoSave = true } = req.body;
+      
+      const job = await storage.getJobById(req.tenant.id, req.params.jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+
+      console.log(`[Sourcing] Running all specialists for job: ${job.title}`);
+      
+      const { results, allCandidates, configuration } = await sourcingOrchestrator.runAllSpecialists(
+        job,
+        candidatesPerSpecialist
+      );
+
+      let savedCount = 0;
+      if (autoSave) {
+        for (const candidate of allCandidates) {
+          if (candidate.match >= minMatchScore) {
+            try {
+              const candidateData: InsertCandidate = {
+                fullName: candidate.name,
+                role: candidate.currentRole,
+                source: `${candidate.source} (${candidate.specialist})`,
+                status: "New",
+                stage: "Screening",
+                match: candidate.match,
+                jobId: job.id,
+                skills: candidate.skills,
+                location: candidate.location,
+                metadata: {
+                  company: candidate.company,
+                  experience: candidate.experience,
+                  specialist: candidate.specialist,
+                  platform: candidate.source,
+                  profileUrl: candidate.profileUrl,
+                  ...candidate.rawData,
+                },
+              };
+              await storage.createCandidate(req.tenant.id, candidateData);
+              savedCount++;
+            } catch (err) {
+              console.error(`Failed to save candidate ${candidate.name}:`, err);
+            }
+          }
+        }
+      }
+
+      const savedBySpecialist: Record<string, number> = {};
+      for (const candidate of allCandidates) {
+        if (candidate.match >= minMatchScore) {
+          savedBySpecialist[candidate.specialist] = (savedBySpecialist[candidate.specialist] || 0) + 1;
+        }
+      }
+
+      res.json({
+        message: "Sourcing completed",
+        configuration,
+        results: results.map(r => ({
+          specialist: r.specialist,
+          status: r.status,
+          candidatesFound: r.candidates.length,
+          candidatesSaved: savedBySpecialist[r.specialist] || 0,
+          searchQuery: r.searchQuery,
+          timestamp: r.timestamp,
+        })),
+        summary: {
+          totalCandidatesFound: allCandidates.length,
+          candidatesSaved: savedCount,
+          bySpecialist: results.map(r => ({
+            name: r.specialist,
+            found: r.candidates.length,
+            saved: savedBySpecialist[r.specialist] || 0,
+          })),
+        },
+        candidates: allCandidates,
+      });
+    } catch (error) {
+      console.error("Error running sourcing specialists:", error);
+      res.status(500).json({ message: "Failed to run sourcing specialists" });
+    }
+  });
+
+  app.post("/api/sourcing/run/:specialistName/:jobId", async (req, res) => {
+    try {
+      const { limit = 10, minMatchScore = 60, autoSave = true } = req.body;
+      const specialistName = decodeURIComponent(req.params.specialistName);
+      
+      const job = await storage.getJobById(req.tenant.id, req.params.jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+
+      console.log(`[Sourcing] Running ${specialistName} for job: ${job.title}`);
+      
+      const result = await sourcingOrchestrator.runSpecialist(specialistName, job, limit);
+
+      let savedCount = 0;
+      if (autoSave && result.status === "success") {
+        for (const candidate of result.candidates) {
+          if (candidate.match >= minMatchScore) {
+            try {
+              const candidateData: InsertCandidate = {
+                fullName: candidate.name,
+                role: candidate.currentRole,
+                source: `${candidate.source} (${candidate.specialist})`,
+                status: "New",
+                stage: "Screening",
+                match: candidate.match,
+                jobId: job.id,
+                skills: candidate.skills,
+                location: candidate.location,
+                metadata: {
+                  company: candidate.company,
+                  experience: candidate.experience,
+                  specialist: candidate.specialist,
+                  platform: candidate.source,
+                  profileUrl: candidate.profileUrl,
+                  ...candidate.rawData,
+                },
+              };
+              await storage.createCandidate(req.tenant.id, candidateData);
+              savedCount++;
+            } catch (err) {
+              console.error(`Failed to save candidate ${candidate.name}:`, err);
+            }
+          }
+        }
+      }
+
+      res.json({
+        message: `${specialistName} sourcing completed`,
+        result: {
+          specialist: result.specialist,
+          status: result.status,
+          searchQuery: result.searchQuery,
+          candidatesFound: result.candidates.length,
+          candidatesSaved: savedCount,
+          timestamp: result.timestamp,
+          errorMessage: result.errorMessage,
+        },
+        candidates: result.candidates,
+      });
+    } catch (error) {
+      console.error("Error running sourcing specialist:", error);
+      res.status(500).json({ message: "Failed to run sourcing specialist" });
+    }
+  });
+
+  app.post("/api/sourcing/generate-config/:jobId", async (req, res) => {
+    try {
+      const job = await storage.getJobById(req.tenant.id, req.params.jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+
+      const { LinkedInSpecialist } = await import("./sourcing-specialists");
+      const specialist = new LinkedInSpecialist();
+      const configuration = await specialist.generateSearchConfiguration(job);
+
+      res.json({
+        job: {
+          id: job.id,
+          title: job.title,
+          department: job.department,
+          location: job.location,
+        },
+        configuration,
+      });
+    } catch (error) {
+      console.error("Error generating sourcing config:", error);
+      res.status(500).json({ message: "Failed to generate sourcing configuration" });
     }
   });
 
