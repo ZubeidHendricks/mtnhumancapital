@@ -22,7 +22,15 @@ import {
   Trash2,
   Eye,
   RefreshCw,
-  FolderOpen
+  FolderOpen,
+  Mail,
+  Phone,
+  MapPin,
+  GraduationCap,
+  Building2,
+  Award,
+  Languages,
+  Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -414,60 +422,119 @@ export default function DocumentAutomation() {
                     </Button>
                   </div>
                 ) : (
-                  <ScrollArea className="h-[500px]">
-                    <div className="space-y-2">
-                      {cvDocuments.map((doc) => (
-                        <div 
-                          key={doc.id}
-                          className="flex items-center justify-between p-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors"
-                          data-testid={`card-document-${doc.id}`}
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className="p-2 rounded bg-zinc-700/50">
-                              <File className="h-5 w-5 text-zinc-400" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-white">{doc.originalFilename}</p>
-                              <div className="flex items-center gap-2 mt-1">
-                                <span className="text-xs text-zinc-500">{formatFileSize(doc.fileSize)}</span>
-                                <span className="text-zinc-600">•</span>
-                                <span className="text-xs text-zinc-500">
-                                  {new Date(doc.createdAt).toLocaleDateString()}
-                                </span>
-                                {doc.linkedCandidateId && (
-                                  <>
-                                    <span className="text-zinc-600">•</span>
-                                    <span className="text-xs text-green-400">Candidate created</span>
-                                  </>
-                                )}
+                  <ScrollArea className="h-[600px]">
+                    <div className="space-y-3">
+                      {cvDocuments.map((doc) => {
+                        const extracted = doc.extractedData as any;
+                        return (
+                          <div 
+                            key={doc.id}
+                            className="p-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors border border-zinc-700/50"
+                            data-testid={`card-document-${doc.id}`}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-start gap-4">
+                                <div className="p-3 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30">
+                                  <Users className="h-6 w-6 text-amber-400" />
+                                </div>
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <p className="font-semibold text-white text-lg">
+                                      {extracted?.fullName || doc.originalFilename}
+                                    </p>
+                                    <Badge className={getStatusBadge(doc.status)}>
+                                      {getStatusIcon(doc.status)}
+                                      <span className="ml-1 capitalize">{doc.status}</span>
+                                    </Badge>
+                                  </div>
+                                  
+                                  {extracted?.role && (
+                                    <p className="text-amber-400 text-sm font-medium mb-2">{extracted.role}</p>
+                                  )}
+                                  
+                                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-zinc-400 mb-3">
+                                    {extracted?.email && (
+                                      <span className="flex items-center gap-1">
+                                        <Mail className="h-3 w-3" />
+                                        {extracted.email}
+                                      </span>
+                                    )}
+                                    {extracted?.phone && (
+                                      <span className="flex items-center gap-1">
+                                        <Phone className="h-3 w-3" />
+                                        {extracted.phone}
+                                      </span>
+                                    )}
+                                    {extracted?.location && (
+                                      <span className="flex items-center gap-1">
+                                        <MapPin className="h-3 w-3" />
+                                        {extracted.location}
+                                      </span>
+                                    )}
+                                    {extracted?.yearsOfExperience && (
+                                      <span className="flex items-center gap-1">
+                                        <Clock className="h-3 w-3" />
+                                        {extracted.yearsOfExperience} years exp
+                                      </span>
+                                    )}
+                                  </div>
+                                  
+                                  {extracted?.skills && extracted.skills.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 mb-2">
+                                      {extracted.skills.slice(0, 6).map((skill: string, i: number) => (
+                                        <Badge key={i} variant="outline" className="text-xs border-zinc-600 text-zinc-300">
+                                          {skill}
+                                        </Badge>
+                                      ))}
+                                      {extracted.skills.length > 6 && (
+                                        <Badge variant="outline" className="text-xs border-zinc-600 text-zinc-400">
+                                          +{extracted.skills.length - 6} more
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  )}
+                                  
+                                  <div className="flex items-center gap-3 text-xs text-zinc-500">
+                                    <span>{formatFileSize(doc.fileSize)}</span>
+                                    <span>•</span>
+                                    <span>{new Date(doc.createdAt).toLocaleDateString()}</span>
+                                    {doc.linkedCandidateId && (
+                                      <>
+                                        <span>•</span>
+                                        <span className="text-green-400 flex items-center gap-1">
+                                          <CheckCircle2 className="h-3 w-3" />
+                                          Candidate created
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => setSelectedDocument(doc)}
+                                  className="border-zinc-600 text-zinc-300 hover:bg-zinc-700"
+                                  data-testid={`button-view-document-${doc.id}`}
+                                >
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  View Details
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                                  onClick={() => deleteMutation.mutate(doc.id)}
+                                  data-testid={`button-delete-document-${doc.id}`}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
                               </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Badge className={getStatusBadge(doc.status)}>
-                              {getStatusIcon(doc.status)}
-                              <span className="ml-1 capitalize">{doc.status}</span>
-                            </Badge>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => setSelectedDocument(doc)}
-                              data-testid={`button-view-document-${doc.id}`}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                              onClick={() => deleteMutation.mutate(doc.id)}
-                              data-testid={`button-delete-document-${doc.id}`}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </ScrollArea>
                 )}
@@ -571,57 +638,215 @@ export default function DocumentAutomation() {
           </DialogHeader>
           
           {selectedDocument && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-zinc-500 mb-1">Status</p>
-                  <Badge className={getStatusBadge(selectedDocument.status)}>
-                    {getStatusIcon(selectedDocument.status)}
-                    <span className="ml-1 capitalize">{selectedDocument.status}</span>
-                  </Badge>
-                </div>
-                <div>
-                  <p className="text-xs text-zinc-500 mb-1">File Size</p>
-                  <p className="text-white">{formatFileSize(selectedDocument.fileSize)}</p>
-                </div>
-              </div>
+            <div className="space-y-6">
+              {(() => {
+                const data = selectedDocument.extractedData as any;
+                return (
+                  <>
+                    {/* Header with Status */}
+                    <div className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <Badge className={getStatusBadge(selectedDocument.status)}>
+                          {getStatusIcon(selectedDocument.status)}
+                          <span className="ml-1 capitalize">{selectedDocument.status}</span>
+                        </Badge>
+                        <span className="text-zinc-400 text-sm">{formatFileSize(selectedDocument.fileSize)}</span>
+                      </div>
+                      {selectedDocument.linkedCandidateId && (
+                        <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Candidate Created
+                        </Badge>
+                      )}
+                    </div>
 
-              {selectedDocument.linkedCandidateId && (
-                <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-                  <p className="text-sm text-green-400">
-                    ✓ Candidate created from this document
-                  </p>
-                </div>
-              )}
+                    {data && (
+                      <>
+                        {/* Personal Information */}
+                        <div className="space-y-3">
+                          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                            <Users className="h-5 w-5 text-amber-400" />
+                            Personal Information
+                          </h3>
+                          <div className="grid grid-cols-2 gap-4 p-4 bg-zinc-800/30 rounded-lg">
+                            <div>
+                              <p className="text-xs text-zinc-500 mb-1">Full Name</p>
+                              <p className="text-white font-medium">{data.fullName || "N/A"}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-zinc-500 mb-1">Role/Title</p>
+                              <p className="text-amber-400">{data.role || "N/A"}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-zinc-500 mb-1">Email</p>
+                              <p className="text-white">{data.email || "N/A"}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-zinc-500 mb-1">Phone</p>
+                              <p className="text-white">{data.phone || "N/A"}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-zinc-500 mb-1">Location</p>
+                              <p className="text-white">{data.location || "N/A"}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-zinc-500 mb-1">Experience</p>
+                              <p className="text-white">{data.yearsOfExperience ? `${data.yearsOfExperience} years` : "N/A"}</p>
+                            </div>
+                          </div>
+                        </div>
 
-              {selectedDocument.extractedData && (
-                <div>
-                  <p className="text-sm font-medium text-white mb-2">Extracted Data</p>
-                  <div className="p-4 bg-zinc-800 rounded-lg">
-                    <pre className="text-xs text-zinc-300 whitespace-pre-wrap overflow-x-auto">
-                      {JSON.stringify(selectedDocument.extractedData, null, 2)}
-                    </pre>
-                  </div>
-                </div>
-              )}
+                        {/* Summary */}
+                        {data.summary && (
+                          <div className="space-y-3">
+                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                              <Sparkles className="h-5 w-5 text-purple-400" />
+                              Professional Summary
+                            </h3>
+                            <p className="text-zinc-300 text-sm leading-relaxed p-4 bg-zinc-800/30 rounded-lg">
+                              {data.summary}
+                            </p>
+                          </div>
+                        )}
 
-              {selectedDocument.rawText && (
-                <div>
-                  <p className="text-sm font-medium text-white mb-2">Raw Text (Preview)</p>
-                  <ScrollArea className="h-48 p-4 bg-zinc-800 rounded-lg">
-                    <p className="text-xs text-zinc-400 whitespace-pre-wrap">
-                      {selectedDocument.rawText.slice(0, 2000)}
-                      {selectedDocument.rawText.length > 2000 && "..."}
-                    </p>
-                  </ScrollArea>
-                </div>
-              )}
+                        {/* Skills */}
+                        {data.skills && data.skills.length > 0 && (
+                          <div className="space-y-3">
+                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                              <Award className="h-5 w-5 text-blue-400" />
+                              Skills ({data.skills.length})
+                            </h3>
+                            <div className="flex flex-wrap gap-2 p-4 bg-zinc-800/30 rounded-lg">
+                              {data.skills.map((skill: string, i: number) => (
+                                <Badge key={i} className="bg-blue-500/20 text-blue-300 border-blue-500/30">
+                                  {skill}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
-              {selectedDocument.errorMessage && (
-                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                  <p className="text-sm text-red-400">{selectedDocument.errorMessage}</p>
-                </div>
-              )}
+                        {/* Experience */}
+                        {data.experience && data.experience.length > 0 && (
+                          <div className="space-y-3">
+                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                              <Building2 className="h-5 w-5 text-green-400" />
+                              Experience ({data.experience.length})
+                            </h3>
+                            <div className="space-y-3">
+                              {data.experience.map((exp: any, i: number) => (
+                                <div key={i} className="p-4 bg-zinc-800/30 rounded-lg border-l-2 border-green-500/50">
+                                  <div className="flex items-start justify-between mb-2">
+                                    <div>
+                                      <p className="font-medium text-white">{exp.title}</p>
+                                      <p className="text-amber-400 text-sm">{exp.company}</p>
+                                    </div>
+                                    <div className="text-right text-sm text-zinc-400">
+                                      <p>{exp.duration}</p>
+                                      {exp.location && <p>{exp.location}</p>}
+                                    </div>
+                                  </div>
+                                  {exp.responsibilities && exp.responsibilities.length > 0 && (
+                                    <ul className="text-sm text-zinc-300 space-y-1 mt-2">
+                                      {exp.responsibilities.slice(0, 3).map((resp: string, j: number) => (
+                                        <li key={j} className="flex items-start gap-2">
+                                          <span className="text-green-400 mt-1">•</span>
+                                          {resp}
+                                        </li>
+                                      ))}
+                                      {exp.responsibilities.length > 3 && (
+                                        <li className="text-zinc-500 text-xs">
+                                          +{exp.responsibilities.length - 3} more responsibilities
+                                        </li>
+                                      )}
+                                    </ul>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Education */}
+                        {data.education && data.education.length > 0 && (
+                          <div className="space-y-3">
+                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                              <GraduationCap className="h-5 w-5 text-orange-400" />
+                              Education ({data.education.length})
+                            </h3>
+                            <div className="space-y-2">
+                              {data.education.map((edu: any, i: number) => (
+                                <div key={i} className="p-4 bg-zinc-800/30 rounded-lg border-l-2 border-orange-500/50">
+                                  <p className="font-medium text-white">{edu.degree}</p>
+                                  <p className="text-amber-400 text-sm">{edu.institution}</p>
+                                  <div className="flex gap-3 text-sm text-zinc-400 mt-1">
+                                    {edu.year && <span>{edu.year}</span>}
+                                    {edu.location && <span>• {edu.location}</span>}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Languages & Certifications */}
+                        <div className="grid grid-cols-2 gap-4">
+                          {data.languages && data.languages.length > 0 && (
+                            <div className="space-y-2">
+                              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                                <Languages className="h-4 w-4 text-cyan-400" />
+                                Languages
+                              </h3>
+                              <div className="flex flex-wrap gap-1">
+                                {data.languages.map((lang: string, i: number) => (
+                                  <Badge key={i} variant="outline" className="text-xs border-cyan-500/30 text-cyan-300">
+                                    {lang}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {data.certifications && data.certifications.length > 0 && (
+                            <div className="space-y-2">
+                              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                                <Award className="h-4 w-4 text-yellow-400" />
+                                Certifications
+                              </h3>
+                              <div className="flex flex-wrap gap-1">
+                                {data.certifications.map((cert: string, i: number) => (
+                                  <Badge key={i} variant="outline" className="text-xs border-yellow-500/30 text-yellow-300">
+                                    {cert}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    {/* Error Message */}
+                    {selectedDocument.errorMessage && (
+                      <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                        <p className="text-sm text-red-400">{selectedDocument.errorMessage}</p>
+                      </div>
+                    )}
+
+                    {/* Raw Text Preview */}
+                    {selectedDocument.rawText && (
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-semibold text-white">Raw Text Preview</h3>
+                        <ScrollArea className="h-32 p-3 bg-zinc-800/50 rounded-lg">
+                          <p className="text-xs text-zinc-500 whitespace-pre-wrap">
+                            {selectedDocument.rawText.slice(0, 1000)}
+                            {selectedDocument.rawText.length > 1000 && "..."}
+                          </p>
+                        </ScrollArea>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           )}
         </DialogContent>
