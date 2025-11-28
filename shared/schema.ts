@@ -762,3 +762,156 @@ export type DocumentBatch = typeof documentBatches.$inferSelect;
 export type InsertDocument = z.infer<typeof insertDocumentSchema>;
 export type UpdateDocument = z.infer<typeof updateDocumentSchema>;
 export type Document = typeof documents.$inferSelect;
+
+// ==================== WHATSAPP CONVERSATIONS ====================
+
+export const whatsappConversations = pgTable("whatsapp_conversations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id"),
+  candidateId: varchar("candidate_id").references(() => candidates.id),
+  waId: text("wa_id").notNull(), // WhatsApp ID (phone number)
+  profileName: text("profile_name"), // WhatsApp profile name
+  phone: text("phone").notNull(),
+  type: text("type").notNull().default("general"), // 'general', 'document_request', 'appointment', 'onboarding', 'screening'
+  subject: text("subject"), // Brief description of conversation purpose
+  status: text("status").notNull().default("active"), // 'active', 'resolved', 'pending', 'escalated'
+  assignedTo: varchar("assigned_to").references(() => users.id), // HR staff assigned
+  priority: text("priority").default("normal"), // 'low', 'normal', 'high', 'urgent'
+  lastMessageAt: timestamp("last_message_at"),
+  lastMessagePreview: text("last_message_preview"),
+  unreadCount: integer("unread_count").default(0),
+  metadata: jsonb("metadata"), // Additional context
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  tenantIdIdx: index("whatsapp_conversations_tenant_id_idx").on(table.tenantId),
+  candidateIdIdx: index("whatsapp_conversations_candidate_id_idx").on(table.candidateId),
+  waIdIdx: index("whatsapp_conversations_wa_id_idx").on(table.waId),
+  statusIdx: index("whatsapp_conversations_status_idx").on(table.status),
+  typeIdx: index("whatsapp_conversations_type_idx").on(table.type),
+}));
+
+export const whatsappMessages = pgTable("whatsapp_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id"),
+  conversationId: varchar("conversation_id").notNull().references(() => whatsappConversations.id),
+  whatsappMessageId: text("whatsapp_message_id"), // WhatsApp's message ID
+  direction: text("direction").notNull(), // 'inbound', 'outbound'
+  senderType: text("sender_type").notNull(), // 'candidate', 'ai', 'human'
+  senderId: varchar("sender_id"), // User ID if human sender
+  messageType: text("message_type").notNull().default("text"), // 'text', 'image', 'document', 'audio', 'video', 'template', 'interactive'
+  body: text("body"), // Text content
+  mediaUrl: text("media_url"), // URL for media messages
+  mediaType: text("media_type"), // MIME type of media
+  templateName: text("template_name"), // If template message
+  templateParams: jsonb("template_params"), // Template parameters
+  interactiveType: text("interactive_type"), // 'button', 'list', 'product'
+  interactiveData: jsonb("interactive_data"), // Interactive message data
+  status: text("status").notNull().default("sent"), // 'pending', 'sent', 'delivered', 'read', 'failed'
+  errorCode: text("error_code"),
+  errorMessage: text("error_message"),
+  payload: jsonb("payload"), // Full WhatsApp API payload
+  sentAt: timestamp("sent_at"),
+  deliveredAt: timestamp("delivered_at"),
+  readAt: timestamp("read_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  tenantIdIdx: index("whatsapp_messages_tenant_id_idx").on(table.tenantId),
+  conversationIdIdx: index("whatsapp_messages_conversation_id_idx").on(table.conversationId),
+  whatsappMessageIdIdx: index("whatsapp_messages_whatsapp_message_id_idx").on(table.whatsappMessageId),
+  statusIdx: index("whatsapp_messages_status_idx").on(table.status),
+  createdAtIdx: index("whatsapp_messages_created_at_idx").on(table.createdAt),
+}));
+
+export const whatsappDocumentRequests = pgTable("whatsapp_document_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id"),
+  conversationId: varchar("conversation_id").notNull().references(() => whatsappConversations.id),
+  candidateId: varchar("candidate_id").references(() => candidates.id),
+  messageId: varchar("message_id").references(() => whatsappMessages.id),
+  documentType: text("document_type").notNull(), // 'id_document', 'proof_of_address', 'qualification', 'reference', 'cv', 'other'
+  documentName: text("document_name").notNull(), // Human-readable name
+  description: text("description"), // Additional context
+  status: text("status").notNull().default("requested"), // 'requested', 'received', 'verified', 'rejected', 'expired'
+  dueDate: timestamp("due_date"),
+  receivedAt: timestamp("received_at"),
+  receivedDocumentId: varchar("received_document_id").references(() => documents.id),
+  reminderCount: integer("reminder_count").default(0),
+  lastReminderAt: timestamp("last_reminder_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  tenantIdIdx: index("whatsapp_document_requests_tenant_id_idx").on(table.tenantId),
+  conversationIdIdx: index("whatsapp_document_requests_conversation_id_idx").on(table.conversationId),
+  candidateIdIdx: index("whatsapp_document_requests_candidate_id_idx").on(table.candidateId),
+  statusIdx: index("whatsapp_document_requests_status_idx").on(table.status),
+}));
+
+export const whatsappAppointments = pgTable("whatsapp_appointments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id"),
+  conversationId: varchar("conversation_id").notNull().references(() => whatsappConversations.id),
+  candidateId: varchar("candidate_id").references(() => candidates.id),
+  messageId: varchar("message_id").references(() => whatsappMessages.id),
+  appointmentType: text("appointment_type").notNull(), // 'interview', 'onboarding', 'assessment', 'document_collection', 'other'
+  title: text("title").notNull(),
+  description: text("description"),
+  scheduledAt: timestamp("scheduled_at"),
+  duration: integer("duration"), // Duration in minutes
+  location: text("location"), // Physical location or 'virtual'
+  meetingLink: text("meeting_link"), // For virtual meetings
+  status: text("status").notNull().default("proposed"), // 'proposed', 'confirmed', 'rescheduled', 'cancelled', 'completed', 'no_show'
+  confirmedAt: timestamp("confirmed_at"),
+  reminderSent: integer("reminder_sent").default(0),
+  candidateResponse: text("candidate_response"), // 'accepted', 'declined', 'reschedule_requested'
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  tenantIdIdx: index("whatsapp_appointments_tenant_id_idx").on(table.tenantId),
+  conversationIdIdx: index("whatsapp_appointments_conversation_id_idx").on(table.conversationId),
+  candidateIdIdx: index("whatsapp_appointments_candidate_id_idx").on(table.candidateId),
+  statusIdx: index("whatsapp_appointments_status_idx").on(table.status),
+  scheduledAtIdx: index("whatsapp_appointments_scheduled_at_idx").on(table.scheduledAt),
+}));
+
+// Insert schemas for WhatsApp
+export const insertWhatsappConversationSchema = createInsertSchema(whatsappConversations).omit({
+  id: true,
+  tenantId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertWhatsappMessageSchema = createInsertSchema(whatsappMessages).omit({
+  id: true,
+  tenantId: true,
+  createdAt: true,
+});
+
+export const insertWhatsappDocumentRequestSchema = createInsertSchema(whatsappDocumentRequests).omit({
+  id: true,
+  tenantId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertWhatsappAppointmentSchema = createInsertSchema(whatsappAppointments).omit({
+  id: true,
+  tenantId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertWhatsappConversation = z.infer<typeof insertWhatsappConversationSchema>;
+export type WhatsappConversation = typeof whatsappConversations.$inferSelect;
+
+export type InsertWhatsappMessage = z.infer<typeof insertWhatsappMessageSchema>;
+export type WhatsappMessage = typeof whatsappMessages.$inferSelect;
+
+export type InsertWhatsappDocumentRequest = z.infer<typeof insertWhatsappDocumentRequestSchema>;
+export type WhatsappDocumentRequest = typeof whatsappDocumentRequests.$inferSelect;
+
+export type InsertWhatsappAppointment = z.infer<typeof insertWhatsappAppointmentSchema>;
+export type WhatsappAppointment = typeof whatsappAppointments.$inferSelect;

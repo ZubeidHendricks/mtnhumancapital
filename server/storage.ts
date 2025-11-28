@@ -44,6 +44,14 @@ import {
   type UpdateDocument,
   type DocumentBatch,
   type InsertDocumentBatch,
+  type WhatsappConversation,
+  type InsertWhatsappConversation,
+  type WhatsappMessage,
+  type InsertWhatsappMessage,
+  type WhatsappDocumentRequest,
+  type InsertWhatsappDocumentRequest,
+  type WhatsappAppointment,
+  type InsertWhatsappAppointment,
   users,
   jobs,
   candidates,
@@ -65,7 +73,11 @@ import {
   mentorships,
   growthAreas,
   documents,
-  documentBatches
+  documentBatches,
+  whatsappConversations,
+  whatsappMessages,
+  whatsappDocumentRequests,
+  whatsappAppointments
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, lte } from "drizzle-orm";
@@ -216,6 +228,33 @@ export interface IStorage {
   getDocumentBatch(tenantId: string, id: string): Promise<DocumentBatch | undefined>;
   createDocumentBatch(tenantId: string, batch: InsertDocumentBatch): Promise<DocumentBatch>;
   updateDocumentBatch(tenantId: string, id: string, updates: Partial<InsertDocumentBatch>): Promise<DocumentBatch | undefined>;
+  
+  // WhatsApp Conversations
+  getAllWhatsappConversations(tenantId: string): Promise<WhatsappConversation[]>;
+  getWhatsappConversation(tenantId: string, id: string): Promise<WhatsappConversation | undefined>;
+  getWhatsappConversationByWaId(tenantId: string, waId: string): Promise<WhatsappConversation | undefined>;
+  getWhatsappConversationsByCandidateId(tenantId: string, candidateId: string): Promise<WhatsappConversation[]>;
+  createWhatsappConversation(tenantId: string, conversation: InsertWhatsappConversation): Promise<WhatsappConversation>;
+  updateWhatsappConversation(tenantId: string, id: string, updates: Partial<InsertWhatsappConversation>): Promise<WhatsappConversation | undefined>;
+  
+  // WhatsApp Messages
+  getWhatsappMessages(tenantId: string, conversationId: string): Promise<WhatsappMessage[]>;
+  getWhatsappMessage(tenantId: string, id: string): Promise<WhatsappMessage | undefined>;
+  getWhatsappMessageByWhatsappId(tenantId: string, whatsappMessageId: string): Promise<WhatsappMessage | undefined>;
+  createWhatsappMessage(tenantId: string, message: InsertWhatsappMessage): Promise<WhatsappMessage>;
+  updateWhatsappMessage(tenantId: string, id: string, updates: Partial<InsertWhatsappMessage>): Promise<WhatsappMessage | undefined>;
+  
+  // WhatsApp Document Requests
+  getWhatsappDocumentRequests(tenantId: string, conversationId?: string): Promise<WhatsappDocumentRequest[]>;
+  getWhatsappDocumentRequest(tenantId: string, id: string): Promise<WhatsappDocumentRequest | undefined>;
+  createWhatsappDocumentRequest(tenantId: string, request: InsertWhatsappDocumentRequest): Promise<WhatsappDocumentRequest>;
+  updateWhatsappDocumentRequest(tenantId: string, id: string, updates: Partial<InsertWhatsappDocumentRequest>): Promise<WhatsappDocumentRequest | undefined>;
+  
+  // WhatsApp Appointments
+  getWhatsappAppointments(tenantId: string, conversationId?: string): Promise<WhatsappAppointment[]>;
+  getWhatsappAppointment(tenantId: string, id: string): Promise<WhatsappAppointment | undefined>;
+  createWhatsappAppointment(tenantId: string, appointment: InsertWhatsappAppointment): Promise<WhatsappAppointment>;
+  updateWhatsappAppointment(tenantId: string, id: string, updates: Partial<InsertWhatsappAppointment>): Promise<WhatsappAppointment | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1156,6 +1195,138 @@ export class DatabaseStorage implements IStorage {
     }
     const [batch] = await db.update(documentBatches).set(updateData).where(and(eq(documentBatches.id, id), eq(documentBatches.tenantId, tenantId))).returning();
     return batch || undefined;
+  }
+
+  // WhatsApp Conversations Implementation
+  async getAllWhatsappConversations(tenantId: string): Promise<WhatsappConversation[]> {
+    return await db.select().from(whatsappConversations)
+      .where(eq(whatsappConversations.tenantId, tenantId))
+      .orderBy(desc(whatsappConversations.lastMessageAt));
+  }
+
+  async getWhatsappConversation(tenantId: string, id: string): Promise<WhatsappConversation | undefined> {
+    const [conv] = await db.select().from(whatsappConversations)
+      .where(and(eq(whatsappConversations.id, id), eq(whatsappConversations.tenantId, tenantId)));
+    return conv || undefined;
+  }
+
+  async getWhatsappConversationByWaId(tenantId: string, waId: string): Promise<WhatsappConversation | undefined> {
+    const [conv] = await db.select().from(whatsappConversations)
+      .where(and(eq(whatsappConversations.waId, waId), eq(whatsappConversations.tenantId, tenantId)));
+    return conv || undefined;
+  }
+
+  async getWhatsappConversationsByCandidateId(tenantId: string, candidateId: string): Promise<WhatsappConversation[]> {
+    return await db.select().from(whatsappConversations)
+      .where(and(eq(whatsappConversations.candidateId, candidateId), eq(whatsappConversations.tenantId, tenantId)))
+      .orderBy(desc(whatsappConversations.lastMessageAt));
+  }
+
+  async createWhatsappConversation(tenantId: string, conversation: InsertWhatsappConversation): Promise<WhatsappConversation> {
+    const [conv] = await db.insert(whatsappConversations).values({ ...conversation, tenantId }).returning();
+    return conv;
+  }
+
+  async updateWhatsappConversation(tenantId: string, id: string, updates: Partial<InsertWhatsappConversation>): Promise<WhatsappConversation | undefined> {
+    const [conv] = await db.update(whatsappConversations)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(eq(whatsappConversations.id, id), eq(whatsappConversations.tenantId, tenantId)))
+      .returning();
+    return conv || undefined;
+  }
+
+  // WhatsApp Messages Implementation
+  async getWhatsappMessages(tenantId: string, conversationId: string): Promise<WhatsappMessage[]> {
+    return await db.select().from(whatsappMessages)
+      .where(and(eq(whatsappMessages.conversationId, conversationId), eq(whatsappMessages.tenantId, tenantId)))
+      .orderBy(whatsappMessages.createdAt);
+  }
+
+  async getWhatsappMessage(tenantId: string, id: string): Promise<WhatsappMessage | undefined> {
+    const [msg] = await db.select().from(whatsappMessages)
+      .where(and(eq(whatsappMessages.id, id), eq(whatsappMessages.tenantId, tenantId)));
+    return msg || undefined;
+  }
+
+  async getWhatsappMessageByWhatsappId(tenantId: string, whatsappMessageId: string): Promise<WhatsappMessage | undefined> {
+    const [msg] = await db.select().from(whatsappMessages)
+      .where(and(eq(whatsappMessages.whatsappMessageId, whatsappMessageId), eq(whatsappMessages.tenantId, tenantId)));
+    return msg || undefined;
+  }
+
+  async createWhatsappMessage(tenantId: string, message: InsertWhatsappMessage): Promise<WhatsappMessage> {
+    const [msg] = await db.insert(whatsappMessages).values({ ...message, tenantId }).returning();
+    return msg;
+  }
+
+  async updateWhatsappMessage(tenantId: string, id: string, updates: Partial<InsertWhatsappMessage>): Promise<WhatsappMessage | undefined> {
+    const [msg] = await db.update(whatsappMessages)
+      .set(updates)
+      .where(and(eq(whatsappMessages.id, id), eq(whatsappMessages.tenantId, tenantId)))
+      .returning();
+    return msg || undefined;
+  }
+
+  // WhatsApp Document Requests Implementation
+  async getWhatsappDocumentRequests(tenantId: string, conversationId?: string): Promise<WhatsappDocumentRequest[]> {
+    if (conversationId) {
+      return await db.select().from(whatsappDocumentRequests)
+        .where(and(eq(whatsappDocumentRequests.conversationId, conversationId), eq(whatsappDocumentRequests.tenantId, tenantId)))
+        .orderBy(desc(whatsappDocumentRequests.createdAt));
+    }
+    return await db.select().from(whatsappDocumentRequests)
+      .where(eq(whatsappDocumentRequests.tenantId, tenantId))
+      .orderBy(desc(whatsappDocumentRequests.createdAt));
+  }
+
+  async getWhatsappDocumentRequest(tenantId: string, id: string): Promise<WhatsappDocumentRequest | undefined> {
+    const [req] = await db.select().from(whatsappDocumentRequests)
+      .where(and(eq(whatsappDocumentRequests.id, id), eq(whatsappDocumentRequests.tenantId, tenantId)));
+    return req || undefined;
+  }
+
+  async createWhatsappDocumentRequest(tenantId: string, request: InsertWhatsappDocumentRequest): Promise<WhatsappDocumentRequest> {
+    const [req] = await db.insert(whatsappDocumentRequests).values({ ...request, tenantId }).returning();
+    return req;
+  }
+
+  async updateWhatsappDocumentRequest(tenantId: string, id: string, updates: Partial<InsertWhatsappDocumentRequest>): Promise<WhatsappDocumentRequest | undefined> {
+    const [req] = await db.update(whatsappDocumentRequests)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(eq(whatsappDocumentRequests.id, id), eq(whatsappDocumentRequests.tenantId, tenantId)))
+      .returning();
+    return req || undefined;
+  }
+
+  // WhatsApp Appointments Implementation
+  async getWhatsappAppointments(tenantId: string, conversationId?: string): Promise<WhatsappAppointment[]> {
+    if (conversationId) {
+      return await db.select().from(whatsappAppointments)
+        .where(and(eq(whatsappAppointments.conversationId, conversationId), eq(whatsappAppointments.tenantId, tenantId)))
+        .orderBy(desc(whatsappAppointments.scheduledAt));
+    }
+    return await db.select().from(whatsappAppointments)
+      .where(eq(whatsappAppointments.tenantId, tenantId))
+      .orderBy(desc(whatsappAppointments.scheduledAt));
+  }
+
+  async getWhatsappAppointment(tenantId: string, id: string): Promise<WhatsappAppointment | undefined> {
+    const [apt] = await db.select().from(whatsappAppointments)
+      .where(and(eq(whatsappAppointments.id, id), eq(whatsappAppointments.tenantId, tenantId)));
+    return apt || undefined;
+  }
+
+  async createWhatsappAppointment(tenantId: string, appointment: InsertWhatsappAppointment): Promise<WhatsappAppointment> {
+    const [apt] = await db.insert(whatsappAppointments).values({ ...appointment, tenantId }).returning();
+    return apt;
+  }
+
+  async updateWhatsappAppointment(tenantId: string, id: string, updates: Partial<InsertWhatsappAppointment>): Promise<WhatsappAppointment | undefined> {
+    const [apt] = await db.update(whatsappAppointments)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(eq(whatsappAppointments.id, id), eq(whatsappAppointments.tenantId, tenantId)))
+      .returning();
+    return apt || undefined;
   }
 }
 
