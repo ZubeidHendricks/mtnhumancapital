@@ -35,7 +35,12 @@ import {
   ArrowRight,
   ExternalLink,
   FolderArchive,
-  FileArchive
+  FileArchive,
+  Linkedin,
+  Grid3X3,
+  List,
+  Calendar,
+  Globe
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -79,6 +84,7 @@ export default function DocumentAutomation() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadType, setUploadType] = useState<"cvs" | "job-specs">("cvs");
   const [dragOver, setDragOver] = useState(false);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const { data: allDocuments = [], isLoading: documentsLoading } = useQuery<Document[]>({
     queryKey: documentsKey,
@@ -505,12 +511,33 @@ export default function DocumentAutomation() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-lg text-white">CV Library</CardTitle>
-                    <CardDescription>View and manage uploaded CVs - candidates are automatically created</CardDescription>
+                    <CardTitle className="text-lg text-white flex items-center gap-2">
+                      <Users className="h-5 w-5 text-amber-400" />
+                      CV Library
+                    </CardTitle>
+                    <CardDescription>Extracted candidate profiles from uploaded CVs</CardDescription>
                   </div>
                   <div className="flex items-center gap-3">
+                    <div className="flex items-center bg-zinc-800 rounded-lg p-1">
+                      <Button
+                        variant={viewMode === "grid" ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setViewMode("grid")}
+                        className={viewMode === "grid" ? "bg-amber-500/20 text-amber-400" : "text-zinc-400"}
+                      >
+                        <Grid3X3 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant={viewMode === "list" ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setViewMode("list")}
+                        className={viewMode === "list" ? "bg-amber-500/20 text-amber-400" : "text-zinc-400"}
+                      >
+                        <List className="h-4 w-4" />
+                      </Button>
+                    </div>
                     <Badge variant="outline" className="border-zinc-600">
-                      {cvDocuments.length} documents
+                      {cvDocuments.length} CVs
                     </Badge>
                     <Link href="/hr-dashboard">
                       <Button variant="outline" size="sm" className="border-amber-500/50 text-amber-400 hover:bg-amber-500/10">
@@ -541,150 +568,241 @@ export default function DocumentAutomation() {
                       Upload CVs
                     </Button>
                   </div>
-                ) : (
-                  <ScrollArea className="h-[600px]">
-                    <div className="space-y-3">
+                ) : viewMode === "grid" ? (
+                  <ScrollArea className="h-[650px]">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {cvDocuments.map((doc) => {
                         const extracted = doc.extractedData as any;
+                        const initials = extracted?.fullName?.split(' ')?.map((n: string) => n[0])?.join('')?.toUpperCase() || '?';
                         return (
                           <div 
                             key={doc.id}
-                            className="p-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors border border-zinc-700/50"
+                            className="p-4 rounded-xl bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 hover:from-zinc-800 hover:to-zinc-900 transition-all border border-zinc-700/50 hover:border-amber-500/30 group"
                             data-testid={`card-document-${doc.id}`}
                           >
-                            <div className="flex items-start justify-between">
-                              <div className="flex items-start gap-4">
+                            {/* Header with Avatar */}
+                            <div className="flex items-start gap-3 mb-3">
+                              <div className="relative">
                                 {extracted?.photoUrl ? (
-                                  <div className="relative">
-                                    <img 
-                                      src={extracted.photoUrl} 
-                                      alt={extracted.fullName || "Candidate"} 
-                                      className="w-16 h-16 rounded-lg object-cover border-2 border-amber-500/30"
-                                      onError={(e) => {
-                                        e.currentTarget.style.display = 'none';
-                                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                                      }}
-                                    />
-                                    <div className="hidden p-3 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30">
-                                      <Users className="h-6 w-6 text-amber-400" />
-                                    </div>
-                                  </div>
+                                  <img 
+                                    src={extracted.photoUrl} 
+                                    alt={extracted.fullName || "Candidate"} 
+                                    className="w-14 h-14 rounded-full object-cover border-2 border-amber-500/30"
+                                  />
                                 ) : (
-                                  <div className="p-3 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30">
-                                    <Users className="h-6 w-6 text-amber-400" />
+                                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-bold text-lg">
+                                    {initials}
                                   </div>
                                 )}
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <p className="font-semibold text-white text-lg">
-                                      {extracted?.fullName || doc.originalFilename}
-                                    </p>
-                                    <Badge className={getStatusBadge(doc.status)}>
-                                      {getStatusIcon(doc.status)}
-                                      <span className="ml-1 capitalize">{doc.status}</span>
-                                    </Badge>
-                                  </div>
-                                  
-                                  {extracted?.role && (
-                                    <p className="text-amber-400 text-sm font-medium mb-2">{extracted.role}</p>
-                                  )}
-                                  
-                                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-zinc-400 mb-3">
-                                    {extracted?.email && (
-                                      <span className="flex items-center gap-1">
-                                        <Mail className="h-3 w-3" />
-                                        {extracted.email}
-                                      </span>
-                                    )}
-                                    {extracted?.phone && (
-                                      <span className="flex items-center gap-1">
-                                        <Phone className="h-3 w-3" />
-                                        {extracted.phone}
-                                      </span>
-                                    )}
-                                    {extracted?.location && (
-                                      <span className="flex items-center gap-1">
-                                        <MapPin className="h-3 w-3" />
-                                        {extracted.location}
-                                      </span>
-                                    )}
-                                    {extracted?.yearsOfExperience && (
-                                      <span className="flex items-center gap-1">
-                                        <Clock className="h-3 w-3" />
-                                        {extracted.yearsOfExperience} years exp
-                                      </span>
-                                    )}
-                                  </div>
-                                  
-                                  {extracted?.skills && extracted.skills.length > 0 && (
-                                    <div className="flex flex-wrap gap-1 mb-2">
-                                      {extracted.skills.slice(0, 6).map((skill: string, i: number) => (
-                                        <Badge key={i} variant="outline" className="text-xs border-zinc-600 text-zinc-300">
-                                          {skill}
-                                        </Badge>
-                                      ))}
-                                      {extracted.skills.length > 6 && (
-                                        <Badge variant="outline" className="text-xs border-zinc-600 text-zinc-400">
-                                          +{extracted.skills.length - 6} more
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  )}
-                                  
-                                  <div className="flex items-center gap-3 text-xs text-zinc-500">
-                                    <span>{formatFileSize(doc.fileSize)}</span>
-                                    <span>•</span>
-                                    <span>{new Date(doc.createdAt).toLocaleDateString()}</span>
-                                    {doc.linkedCandidateId && (
-                                      <>
-                                        <span>•</span>
-                                        <span className="text-green-400 flex items-center gap-1">
-                                          <CheckCircle2 className="h-3 w-3" />
-                                          Candidate created
-                                        </span>
-                                      </>
-                                    )}
-                                  </div>
+                                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-green-500 border-2 border-zinc-900 flex items-center justify-center">
+                                  <CheckCircle2 className="h-3 w-3 text-white" />
                                 </div>
                               </div>
-                              <div className="flex items-center gap-1">
-                                {doc.linkedCandidateId && (
-                                  <Link href="/hr-dashboard">
-                                    <Button 
-                                      variant="default" 
-                                      size="sm"
-                                      className="bg-green-600 hover:bg-green-700 text-white"
-                                      data-testid={`button-view-candidate-${doc.id}`}
-                                    >
-                                      <Users className="h-4 w-4 mr-1" />
-                                      View Candidate
-                                    </Button>
-                                  </Link>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-white truncate">
+                                  {extracted?.fullName || doc.originalFilename}
+                                </h3>
+                                {extracted?.role && (
+                                  <p className="text-amber-400 text-sm truncate">{extracted.role}</p>
                                 )}
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => setSelectedDocument(doc)}
-                                  className="border-zinc-600 text-zinc-300 hover:bg-zinc-700"
-                                  data-testid={`button-view-document-${doc.id}`}
+                              </div>
+                            </div>
+
+                            {/* Contact Info */}
+                            <div className="space-y-1.5 mb-3">
+                              {extracted?.location && (
+                                <div className="flex items-center gap-2 text-xs text-zinc-400">
+                                  <MapPin className="h-3 w-3 flex-shrink-0" />
+                                  <span className="truncate">{extracted.location}</span>
+                                </div>
+                              )}
+                              {extracted?.email && (
+                                <div className="flex items-center gap-2 text-xs text-zinc-400">
+                                  <Mail className="h-3 w-3 flex-shrink-0" />
+                                  <span className="truncate">{extracted.email}</span>
+                                </div>
+                              )}
+                              {extracted?.phone && (
+                                <div className="flex items-center gap-2 text-xs text-zinc-400">
+                                  <Phone className="h-3 w-3 flex-shrink-0" />
+                                  <span>{extracted.phone}</span>
+                                </div>
+                              )}
+                              {extracted?.linkedinUrl && (
+                                <a 
+                                  href={extracted.linkedinUrl.startsWith('http') ? extracted.linkedinUrl : `https://${extracted.linkedinUrl}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-2 text-xs text-blue-400 hover:text-blue-300"
                                 >
-                                  <Eye className="h-4 w-4 mr-1" />
-                                  Details
-                                </Button>
+                                  <Linkedin className="h-3 w-3 flex-shrink-0" />
+                                  <span className="truncate">LinkedIn Profile</span>
+                                  <ExternalLink className="h-3 w-3" />
+                                </a>
+                              )}
+                            </div>
+
+                            {/* Skills */}
+                            {extracted?.skills && extracted.skills.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mb-3">
+                                {extracted.skills.slice(0, 3).map((skill: string, i: number) => (
+                                  <Badge key={i} variant="outline" className="text-xs border-zinc-600 text-zinc-300 px-1.5 py-0">
+                                    {skill}
+                                  </Badge>
+                                ))}
+                                {extracted.skills.length > 3 && (
+                                  <Badge variant="outline" className="text-xs border-zinc-600 text-zinc-500 px-1.5 py-0">
+                                    +{extracted.skills.length - 3}
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Experience Summary */}
+                            {extracted?.experience && extracted.experience.length > 0 && (
+                              <div className="text-xs text-zinc-500 mb-3 p-2 bg-zinc-800/50 rounded-lg">
+                                <div className="flex items-center gap-1 mb-1">
+                                  <Briefcase className="h-3 w-3" />
+                                  <span className="font-medium text-zinc-400">Latest Role</span>
+                                </div>
+                                <p className="text-zinc-300 truncate">{extracted.experience[0]?.title}</p>
+                                <p className="text-zinc-500 truncate">{extracted.experience[0]?.company}</p>
+                              </div>
+                            )}
+
+                            {/* Footer with Date and Actions */}
+                            <div className="flex items-center justify-between pt-2 border-t border-zinc-700/50">
+                              <span className="text-xs text-zinc-500 flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {new Date(doc.createdAt).toLocaleDateString()}
+                              </span>
+                              <div className="flex items-center gap-1">
                                 <Button 
                                   variant="ghost" 
                                   size="sm"
-                                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                                  onClick={() => deleteMutation.mutate(doc.id)}
-                                  data-testid={`button-delete-document-${doc.id}`}
+                                  onClick={() => setSelectedDocument(doc)}
+                                  className="h-7 px-2 text-zinc-400 hover:text-white"
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Eye className="h-3.5 w-3.5" />
+                                </Button>
+                                <Link href="/hr-dashboard">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    className="h-7 px-2 text-amber-400 hover:text-amber-300"
+                                  >
+                                    <ArrowRight className="h-3.5 w-3.5" />
+                                  </Button>
+                                </Link>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  className="h-7 px-2 text-red-400 hover:text-red-300"
+                                  onClick={() => deleteMutation.mutate(doc.id)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
                                 </Button>
                               </div>
                             </div>
                           </div>
                         );
                       })}
+                    </div>
+                  </ScrollArea>
+                ) : (
+                  <ScrollArea className="h-[650px]">
+                    <div className="rounded-lg border border-zinc-700 overflow-hidden">
+                      <table className="w-full">
+                        <thead className="bg-zinc-800/80">
+                          <tr>
+                            <th className="text-left text-xs font-medium text-zinc-400 px-4 py-3">Candidate</th>
+                            <th className="text-left text-xs font-medium text-zinc-400 px-4 py-3">Role</th>
+                            <th className="text-left text-xs font-medium text-zinc-400 px-4 py-3">Location</th>
+                            <th className="text-left text-xs font-medium text-zinc-400 px-4 py-3">Contact</th>
+                            <th className="text-left text-xs font-medium text-zinc-400 px-4 py-3">Skills</th>
+                            <th className="text-left text-xs font-medium text-zinc-400 px-4 py-3">Date</th>
+                            <th className="text-right text-xs font-medium text-zinc-400 px-4 py-3">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-700/50">
+                          {cvDocuments.map((doc) => {
+                            const extracted = doc.extractedData as any;
+                            const initials = extracted?.fullName?.split(' ')?.map((n: string) => n[0])?.join('')?.toUpperCase() || '?';
+                            return (
+                              <tr key={doc.id} className="hover:bg-zinc-800/50" data-testid={`row-document-${doc.id}`}>
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-bold text-xs">
+                                      {initials}
+                                    </div>
+                                    <span className="text-white font-medium text-sm">
+                                      {extracted?.fullName || doc.originalFilename}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span className="text-amber-400 text-sm">{extracted?.role || '-'}</span>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span className="text-zinc-400 text-sm">{extracted?.location || '-'}</span>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-2">
+                                    {extracted?.email && (
+                                      <span title={extracted.email}>
+                                        <Mail className="h-3.5 w-3.5 text-zinc-500" />
+                                      </span>
+                                    )}
+                                    {extracted?.phone && (
+                                      <span title={extracted.phone}>
+                                        <Phone className="h-3.5 w-3.5 text-zinc-500" />
+                                      </span>
+                                    )}
+                                    {extracted?.linkedinUrl && (
+                                      <a href={extracted.linkedinUrl.startsWith('http') ? extracted.linkedinUrl : `https://${extracted.linkedinUrl}`} target="_blank" rel="noopener noreferrer" title="LinkedIn Profile">
+                                        <Linkedin className="h-3.5 w-3.5 text-blue-400 hover:text-blue-300" />
+                                      </a>
+                                    )}
+                                    {!extracted?.email && !extracted?.phone && !extracted?.linkedinUrl && (
+                                      <span className="text-zinc-600 text-xs">-</span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="flex gap-1">
+                                    {extracted?.skills?.slice(0, 2).map((skill: string, i: number) => (
+                                      <Badge key={i} variant="outline" className="text-xs border-zinc-600 text-zinc-400 px-1.5 py-0">
+                                        {skill}
+                                      </Badge>
+                                    ))}
+                                    {extracted?.skills?.length > 2 && (
+                                      <span className="text-xs text-zinc-500">+{extracted.skills.length - 2}</span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span className="text-zinc-500 text-xs">{new Date(doc.createdAt).toLocaleDateString()}</span>
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  <div className="flex items-center justify-end gap-1">
+                                    <Button variant="ghost" size="sm" onClick={() => setSelectedDocument(doc)} className="h-7 px-2 text-zinc-400">
+                                      <Eye className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Link href="/hr-dashboard">
+                                      <Button variant="ghost" size="sm" className="h-7 px-2 text-amber-400">
+                                        <ArrowRight className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </Link>
+                                    <Button variant="ghost" size="sm" className="h-7 px-2 text-red-400" onClick={() => deleteMutation.mutate(doc.id)}>
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
                     </div>
                   </ScrollArea>
                 )}

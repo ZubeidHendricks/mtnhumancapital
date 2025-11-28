@@ -67,18 +67,41 @@ export class CVParser {
     }
   }
 
+  // Helper to extract LinkedIn URL from text using regex
+  extractLinkedInUrl(text: string): string | null {
+    const linkedinPatterns = [
+      /(?:https?:\/\/)?(?:www\.)?linkedin\.com\/in\/[\w-]+/gi,
+      /linkedin\.com\/in\/[\w-]+/gi,
+    ];
+    
+    for (const pattern of linkedinPatterns) {
+      const match = text.match(pattern);
+      if (match && match[0]) {
+        let url = match[0];
+        if (!url.startsWith('http')) {
+          url = 'https://' + (url.startsWith('www.') ? '' : 'www.') + url;
+        }
+        return url;
+      }
+    }
+    return null;
+  }
+
   async parseCV(text: string): Promise<CVData> {
-    const prompt = `Extract structured information from this CV/Resume. Return ONLY valid JSON matching this exact schema:
+    // Pre-extract LinkedIn URL as fallback
+    const fallbackLinkedIn = this.extractLinkedInUrl(text);
+
+    const prompt = `Extract structured information from this CV/Resume. This may be a LinkedIn profile export. Return ONLY valid JSON matching this exact schema:
 
 {
   "fullName": "candidate full name",
   "email": "email address or null",
-  "phone": "phone number or null",
+  "phone": "phone number with country code or null",
   "location": "city/country or null",
   "summary": "professional summary/bio or null",
-  "role": "current or target job title or null",
+  "role": "current or target job title (look for text after name) or null",
   "yearsOfExperience": number or null,
-  "skills": ["skill1", "skill2", ...],
+  "skills": ["skill1", "skill2", ...] - look for "Top Skills" or "Skills" sections,
   "education": [
     {
       "degree": "degree name",
@@ -91,15 +114,21 @@ export class CVParser {
     {
       "title": "job title",
       "company": "company name",
-      "duration": "dates worked",
+      "duration": "dates worked (e.g., 'January 2020 - Present')",
       "location": "city/country or null",
       "responsibilities": ["responsibility 1", "responsibility 2", ...]
     }
   ],
   "languages": ["language1", "language2", ...] or null,
   "certifications": ["cert1", "cert2", ...] or null,
-  "linkedinUrl": "LinkedIn profile URL or null"
+  "linkedinUrl": "extract any linkedin.com/in/... URL found in the text, or null"
 }
+
+IMPORTANT: 
+- For LinkedIn profiles, the role/title is usually shown right after the person's name
+- Look for "linkedin.com/in/" URLs in the Contact section
+- Extract ALL skills from "Top Skills" section
+- Duration should be the actual date range shown
 
 CV Text:
 ${text}
@@ -153,6 +182,12 @@ Return ONLY the JSON object, no explanations.`;
       
       // Validate against schema
       const validated = CVDataSchema.parse(parsedData);
+      
+      // Use fallback LinkedIn URL if AI didn't extract one
+      if (!validated.linkedinUrl && fallbackLinkedIn) {
+        validated.linkedinUrl = fallbackLinkedIn;
+        console.log("Using fallback LinkedIn URL:", fallbackLinkedIn);
+      }
       
       return validated;
     } catch (error) {
