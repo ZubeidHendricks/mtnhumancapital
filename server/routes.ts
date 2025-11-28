@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { createRequire } from "module";
 import { storage } from "./storage";
 import { insertCandidateSchema, insertJobSchema, insertIntegrityCheckSchema, insertRecruitmentSessionSchema, insertInterviewSchema, updateInterviewSchema, insertTenantRequestSchema, updateTenantRequestSchema, type InsertCandidate } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
@@ -11,7 +12,10 @@ import { embeddingService } from "./embedding-service";
 import { getOrCreateConversation, deleteConversation } from "./job-creation-agent";
 import { requireAdmin } from "./admin-middleware";
 import multer from "multer";
-// pdf-parse will be dynamically imported when needed (CommonJS compatibility)
+
+// Use createRequire for CommonJS module compatibility
+const require = createRequire(import.meta.url);
+const pdfParse = require("pdf-parse");
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -2535,7 +2539,6 @@ Format your response as JSON:
           // Parse PDF to extract text
           let rawText = "";
           if (file.mimetype === "application/pdf") {
-            const pdfParse = (await import("pdf-parse")).default;
             const pdfData = await pdfParse(file.buffer);
             rawText = pdfData.text;
           } else {
@@ -2635,7 +2638,6 @@ Format your response as JSON:
           // Parse PDF to extract text
           let rawText = "";
           if (file.mimetype === "application/pdf") {
-            const pdfParse = (await import("pdf-parse")).default;
             const pdfData = await pdfParse(file.buffer);
             rawText = pdfData.text;
           } else {
