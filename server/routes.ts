@@ -11,7 +11,7 @@ import { embeddingService } from "./embedding-service";
 import { getOrCreateConversation, deleteConversation } from "./job-creation-agent";
 import { requireAdmin } from "./admin-middleware";
 import multer from "multer";
-import * as pdfParseModule from "pdf-parse";
+// pdf-parse will be dynamically imported when needed (CommonJS compatibility)
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -2535,7 +2535,8 @@ Format your response as JSON:
           // Parse PDF to extract text
           let rawText = "";
           if (file.mimetype === "application/pdf") {
-            const pdfData = await (pdfParseModule as any).default(file.buffer);
+            const pdfParse = (await import("pdf-parse")).default;
+            const pdfData = await pdfParse(file.buffer);
             rawText = pdfData.text;
           } else {
             rawText = file.buffer.toString("utf-8");
@@ -2634,7 +2635,8 @@ Format your response as JSON:
           // Parse PDF to extract text
           let rawText = "";
           if (file.mimetype === "application/pdf") {
-            const pdfData = await (pdfParseModule as any).default(file.buffer);
+            const pdfParse = (await import("pdf-parse")).default;
+            const pdfData = await pdfParse(file.buffer);
             rawText = pdfData.text;
           } else {
             rawText = file.buffer.toString("utf-8");
