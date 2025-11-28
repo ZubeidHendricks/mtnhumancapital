@@ -1,6 +1,5 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { createRequire } from "module";
 import { storage } from "./storage";
 import { insertCandidateSchema, insertJobSchema, insertIntegrityCheckSchema, insertRecruitmentSessionSchema, insertInterviewSchema, updateInterviewSchema, insertTenantRequestSchema, updateTenantRequestSchema, type InsertCandidate } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
@@ -12,10 +11,7 @@ import { embeddingService } from "./embedding-service";
 import { getOrCreateConversation, deleteConversation } from "./job-creation-agent";
 import { requireAdmin } from "./admin-middleware";
 import multer from "multer";
-
-// Use createRequire for CommonJS module compatibility
-const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse");
+import { PDFParse } from "pdf-parse";
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -2539,8 +2535,10 @@ Format your response as JSON:
           // Parse PDF to extract text
           let rawText = "";
           if (file.mimetype === "application/pdf") {
-            const pdfData = await pdfParse(file.buffer);
+            const parser = new PDFParse({ data: file.buffer });
+            const pdfData = await parser.getText();
             rawText = pdfData.text;
+            await parser.destroy();
           } else {
             rawText = file.buffer.toString("utf-8");
           }
@@ -2638,8 +2636,10 @@ Format your response as JSON:
           // Parse PDF to extract text
           let rawText = "";
           if (file.mimetype === "application/pdf") {
-            const pdfData = await pdfParse(file.buffer);
+            const parser = new PDFParse({ data: file.buffer });
+            const pdfData = await parser.getText();
             rawText = pdfData.text;
+            await parser.destroy();
           } else {
             rawText = file.buffer.toString("utf-8");
           }
