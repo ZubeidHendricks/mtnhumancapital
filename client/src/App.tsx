@@ -26,6 +26,7 @@ import PersonaManagement from "@/pages/persona-management";
 import TenantRequests from "@/pages/tenant-requests";
 import WorkforceIntelligence from "@/pages/workforce-intelligence";
 import PlatformSettings from "@/pages/platform-settings";
+import DocumentAutomation from "@/pages/document-automation";
 
 function Router() {
   return (
@@ -51,6 +52,7 @@ function Router() {
       <Route path="/candidate-pipeline" component={CandidatePipeline} />
       <Route path="/workforce-intelligence" component={WorkforceIntelligence} />
       <Route path="/platform-settings" component={PlatformSettings} />
+      <Route path="/document-automation" component={DocumentAutomation} />
       <Route component={NotFound} />
     </Switch>
   );

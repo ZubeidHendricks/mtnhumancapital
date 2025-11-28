@@ -433,6 +433,12 @@ BENEFITS:
                 Workforce Intelligence
               </Button>
             </Link>
+            <Link href="/document-automation">
+              <Button variant="outline" className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-blue-500/30 hover:border-blue-500/50 hover:bg-blue-500/20 text-blue-400">
+                <FileText className="h-4 w-4 mr-2" />
+                Document Automation
+              </Button>
+            </Link>
           </div>
 
           {/* RECRUITMENT TAB */}

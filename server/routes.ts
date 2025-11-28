@@ -2534,8 +2534,8 @@ Format your response as JSON:
           // Parse PDF to extract text
           let rawText = "";
           if (file.mimetype === "application/pdf") {
-            const pdfParse = await import("pdf-parse");
-            const pdfData = await pdfParse.default(file.buffer);
+            const pdfParse = require("pdf-parse");
+            const pdfData = await pdfParse(file.buffer);
             rawText = pdfData.text;
           } else {
             rawText = file.buffer.toString("utf-8");
@@ -2634,8 +2634,8 @@ Format your response as JSON:
           // Parse PDF to extract text
           let rawText = "";
           if (file.mimetype === "application/pdf") {
-            const pdfParse = await import("pdf-parse");
-            const pdfData = await pdfParse.default(file.buffer);
+            const pdfParse = require("pdf-parse");
+            const pdfData = await pdfParse(file.buffer);
             rawText = pdfData.text;
           } else {
             rawText = file.buffer.toString("utf-8");
