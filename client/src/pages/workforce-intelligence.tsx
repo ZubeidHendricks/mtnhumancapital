@@ -823,7 +823,7 @@ export default function WorkforceIntelligence() {
                               Avg: {category.avgProficiency}/8 | {category.totalAssessed} assessed
                             </Badge>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                             {category.skills.map((skill) => {
                               const hasGap = skill.gapCount > 0;
                               const colors = hasGap 
@@ -832,27 +832,27 @@ export default function WorkforceIntelligence() {
                               return (
                                 <Card 
                                   key={skill.id}
-                                  className={`border ${colors.border} ${colors.bg} hover:shadow-md transition-shadow cursor-pointer`}
+                                  className={`border ${colors.border} ${colors.bg} hover:shadow-md transition-shadow cursor-pointer min-w-0`}
                                   data-testid={`card-skill-${skill.name.toLowerCase().replace(/\s+/g, '-')}`}
                                 >
-                                  <CardContent className="p-4 space-y-3">
-                                    <div className="flex items-start justify-between">
-                                      <h3 className="font-semibold text-white">{skill.name}</h3>
-                                      <div className={`w-2 h-2 rounded-full ${colors.dot}`} />
+                                  <CardContent className="p-3 sm:p-4 space-y-2 sm:space-y-3">
+                                    <div className="flex items-start justify-between gap-2">
+                                      <h3 className="font-semibold text-white text-sm sm:text-base leading-tight break-words min-w-0 flex-1">{skill.name}</h3>
+                                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${colors.dot}`} />
                                     </div>
                                     <div className="flex items-center gap-2">
-                                      <div className="flex-1 h-2 bg-zinc-700 rounded-full overflow-hidden">
+                                      <div className="flex-1 h-2 bg-zinc-700 rounded-full overflow-hidden min-w-0">
                                         <div 
                                           className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full"
                                           style={{ width: `${(skill.avgProficiency / 8) * 100}%` }}
                                         />
                                       </div>
-                                      <span className="text-xs text-zinc-400">{skill.avgProficiency}/8</span>
+                                      <span className="text-xs text-zinc-400 flex-shrink-0">{skill.avgProficiency}/8</span>
                                     </div>
-                                    <div className="flex items-center justify-between text-xs text-zinc-500">
-                                      <span>{skill.assessedCount} assessed</span>
+                                    <div className="flex items-center justify-between gap-2 text-xs text-zinc-500 flex-wrap">
+                                      <span className="whitespace-nowrap">{skill.assessedCount} assessed</span>
                                       {skill.gapCount > 0 && (
-                                        <Badge className="text-[10px] bg-red-500/20 text-red-400 border-0">
+                                        <Badge className="text-[10px] bg-red-500/20 text-red-400 border-0 flex-shrink-0">
                                           {skill.gapCount} gap{skill.gapCount > 1 ? 's' : ''}
                                         </Badge>
                                       )}
@@ -1125,19 +1125,19 @@ export default function WorkforceIntelligence() {
                                     <span className="text-sm text-zinc-400">{ambition.targetDepartment}</span>
                                   </div>
                                 )}
-                                {ambition.targetDate && (
+                                {ambition.targetTimeframe && (
                                   <div className="flex items-center gap-2">
                                     <Target className="h-4 w-4 text-zinc-500" />
-                                    <span className="text-sm text-zinc-400">By {new Date(ambition.targetDate).toLocaleDateString()}</span>
+                                    <span className="text-sm text-zinc-400">Target: {ambition.targetTimeframe.replace('_', ' ')}</span>
                                   </div>
                                 )}
                               </div>
                               <div className="mt-3">
                                 <div className="flex items-center justify-between text-xs text-zinc-500 mb-1">
-                                  <span>Progress</span>
-                                  <span>{ambition.progress || 0}%</span>
+                                  <span>Match Score</span>
+                                  <span>{ambition.matchScore || 0}%</span>
                                 </div>
-                                <Progress value={ambition.progress || 0} className="h-2" />
+                                <Progress value={ambition.matchScore || 0} className="h-2" />
                               </div>
                             </CardContent>
                           </Card>
@@ -1342,6 +1342,7 @@ export default function WorkforceIntelligence() {
                           medium: 'bg-yellow-500/20 text-yellow-400',
                           low: 'bg-green-500/20 text-green-400'
                         };
+                        const actions: {description: string}[] = Array.isArray(area.suggestedActions) ? area.suggestedActions as {description: string}[] : [];
                         return (
                           <Card key={area.id} className={`border ${priorityColors[area.priority as keyof typeof priorityColors] || priorityColors.medium}`}>
                             <CardContent className="p-4">
@@ -1381,14 +1382,14 @@ export default function WorkforceIntelligence() {
                               
                               <Progress value={area.progress || 0} className="h-2" />
                               
-                              {area.suggestedActions && (area.suggestedActions as any[]).length > 0 && (
+                              {actions.length > 0 && (
                                 <div className="mt-3 pt-3 border-t border-zinc-700">
                                   <p className="text-xs font-medium text-zinc-400 mb-2">Suggested Actions:</p>
                                   <div className="space-y-1">
-                                    {(area.suggestedActions as any[]).slice(0, 2).map((action: any, i: number) => (
+                                    {actions.slice(0, 2).map((action, i) => (
                                       <div key={i} className="flex items-center gap-2 text-sm text-zinc-300">
                                         <CheckCircle className="h-3 w-3 text-zinc-500" />
-                                        <span>{action.description}</span>
+                                        <span>{action.description || 'No description'}</span>
                                       </div>
                                     ))}
                                   </div>
