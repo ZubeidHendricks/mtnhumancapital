@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,9 @@ import {
   Building2,
   Award,
   Languages,
-  Sparkles
+  Sparkles,
+  ArrowRight,
+  ExternalLink
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -395,11 +398,20 @@ export default function DocumentAutomation() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-lg text-white">CV Library</CardTitle>
-                    <CardDescription>View and manage uploaded CVs</CardDescription>
+                    <CardDescription>View and manage uploaded CVs - candidates are automatically created</CardDescription>
                   </div>
-                  <Badge variant="outline" className="border-zinc-600">
-                    {cvDocuments.length} documents
-                  </Badge>
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline" className="border-zinc-600">
+                      {cvDocuments.length} documents
+                    </Badge>
+                    <Link href="/hr-dashboard">
+                      <Button variant="outline" size="sm" className="border-amber-500/50 text-amber-400 hover:bg-amber-500/10">
+                        <Users className="h-4 w-4 mr-2" />
+                        View All Candidates
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -511,6 +523,19 @@ export default function DocumentAutomation() {
                                 </div>
                               </div>
                               <div className="flex items-center gap-1">
+                                {doc.linkedCandidateId && (
+                                  <Link href="/hr-dashboard">
+                                    <Button 
+                                      variant="default" 
+                                      size="sm"
+                                      className="bg-green-600 hover:bg-green-700 text-white"
+                                      data-testid={`button-view-candidate-${doc.id}`}
+                                    >
+                                      <Users className="h-4 w-4 mr-1" />
+                                      View Candidate
+                                    </Button>
+                                  </Link>
+                                )}
                                 <Button 
                                   variant="outline" 
                                   size="sm"
@@ -519,7 +544,7 @@ export default function DocumentAutomation() {
                                   data-testid={`button-view-document-${doc.id}`}
                                 >
                                   <Eye className="h-4 w-4 mr-1" />
-                                  View Details
+                                  Details
                                 </Button>
                                 <Button 
                                   variant="ghost" 
