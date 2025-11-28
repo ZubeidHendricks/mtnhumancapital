@@ -1,14 +1,25 @@
 import { db } from "./db";
-import { users, jobs, candidates } from "@shared/schema";
+import { users, jobs, candidates, whatsappConversations, whatsappMessages, whatsappDocumentRequests, whatsappAppointments, tenantConfig, integrityChecks, interviews, recruitmentSessions, interviewAssessments, documents, documentBatches } from "@shared/schema";
 
 async function seedDatabase() {
   console.log("🌱 Starting database seed...");
 
   try {
     console.log("Clearing existing data...");
+    await db.delete(whatsappAppointments);
+    await db.delete(whatsappDocumentRequests);
+    await db.delete(whatsappMessages);
+    await db.delete(whatsappConversations);
+    await db.delete(interviewAssessments);
+    await db.delete(interviews);
+    await db.delete(recruitmentSessions);
+    await db.delete(integrityChecks);
+    await db.delete(documents);
+    await db.delete(documentBatches);
     await db.delete(candidates);
     await db.delete(jobs);
     await db.delete(users);
+    await db.delete(tenantConfig);
 
     console.log("Creating users...");
     const userRecords = await db.insert(users).values([
@@ -271,11 +282,250 @@ async function seedDatabase() {
 
     console.log(`✓ Created ${candidateRecords.length} candidates`);
 
+    console.log("Creating default tenant config...");
+    const tenantRecord = await db.insert(tenantConfig).values({
+      companyName: "Avatar Human Capital",
+      subdomain: "pps",
+      primaryColor: "#8B5CF6",
+      tagline: "AI-Powered HR Management",
+      industry: "Technology",
+      modulesEnabled: { recruitment: true, whatsapp: true, integrity: true },
+      apiKeysConfigured: {}
+    }).returning();
+
+    console.log("Creating WhatsApp conversations...");
+    const siphoCandidate = candidateRecords.find(c => c.fullName === "Sipho Dlamini")!;
+    const leratoCandidate = candidateRecords.find(c => c.fullName === "Lerato Molefe")!;
+    const thandiCandidate = candidateRecords.find(c => c.fullName === "Thandi Ndlovu")!;
+
+    const conversationRecords = await db.insert(whatsappConversations).values([
+      {
+        tenantId: tenantRecord[0].id,
+        candidateId: siphoCandidate.id,
+        phone: "+27823456789",
+        waId: "27823456789",
+        profileName: "Sipho Dlamini",
+        type: "recruitment",
+        status: "active",
+        lastMessageAt: new Date(Date.now() - 1000 * 60 * 30),
+        lastMessagePreview: "Thank you! I will send my CV shortly.",
+        unreadCount: 1,
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2)
+      },
+      {
+        tenantId: tenantRecord[0].id,
+        candidateId: leratoCandidate.id,
+        phone: "+27834567890",
+        waId: "27834567890",
+        profileName: "Lerato Molefe",
+        type: "document_request",
+        status: "active",
+        lastMessageAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
+        lastMessagePreview: "I have attached my proof of address document.",
+        unreadCount: 0,
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5)
+      },
+      {
+        tenantId: tenantRecord[0].id,
+        candidateId: thandiCandidate.id,
+        phone: "+27845678901",
+        waId: "27845678901",
+        profileName: "Thandi Ndlovu",
+        type: "appointment",
+        status: "active",
+        lastMessageAt: new Date(Date.now() - 1000 * 60 * 60 * 5),
+        lastMessagePreview: "Perfect, I'll be there at 10am tomorrow.",
+        unreadCount: 0,
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3)
+      }
+    ]).returning();
+
+    console.log(`✓ Created ${conversationRecords.length} WhatsApp conversations`);
+
+    console.log("Creating WhatsApp messages...");
+    const siphoConv = conversationRecords.find(c => c.profileName === "Sipho Dlamini")!;
+    const leratoConv = conversationRecords.find(c => c.profileName === "Lerato Molefe")!;
+    const thandiConv = conversationRecords.find(c => c.profileName === "Thandi Ndlovu")!;
+
+    await db.insert(whatsappMessages).values([
+      {
+        conversationId: siphoConv.id,
+        tenantId: tenantRecord[0].id,
+        waMessageId: "wamid_" + Date.now() + "_1",
+        direction: "outbound",
+        senderType: "ai",
+        body: "Hello Sipho! Thank you for your interest in the Senior Backend Developer position at Avatar Human Capital. We were impressed by your profile. Would you be interested in scheduling an interview?",
+        status: "delivered",
+        sentAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2)
+      },
+      {
+        conversationId: siphoConv.id,
+        tenantId: tenantRecord[0].id,
+        waMessageId: "wamid_" + Date.now() + "_2",
+        direction: "inbound",
+        senderType: "candidate",
+        body: "Hi! Yes, I'm very interested in this opportunity. The role sounds like a great fit for my experience.",
+        status: "read",
+        sentAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2 + 1000 * 60 * 15)
+      },
+      {
+        conversationId: siphoConv.id,
+        tenantId: tenantRecord[0].id,
+        waMessageId: "wamid_" + Date.now() + "_3",
+        direction: "outbound",
+        senderType: "ai",
+        body: "That's wonderful! Before we proceed, could you please send us your updated CV? This will help us prepare for the technical discussion.",
+        status: "delivered",
+        sentAt: new Date(Date.now() - 1000 * 60 * 60)
+      },
+      {
+        conversationId: siphoConv.id,
+        tenantId: tenantRecord[0].id,
+        waMessageId: "wamid_" + Date.now() + "_4",
+        direction: "inbound",
+        senderType: "candidate",
+        body: "Thank you! I will send my CV shortly.",
+        status: "delivered",
+        sentAt: new Date(Date.now() - 1000 * 60 * 30)
+      },
+      {
+        conversationId: leratoConv.id,
+        tenantId: tenantRecord[0].id,
+        waMessageId: "wamid_" + Date.now() + "_5",
+        direction: "outbound",
+        senderType: "human",
+        body: "Hi Lerato, this is the HR team at Avatar Human Capital. We need a few documents for your background check. Could you please send your proof of address?",
+        status: "delivered",
+        sentAt: new Date(Date.now() - 1000 * 60 * 60 * 24)
+      },
+      {
+        conversationId: leratoConv.id,
+        tenantId: tenantRecord[0].id,
+        waMessageId: "wamid_" + Date.now() + "_6",
+        direction: "inbound",
+        senderType: "candidate",
+        body: "No problem, let me find my utility bill. Is a bank statement also acceptable?",
+        status: "read",
+        sentAt: new Date(Date.now() - 1000 * 60 * 60 * 5)
+      },
+      {
+        conversationId: leratoConv.id,
+        tenantId: tenantRecord[0].id,
+        waMessageId: "wamid_" + Date.now() + "_7",
+        direction: "outbound",
+        senderType: "human",
+        body: "Yes, a recent bank statement (within the last 3 months) showing your address would be perfect.",
+        status: "delivered",
+        sentAt: new Date(Date.now() - 1000 * 60 * 60 * 4)
+      },
+      {
+        conversationId: leratoConv.id,
+        tenantId: tenantRecord[0].id,
+        waMessageId: "wamid_" + Date.now() + "_8",
+        direction: "inbound",
+        senderType: "candidate",
+        body: "I have attached my proof of address document.",
+        status: "read",
+        sentAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
+        mediaUrl: "https://example.com/docs/lerato-proof-of-address.pdf",
+        mediaType: "document"
+      },
+      {
+        conversationId: thandiConv.id,
+        tenantId: tenantRecord[0].id,
+        waMessageId: "wamid_" + Date.now() + "_9",
+        direction: "outbound",
+        senderType: "ai",
+        body: "Good morning Thandi! We would like to schedule your first-round interview for the Frontend React Developer position. Are you available tomorrow at 10:00 AM?",
+        status: "delivered",
+        sentAt: new Date(Date.now() - 1000 * 60 * 60 * 8)
+      },
+      {
+        conversationId: thandiConv.id,
+        tenantId: tenantRecord[0].id,
+        waMessageId: "wamid_" + Date.now() + "_10",
+        direction: "inbound",
+        senderType: "candidate",
+        body: "Good morning! Yes, 10am tomorrow works perfectly for me. Should I come to your office?",
+        status: "read",
+        sentAt: new Date(Date.now() - 1000 * 60 * 60 * 7)
+      },
+      {
+        conversationId: thandiConv.id,
+        tenantId: tenantRecord[0].id,
+        waMessageId: "wamid_" + Date.now() + "_11",
+        direction: "outbound",
+        senderType: "ai",
+        body: "Great! The interview will be conducted via video call. I'll send you the meeting link shortly. Please make sure you have a stable internet connection.",
+        status: "delivered",
+        sentAt: new Date(Date.now() - 1000 * 60 * 60 * 6)
+      },
+      {
+        conversationId: thandiConv.id,
+        tenantId: tenantRecord[0].id,
+        waMessageId: "wamid_" + Date.now() + "_12",
+        direction: "inbound",
+        senderType: "candidate",
+        body: "Perfect, I'll be there at 10am tomorrow.",
+        status: "read",
+        sentAt: new Date(Date.now() - 1000 * 60 * 60 * 5)
+      }
+    ]);
+
+    console.log("✓ Created WhatsApp messages");
+
+    console.log("Creating document requests...");
+    await db.insert(whatsappDocumentRequests).values([
+      {
+        conversationId: siphoConv.id,
+        tenantId: tenantRecord[0].id,
+        candidateId: siphoCandidate.id,
+        documentType: "cv",
+        documentName: "Updated CV / Resume",
+        description: "Please send your updated CV for the Senior Backend Developer position",
+        status: "requested"
+      },
+      {
+        conversationId: leratoConv.id,
+        tenantId: tenantRecord[0].id,
+        candidateId: leratoCandidate.id,
+        documentType: "proof_of_address",
+        documentName: "Proof of Address",
+        description: "Bank statement or utility bill showing current address",
+        status: "received",
+        receivedAt: new Date(Date.now() - 1000 * 60 * 60 * 2)
+      }
+    ]);
+
+    console.log("✓ Created document requests");
+
+    console.log("Creating appointments...");
+    await db.insert(whatsappAppointments).values([
+      {
+        conversationId: thandiConv.id,
+        tenantId: tenantRecord[0].id,
+        candidateId: thandiCandidate.id,
+        appointmentType: "interview",
+        title: "First Round Interview",
+        description: "Video call interview - Frontend React Developer position",
+        scheduledAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
+        duration: 60,
+        location: "virtual",
+        meetingLink: "https://meet.google.com/abc-defg-hij",
+        status: "confirmed",
+        confirmedAt: new Date(Date.now() - 1000 * 60 * 60 * 5),
+        candidateResponse: "accepted"
+      }
+    ]);
+
+    console.log("✓ Created appointments");
+
     console.log("\n✅ Database seeded successfully!");
     console.log("\nSummary:");
     console.log(`- ${userRecords.length} users`);
     console.log(`- ${jobRecords.length} jobs`);
     console.log(`- ${candidateRecords.length} candidates`);
+    console.log(`- ${conversationRecords.length} WhatsApp conversations with messages, documents, and appointments`);
     
   } catch (error) {
     console.error("❌ Error seeding database:", error);

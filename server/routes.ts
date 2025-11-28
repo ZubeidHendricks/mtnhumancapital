@@ -1129,10 +1129,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get current tenant based on subdomain (attached by middleware)
   app.get("/api/tenant/current", async (req, res) => {
     try {
-      if (!req.tenant) {
-        return res.status(404).json({ message: "No tenant found for this domain" });
+      if (req.tenant) {
+        return res.json(req.tenant);
       }
-      res.json(req.tenant);
+      // Fallback to default tenant for development
+      const config = await storage.getTenantConfig();
+      if (config) {
+        return res.json(config);
+      }
+      return res.status(404).json({ message: "No tenant found" });
     } catch (error) {
       console.error("Error fetching current tenant:", error);
       res.status(500).json({ message: "Failed to fetch tenant" });

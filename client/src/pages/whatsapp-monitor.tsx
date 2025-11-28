@@ -376,14 +376,14 @@ export default function WhatsAppMonitor() {
   const getTypeBadge = (type: string) => {
     switch (type) {
       case "recruitment":
-        return <Badge className="bg-blue-100 text-blue-800">Recruitment</Badge>;
+        return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/20">Recruitment</Badge>;
       case "document_request":
-        return <Badge className="bg-purple-100 text-purple-800">Documents</Badge>;
+        return <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/20">Documents</Badge>;
       case "appointment":
-        return <Badge className="bg-orange-100 text-orange-800">Appointment</Badge>;
+        return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/20">Appointment</Badge>;
       case "general":
       default:
-        return <Badge className="bg-gray-100 text-gray-800">General</Badge>;
+        return <Badge className="bg-white/10 text-muted-foreground border-white/10">General</Badge>;
     }
   };
 
@@ -404,37 +404,47 @@ export default function WhatsAppMonitor() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50" data-testid="whatsapp-monitor-page">
+    <div className="min-h-screen bg-background text-foreground" data-testid="whatsapp-monitor-page">
       <Navbar />
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900" data-testid="page-title">WhatsApp Monitor</h1>
-          <p className="text-gray-500 mt-1">Manage candidate conversations and AI interactions</p>
+      <main className="container mx-auto px-6 pt-24 pb-12">
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold" data-testid="page-title">WhatsApp Monitor</h1>
+              <p className="text-muted-foreground mt-1">Manage candidate conversations and AI interactions</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20">
+                <span className="w-2 h-2 rounded-full bg-green-400 mr-2 animate-pulse"></span>
+                {conversations.length} Active
+              </Badge>
+            </div>
+          </div>
           {whatsappStatus && !whatsappStatus.configured && (
-            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-3">
-              <AlertCircle className="h-5 w-5 text-yellow-600" />
-              <p className="text-yellow-800">WhatsApp API is not configured. Messages will be stored but not sent.</p>
+            <div className="mt-4 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-yellow-500" />
+              <p className="text-yellow-400">WhatsApp API is not configured. Messages will be stored but not sent.</p>
             </div>
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-200px)]">
-          <Card className="lg:col-span-4 flex flex-col" data-testid="conversation-list-panel">
-            <CardHeader className="border-b pb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr_320px] gap-6 h-[calc(100vh-200px)]">
+          <Card className="bg-card/50 border-white/10 flex flex-col" data-testid="conversation-list-panel">
+            <CardHeader className="border-b border-white/10 pb-4">
               <div className="flex items-center gap-2 mb-4">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search conversations..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 bg-background/50 border-white/10"
                     data-testid="search-conversations"
                   />
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon" data-testid="filter-button">
+                    <Button variant="outline" size="icon" className="border-white/10" data-testid="filter-button">
                       <Filter className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -449,7 +459,7 @@ export default function WhatsAppMonitor() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-muted-foreground">
                 {filteredConversations.length} conversation{filteredConversations.length !== 1 ? 's' : ''}
               </div>
             </CardHeader>
@@ -457,46 +467,46 @@ export default function WhatsAppMonitor() {
               <ScrollArea className="h-full">
                 {isLoadingConversations ? (
                   <div className="flex items-center justify-center h-32">
-                    <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                   </div>
                 ) : filteredConversations.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-32 text-gray-500">
-                    <MessageCircle className="h-8 w-8 mb-2 text-gray-300" />
+                  <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
+                    <MessageCircle className="h-8 w-8 mb-2 opacity-50" />
                     <p>No conversations found</p>
                   </div>
                 ) : (
-                  <div className="divide-y">
+                  <div className="divide-y divide-white/5">
                     {filteredConversations.map((conv) => (
                       <div
                         key={conv.id}
-                        className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                          selectedConversationId === conv.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                        className={`p-4 cursor-pointer hover:bg-white/5 transition-colors ${
+                          selectedConversationId === conv.id ? 'bg-primary/10 border-l-4 border-l-primary' : ''
                         }`}
                         onClick={() => handleSelectConversation(conv)}
                         data-testid={`conversation-item-${conv.id}`}
                       >
                         <div className="flex items-start gap-3">
                           <Avatar>
-                            <AvatarFallback className="bg-green-100 text-green-700">
+                            <AvatarFallback className="bg-green-500/20 text-green-400">
                               {(conv.profileName || conv.phone).charAt(0).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between">
-                              <span className="font-medium text-gray-900 truncate">
+                              <span className="font-medium truncate">
                                 {conv.profileName || conv.phone}
                               </span>
                               {conv.unreadCount > 0 && (
                                 <Badge className="bg-green-500 text-white ml-2">{conv.unreadCount}</Badge>
                               )}
                             </div>
-                            <p className="text-sm text-gray-500 truncate mt-0.5">
+                            <p className="text-sm text-muted-foreground truncate mt-0.5">
                               {conv.lastMessagePreview || "No messages yet"}
                             </p>
                             <div className="flex items-center gap-2 mt-2">
                               {getTypeBadge(conv.type)}
                               {conv.lastMessageAt && (
-                                <span className="text-xs text-gray-400">
+                                <span className="text-xs text-muted-foreground">
                                   {formatDistanceToNow(new Date(conv.lastMessageAt), { addSuffix: true })}
                                 </span>
                               )}
@@ -511,10 +521,10 @@ export default function WhatsAppMonitor() {
             </CardContent>
           </Card>
 
-          <Card className="lg:col-span-5 flex flex-col" data-testid="message-thread-panel">
+          <Card className="bg-card/50 border-white/10 flex flex-col" data-testid="message-thread-panel">
             {selectedConversationId && conversationDetail ? (
               <>
-                <CardHeader className="border-b pb-4">
+                <CardHeader className="border-b border-white/10 pb-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Button
@@ -526,7 +536,7 @@ export default function WhatsAppMonitor() {
                         <ChevronLeft className="h-5 w-5" />
                       </Button>
                       <Avatar>
-                        <AvatarFallback className="bg-green-100 text-green-700">
+                        <AvatarFallback className="bg-green-500/20 text-green-400">
                           {(conversationDetail.conversation.profileName || conversationDetail.conversation.phone).charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
@@ -534,13 +544,14 @@ export default function WhatsAppMonitor() {
                         <h3 className="font-semibold">
                           {conversationDetail.conversation.profileName || conversationDetail.conversation.phone}
                         </h3>
-                        <p className="text-sm text-gray-500">{conversationDetail.conversation.phone}</p>
+                        <p className="text-sm text-muted-foreground">{conversationDetail.conversation.phone}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
                         size="icon"
+                        className="border-white/10"
                         onClick={openWhatsAppCall}
                         title="Start WhatsApp call"
                         data-testid="btn-whatsapp-call"
@@ -549,7 +560,7 @@ export default function WhatsAppMonitor() {
                       </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="icon" data-testid="conversation-menu">
+                          <Button variant="outline" size="icon" className="border-white/10" data-testid="conversation-menu">
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -577,11 +588,11 @@ export default function WhatsAppMonitor() {
                   <ScrollArea className="h-full pr-4">
                     {isLoadingDetail ? (
                       <div className="flex items-center justify-center h-32">
-                        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                       </div>
                     ) : conversationDetail.messages.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center h-32 text-gray-500">
-                        <MessageCircle className="h-8 w-8 mb-2 text-gray-300" />
+                      <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
+                        <MessageCircle className="h-8 w-8 mb-2 opacity-50" />
                         <p>No messages yet</p>
                         <p className="text-sm">Start the conversation by sending a message</p>
                       </div>
@@ -597,9 +608,9 @@ export default function WhatsAppMonitor() {
                               className={`max-w-[80%] rounded-2xl px-4 py-2 ${
                                 message.direction === 'outbound'
                                   ? message.senderType === 'ai'
-                                    ? 'bg-purple-100 text-purple-900'
-                                    : 'bg-blue-500 text-white'
-                                  : 'bg-gray-100 text-gray-900'
+                                    ? 'bg-purple-500/20 text-purple-200'
+                                    : 'bg-primary text-primary-foreground'
+                                  : 'bg-white/10 text-foreground'
                               }`}
                             >
                               {message.senderType === 'ai' && message.direction === 'outbound' && (
@@ -663,18 +674,18 @@ export default function WhatsAppMonitor() {
                 </CardFooter>
               </>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                <MessageCircle className="h-16 w-16 mb-4 text-gray-200" />
-                <h3 className="text-lg font-medium text-gray-700">Select a conversation</h3>
-                <p className="text-sm">Choose a conversation from the list to view messages</p>
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                <MessageCircle className="h-16 w-16 mb-4 opacity-30" />
+                <h3 className="text-lg font-medium">Select a conversation</h3>
+                <p className="text-sm opacity-70">Choose a conversation from the list to view messages</p>
               </div>
             )}
           </Card>
 
-          <Card className="lg:col-span-3" data-testid="details-panel">
+          <Card className="bg-card/50 border-white/10" data-testid="details-panel">
             {selectedConversationId && conversationDetail ? (
               <Tabs defaultValue="info" className="h-full flex flex-col">
-                <TabsList className="w-full justify-start border-b rounded-none">
+                <TabsList className="w-full justify-start border-b border-white/10 rounded-none bg-transparent">
                   <TabsTrigger value="info">Info</TabsTrigger>
                   <TabsTrigger value="docs">Documents</TabsTrigger>
                   <TabsTrigger value="appointments">Appointments</TabsTrigger>
@@ -684,34 +695,34 @@ export default function WhatsAppMonitor() {
                   <TabsContent value="info" className="m-0 p-4">
                     <div className="space-y-6">
                       <div>
-                        <h4 className="text-sm font-medium text-gray-500 mb-2">Contact Info</h4>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-2">Contact Info</h4>
                         <div className="space-y-2">
                           <div className="flex items-center gap-2 text-sm">
-                            <Phone className="h-4 w-4 text-gray-400" />
+                            <Phone className="h-4 w-4 text-muted-foreground" />
                             <span>{conversationDetail.conversation.phone}</span>
                           </div>
                           <div className="flex items-center gap-2 text-sm">
-                            <MessageCircle className="h-4 w-4 text-gray-400" />
+                            <MessageCircle className="h-4 w-4 text-muted-foreground" />
                             <span>WA ID: {conversationDetail.conversation.waId}</span>
                           </div>
                         </div>
                       </div>
 
-                      <Separator />
+                      <Separator className="bg-white/10" />
 
                       <div>
-                        <h4 className="text-sm font-medium text-gray-500 mb-2">Conversation</h4>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-2">Conversation</h4>
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-600">Type</span>
+                            <span className="text-sm text-muted-foreground">Type</span>
                             {getTypeBadge(conversationDetail.conversation.type)}
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-600">Status</span>
+                            <span className="text-sm text-muted-foreground">Status</span>
                             {getStatusBadge(conversationDetail.conversation.status)}
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-600">Created</span>
+                            <span className="text-sm text-muted-foreground">Created</span>
                             <span className="text-sm">
                               {format(new Date(conversationDetail.conversation.createdAt), 'MMM d, yyyy')}
                             </span>
@@ -719,11 +730,11 @@ export default function WhatsAppMonitor() {
                         </div>
                       </div>
 
-                      <Separator />
+                      <Separator className="bg-white/10" />
 
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-sm font-medium text-gray-500">Linked Candidate</h4>
+                          <h4 className="text-sm font-medium text-muted-foreground">Linked Candidate</h4>
                           {!conversationDetail.candidate && (
                             <Button
                               variant="ghost"
@@ -737,32 +748,32 @@ export default function WhatsAppMonitor() {
                           )}
                         </div>
                         {conversationDetail.candidate ? (
-                          <Card className="p-3">
+                          <Card className="p-3 bg-white/5 border-white/10">
                             <div className="flex items-center gap-3">
                               <Avatar className="h-10 w-10">
-                                <AvatarFallback className="bg-blue-100 text-blue-700">
+                                <AvatarFallback className="bg-blue-500/20 text-blue-400">
                                   {conversationDetail.candidate.fullName.charAt(0)}
                                 </AvatarFallback>
                               </Avatar>
                               <div>
                                 <p className="font-medium text-sm">{conversationDetail.candidate.fullName}</p>
-                                <p className="text-xs text-gray-500">{conversationDetail.candidate.position || 'Candidate'}</p>
+                                <p className="text-xs text-muted-foreground">{conversationDetail.candidate.position || 'Candidate'}</p>
                               </div>
                             </div>
                           </Card>
                         ) : (
-                          <p className="text-sm text-gray-400">No candidate linked</p>
+                          <p className="text-sm text-muted-foreground">No candidate linked</p>
                         )}
                       </div>
 
-                      <Separator />
+                      <Separator className="bg-white/10" />
 
                       <div>
-                        <h4 className="text-sm font-medium text-gray-500 mb-3">Quick Actions</h4>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-3">Quick Actions</h4>
                         <div className="space-y-2">
                           <Button
                             variant="outline"
-                            className="w-full justify-start"
+                            className="w-full justify-start border-white/10"
                             onClick={() => setIsDocRequestOpen(true)}
                             data-testid="btn-request-document"
                           >
@@ -771,7 +782,7 @@ export default function WhatsAppMonitor() {
                           </Button>
                           <Button
                             variant="outline"
-                            className="w-full justify-start"
+                            className="w-full justify-start border-white/10"
                             onClick={() => setIsAppointmentOpen(true)}
                             data-testid="btn-schedule-appointment"
                           >
