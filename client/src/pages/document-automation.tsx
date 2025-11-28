@@ -40,7 +40,9 @@ import {
   Grid3X3,
   List,
   Calendar,
-  Globe
+  Globe,
+  Target,
+  Star
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -1276,7 +1278,11 @@ export default function DocumentAutomation() {
         <DialogContent className="max-w-3xl bg-zinc-900 border-zinc-700 max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-white flex items-center gap-2">
-              <File className="h-5 w-5" />
+              {selectedDocument?.type === "job_spec" ? (
+                <Briefcase className="h-5 w-5 text-purple-400" />
+              ) : (
+                <File className="h-5 w-5 text-amber-400" />
+              )}
               {selectedDocument?.originalFilename}
             </DialogTitle>
             <DialogDescription>
@@ -1288,6 +1294,8 @@ export default function DocumentAutomation() {
             <div className="space-y-6">
               {(() => {
                 const data = selectedDocument.extractedData as any;
+                const isJobSpec = selectedDocument.type === "job_spec";
+                
                 return (
                   <>
                     {/* Header with Status */}
@@ -1305,11 +1313,153 @@ export default function DocumentAutomation() {
                           Candidate Created
                         </Badge>
                       )}
+                      {(selectedDocument as any).linkedJobId && (
+                        <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Job Created
+                        </Badge>
+                      )}
                     </div>
 
-                    {data && (
+                    {data && isJobSpec ? (
                       <>
-                        {/* Personal Information */}
+                        {/* Job Information */}
+                        <div className="space-y-3">
+                          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                            <Briefcase className="h-5 w-5 text-purple-400" />
+                            Job Information
+                          </h3>
+                          <div className="grid grid-cols-2 gap-4 p-4 bg-zinc-800/30 rounded-lg">
+                            <div>
+                              <p className="text-xs text-zinc-500 mb-1">Job Title</p>
+                              <p className="text-white font-medium">{data.title || data.jobTitle || "N/A"}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-zinc-500 mb-1">Company</p>
+                              <p className="text-purple-400">{data.company || "N/A"}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-zinc-500 mb-1">Department</p>
+                              <p className="text-white">{data.department || "N/A"}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-zinc-500 mb-1">Location</p>
+                              <p className="text-white">{data.location || "N/A"}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-zinc-500 mb-1">Employment Type</p>
+                              <p className="text-white">{data.employmentType || "N/A"}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-zinc-500 mb-1">Salary Range</p>
+                              <p className="text-green-400">{data.salaryRange || data.salary || "N/A"}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Experience Required */}
+                        {data.experienceRequired && (
+                          <div className="space-y-3">
+                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                              <Clock className="h-5 w-5 text-blue-400" />
+                              Experience Required
+                            </h3>
+                            <p className="text-zinc-300 text-sm leading-relaxed p-4 bg-zinc-800/30 rounded-lg">
+                              {data.experienceRequired}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Job Description */}
+                        {data.description && (
+                          <div className="space-y-3">
+                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                              <FileText className="h-5 w-5 text-amber-400" />
+                              Job Description
+                            </h3>
+                            <p className="text-zinc-300 text-sm leading-relaxed p-4 bg-zinc-800/30 rounded-lg whitespace-pre-wrap">
+                              {data.description}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Required Skills */}
+                        {data.requiredSkills && data.requiredSkills.length > 0 && (
+                          <div className="space-y-3">
+                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                              <Award className="h-5 w-5 text-blue-400" />
+                              Required Skills ({data.requiredSkills.length})
+                            </h3>
+                            <div className="flex flex-wrap gap-2 p-4 bg-zinc-800/30 rounded-lg">
+                              {data.requiredSkills.map((skill: string, i: number) => (
+                                <Badge key={i} className="bg-purple-500/20 text-purple-300 border-purple-500/30">
+                                  {skill}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Responsibilities */}
+                        {data.responsibilities && data.responsibilities.length > 0 && (
+                          <div className="space-y-3">
+                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                              <Target className="h-5 w-5 text-green-400" />
+                              Responsibilities ({data.responsibilities.length})
+                            </h3>
+                            <div className="p-4 bg-zinc-800/30 rounded-lg">
+                              <ul className="space-y-2">
+                                {data.responsibilities.map((resp: string, i: number) => (
+                                  <li key={i} className="flex items-start gap-2 text-sm text-zinc-300">
+                                    <span className="text-green-400 mt-1">•</span>
+                                    {resp}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Qualifications */}
+                        {data.qualifications && data.qualifications.length > 0 && (
+                          <div className="space-y-3">
+                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                              <GraduationCap className="h-5 w-5 text-orange-400" />
+                              Qualifications ({data.qualifications.length})
+                            </h3>
+                            <div className="p-4 bg-zinc-800/30 rounded-lg">
+                              <ul className="space-y-2">
+                                {data.qualifications.map((qual: string, i: number) => (
+                                  <li key={i} className="flex items-start gap-2 text-sm text-zinc-300">
+                                    <span className="text-orange-400 mt-1">•</span>
+                                    {qual}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Benefits */}
+                        {data.benefits && data.benefits.length > 0 && (
+                          <div className="space-y-3">
+                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                              <Star className="h-5 w-5 text-yellow-400" />
+                              Benefits ({data.benefits.length})
+                            </h3>
+                            <div className="flex flex-wrap gap-2 p-4 bg-zinc-800/30 rounded-lg">
+                              {data.benefits.map((benefit: string, i: number) => (
+                                <Badge key={i} variant="outline" className="text-xs border-yellow-500/30 text-yellow-300">
+                                  {benefit}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : data && (
+                      <>
+                        {/* Personal Information - For CVs */}
                         <div className="space-y-3">
                           <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                             <Users className="h-5 w-5 text-amber-400" />
@@ -1482,11 +1632,14 @@ export default function DocumentAutomation() {
                     {/* Raw Text Preview */}
                     {selectedDocument.rawText && (
                       <div className="space-y-2">
-                        <h3 className="text-sm font-semibold text-white">Raw Text Preview</h3>
-                        <ScrollArea className="h-32 p-3 bg-zinc-800/50 rounded-lg">
+                        <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-zinc-400" />
+                          Raw Text Preview
+                        </h3>
+                        <ScrollArea className="h-40 p-3 bg-zinc-800/50 rounded-lg">
                           <p className="text-xs text-zinc-500 whitespace-pre-wrap">
-                            {selectedDocument.rawText.slice(0, 1000)}
-                            {selectedDocument.rawText.length > 1000 && "..."}
+                            {selectedDocument.rawText.slice(0, 2000)}
+                            {selectedDocument.rawText.length > 2000 && "..."}
                           </p>
                         </ScrollArea>
                       </div>
