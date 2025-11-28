@@ -27,6 +27,7 @@ import TenantRequests from "@/pages/tenant-requests";
 import WorkforceIntelligence from "@/pages/workforce-intelligence";
 import PlatformSettings from "@/pages/platform-settings";
 import DocumentAutomation from "@/pages/document-automation";
+import WhatsAppMonitor from "@/pages/whatsapp-monitor";
 
 function Router() {
   return (
@@ -53,6 +54,7 @@ function Router() {
       <Route path="/workforce-intelligence" component={WorkforceIntelligence} />
       <Route path="/platform-settings" component={PlatformSettings} />
       <Route path="/document-automation" component={DocumentAutomation} />
+      <Route path="/whatsapp-monitor" component={WhatsAppMonitor} />
       <Route component={NotFound} />
     </Switch>
   );
