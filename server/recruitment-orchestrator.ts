@@ -1,13 +1,40 @@
 import { recruitmentAgents, type JobRequirements, type CandidateProfile } from "./recruitment-agents";
+import { sourcingOrchestrator, type SpecialistCandidate, type SpecialistResult, type SourcingConfiguration } from "./sourcing-specialists";
 import type { IStorage } from "./storage";
 import type { Job, RecruitmentSession, InsertCandidate } from "@shared/schema";
 
 export interface RecruitmentProgress {
   sessionId: string;
-  status: "analyzing" | "searching" | "ranking" | "completed" | "failed";
+  status: "analyzing" | "sourcing_linkedin" | "sourcing_pnet" | "sourcing_indeed" | "searching" | "ranking" | "completed" | "failed";
   currentStep: string;
   candidatesFound: number;
   candidatesAdded: number;
+  specialistResults?: {
+    linkedin?: { found: number; status: string };
+    pnet?: { found: number; status: string };
+    indeed?: { found: number; status: string };
+  };
+}
+
+function deduplicateCandidates(candidates: CandidateProfile[]): CandidateProfile[] {
+  const seen = new Map<string, CandidateProfile>();
+  
+  for (const candidate of candidates) {
+    const normalizedName = candidate.name.toLowerCase().trim();
+    const normalizedCompany = (candidate.company || "").toLowerCase().trim();
+    const key = `${normalizedName}|${normalizedCompany}|${candidate.currentRole?.toLowerCase().trim() || ""}`;
+    
+    if (!seen.has(key)) {
+      seen.set(key, candidate);
+    } else {
+      const existing = seen.get(key)!;
+      if ((candidate.match || 0) > (existing.match || 0)) {
+        seen.set(key, candidate);
+      }
+    }
+  }
+  
+  return Array.from(seen.values());
 }
 
 export class RecruitmentOrchestrator {
@@ -49,17 +76,89 @@ export class RecruitmentOrchestrator {
       await this.updateSession(tenantId, sessionId, {
         searchQuery: requirements.searchQuery,
         searchCriteria: requirements as any,
-        results: { step: "searching_candidates", requirements },
+        results: { step: "sourcing_specialists", requirements },
       });
 
-      // Step 3: Search for candidates using AI
-      console.log(`Searching for candidates...`);
-      const candidateProfiles = await recruitmentAgents.searchCandidates(requirements, maxCandidates);
+      // Step 3: Run sourcing specialists (LinkedIn, PNet, Indeed)
+      console.log(`Running sourcing specialists for job: ${job.title}`);
+      
+      await this.updateSession(tenantId, sessionId, {
+        results: { 
+          step: "sourcing_specialists", 
+          requirements,
+          specialists: { linkedin: "running", pnet: "pending", indeed: "pending" }
+        },
+      });
+
+      const { results: specialistResults, allCandidates: specialistCandidates, configuration } = 
+        await sourcingOrchestrator.runAllSpecialists(job, Math.ceil(maxCandidates / 3));
+
+      const specialistSummary = {
+        linkedin: specialistResults.find(r => r.specialist === "LinkedIn Specialist"),
+        pnet: specialistResults.find(r => r.specialist === "PNet Specialist"),
+        indeed: specialistResults.find(r => r.specialist === "Indeed Specialist"),
+      };
+
+      console.log(`Specialists found ${specialistCandidates.length} candidates total`);
 
       await this.updateSession(tenantId, sessionId, {
-        candidatesFound: candidateProfiles.length,
-        results: { step: "ranking_candidates", candidatesFound: candidateProfiles.length },
+        results: { 
+          step: "sourcing_ai_search", 
+          requirements,
+          specialistResults: specialistResults.map(r => ({
+            specialist: r.specialist,
+            found: r.candidates.length,
+            status: r.status,
+          })),
+          configuration,
+        },
       });
+
+      // Step 4: Augment with general AI search
+      console.log(`Augmenting with AI search...`);
+      const aiCandidates = await recruitmentAgents.searchCandidates(requirements, Math.ceil(maxCandidates / 2));
+
+      // Convert specialist candidates to CandidateProfile format
+      const convertedSpecialistCandidates: CandidateProfile[] = specialistCandidates.map(sc => ({
+        name: sc.name,
+        currentRole: sc.currentRole,
+        company: sc.company,
+        location: sc.location,
+        skills: sc.skills,
+        experience: sc.experience,
+        source: sc.source,
+        match: sc.match,
+        rawData: {
+          ...sc.rawData,
+          specialist: sc.specialist,
+          profileUrl: sc.profileUrl,
+        },
+      }));
+
+      // Merge and deduplicate all candidates
+      const allCandidates = deduplicateCandidates([
+        ...convertedSpecialistCandidates,
+        ...aiCandidates,
+      ]);
+
+      console.log(`Total unique candidates after deduplication: ${allCandidates.length}`);
+
+      await this.updateSession(tenantId, sessionId, {
+        candidatesFound: allCandidates.length,
+        results: { 
+          step: "ranking_candidates", 
+          candidatesFound: allCandidates.length,
+          specialistResults: specialistResults.map(r => ({
+            specialist: r.specialist,
+            found: r.candidates.length,
+            status: r.status,
+          })),
+          aiSearchFound: aiCandidates.length,
+          configuration,
+        },
+      });
+
+      const candidateProfiles = allCandidates;
 
       // Step 4: Rank and add candidates
       console.log(`Ranking ${candidateProfiles.length} candidates...`);
