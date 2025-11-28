@@ -24,6 +24,7 @@ import {
   Filter,
   MoreHorizontal,
   BrainCircuit,
+  Brain,
   Sparkles,
   ShieldCheck,
   Laptop,
@@ -419,12 +420,20 @@ BENEFITS:
         )}
 
         <Tabs defaultValue="recruitment" className="space-y-6" onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:w-[600px] bg-card/50 border border-white/5">
-            <TabsTrigger value="recruitment">Recruitment</TabsTrigger>
-            <TabsTrigger value="integrity">Integrity</TabsTrigger>
-            <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
-            <TabsTrigger value="performance">Performance</TabsTrigger>
-          </TabsList>
+          <div className="flex items-center gap-3 flex-wrap">
+            <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:w-[600px] bg-card/50 border border-white/5">
+              <TabsTrigger value="recruitment">Recruitment</TabsTrigger>
+              <TabsTrigger value="integrity">Integrity</TabsTrigger>
+              <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
+              <TabsTrigger value="performance">Performance</TabsTrigger>
+            </TabsList>
+            <Link href="/workforce-intelligence">
+              <Button variant="outline" className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/30 hover:border-amber-500/50 hover:bg-amber-500/20 text-amber-400">
+                <Brain className="h-4 w-4 mr-2" />
+                Workforce Intelligence
+              </Button>
+            </Link>
+          </div>
 
           {/* RECRUITMENT TAB */}
           <TabsContent value="recruitment" className="space-y-6">
