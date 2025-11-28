@@ -446,9 +446,26 @@ export default function DocumentAutomation() {
                           >
                             <div className="flex items-start justify-between">
                               <div className="flex items-start gap-4">
-                                <div className="p-3 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30">
-                                  <Users className="h-6 w-6 text-amber-400" />
-                                </div>
+                                {extracted?.photoUrl ? (
+                                  <div className="relative">
+                                    <img 
+                                      src={extracted.photoUrl} 
+                                      alt={extracted.fullName || "Candidate"} 
+                                      className="w-16 h-16 rounded-lg object-cover border-2 border-amber-500/30"
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                      }}
+                                    />
+                                    <div className="hidden p-3 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30">
+                                      <Users className="h-6 w-6 text-amber-400" />
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="p-3 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30">
+                                    <Users className="h-6 w-6 text-amber-400" />
+                                  </div>
+                                )}
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2 mb-1">
                                     <p className="font-semibold text-white text-lg">

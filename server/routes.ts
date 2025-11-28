@@ -2554,9 +2554,15 @@ Format your response as JSON:
             fullName: parsedData.fullName || "Unknown",
             email: parsedData.email || undefined,
             phone: parsedData.phone || undefined,
+            role: parsedData.role || undefined,
+            location: parsedData.location || undefined,
+            yearsOfExperience: parsedData.yearsOfExperience || undefined,
             skills: parsedData.skills || [],
             education: parsedData.education || [],
             experience: parsedData.experience || [],
+            languages: parsedData.languages || undefined,
+            certifications: parsedData.certifications || undefined,
+            linkedinUrl: parsedData.linkedinUrl || undefined,
             summary: parsedData.summary || undefined,
             source: "CV Upload",
             status: "New",
@@ -2564,11 +2570,25 @@ Format your response as JSON:
             match: 0,
           });
 
+          // Extract profile photo from PDF if available
+          let photoUrl: string | null = null;
+          if (file.mimetype === "application/pdf") {
+            try {
+              photoUrl = await cvParser.extractProfilePhoto(file.buffer, candidate.id);
+              if (photoUrl) {
+                await storage.updateCandidate(req.tenant.id, candidate.id, { photoUrl });
+                console.log(`Profile photo extracted for candidate ${candidate.id}: ${photoUrl}`);
+              }
+            } catch (photoError) {
+              console.warn(`Could not extract photo for ${file.originalname}:`, photoError);
+            }
+          }
+
           // Update document with extracted data
           await storage.updateDocument(req.tenant.id, doc.id, {
             status: "processed",
             rawText,
-            extractedData: parsedData,
+            extractedData: { ...parsedData, photoUrl },
             linkedCandidateId: candidate.id,
           });
 

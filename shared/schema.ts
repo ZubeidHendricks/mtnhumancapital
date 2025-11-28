@@ -67,6 +67,7 @@ export const candidates = pgTable("candidates", {
   match: integer("match").notNull().default(0),
   jobId: varchar("job_id").references(() => jobs.id),
   cvUrl: text("cv_url"),
+  photoUrl: text("photo_url"),
   skills: text("skills").array(),
   education: jsonb("education"),
   experience: jsonb("experience"),

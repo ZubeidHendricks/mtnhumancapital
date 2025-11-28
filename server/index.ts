@@ -1,4 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
+import path from "path";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { resolveTenant } from "./tenant-middleware";
@@ -8,6 +9,9 @@ import { insertTenantRequestSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 
 const app = express();
+
+// Serve uploaded files (profile photos, etc.)
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 declare module 'http' {
   interface IncomingMessage {

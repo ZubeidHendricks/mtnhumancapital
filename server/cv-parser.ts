@@ -1,9 +1,13 @@
 import Groq from "groq-sdk";
 import { z } from "zod";
 import { createRequire } from "module";
+import { writeFile, mkdir } from "fs/promises";
+import { existsSync } from "fs";
+import path from "path";
 
 const require = createRequire(import.meta.url);
 const pdfParse = require('pdf-parse');
+const { PDFParse } = require('pdf-parse');
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
@@ -156,6 +160,53 @@ Return ONLY the JSON object, no explanations.`;
     const cvData = await this.parseCV(text);
     
     return cvData;
+  }
+
+  async extractProfilePhoto(buffer: Buffer, candidateId: string): Promise<string | null> {
+    try {
+      console.log("Attempting to extract profile photo from PDF...");
+      
+      // Ensure uploads/photos directory exists
+      const photosDir = path.join(process.cwd(), "uploads", "photos");
+      if (!existsSync(photosDir)) {
+        await mkdir(photosDir, { recursive: true });
+      }
+
+      // Use PDFParse v2 API for image extraction
+      const parser = new PDFParse({ data: buffer });
+      const result = await parser.getImage();
+      await parser.destroy();
+
+      // Look for images in the first few pages (profile photos are usually at the top)
+      for (let pageIdx = 0; pageIdx < Math.min(result.pages?.length || 0, 2); pageIdx++) {
+        const page = result.pages[pageIdx];
+        if (page?.images && page.images.length > 0) {
+          // Get the first image (usually the profile photo)
+          const img = page.images[0];
+          
+          if (img?.data && img.data.length > 1000) { // Minimum size filter to avoid tiny icons
+            // Determine file extension based on image type
+            const extension = img.type === 'jpeg' || img.type === 'jpg' ? 'jpg' : 'png';
+            const filename = `${candidateId}.${extension}`;
+            const filepath = path.join(photosDir, filename);
+            
+            // Save the image
+            await writeFile(filepath, img.data);
+            console.log(`Profile photo extracted and saved: ${filename}`);
+            
+            // Return the relative URL for the photo
+            return `/uploads/photos/${filename}`;
+          }
+        }
+      }
+
+      console.log("No suitable profile photo found in PDF");
+      return null;
+    } catch (error) {
+      console.error("Error extracting profile photo:", error);
+      // Don't throw - profile photo extraction is optional
+      return null;
+    }
   }
 }
 

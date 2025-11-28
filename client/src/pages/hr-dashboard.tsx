@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link } from "wouter";
 import { JobCreationChat } from "@/components/job-creation-chat";
 import { 
@@ -635,6 +635,9 @@ BENEFITS:
                               <div key={candidate.id} className="px-4 py-3 flex items-center justify-between hover:bg-white/5 transition-colors">
                                 <div className="flex items-center gap-3">
                                   <Avatar className="h-8 w-8 border border-white/20">
+                                    {candidate.photoUrl && (
+                                      <AvatarImage src={candidate.photoUrl} alt={candidate.fullName} />
+                                    )}
                                     <AvatarFallback className="bg-gradient-to-br from-yellow-500 to-orange-600 text-white text-xs font-semibold">
                                       {candidate.fullName?.split(' ')?.map((n: string) => n[0])?.join('')?.toUpperCase() || '?'}
                                     </AvatarFallback>
