@@ -104,6 +104,18 @@ export default function DocumentAutomation() {
     },
   });
 
+  const jobSpecsKey = useTenantQueryKey(["documents", "job-spec"]);
+  const { data: jobSpecDocuments = [] } = useQuery<Document[]>({
+    queryKey: jobSpecsKey,
+    queryFn: async () => {
+      const res = await fetch("/api/documents/type/job-spec");
+      if (!res.ok) throw new Error("Failed to fetch job spec documents");
+      return res.json();
+    },
+  });
+  
+  const [jobSpecViewMode, setJobSpecViewMode] = useState<"grid" | "list">("grid");
+
   const { data: batches = [] } = useQuery<DocumentBatch[]>({
     queryKey: batchesKey,
     queryFn: async () => {
@@ -160,6 +172,7 @@ export default function DocumentAutomation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: documentsKey });
       queryClient.invalidateQueries({ queryKey: cvsKey });
+      queryClient.invalidateQueries({ queryKey: jobSpecsKey });
       toast.success("Document deleted");
     },
   });
@@ -318,6 +331,10 @@ export default function DocumentAutomation() {
             <TabsTrigger value="cvs" className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400" data-testid="tab-cv-library">
               <Users className="h-4 w-4 mr-2" />
               CV Library
+            </TabsTrigger>
+            <TabsTrigger value="job-specs" className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400" data-testid="tab-job-specs-library">
+              <Briefcase className="h-4 w-4 mr-2" />
+              Job Specs
             </TabsTrigger>
             <TabsTrigger value="batches" className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400" data-testid="tab-upload-history">
               <FolderOpen className="h-4 w-4 mr-2" />
@@ -790,6 +807,267 @@ export default function DocumentAutomation() {
                                     </Button>
                                     <Link href="/hr-dashboard">
                                       <Button variant="ghost" size="sm" className="h-7 px-2 text-amber-400">
+                                        <ArrowRight className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </Link>
+                                    <Button variant="ghost" size="sm" className="h-7 px-2 text-red-400" onClick={() => deleteMutation.mutate(doc.id)}>
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </ScrollArea>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="job-specs" className="space-y-6">
+            <Card className="bg-zinc-900/50 border-zinc-800">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg text-white flex items-center gap-2">
+                      <Briefcase className="h-5 w-5 text-purple-400" />
+                      Job Specifications Library
+                    </CardTitle>
+                    <CardDescription>Extracted job requirements from uploaded specifications</CardDescription>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center bg-zinc-800 rounded-lg p-1">
+                      <Button
+                        variant={jobSpecViewMode === "grid" ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setJobSpecViewMode("grid")}
+                        className={jobSpecViewMode === "grid" ? "bg-purple-500/20 text-purple-400" : "text-zinc-400"}
+                      >
+                        <Grid3X3 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant={jobSpecViewMode === "list" ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setJobSpecViewMode("list")}
+                        className={jobSpecViewMode === "list" ? "bg-purple-500/20 text-purple-400" : "text-zinc-400"}
+                      >
+                        <List className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <Badge variant="outline" className="border-zinc-600">
+                      {jobSpecDocuments.length} Jobs
+                    </Badge>
+                    <Link href="/recruitment-dashboard">
+                      <Button variant="outline" size="sm" className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10">
+                        <Briefcase className="h-4 w-4 mr-2" />
+                        View Recruitment
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {documentsLoading ? (
+                  <div className="text-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-purple-400 mx-auto" />
+                  </div>
+                ) : jobSpecDocuments.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Briefcase className="h-16 w-16 text-zinc-600 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-zinc-300 mb-2">No job specs uploaded yet</h3>
+                    <p className="text-zinc-500 mb-4">Upload job specifications to see them here</p>
+                    <Button 
+                      variant="outline" 
+                      className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
+                      onClick={() => setActiveTab("upload")}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Job Specs
+                    </Button>
+                  </div>
+                ) : jobSpecViewMode === "grid" ? (
+                  <ScrollArea className="h-[650px]">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {jobSpecDocuments.map((doc) => {
+                        const extracted = doc.extractedData as any;
+                        return (
+                          <div 
+                            key={doc.id}
+                            className="p-4 rounded-xl bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 hover:from-zinc-800 hover:to-zinc-900 transition-all border border-zinc-700/50 hover:border-purple-500/30 group"
+                            data-testid={`card-job-spec-${doc.id}`}
+                          >
+                            <div className="flex items-start gap-3 mb-3">
+                              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+                                <Briefcase className="h-6 w-6 text-white" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-white truncate">
+                                  {extracted?.title || extracted?.jobTitle || doc.originalFilename}
+                                </h3>
+                                {extracted?.company && (
+                                  <p className="text-purple-400 text-sm truncate flex items-center gap-1">
+                                    <Building2 className="h-3 w-3" />
+                                    {extracted.company}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="space-y-1.5 mb-3">
+                              {extracted?.location && (
+                                <div className="flex items-center gap-2 text-xs text-zinc-400">
+                                  <MapPin className="h-3 w-3 flex-shrink-0" />
+                                  <span className="truncate">{extracted.location}</span>
+                                </div>
+                              )}
+                              {extracted?.department && (
+                                <div className="flex items-center gap-2 text-xs text-zinc-400">
+                                  <Building2 className="h-3 w-3 flex-shrink-0" />
+                                  <span className="truncate">{extracted.department}</span>
+                                </div>
+                              )}
+                              {extracted?.employmentType && (
+                                <div className="flex items-center gap-2 text-xs text-zinc-400">
+                                  <Clock className="h-3 w-3 flex-shrink-0" />
+                                  <span>{extracted.employmentType}</span>
+                                </div>
+                              )}
+                              {(extracted?.salaryRange || extracted?.salary) && (
+                                <div className="flex items-center gap-2 text-xs text-green-400">
+                                  <Award className="h-3 w-3 flex-shrink-0" />
+                                  <span>{extracted.salaryRange || extracted.salary}</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {extracted?.requiredSkills && extracted.requiredSkills.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mb-3">
+                                {extracted.requiredSkills.slice(0, 3).map((skill: string, i: number) => (
+                                  <Badge key={i} variant="outline" className="text-xs border-purple-500/30 text-purple-300 px-1.5 py-0">
+                                    {skill}
+                                  </Badge>
+                                ))}
+                                {extracted.requiredSkills.length > 3 && (
+                                  <Badge variant="outline" className="text-xs border-zinc-600 text-zinc-500 px-1.5 py-0">
+                                    +{extracted.requiredSkills.length - 3}
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
+
+                            {extracted?.experienceRequired && (
+                              <div className="text-xs text-zinc-500 mb-3 p-2 bg-zinc-800/50 rounded-lg">
+                                <div className="flex items-center gap-1 mb-1">
+                                  <GraduationCap className="h-3 w-3" />
+                                  <span className="font-medium text-zinc-400">Experience Required</span>
+                                </div>
+                                <p className="text-zinc-300 truncate">{extracted.experienceRequired}</p>
+                              </div>
+                            )}
+
+                            <div className="flex items-center justify-between pt-2 border-t border-zinc-700/50">
+                              <span className="text-xs text-zinc-500 flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {new Date(doc.createdAt).toLocaleDateString()}
+                              </span>
+                              <div className="flex items-center gap-1">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => setSelectedDocument(doc)}
+                                  className="h-7 px-2 text-zinc-400 hover:text-white"
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                </Button>
+                                <Link href="/recruitment-dashboard">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    className="h-7 px-2 text-purple-400 hover:text-purple-300"
+                                  >
+                                    <ArrowRight className="h-3.5 w-3.5" />
+                                  </Button>
+                                </Link>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  className="h-7 px-2 text-red-400 hover:text-red-300"
+                                  onClick={() => deleteMutation.mutate(doc.id)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </ScrollArea>
+                ) : (
+                  <ScrollArea className="h-[650px]">
+                    <div className="rounded-lg border border-zinc-700 overflow-hidden">
+                      <table className="w-full">
+                        <thead className="bg-zinc-800/80">
+                          <tr>
+                            <th className="text-left text-xs font-medium text-zinc-400 px-4 py-3">Job Title</th>
+                            <th className="text-left text-xs font-medium text-zinc-400 px-4 py-3">Company</th>
+                            <th className="text-left text-xs font-medium text-zinc-400 px-4 py-3">Location</th>
+                            <th className="text-left text-xs font-medium text-zinc-400 px-4 py-3">Type</th>
+                            <th className="text-left text-xs font-medium text-zinc-400 px-4 py-3">Required Skills</th>
+                            <th className="text-left text-xs font-medium text-zinc-400 px-4 py-3">Date</th>
+                            <th className="text-right text-xs font-medium text-zinc-400 px-4 py-3">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-700/50">
+                          {jobSpecDocuments.map((doc) => {
+                            const extracted = doc.extractedData as any;
+                            return (
+                              <tr key={doc.id} className="hover:bg-zinc-800/50" data-testid={`row-job-spec-${doc.id}`}>
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+                                      <Briefcase className="h-4 w-4 text-white" />
+                                    </div>
+                                    <span className="text-white font-medium text-sm">
+                                      {extracted?.title || extracted?.jobTitle || doc.originalFilename}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span className="text-purple-400 text-sm">{extracted?.company || '-'}</span>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span className="text-zinc-400 text-sm">{extracted?.location || '-'}</span>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span className="text-zinc-400 text-sm">{extracted?.employmentType || '-'}</span>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="flex gap-1">
+                                    {extracted?.requiredSkills?.slice(0, 2).map((skill: string, i: number) => (
+                                      <Badge key={i} variant="outline" className="text-xs border-purple-500/30 text-purple-300 px-1.5 py-0">
+                                        {skill}
+                                      </Badge>
+                                    ))}
+                                    {extracted?.requiredSkills?.length > 2 && (
+                                      <span className="text-xs text-zinc-500">+{extracted.requiredSkills.length - 2}</span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span className="text-zinc-500 text-xs">{new Date(doc.createdAt).toLocaleDateString()}</span>
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  <div className="flex items-center justify-end gap-1">
+                                    <Button variant="ghost" size="sm" onClick={() => setSelectedDocument(doc)} className="h-7 px-2 text-zinc-400">
+                                      <Eye className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Link href="/recruitment-dashboard">
+                                      <Button variant="ghost" size="sm" className="h-7 px-2 text-purple-400">
                                         <ArrowRight className="h-3.5 w-3.5" />
                                       </Button>
                                     </Link>

@@ -2834,15 +2834,22 @@ Format your response as JSON:
                 role: "system",
                 content: `You are an expert HR document parser. Extract job details from the provided text and return a JSON object with these fields:
                 - title: job title (string)
+                - company: company/organization name (string or null)
                 - department: department name (string)
                 - description: full job description (string)
-                - location: work location (string or null)
-                - employmentType: one of "full_time", "part_time", "contract", "temporary"
+                - location: work location, city/region (string or null)
+                - employmentType: one of "Full-time", "Part-time", "Contract", "Temporary", "Internship"
                 - salaryMin: minimum salary as number or null
                 - salaryMax: maximum salary as number or null
+                - salaryRange: formatted salary range string like "R25,000 - R35,000/month" or null
                 - minYearsExperience: minimum years of experience as number or null
+                - experienceRequired: experience requirements as text (e.g., "3-5 years in logistics")
+                - requiredSkills: array of required skills/competencies (e.g., ["Project Management", "Excel", "Communication"])
+                - qualifications: array of required education/qualifications
                 - licenseRequirements: array of required licenses/certifications
                 - physicalRequirements: physical requirements description or null
+                - benefits: array of benefits offered or null
+                - reportingTo: who this role reports to or null
                 Return ONLY valid JSON, no other text.`
               },
               {
