@@ -876,6 +876,44 @@ export const whatsappAppointments = pgTable("whatsapp_appointments", {
   scheduledAtIdx: index("whatsapp_appointments_scheduled_at_idx").on(table.scheduledAt),
 }));
 
+// Interview Sessions - for sending interview links via WhatsApp
+export const interviewSessions = pgTable("interview_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id"),
+  candidateId: varchar("candidate_id").references(() => candidates.id),
+  conversationId: varchar("conversation_id").references(() => whatsappConversations.id),
+  token: varchar("token").notNull().unique(), // Short unique token for the link
+  interviewType: text("interview_type").notNull().default("voice"), // 'voice', 'video'
+  status: text("status").notNull().default("pending"), // 'pending', 'sent', 'started', 'completed', 'expired'
+  prompt: text("prompt"), // Custom interview prompt/questions
+  transcripts: jsonb("transcripts"), // Array of { role: 'user'|'ai', text: string, emotion?: string }
+  emotionAnalysis: jsonb("emotion_analysis"), // Summary of detected emotions
+  overallScore: integer("overall_score"), // AI-generated score 0-100
+  feedback: text("feedback"), // AI-generated feedback summary
+  duration: integer("duration"), // Duration in seconds
+  sentAt: timestamp("sent_at"), // When the invite was sent
+  startedAt: timestamp("started_at"), // When candidate started the interview
+  completedAt: timestamp("completed_at"),
+  expiresAt: timestamp("expires_at"), // Link expiration time
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  tenantIdIdx: index("interview_sessions_tenant_id_idx").on(table.tenantId),
+  candidateIdIdx: index("interview_sessions_candidate_id_idx").on(table.candidateId),
+  conversationIdIdx: index("interview_sessions_conversation_id_idx").on(table.conversationId),
+  tokenIdx: index("interview_sessions_token_idx").on(table.token),
+  statusIdx: index("interview_sessions_status_idx").on(table.status),
+}));
+
+export const insertInterviewSessionSchema = createInsertSchema(interviewSessions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertInterviewSession = z.infer<typeof insertInterviewSessionSchema>;
+export type InterviewSession = typeof interviewSessions.$inferSelect;
+
 // Insert schemas for WhatsApp
 export const insertWhatsappConversationSchema = createInsertSchema(whatsappConversations).omit({
   id: true,
