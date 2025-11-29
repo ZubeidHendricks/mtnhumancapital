@@ -47,6 +47,29 @@ import {
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 
+const linkifyText = (text: string) => {
+  if (!text) return null;
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+  
+  return parts.map((part, index) => {
+    if (part.match(urlRegex)) {
+      return (
+        <a
+          key={index}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-400 hover:text-blue-300 underline break-all"
+        >
+          {part}
+        </a>
+      );
+    }
+    return part;
+  });
+};
+
 interface WhatsappConversation {
   id: string;
   tenantId: string;
@@ -739,7 +762,7 @@ export default function WhatsAppMonitor() {
                               {message.senderType === 'ai' && message.direction === 'outbound' && (
                                 <div className="text-xs font-medium mb-1 opacity-70">AI Assistant</div>
                               )}
-                              <p className="whitespace-pre-wrap">{message.body}</p>
+                              <p className="whitespace-pre-wrap">{message.body ? linkifyText(message.body) : ''}</p>
                               {message.mediaUrl && (
                                 <div className="mt-2">
                                   <a
@@ -1277,7 +1300,7 @@ export default function WhatsAppMonitor() {
                 <div className="space-y-2">
                   <Label className="text-xs text-muted-foreground">Message Preview</Label>
                   <div className="bg-muted/50 rounded-lg p-4 text-sm whitespace-pre-wrap border" data-testid="interview-invite-message-preview">
-                    {interviewInvitePreview.messagePreview}
+                    {linkifyText(interviewInvitePreview.messagePreview)}
                   </div>
                 </div>
                 <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 flex items-start gap-2">
