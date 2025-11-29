@@ -156,7 +156,14 @@ export default function WhatsAppMonitor() {
   const [isDocRequestOpen, setIsDocRequestOpen] = useState(false);
   const [isAppointmentOpen, setIsAppointmentOpen] = useState(false);
   const [isLinkCandidateOpen, setIsLinkCandidateOpen] = useState(false);
+  const [isInterviewInviteOpen, setIsInterviewInviteOpen] = useState(false);
   const [isSendingInterviewInvite, setIsSendingInterviewInvite] = useState(false);
+  const [interviewInvitePreview, setInterviewInvitePreview] = useState<{
+    candidateName: string;
+    candidatePhone: string;
+    jobTitle: string;
+    messagePreview: string;
+  } | null>(null);
 
   const [docType, setDocType] = useState("");
   const [docName, setDocName] = useState("");
@@ -207,8 +214,32 @@ export default function WhatsAppMonitor() {
     toast.info("Calendly opened in new tab. Remember to record the appointment here after booking.");
   };
 
-  const sendInterviewInvite = async () => {
+  const openInterviewInviteModal = () => {
     if (!selectedConversationId) return;
+    
+    const conversation = conversations.find(c => c.id === selectedConversationId);
+    if (!conversation) {
+      toast.error("No conversation selected");
+      return;
+    }
+
+    const candidateName = conversationDetail?.candidate?.fullName || conversation.profileName || 'Candidate';
+    const candidatePhone = conversation.phone;
+    const jobTitle = conversationDetail?.candidate?.position || 'Open Position';
+    
+    const messagePreview = `🎤 *Voice Interview Invitation*\n\nHello ${candidateName}!\n\nYou have been invited to complete a voice interview for the ${jobTitle}.\n\nPlease click the link below to start your interview:\n[Interview Link will be generated]\n\n⏰ This link expires in 7 days.\n📱 Make sure you have a quiet environment and allow microphone access.\n\nGood luck!`;
+    
+    setInterviewInvitePreview({
+      candidateName,
+      candidatePhone,
+      jobTitle,
+      messagePreview
+    });
+    setIsInterviewInviteOpen(true);
+  };
+
+  const sendInterviewInvite = async () => {
+    if (!selectedConversationId || !interviewInvitePreview) return;
     
     const conversation = conversations.find(c => c.id === selectedConversationId);
     if (!conversation) {
@@ -220,20 +251,22 @@ export default function WhatsAppMonitor() {
     try {
       const response = await api.post('/interview-sessions', {
         candidateId: conversationDetail?.candidate?.id,
-        candidateName: conversationDetail?.candidate?.fullName || conversation.profileName || 'Candidate',
-        candidatePhone: conversation.phone,
-        jobTitle: conversationDetail?.candidate?.appliedPosition || 'Position'
+        candidateName: interviewInvitePreview.candidateName,
+        candidatePhone: interviewInvitePreview.candidatePhone,
+        jobTitle: interviewInvitePreview.jobTitle
       });
       
       const interviewUrl = `${window.location.origin}/interview/invite/${response.data.token}`;
       
-      const messageBody = `🎤 *Voice Interview Invitation*\n\nHello ${conversationDetail?.candidate?.fullName || conversation.profileName || 'there'}!\n\nYou have been invited to complete a voice interview for the ${conversationDetail?.candidate?.appliedPosition || 'open position'}.\n\nPlease click the link below to start your interview:\n${interviewUrl}\n\n⏰ This link expires in 24 hours.\n📱 Make sure you have a quiet environment and allow microphone access.\n\nGood luck!`;
+      const messageBody = `🎤 *Voice Interview Invitation*\n\nHello ${interviewInvitePreview.candidateName}!\n\nYou have been invited to complete a voice interview for the ${interviewInvitePreview.jobTitle}.\n\nPlease click the link below to start your interview:\n${interviewUrl}\n\n⏰ This link expires in 7 days.\n📱 Make sure you have a quiet environment and allow microphone access.\n\nGood luck!`;
       
       await api.post(`/whatsapp/conversations/${selectedConversationId}/send`, {
         message: messageBody
       });
       
       toast.success("Interview invite sent successfully!");
+      setIsInterviewInviteOpen(false);
+      setInterviewInvitePreview(null);
       queryClient.invalidateQueries({ queryKey: conversationDetailKey });
     } catch (error: any) {
       console.error("Error sending interview invite:", error);
@@ -658,15 +691,8 @@ export default function WhatsAppMonitor() {
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            onClick={sendInterviewInvite}
-                            disabled={isSendingInterviewInvite}
-                          >
-                            {isSendingInterviewInvite ? (
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            ) : (
-                              <Mic className="h-4 w-4 mr-2" />
-                            )}
+                          <DropdownMenuItem onClick={openInterviewInviteModal}>
+                            <Mic className="h-4 w-4 mr-2" />
                             Send Interview Invite
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
@@ -1214,6 +1240,75 @@ export default function WhatsAppMonitor() {
                   <UserCheck className="h-4 w-4 mr-2" />
                 )}
                 Link Candidate
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isInterviewInviteOpen} onOpenChange={setIsInterviewInviteOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Mic className="h-5 w-5 text-purple-500" />
+                Send Voice Interview Invite
+              </DialogTitle>
+              <DialogDescription>
+                Send a voice interview invitation to this candidate via WhatsApp
+              </DialogDescription>
+            </DialogHeader>
+            {interviewInvitePreview && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Candidate Name</Label>
+                    <p className="font-medium" data-testid="interview-invite-candidate-name">{interviewInvitePreview.candidateName}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Phone Number</Label>
+                    <p className="font-medium" data-testid="interview-invite-phone">{interviewInvitePreview.candidatePhone}</p>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Position</Label>
+                  <p className="font-medium" data-testid="interview-invite-job-title">{interviewInvitePreview.jobTitle}</p>
+                </div>
+                <Separator />
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Message Preview</Label>
+                  <div className="bg-muted/50 rounded-lg p-4 text-sm whitespace-pre-wrap border" data-testid="interview-invite-message-preview">
+                    {interviewInvitePreview.messagePreview}
+                  </div>
+                </div>
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-amber-600">
+                    The interview link will be valid for 7 days. The candidate will need microphone access to complete the voice interview.
+                  </p>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setIsInterviewInviteOpen(false);
+                  setInterviewInvitePreview(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={sendInterviewInvite}
+                disabled={isSendingInterviewInvite}
+                className="bg-purple-600 hover:bg-purple-700"
+                data-testid="btn-send-interview-invite"
+              >
+                {isSendingInterviewInvite ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Send className="h-4 w-4 mr-2" />
+                )}
+                Send Invite via WhatsApp
               </Button>
             </DialogFooter>
           </DialogContent>
