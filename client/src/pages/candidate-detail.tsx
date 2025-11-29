@@ -5,21 +5,27 @@ import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/ui/back-button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Mail, Phone, MapPin, Briefcase, Calendar, Award, Languages, FileText, Upload, ShieldCheck } from "lucide-react";
-import type { Candidate } from "@shared/schema";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Mail, Phone, MapPin, Briefcase, Calendar, Award, Languages, FileText, Upload, ShieldCheck, Mic, ChevronDown, Clock, MessageCircle, User, Bot } from "lucide-react";
+import type { Candidate, InterviewSession } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 export default function CandidateDetail() {
   const [, params] = useRoute("/candidates/:id");
   const [, setLocation] = useLocation();
   const [candidate, setCandidate] = useState<Candidate | null>(null);
+  const [interviewSessions, setInterviewSessions] = useState<InterviewSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [expandedInterview, setExpandedInterview] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     if (params?.id) {
       fetchCandidate(params.id);
+      fetchInterviewSessions(params.id);
     }
   }, [params?.id]);
 
@@ -38,6 +44,18 @@ export default function CandidateDetail() {
       setLocation("/candidates-list");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchInterviewSessions = async (candidateId: string) => {
+    try {
+      const response = await fetch(`/api/interview-sessions/candidate/${candidateId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setInterviewSessions(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch interview sessions:", error);
     }
   };
 
@@ -373,6 +391,158 @@ export default function CandidateDetail() {
               <p className="text-sm leading-relaxed text-muted-foreground" data-testid="text-ai-analysis">
                 {(candidate.metadata as any).aiAnalysis}
               </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Voice Interviews */}
+        {interviewSessions.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Mic className="h-5 w-5 text-purple-500" />
+                Voice Interviews
+              </CardTitle>
+              <CardDescription>
+                AI-powered voice interview sessions with transcripts and emotion analysis
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {interviewSessions.map((session) => (
+                  <Collapsible
+                    key={session.id}
+                    open={expandedInterview === session.id}
+                    onOpenChange={() => setExpandedInterview(expandedInterview === session.id ? null : session.id)}
+                  >
+                    <Card className="bg-muted/30 border-muted">
+                      <CollapsibleTrigger asChild>
+                        <div className="w-full cursor-pointer">
+                          <CardHeader className="pb-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-3 h-3 rounded-full ${
+                                  session.status === 'completed' ? 'bg-green-500' :
+                                  session.status === 'started' ? 'bg-yellow-500' :
+                                  session.status === 'expired' ? 'bg-gray-500' :
+                                  'bg-blue-500'
+                                }`} />
+                                <div>
+                                  <p className="font-medium text-sm">
+                                    {session.interviewType === 'voice' ? 'Voice Interview' : 'Video Interview'}
+                                  </p>
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <Clock className="h-3 w-3" />
+                                    {session.createdAt && format(new Date(session.createdAt), 'MMM d, yyyy HH:mm')}
+                                    {session.duration && (
+                                      <span className="ml-2">
+                                        Duration: {Math.floor(session.duration / 60)}m {session.duration % 60}s
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant={
+                                  session.status === 'completed' ? 'default' :
+                                  session.status === 'started' ? 'secondary' :
+                                  'outline'
+                                }>
+                                  {session.status}
+                                </Badge>
+                                {session.overallScore && (
+                                  <Badge variant="secondary" className="bg-purple-500/20 text-purple-400">
+                                    Score: {session.overallScore}%
+                                  </Badge>
+                                )}
+                                <ChevronDown className={`h-4 w-4 transition-transform ${expandedInterview === session.id ? 'rotate-180' : ''}`} />
+                              </div>
+                            </div>
+                          </CardHeader>
+                        </div>
+                      </CollapsibleTrigger>
+                      
+                      <CollapsibleContent>
+                        <CardContent className="pt-0">
+                          <Separator className="mb-4" />
+                          
+                          {/* Emotion Analysis */}
+                          {session.emotionAnalysis && (
+                            <div className="mb-4 p-3 bg-background/50 rounded-lg">
+                              <p className="text-xs font-medium text-muted-foreground mb-2">Emotion Analysis</p>
+                              <div className="flex flex-wrap gap-2">
+                                {typeof session.emotionAnalysis === 'object' && Object.entries(session.emotionAnalysis as Record<string, any>).map(([key, value]) => (
+                                  <Badge key={key} variant="outline" className="text-xs">
+                                    {key}: {typeof value === 'string' ? value : JSON.stringify(value)}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Feedback */}
+                          {session.feedback && (
+                            <div className="mb-4 p-3 bg-background/50 rounded-lg">
+                              <p className="text-xs font-medium text-muted-foreground mb-2">AI Feedback</p>
+                              <p className="text-sm">{session.feedback}</p>
+                            </div>
+                          )}
+                          
+                          {/* Transcripts */}
+                          {session.transcripts && Array.isArray(session.transcripts) && session.transcripts.length > 0 && (
+                            <div>
+                              <p className="text-xs font-medium text-muted-foreground mb-3 flex items-center gap-1">
+                                <MessageCircle className="h-3 w-3" />
+                                Conversation Transcript
+                              </p>
+                              <ScrollArea className="h-[300px] pr-4">
+                                <div className="space-y-3">
+                                  {(session.transcripts as Array<{role: string; text: string; emotion?: string}>).map((msg, idx) => (
+                                    <div
+                                      key={idx}
+                                      className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                                    >
+                                      {msg.role !== 'user' && (
+                                        <div className="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                                          <Bot className="h-3 w-3 text-purple-400" />
+                                        </div>
+                                      )}
+                                      <div className={`max-w-[80%] rounded-lg px-3 py-2 ${
+                                        msg.role === 'user'
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'bg-muted'
+                                      }`}>
+                                        <p className="text-sm">{msg.text}</p>
+                                        {msg.emotion && (
+                                          <p className="text-xs opacity-70 mt-1">Emotion: {msg.emotion}</p>
+                                        )}
+                                      </div>
+                                      {msg.role === 'user' && (
+                                        <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                                          <User className="h-3 w-3 text-primary" />
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </ScrollArea>
+                            </div>
+                          )}
+
+                          {/* No transcript message */}
+                          {(!session.transcripts || !Array.isArray(session.transcripts) || session.transcripts.length === 0) && session.status !== 'completed' && (
+                            <p className="text-sm text-muted-foreground text-center py-4">
+                              {session.status === 'pending' ? 'Interview not yet started' :
+                               session.status === 'started' ? 'Interview in progress...' :
+                               'No transcript available'}
+                            </p>
+                          )}
+                        </CardContent>
+                      </CollapsibleContent>
+                    </Card>
+                  </Collapsible>
+                ))}
+              </div>
             </CardContent>
           </Card>
         )}
