@@ -28,6 +28,7 @@ import WorkforceIntelligence from "@/pages/workforce-intelligence";
 import PlatformSettings from "@/pages/platform-settings";
 import DocumentAutomation from "@/pages/document-automation";
 import WhatsAppMonitor from "@/pages/whatsapp-monitor";
+import InterviewInvite from "@/pages/interview-invite";
 
 function Router() {
   return (
@@ -47,6 +48,7 @@ function Router() {
       <Route path="/hr-management-agent" component={HRManagementAgent} />
       <Route path="/interview/voice" component={InterviewVoice} />
       <Route path="/interview/video" component={InterviewVideo} />
+      <Route path="/interview/invite/:token" component={InterviewInvite} />
       <Route path="/candidates-list" component={CandidatesList} />
       <Route path="/candidates/:id" component={CandidateDetail} />
       <Route path="/shortlisted-candidates" component={ShortlistedCandidates} />

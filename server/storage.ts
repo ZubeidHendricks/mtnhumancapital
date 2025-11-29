@@ -52,6 +52,8 @@ import {
   type InsertWhatsappDocumentRequest,
   type WhatsappAppointment,
   type InsertWhatsappAppointment,
+  type InterviewSession,
+  type InsertInterviewSession,
   users,
   jobs,
   candidates,
@@ -77,7 +79,8 @@ import {
   whatsappConversations,
   whatsappMessages,
   whatsappDocumentRequests,
-  whatsappAppointments
+  whatsappAppointments,
+  interviewSessions
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, lte } from "drizzle-orm";
@@ -255,6 +258,15 @@ export interface IStorage {
   getWhatsappAppointment(tenantId: string, id: string): Promise<WhatsappAppointment | undefined>;
   createWhatsappAppointment(tenantId: string, appointment: InsertWhatsappAppointment): Promise<WhatsappAppointment>;
   updateWhatsappAppointment(tenantId: string, id: string, updates: Partial<InsertWhatsappAppointment>): Promise<WhatsappAppointment | undefined>;
+  
+  // Interview Sessions
+  getInterviewSession(tenantId: string, id: string): Promise<InterviewSession | undefined>;
+  getInterviewSessionByToken(token: string): Promise<InterviewSession | undefined>;
+  getInterviewSessionsByCandidateId(tenantId: string, candidateId: string): Promise<InterviewSession[]>;
+  getInterviewSessionsByConversationId(tenantId: string, conversationId: string): Promise<InterviewSession[]>;
+  createInterviewSession(tenantId: string, session: InsertInterviewSession): Promise<InterviewSession>;
+  updateInterviewSession(tenantId: string, id: string, updates: Partial<InsertInterviewSession>): Promise<InterviewSession | undefined>;
+  updateInterviewSessionByToken(token: string, updates: Partial<InsertInterviewSession>): Promise<InterviewSession | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1327,6 +1339,52 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(whatsappAppointments.id, id), eq(whatsappAppointments.tenantId, tenantId)))
       .returning();
     return apt || undefined;
+  }
+
+  // Interview Sessions Implementation
+  async getInterviewSession(tenantId: string, id: string): Promise<InterviewSession | undefined> {
+    const [session] = await db.select().from(interviewSessions)
+      .where(and(eq(interviewSessions.id, id), eq(interviewSessions.tenantId, tenantId)));
+    return session || undefined;
+  }
+
+  async getInterviewSessionByToken(token: string): Promise<InterviewSession | undefined> {
+    const [session] = await db.select().from(interviewSessions)
+      .where(eq(interviewSessions.token, token));
+    return session || undefined;
+  }
+
+  async getInterviewSessionsByCandidateId(tenantId: string, candidateId: string): Promise<InterviewSession[]> {
+    return await db.select().from(interviewSessions)
+      .where(and(eq(interviewSessions.candidateId, candidateId), eq(interviewSessions.tenantId, tenantId)))
+      .orderBy(desc(interviewSessions.createdAt));
+  }
+
+  async getInterviewSessionsByConversationId(tenantId: string, conversationId: string): Promise<InterviewSession[]> {
+    return await db.select().from(interviewSessions)
+      .where(and(eq(interviewSessions.conversationId, conversationId), eq(interviewSessions.tenantId, tenantId)))
+      .orderBy(desc(interviewSessions.createdAt));
+  }
+
+  async createInterviewSession(tenantId: string, session: InsertInterviewSession): Promise<InterviewSession> {
+    const [newSession] = await db.insert(interviewSessions).values({ ...session, tenantId }).returning();
+    return newSession;
+  }
+
+  async updateInterviewSession(tenantId: string, id: string, updates: Partial<InsertInterviewSession>): Promise<InterviewSession | undefined> {
+    const [session] = await db.update(interviewSessions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(eq(interviewSessions.id, id), eq(interviewSessions.tenantId, tenantId)))
+      .returning();
+    return session || undefined;
+  }
+
+  async updateInterviewSessionByToken(token: string, updates: Partial<InsertInterviewSession>): Promise<InterviewSession | undefined> {
+    const [session] = await db.update(interviewSessions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(interviewSessions.token, token))
+      .returning();
+    return session || undefined;
   }
 }
 

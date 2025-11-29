@@ -882,7 +882,10 @@ export const interviewSessions = pgTable("interview_sessions", {
   tenantId: varchar("tenant_id"),
   candidateId: varchar("candidate_id").references(() => candidates.id),
   conversationId: varchar("conversation_id").references(() => whatsappConversations.id),
-  token: varchar("token").notNull().unique(), // Short unique token for the link
+  candidateName: text("candidate_name"), // For invites without linked candidate
+  candidatePhone: varchar("candidate_phone"), // Phone number for identification
+  jobTitle: text("job_title"), // Position being interviewed for
+  token: varchar("token").notNull().unique(), // Secure unique token for the link
   interviewType: text("interview_type").notNull().default("voice"), // 'voice', 'video'
   status: text("status").notNull().default("pending"), // 'pending', 'sent', 'started', 'completed', 'expired'
   prompt: text("prompt"), // Custom interview prompt/questions

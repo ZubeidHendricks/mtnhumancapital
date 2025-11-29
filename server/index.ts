@@ -43,6 +43,125 @@ app.post("/api/tenant-requests", async (req, res) => {
   }
 });
 
+// PUBLIC route for interview session by token (for candidates accessing their interview link)
+app.get("/api/public/interview-session/:token", async (req, res) => {
+  try {
+    const session = await storage.getInterviewSessionByToken(req.params.token);
+    if (!session) {
+      return res.status(404).json({ message: "Interview session not found" });
+    }
+    
+    // Check if session has expired
+    if (session.expiresAt && new Date(session.expiresAt) < new Date()) {
+      return res.status(410).json({ message: "Interview link has expired" });
+    }
+    
+    // Check if session was already completed
+    if (session.status === 'completed') {
+      return res.status(410).json({ message: "Interview has already been completed" });
+    }
+    
+    // Get candidate info for display
+    const candidate = session.candidateId 
+      ? await storage.getCandidateById(session.tenantId || '', session.candidateId)
+      : null;
+    
+    res.json({ 
+      session, 
+      candidate: candidate ? { 
+        id: candidate.id, 
+        fullName: candidate.fullName 
+      } : null 
+    });
+  } catch (error) {
+    console.error("Error fetching interview session:", error);
+    res.status(500).json({ message: "Failed to fetch interview session" });
+  }
+});
+
+// PUBLIC route for getting Hume AI config for the interview (uses session token)
+app.get("/api/public/interview-session/:token/config", async (req, res) => {
+  try {
+    const session = await storage.getInterviewSessionByToken(req.params.token);
+    if (!session) {
+      return res.status(404).json({ message: "Interview session not found" });
+    }
+    
+    // Check if session has expired
+    if (session.expiresAt && new Date(session.expiresAt) < new Date()) {
+      return res.status(410).json({ message: "Interview link has expired" });
+    }
+    
+    // Get Hume AI access token
+    const apiKey = process.env.HUMAI_API_KEY;
+    const secretKey = process.env.HUMAI_SECRET_KEY;
+    
+    if (!apiKey || !secretKey) {
+      return res.status(500).json({ message: "Voice interview is not configured" });
+    }
+    
+    // Fetch Hume AI access token
+    const tokenResponse = await fetch('https://api.hume.ai/oauth2-cc/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': 'Basic ' + Buffer.from(`${apiKey}:${secretKey}`).toString('base64')
+      },
+      body: 'grant_type=client_credentials'
+    });
+    
+    if (!tokenResponse.ok) {
+      return res.status(500).json({ message: "Failed to authenticate with voice service" });
+    }
+    
+    const tokenData = await tokenResponse.json() as { access_token: string };
+    
+    // Mark session as started if it's the first time
+    if (session.status === 'pending' || session.status === 'sent') {
+      await storage.updateInterviewSessionByToken(req.params.token, {
+        status: 'started',
+        startedAt: new Date()
+      });
+    }
+    
+    res.json({ 
+      accessToken: tokenData.access_token,
+      sessionId: session.id,
+      prompt: session.prompt
+    });
+  } catch (error) {
+    console.error("Error getting interview config:", error);
+    res.status(500).json({ message: "Failed to get interview configuration" });
+  }
+});
+
+// PUBLIC route for saving interview results
+app.post("/api/public/interview-session/:token/complete", async (req, res) => {
+  try {
+    const session = await storage.getInterviewSessionByToken(req.params.token);
+    if (!session) {
+      return res.status(404).json({ message: "Interview session not found" });
+    }
+    
+    const { transcripts, emotionAnalysis, overallScore, feedback, duration } = req.body;
+    
+    const updatedSession = await storage.updateInterviewSessionByToken(req.params.token, {
+      status: 'completed',
+      transcripts,
+      emotionAnalysis,
+      overallScore,
+      feedback,
+      duration,
+      completedAt: new Date()
+    });
+    
+    res.json(updatedSession);
+  } catch (error) {
+    console.error("Error completing interview session:", error);
+    res.status(500).json({ message: "Failed to complete interview session" });
+  }
+});
+
 // Apply tenant resolution middleware ONLY to API routes to avoid blocking static assets
 app.use('/api', resolveTenant);
 

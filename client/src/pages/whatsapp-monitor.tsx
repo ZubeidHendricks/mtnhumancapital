@@ -42,7 +42,8 @@ import {
   FileUp,
   CalendarPlus,
   Link2,
-  CalendarCheck
+  CalendarCheck,
+  Mic
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 
@@ -155,6 +156,7 @@ export default function WhatsAppMonitor() {
   const [isDocRequestOpen, setIsDocRequestOpen] = useState(false);
   const [isAppointmentOpen, setIsAppointmentOpen] = useState(false);
   const [isLinkCandidateOpen, setIsLinkCandidateOpen] = useState(false);
+  const [isSendingInterviewInvite, setIsSendingInterviewInvite] = useState(false);
 
   const [docType, setDocType] = useState("");
   const [docName, setDocName] = useState("");
@@ -203,6 +205,42 @@ export default function WhatsAppMonitor() {
     
     window.open(calendlyUrl, '_blank', 'noopener,noreferrer');
     toast.info("Calendly opened in new tab. Remember to record the appointment here after booking.");
+  };
+
+  const sendInterviewInvite = async () => {
+    if (!selectedConversationId) return;
+    
+    const conversation = conversations.find(c => c.id === selectedConversationId);
+    if (!conversation) {
+      toast.error("No conversation selected");
+      return;
+    }
+
+    setIsSendingInterviewInvite(true);
+    try {
+      const response = await api.post('/interview-sessions', {
+        candidateId: conversationDetail?.candidate?.id,
+        candidateName: conversationDetail?.candidate?.fullName || conversation.profileName || 'Candidate',
+        candidatePhone: conversation.phone,
+        jobTitle: conversationDetail?.candidate?.appliedPosition || 'Position'
+      });
+      
+      const interviewUrl = `${window.location.origin}/interview/invite/${response.data.token}`;
+      
+      const messageBody = `🎤 *Voice Interview Invitation*\n\nHello ${conversationDetail?.candidate?.fullName || conversation.profileName || 'there'}!\n\nYou have been invited to complete a voice interview for the ${conversationDetail?.candidate?.appliedPosition || 'open position'}.\n\nPlease click the link below to start your interview:\n${interviewUrl}\n\n⏰ This link expires in 24 hours.\n📱 Make sure you have a quiet environment and allow microphone access.\n\nGood luck!`;
+      
+      await api.post(`/whatsapp/conversations/${selectedConversationId}/send`, {
+        message: messageBody
+      });
+      
+      toast.success("Interview invite sent successfully!");
+      queryClient.invalidateQueries({ queryKey: conversationDetailKey });
+    } catch (error: any) {
+      console.error("Error sending interview invite:", error);
+      toast.error(error.response?.data?.message || "Failed to send interview invite");
+    } finally {
+      setIsSendingInterviewInvite(false);
+    }
   };
 
   const { data: conversations = [], isLoading: isLoadingConversations } = useQuery<WhatsappConversation[]>({
@@ -619,6 +657,18 @@ export default function WhatsAppMonitor() {
                               Schedule via Calendly
                             </DropdownMenuItem>
                           )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={sendInterviewInvite}
+                            disabled={isSendingInterviewInvite}
+                          >
+                            {isSendingInterviewInvite ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <Mic className="h-4 w-4 mr-2" />
+                            )}
+                            Send Interview Invite
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => setIsLinkCandidateOpen(true)}>
                             <Link2 className="h-4 w-4 mr-2" />

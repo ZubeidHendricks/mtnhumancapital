@@ -808,6 +808,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Interview Sessions - for WhatsApp interview invites
+  app.post("/api/interview-sessions", async (req, res) => {
+    try {
+      const { candidateId, candidateName, candidatePhone, jobTitle, conversationId, interviewType, prompt } = req.body;
+      
+      // At minimum, we need phone or candidateId to identify who's being interviewed
+      if (!candidateId && !candidatePhone) {
+        return res.status(400).json({ message: "Either candidate ID or phone number is required" });
+      }
+      
+      // Generate a cryptographically secure token
+      const crypto = require('crypto');
+      const token = crypto.randomBytes(16).toString('hex').toUpperCase();
+      
+      // Set expiration to 7 days from now
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+      
+      const session = await storage.createInterviewSession(req.tenant.id, {
+        candidateId: candidateId || null,
+        conversationId,
+        candidateName,
+        candidatePhone,
+        jobTitle,
+        token,
+        interviewType: interviewType || 'voice',
+        status: 'pending',
+        prompt,
+        expiresAt,
+      });
+      
+      // Generate the interview URL
+      const baseUrl = req.headers.origin || `https://${req.headers.host}`;
+      const interviewUrl = `${baseUrl}/interview/invite/${token}`;
+      
+      res.status(201).json({ ...session, interviewUrl });
+    } catch (error) {
+      console.error("Error creating interview session:", error);
+      res.status(500).json({ message: "Failed to create interview session" });
+    }
+  });
+
+  app.get("/api/interview-sessions/conversation/:conversationId", async (req, res) => {
+    try {
+      const sessions = await storage.getInterviewSessionsByConversationId(req.tenant.id, req.params.conversationId);
+      res.json(sessions);
+    } catch (error) {
+      console.error("Error fetching interview sessions:", error);
+      res.status(500).json({ message: "Failed to fetch interview sessions" });
+    }
+  });
+
+  app.get("/api/interview-sessions/candidate/:candidateId", async (req, res) => {
+    try {
+      const sessions = await storage.getInterviewSessionsByCandidateId(req.tenant.id, req.params.candidateId);
+      res.json(sessions);
+    } catch (error) {
+      console.error("Error fetching interview sessions:", error);
+      res.status(500).json({ message: "Failed to fetch interview sessions" });
+    }
+  });
+
   app.get("/api/integrity-checks", async (req, res) => {
     try {
       const checks = await storage.getAllIntegrityChecks(req.tenant.id);
