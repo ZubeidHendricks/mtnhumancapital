@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSearch, useLocation } from "wouter";
+import { PopupModal, useCalendlyEventListener } from "react-calendly";
 import { Navbar } from "@/components/layout/navbar";
 import { useTenantQueryKey } from "@/hooks/useTenant";
 import { api } from "@/lib/api";
@@ -41,7 +42,8 @@ import {
   ArrowUpRight,
   FileUp,
   CalendarPlus,
-  Link2
+  Link2,
+  CalendarCheck
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 
@@ -154,6 +156,7 @@ export default function WhatsAppMonitor() {
   const [isDocRequestOpen, setIsDocRequestOpen] = useState(false);
   const [isAppointmentOpen, setIsAppointmentOpen] = useState(false);
   const [isLinkCandidateOpen, setIsLinkCandidateOpen] = useState(false);
+  const [isCalendlyOpen, setIsCalendlyOpen] = useState(false);
 
   const [docType, setDocType] = useState("");
   const [docName, setDocName] = useState("");
@@ -175,6 +178,75 @@ export default function WhatsAppMonitor() {
       const response = await api.get('/whatsapp/status');
       return response.data;
     },
+  });
+
+  const { data: calendlyConfig } = useQuery({
+    queryKey: useTenantQueryKey(['calendly', 'config']),
+    queryFn: async () => {
+      const response = await api.get('/calendly/config');
+      return response.data;
+    },
+  });
+
+  useCalendlyEventListener({
+    onEventScheduled: async (e) => {
+      if (!isCalendlyOpen) {
+        return;
+      }
+      
+      if (selectedConversationId && conversationDetail?.conversation) {
+        try {
+          const eventData = e.data?.payload;
+          
+          const inviteeEmail = eventData?.invitee?.email?.toLowerCase();
+          const candidateEmail = conversationDetail?.candidate?.email?.toLowerCase();
+          const profileName = conversationDetail?.conversation?.profileName?.toLowerCase();
+          const inviteeName = eventData?.invitee?.name?.toLowerCase();
+          
+          const emailMatches = inviteeEmail && candidateEmail && inviteeEmail === candidateEmail;
+          const nameMatches = inviteeName && profileName && inviteeName.includes(profileName);
+          
+          if (!emailMatches && !nameMatches) {
+            console.log("Calendly event does not match current conversation, skipping");
+            setIsCalendlyOpen(false);
+            return;
+          }
+          
+          const scheduledTime = eventData?.event?.start_time 
+            ? new Date(eventData.event.start_time).toLocaleString('en-ZA', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })
+            : 'scheduled time';
+          
+          await api.post(`/whatsapp/conversations/${selectedConversationId}/messages`, {
+            body: `Great news! Your appointment has been confirmed via Calendly for ${scheduledTime}. You'll receive a calendar invite with the meeting details shortly.`,
+            senderType: 'ai'
+          });
+          
+          await api.post(`/whatsapp/conversations/${selectedConversationId}/appointment`, {
+            appointmentType: 'interview',
+            title: eventData?.event?.name || 'Calendly Meeting',
+            scheduledAt: eventData?.event?.start_time || new Date().toISOString(),
+            duration: 30,
+            location: 'Calendly Link',
+            description: `Booked via Calendly by ${eventData?.invitee?.name || 'candidate'}`
+          });
+
+          queryClient.invalidateQueries({ queryKey: conversationDetailKey });
+          queryClient.invalidateQueries({ queryKey: conversationsKey });
+          toast.success("Calendly meeting scheduled and notification sent!");
+        } catch (error) {
+          console.error("Error processing Calendly event:", error);
+          toast.error("Meeting scheduled but failed to notify candidate");
+        }
+      }
+      setIsCalendlyOpen(false);
+    }
   });
 
   const { data: conversations = [], isLoading: isLoadingConversations } = useQuery<WhatsappConversation[]>({
@@ -585,6 +657,12 @@ export default function WhatsAppMonitor() {
                             <CalendarPlus className="h-4 w-4 mr-2" />
                             Schedule Appointment
                           </DropdownMenuItem>
+                          {calendlyConfig?.configured && (
+                            <DropdownMenuItem onClick={() => setIsCalendlyOpen(true)}>
+                              <CalendarCheck className="h-4 w-4 mr-2" />
+                              Schedule via Calendly
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => setIsLinkCandidateOpen(true)}>
                             <Link2 className="h-4 w-4 mr-2" />
@@ -801,6 +879,17 @@ export default function WhatsAppMonitor() {
                             <CalendarPlus className="h-4 w-4 mr-2" />
                             Schedule Appointment
                           </Button>
+                          {calendlyConfig?.configured && (
+                            <Button
+                              variant="outline"
+                              className="w-full justify-start border-white/10 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400"
+                              onClick={() => setIsCalendlyOpen(true)}
+                              data-testid="btn-calendly"
+                            >
+                              <CalendarCheck className="h-4 w-4 mr-2" />
+                              Schedule via Calendly
+                            </Button>
+                          )}
                           <Button
                             variant="outline"
                             className="w-full justify-start"
@@ -1123,6 +1212,19 @@ export default function WhatsAppMonitor() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {calendlyConfig?.configured && calendlyConfig.url && (
+          <PopupModal
+            url={calendlyConfig.url}
+            onModalClose={() => setIsCalendlyOpen(false)}
+            open={isCalendlyOpen}
+            rootElement={document.getElementById("root") as HTMLElement}
+            prefill={{
+              email: conversationDetail?.candidate?.email || "",
+              name: conversationDetail?.candidate?.fullName || conversationDetail?.conversation?.profileName || ""
+            }}
+          />
+        )}
       </main>
     </div>
   );

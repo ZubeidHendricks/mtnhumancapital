@@ -1065,6 +1065,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/calendly/config", async (req, res) => {
+    try {
+      const calendlyUrl = process.env.CALENDLY_URL;
+      const isValidUrl = calendlyUrl && 
+        calendlyUrl.startsWith('https://calendly.com/') && 
+        calendlyUrl.length > 25;
+      
+      res.json({
+        configured: !!isValidUrl,
+        url: isValidUrl ? calendlyUrl : null
+      });
+    } catch (error) {
+      console.error("Error fetching Calendly config:", error);
+      res.status(500).json({ message: "Failed to fetch Calendly config" });
+    }
+  });
+
   app.post("/api/tenant-config", async (req, res) => {
     try {
       if (req.body.modulesEnabled && typeof req.body.modulesEnabled !== 'object') {
