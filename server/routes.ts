@@ -3228,6 +3228,47 @@ Format your response as JSON:
     }
   });
 
+  // Get or create conversation for a candidate
+  app.post("/api/whatsapp/candidates/:candidateId/conversation", async (req, res) => {
+    try {
+      const { candidateId } = req.params;
+      
+      // Get the candidate to get their phone number
+      const candidate = await storage.getCandidate(req.tenant.id, candidateId);
+      if (!candidate) {
+        return res.status(404).json({ message: "Candidate not found" });
+      }
+      
+      if (!candidate.phone) {
+        return res.status(400).json({ message: "Candidate does not have a phone number" });
+      }
+      
+      // Check if a conversation already exists for this candidate
+      const existingConversations = await storage.getWhatsappConversationsByCandidateId(req.tenant.id, candidateId);
+      
+      if (existingConversations.length > 0) {
+        // Return the most recent conversation
+        return res.json(existingConversations[0]);
+      }
+      
+      // Create a new conversation for the candidate
+      const waId = candidate.phone.replace(/\D/g, "");
+      const conversation = await storage.createWhatsappConversation(req.tenant.id, {
+        waId,
+        phone: candidate.phone,
+        profileName: candidate.fullName,
+        candidateId,
+        type: "recruitment",
+        status: "active",
+      });
+      
+      res.status(201).json(conversation);
+    } catch (error) {
+      console.error("Error getting/creating WhatsApp conversation for candidate:", error);
+      res.status(500).json({ message: "Failed to get or create conversation" });
+    }
+  });
+
   // Update conversation (assign, change status, etc.)
   app.patch("/api/whatsapp/conversations/:id", async (req, res) => {
     try {

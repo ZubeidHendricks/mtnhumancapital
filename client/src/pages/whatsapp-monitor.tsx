@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSearch, useLocation } from "wouter";
 import { Navbar } from "@/components/layout/navbar";
 import { useTenantQueryKey } from "@/hooks/useTenant";
 import { api } from "@/lib/api";
@@ -130,14 +131,25 @@ interface ConversationDetail {
 
 export default function WhatsAppMonitor() {
   const queryClient = useQueryClient();
+  const searchParams = useSearch();
+  const [, navigate] = useLocation();
+  const urlParams = new URLSearchParams(searchParams);
+  const conversationIdFromUrl = urlParams.get('conversationId');
+  
   const conversationsKey = useTenantQueryKey(['whatsapp', 'conversations']);
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(conversationIdFromUrl);
   const conversationDetailKey = useTenantQueryKey(['whatsapp', 'conversation', selectedConversationId || 'none']);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [messageInput, setMessageInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const messageEndRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    if (conversationIdFromUrl && conversationIdFromUrl !== selectedConversationId) {
+      setSelectedConversationId(conversationIdFromUrl);
+    }
+  }, [conversationIdFromUrl]);
 
   const [isDocRequestOpen, setIsDocRequestOpen] = useState(false);
   const [isAppointmentOpen, setIsAppointmentOpen] = useState(false);

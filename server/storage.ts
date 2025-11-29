@@ -1219,7 +1219,7 @@ export class DatabaseStorage implements IStorage {
   async getWhatsappConversationsByCandidateId(tenantId: string, candidateId: string): Promise<WhatsappConversation[]> {
     return await db.select().from(whatsappConversations)
       .where(and(eq(whatsappConversations.candidateId, candidateId), eq(whatsappConversations.tenantId, tenantId)))
-      .orderBy(desc(whatsappConversations.lastMessageAt));
+      .orderBy(desc(whatsappConversations.updatedAt), desc(whatsappConversations.lastMessageAt));
   }
 
   async createWhatsappConversation(tenantId: string, conversation: InsertWhatsappConversation): Promise<WhatsappConversation> {

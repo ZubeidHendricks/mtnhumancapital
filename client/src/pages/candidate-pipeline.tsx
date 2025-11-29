@@ -32,9 +32,11 @@ import {
   Building2,
   GraduationCap,
   Brain,
-  ExternalLink
+  ExternalLink,
+  MessageCircle
 } from "lucide-react";
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { Link } from "wouter";
 import type { Candidate } from "@shared/schema";
@@ -76,9 +78,11 @@ const PIPELINE_STAGES = [
 
 export default function CandidatePipeline() {
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
+  const [openingWhatsApp, setOpeningWhatsApp] = useState<string | null>(null);
   const candidatesKey = useTenantQueryKey(['candidates']);
 
   const { data: candidates, isLoading } = useQuery({
@@ -116,6 +120,32 @@ export default function CandidatePipeline() {
       }
     } finally {
       setSendingReminder(null);
+    }
+  };
+
+  const handleOpenWhatsApp = async (candidate: Candidate) => {
+    if (!candidate.phone) {
+      toast.error("No phone number", {
+        description: "This candidate doesn't have a phone number on file"
+      });
+      return;
+    }
+    
+    setOpeningWhatsApp(candidate.id);
+    try {
+      const response = await api.post(`/whatsapp/candidates/${candidate.id}/conversation`);
+      const conversation = response.data;
+      navigate(`/whatsapp-monitor?conversationId=${conversation.id}`);
+    } catch (error: any) {
+      if (error.response?.status === 400) {
+        toast.error("Cannot open WhatsApp", {
+          description: error.response.data?.message || "Candidate has no phone number"
+        });
+      } else {
+        toast.error("Failed to open WhatsApp conversation");
+      }
+    } finally {
+      setOpeningWhatsApp(null);
     }
   };
 
@@ -392,6 +422,20 @@ export default function CandidatePipeline() {
                             <Send className="h-3 w-3 mr-1" />
                             Send Reminder
                           </>
+                        )}
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20"
+                        onClick={() => handleOpenWhatsApp(candidate)}
+                        disabled={openingWhatsApp === candidate.id}
+                        data-testid={`button-whatsapp-${candidate.id}`}
+                      >
+                        {openingWhatsApp === candidate.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <MessageCircle className="h-3 w-3" />
                         )}
                       </Button>
                       <Button 
