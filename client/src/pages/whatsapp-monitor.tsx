@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSearch, useLocation } from "wouter";
-import { PopupModal, useCalendlyEventListener } from "react-calendly";
 import { Navbar } from "@/components/layout/navbar";
 import { useTenantQueryKey } from "@/hooks/useTenant";
 import { api } from "@/lib/api";
@@ -156,7 +155,6 @@ export default function WhatsAppMonitor() {
   const [isDocRequestOpen, setIsDocRequestOpen] = useState(false);
   const [isAppointmentOpen, setIsAppointmentOpen] = useState(false);
   const [isLinkCandidateOpen, setIsLinkCandidateOpen] = useState(false);
-  const [isCalendlyOpen, setIsCalendlyOpen] = useState(false);
 
   const [docType, setDocType] = useState("");
   const [docName, setDocName] = useState("");
@@ -188,66 +186,24 @@ export default function WhatsAppMonitor() {
     },
   });
 
-  useCalendlyEventListener({
-    onEventScheduled: async (e) => {
-      if (!isCalendlyOpen) {
-        return;
-      }
-      
-      if (selectedConversationId && conversationDetail?.conversation) {
-        try {
-          const eventData = e.data?.payload;
-          
-          const inviteeEmail = eventData?.invitee?.email?.toLowerCase();
-          const candidateEmail = conversationDetail?.candidate?.email?.toLowerCase();
-          const profileName = conversationDetail?.conversation?.profileName?.toLowerCase();
-          const inviteeName = eventData?.invitee?.name?.toLowerCase();
-          
-          const emailMatches = inviteeEmail && candidateEmail && inviteeEmail === candidateEmail;
-          const nameMatches = inviteeName && profileName && inviteeName.includes(profileName);
-          
-          if (!emailMatches && !nameMatches) {
-            console.log("Calendly event does not match current conversation, skipping");
-            setIsCalendlyOpen(false);
-            return;
-          }
-          
-          const scheduledTime = eventData?.event?.start_time 
-            ? new Date(eventData.event.start_time).toLocaleString('en-ZA', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              })
-            : 'scheduled time';
-          
-          await api.post(`/whatsapp/conversations/${selectedConversationId}/messages`, {
-            body: `Great news! Your appointment has been confirmed via Calendly for ${scheduledTime}. You'll receive a calendar invite with the meeting details shortly.`,
-            senderType: 'ai'
-          });
-          
-          await api.post(`/whatsapp/conversations/${selectedConversationId}/appointment`, {
-            appointmentType: 'interview',
-            title: eventData?.event?.name || 'Calendly Meeting',
-            scheduledAt: eventData?.event?.start_time || new Date().toISOString(),
-            duration: 30,
-            location: 'Calendly Link',
-            description: `Booked via Calendly by ${eventData?.invitee?.name || 'candidate'}`
-          });
-
-          queryClient.invalidateQueries({ queryKey: conversationDetailKey });
-          queryClient.invalidateQueries({ queryKey: conversationsKey });
-          toast.success("Calendly meeting scheduled and notification sent!");
-        } catch (error) {
-          console.error("Error processing Calendly event:", error);
-          toast.error("Meeting scheduled but failed to notify candidate");
-        }
-      }
-      setIsCalendlyOpen(false);
+  const openCalendlyInNewWindow = () => {
+    if (!calendlyConfig?.url) return;
+    
+    const candidateName = conversationDetail?.candidate?.fullName || conversationDetail?.conversation?.profileName || '';
+    const candidateEmail = conversationDetail?.candidate?.email || '';
+    
+    let calendlyUrl = calendlyConfig.url;
+    const params = new URLSearchParams();
+    if (candidateName) params.set('name', candidateName);
+    if (candidateEmail) params.set('email', candidateEmail);
+    
+    if (params.toString()) {
+      calendlyUrl += (calendlyUrl.includes('?') ? '&' : '?') + params.toString();
     }
-  });
+    
+    window.open(calendlyUrl, '_blank', 'noopener,noreferrer');
+    toast.info("Calendly opened in new tab. Remember to record the appointment here after booking.");
+  };
 
   const { data: conversations = [], isLoading: isLoadingConversations } = useQuery<WhatsappConversation[]>({
     queryKey: conversationsKey,
@@ -658,7 +614,7 @@ export default function WhatsAppMonitor() {
                             Schedule Appointment
                           </DropdownMenuItem>
                           {calendlyConfig?.configured && (
-                            <DropdownMenuItem onClick={() => setIsCalendlyOpen(true)}>
+                            <DropdownMenuItem onClick={openCalendlyInNewWindow}>
                               <CalendarCheck className="h-4 w-4 mr-2" />
                               Schedule via Calendly
                             </DropdownMenuItem>
@@ -883,7 +839,7 @@ export default function WhatsAppMonitor() {
                             <Button
                               variant="outline"
                               className="w-full justify-start border-white/10 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400"
-                              onClick={() => setIsCalendlyOpen(true)}
+                              onClick={openCalendlyInNewWindow}
                               data-testid="btn-calendly"
                             >
                               <CalendarCheck className="h-4 w-4 mr-2" />
@@ -1212,19 +1168,6 @@ export default function WhatsAppMonitor() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-
-        {calendlyConfig?.configured && calendlyConfig.url && (
-          <PopupModal
-            url={calendlyConfig.url}
-            onModalClose={() => setIsCalendlyOpen(false)}
-            open={isCalendlyOpen}
-            rootElement={document.getElementById("root") as HTMLElement}
-            prefill={{
-              email: conversationDetail?.candidate?.email || "",
-              name: conversationDetail?.candidate?.fullName || conversationDetail?.conversation?.profileName || ""
-            }}
-          />
-        )}
       </main>
     </div>
   );
