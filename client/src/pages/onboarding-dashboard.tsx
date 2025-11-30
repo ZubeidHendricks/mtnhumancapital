@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +41,8 @@ import {
   TrendingUp,
   Activity,
   Zap,
+  BrainCircuit,
+  Loader2,
 } from "lucide-react";
 
 interface OnboardingWorkflow {
@@ -96,36 +99,36 @@ interface Candidate {
   stage: string;
 }
 
-const statusConfig: Record<string, { bg: string; text: string; icon: any }> = {
-  pending: { bg: "bg-slate-100", text: "text-slate-700", icon: Clock },
-  requested: { bg: "bg-blue-50", text: "text-blue-700", icon: Send },
-  received: { bg: "bg-amber-50", text: "text-amber-700", icon: FileCheck },
-  verified: { bg: "bg-emerald-50", text: "text-emerald-700", icon: CheckCircle2 },
-  rejected: { bg: "bg-red-50", text: "text-red-700", icon: XCircle },
-  overdue: { bg: "bg-red-50", text: "text-red-700", icon: AlertTriangle },
+const statusConfig: Record<string, { bg: string; text: string; icon: any; border: string }> = {
+  pending: { bg: "bg-slate-500/20", text: "text-slate-300", icon: Clock, border: "border-slate-500/30" },
+  requested: { bg: "bg-blue-500/20", text: "text-blue-300", icon: Send, border: "border-blue-500/30" },
+  received: { bg: "bg-amber-500/20", text: "text-amber-300", icon: FileCheck, border: "border-amber-500/30" },
+  verified: { bg: "bg-emerald-500/20", text: "text-emerald-300", icon: CheckCircle2, border: "border-emerald-500/30" },
+  rejected: { bg: "bg-red-500/20", text: "text-red-300", icon: XCircle, border: "border-red-500/30" },
+  overdue: { bg: "bg-red-500/20", text: "text-red-300", icon: AlertTriangle, border: "border-red-500/30" },
 };
 
 const priorityConfig: Record<string, { bg: string; text: string; border: string }> = {
-  low: { bg: "bg-slate-50", text: "text-slate-600", border: "border-slate-200" },
-  normal: { bg: "bg-blue-50", text: "text-blue-600", border: "border-blue-200" },
-  high: { bg: "bg-orange-50", text: "text-orange-600", border: "border-orange-200" },
-  urgent: { bg: "bg-red-50", text: "text-red-600", border: "border-red-200" },
+  low: { bg: "bg-slate-500/20", text: "text-slate-300", border: "border-slate-500/30" },
+  normal: { bg: "bg-blue-500/20", text: "text-blue-300", border: "border-blue-500/30" },
+  high: { bg: "bg-orange-500/20", text: "text-orange-300", border: "border-orange-500/30" },
+  urgent: { bg: "bg-red-500/20", text: "text-red-300", border: "border-red-500/30" },
 };
 
 const channelConfig: Record<string, { icon: any; color: string }> = {
-  whatsapp: { icon: MessageSquare, color: "text-green-500" },
-  email: { icon: Mail, color: "text-blue-500" },
-  system: { icon: Bot, color: "text-purple-500" },
-  manual: { icon: User, color: "text-slate-500" },
+  whatsapp: { icon: MessageSquare, color: "text-green-400" },
+  email: { icon: Mail, color: "text-blue-400" },
+  system: { icon: Bot, color: "text-purple-400" },
+  manual: { icon: User, color: "text-slate-400" },
 };
 
 const agentColors: Record<string, string> = {
-  onboarding_coordinator: "from-blue-500 to-blue-600",
-  welcome_agent: "from-green-500 to-green-600",
-  contract_agent: "from-purple-500 to-purple-600",
-  document_collector: "from-amber-500 to-amber-600",
-  reminder: "from-orange-500 to-orange-600",
-  escalation: "from-red-500 to-red-600",
+  onboarding_coordinator: "from-blue-500/30 to-blue-600/30 border-blue-500/30",
+  welcome_agent: "from-green-500/30 to-green-600/30 border-green-500/30",
+  contract_agent: "from-purple-500/30 to-purple-600/30 border-purple-500/30",
+  document_collector: "from-amber-500/30 to-amber-600/30 border-amber-500/30",
+  reminder: "from-orange-500/30 to-orange-600/30 border-orange-500/30",
+  escalation: "from-red-500/30 to-red-600/30 border-red-500/30",
 };
 
 export default function OnboardingDashboard() {
@@ -277,47 +280,34 @@ export default function OnboardingDashboard() {
 
   if (loadingWorkflows) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-blue-50" data-testid="loading-spinner">
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative">
-            <div className="w-16 h-16 border-4 border-blue-200 rounded-full animate-pulse" />
-            <RefreshCw className="w-8 h-8 text-blue-500 absolute top-4 left-4 animate-spin" />
-          </div>
-          <p className="text-slate-500 font-medium">Loading onboarding data...</p>
+      <div className="min-h-screen bg-background text-foreground">
+        <Navbar />
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4" data-testid="loading-spinner">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading onboarding data...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
-      <div className="bg-white/80 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/">
-                <Button variant="ghost" size="sm" className="gap-2 text-slate-600 hover:text-slate-900" data-testid="link-back">
-                  <ArrowLeft className="w-4 h-4" />
-                  Back
-                </Button>
-              </Link>
-              <div className="h-8 w-px bg-slate-200" />
-              <div>
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg">
-                    <Sparkles className="w-5 h-5 text-white" />
-                  </div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent" data-testid="page-title">
-                    Onboarding Command Center
-                  </h1>
-                </div>
-                <p className="text-slate-500 text-sm mt-1">AI-powered employee onboarding automation</p>
-              </div>
-            </div>
+    <div className="min-h-screen bg-background text-foreground">
+      <Navbar />
+      
+      <main className="pt-24 pb-12 px-6 container mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight" data-testid="page-title">Onboarding Command Center</h1>
+            <p className="text-muted-foreground">AI-Powered Employee Onboarding Automation</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 px-3 py-1">
+              <BrainCircuit className="w-3 h-3 mr-2" /> AI Agents Active
+            </Badge>
             <Button
               onClick={() => processRemindersMutation.mutate()}
               disabled={processRemindersMutation.isPending}
-              className="gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg shadow-blue-500/25"
+              className="gap-2"
               data-testid="button-process-reminders"
             >
               <Zap className={`w-4 h-4 ${processRemindersMutation.isPending ? "animate-pulse" : ""}`} />
@@ -325,103 +315,89 @@ export default function OnboardingDashboard() {
             </Button>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-4 gap-4 mb-8">
-          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 border-0 shadow-lg shadow-blue-500/20" data-testid="stat-total-workflows">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-blue-100 text-sm font-medium">Active Workflows</p>
-                  <p className="text-4xl font-bold text-white mt-1">{workflows.length}</p>
-                </div>
-                <div className="p-3 bg-white/20 rounded-xl">
-                  <Users className="w-7 h-7 text-white" />
-                </div>
-              </div>
-              <div className="mt-4 flex items-center gap-2 text-blue-100 text-sm">
-                <TrendingUp className="w-4 h-4" />
-                <span>Employees onboarding</span>
-              </div>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <Card className="bg-card/30 border-white/10 backdrop-blur-sm" data-testid="stat-total-workflows">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Active Workflows
+              </CardTitle>
+              <div className="text-3xl font-bold">{workflows.length}</div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <TrendingUp className="w-3 h-3 text-green-400" />
+                Employees onboarding
+              </p>
             </CardContent>
           </Card>
 
-          <Card className={`border-0 shadow-lg ${interventionQueue.length > 0 ? "bg-gradient-to-br from-red-500 to-rose-600 shadow-red-500/20" : "bg-gradient-to-br from-emerald-500 to-green-600 shadow-emerald-500/20"}`} data-testid="stat-interventions">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={`text-sm font-medium ${interventionQueue.length > 0 ? "text-red-100" : "text-emerald-100"}`}>
-                    {interventionQueue.length > 0 ? "Needs Attention" : "All Clear"}
-                  </p>
-                  <p className="text-4xl font-bold text-white mt-1">{interventionQueue.length}</p>
-                </div>
-                <div className="p-3 bg-white/20 rounded-xl">
-                  {interventionQueue.length > 0 ? (
-                    <AlertCircle className="w-7 h-7 text-white" />
-                  ) : (
-                    <Shield className="w-7 h-7 text-white" />
-                  )}
-                </div>
-              </div>
-              <div className={`mt-4 flex items-center gap-2 text-sm ${interventionQueue.length > 0 ? "text-red-100" : "text-emerald-100"}`}>
-                <Activity className="w-4 h-4" />
-                <span>{interventionQueue.length > 0 ? "Requires HR review" : "No issues detected"}</span>
-              </div>
+          <Card className={`border-white/10 backdrop-blur-sm ${interventionQueue.length > 0 ? "bg-red-500/10 border-red-500/20" : "bg-emerald-500/10 border-emerald-500/20"}`} data-testid="stat-interventions">
+            <CardHeader className="pb-2">
+              <CardTitle className={`text-sm font-medium flex items-center gap-2 ${interventionQueue.length > 0 ? "text-red-300" : "text-emerald-300"}`}>
+                {interventionQueue.length > 0 ? <AlertCircle className="w-4 h-4" /> : <Shield className="w-4 h-4" />}
+                {interventionQueue.length > 0 ? "Needs Attention" : "All Clear"}
+              </CardTitle>
+              <div className="text-3xl font-bold">{interventionQueue.length}</div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <p className={`text-xs flex items-center gap-1 ${interventionQueue.length > 0 ? "text-red-300/80" : "text-emerald-300/80"}`}>
+                <Activity className="w-3 h-3" />
+                {interventionQueue.length > 0 ? "Requires HR review" : "No issues detected"}
+              </p>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-amber-500 to-orange-600 border-0 shadow-lg shadow-amber-500/20" data-testid="stat-pending-docs">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-amber-100 text-sm font-medium">Awaiting Documents</p>
-                  <p className="text-4xl font-bold text-white mt-1">
-                    {workflows.filter(w => w.status === "awaiting_documents" || w.status === "documentation").length}
-                  </p>
-                </div>
-                <div className="p-3 bg-white/20 rounded-xl">
-                  <FileText className="w-7 h-7 text-white" />
-                </div>
+          <Card className="bg-amber-500/10 border-amber-500/20 backdrop-blur-sm" data-testid="stat-pending-docs">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-amber-300 flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Awaiting Documents
+              </CardTitle>
+              <div className="text-3xl font-bold">
+                {workflows.filter(w => w.status === "awaiting_documents" || w.status === "documentation").length}
               </div>
-              <div className="mt-4 flex items-center gap-2 text-amber-100 text-sm">
-                <Bell className="w-4 h-4" />
-                <span>Pending submission</span>
-              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <p className="text-xs text-amber-300/80 flex items-center gap-1">
+                <Bell className="w-3 h-3" />
+                Pending submission
+              </p>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-emerald-500 to-teal-600 border-0 shadow-lg shadow-emerald-500/20" data-testid="stat-completed">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-emerald-100 text-sm font-medium">Completed</p>
-                  <p className="text-4xl font-bold text-white mt-1">
-                    {workflows.filter(w => w.status === "completed").length}
-                  </p>
-                </div>
-                <div className="p-3 bg-white/20 rounded-xl">
-                  <CheckCircle2 className="w-7 h-7 text-white" />
-                </div>
+          <Card className="bg-emerald-500/10 border-emerald-500/20 backdrop-blur-sm" data-testid="stat-completed">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-emerald-300 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4" />
+                Completed
+              </CardTitle>
+              <div className="text-3xl font-bold">
+                {workflows.filter(w => w.status === "completed").length}
               </div>
-              <div className="mt-4 flex items-center gap-2 text-emerald-100 text-sm">
-                <Sparkles className="w-4 h-4" />
-                <span>Successfully onboarded</span>
-              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <p className="text-xs text-emerald-300/80 flex items-center gap-1">
+                <Sparkles className="w-3 h-3" />
+                Successfully onboarded
+              </p>
             </CardContent>
           </Card>
         </div>
 
+        {/* Intervention Queue Alert */}
         {interventionQueue.length > 0 && (
-          <Card className="mb-8 border-red-200 bg-gradient-to-r from-red-50 to-rose-50 shadow-lg" data-testid="intervention-queue">
+          <Card className="mb-8 bg-red-500/10 border-red-500/20" data-testid="intervention-queue">
             <CardHeader className="pb-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-100 rounded-lg">
-                  <AlertTriangle className="w-5 h-5 text-red-600" />
+                <div className="p-2 bg-red-500/20 rounded-lg">
+                  <AlertTriangle className="w-5 h-5 text-red-400" />
                 </div>
                 <div>
-                  <CardTitle className="text-red-800">Human Intervention Required</CardTitle>
-                  <CardDescription className="text-red-600">
+                  <CardTitle className="text-red-300">Human Intervention Required</CardTitle>
+                  <CardDescription className="text-red-300/70">
                     {interventionQueue.length} case{interventionQueue.length > 1 ? "s" : ""} need your attention
                   </CardDescription>
                 </div>
@@ -432,30 +408,29 @@ export default function OnboardingDashboard() {
                 {interventionQueue.map(log => (
                   <div
                     key={log.id}
-                    className="flex items-center justify-between p-4 bg-white rounded-xl border border-red-100 shadow-sm hover:shadow-md transition-all"
+                    className="flex items-center justify-between p-4 bg-card/50 rounded-lg border border-red-500/20"
                     data-testid={`intervention-item-${log.id}`}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-400 to-rose-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-red-500/30">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-500/30 to-rose-500/30 border border-red-500/30 flex items-center justify-center text-red-300 font-bold text-lg">
                         {getInitials(getCandidateName(log.candidateId || ""))}
                       </div>
                       <div>
-                        <p className="font-semibold text-slate-900">
+                        <p className="font-semibold text-white">
                           {getCandidateName(log.candidateId || "")}
                         </p>
-                        <p className="text-sm text-slate-500 capitalize">
+                        <p className="text-sm text-muted-foreground capitalize">
                           {log.action.replace(/_/g, " ")}
                         </p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
-                            {(log.details as any)?.reason || "Requires manual review"}
-                          </Badge>
-                        </div>
+                        <Badge variant="outline" className="mt-1 text-xs bg-red-500/20 text-red-300 border-red-500/30">
+                          {(log.details as any)?.reason || "Requires manual review"}
+                        </Badge>
                       </div>
                     </div>
                     <Button
                       onClick={() => setInterventionDialog(log)}
-                      className="bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 shadow-lg shadow-red-500/25"
+                      variant="outline"
+                      className="border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-300"
                       data-testid={`button-resolve-${log.id}`}
                     >
                       Resolve Now
@@ -467,16 +442,18 @@ export default function OnboardingDashboard() {
           </Card>
         )}
 
+        {/* Main Content Grid */}
         <div className="grid grid-cols-12 gap-6">
-          <div className="col-span-4">
-            <Card className="shadow-lg border-slate-200" data-testid="workflows-list">
-              <CardHeader className="border-b border-slate-100 bg-slate-50/50">
+          {/* Workflows List */}
+          <div className="col-span-12 lg:col-span-4">
+            <Card className="border-white/10 bg-card/20" data-testid="workflows-list">
+              <CardHeader>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <Users className="w-5 h-5 text-blue-600" />
+                  <div className="p-2 bg-primary/20 rounded-lg">
+                    <Users className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">Team Members</CardTitle>
+                    <CardTitle>Team Members</CardTitle>
                     <CardDescription>Select to view onboarding details</CardDescription>
                   </div>
                 </div>
@@ -487,48 +464,43 @@ export default function OnboardingDashboard() {
                     {workflows.map(workflow => {
                       const candidate = candidates.find(c => c.id === workflow.candidateId);
                       const isSelected = selectedWorkflow === workflow.id;
-                      const progress = getDocumentProgress(
-                        documentRequests.filter(d => d.workflowId === workflow.id)
-                      );
                       
                       return (
                         <div
                           key={workflow.id}
                           onClick={() => handleWorkflowSelect(workflow.id)}
-                          className={`p-4 rounded-xl cursor-pointer transition-all duration-200 ${
+                          className={`p-4 rounded-lg cursor-pointer transition-all border ${
                             isSelected
-                              ? "bg-gradient-to-r from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/30 scale-[1.02]"
-                              : "bg-white border border-slate-200 hover:border-blue-300 hover:shadow-md"
+                              ? "bg-primary/20 border-primary/30"
+                              : "bg-card/30 border-white/10 hover:border-white/20 hover:bg-card/50"
                           }`}
                           data-testid={`workflow-item-${workflow.id}`}
                         >
                           <div className="flex items-center gap-3">
-                            <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg shadow-md ${
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
                               isSelected 
-                                ? "bg-white/20 text-white" 
-                                : "bg-gradient-to-br from-blue-400 to-indigo-500 text-white"
+                                ? "bg-primary/30 text-primary" 
+                                : "bg-white/10 text-white"
                             }`}>
                               {getInitials(candidate?.fullName || "?")}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className={`font-semibold truncate ${isSelected ? "text-white" : "text-slate-900"}`}>
+                              <p className="font-semibold truncate text-white">
                                 {candidate?.fullName || "Unknown"}
                               </p>
-                              <p className={`text-sm truncate ${isSelected ? "text-blue-100" : "text-slate-500"}`}>
+                              <p className="text-sm truncate text-muted-foreground capitalize">
                                 {workflow.currentStep?.replace(/_/g, " ") || "Getting started"}
                               </p>
                             </div>
-                            <ChevronRight className={`w-5 h-5 flex-shrink-0 ${isSelected ? "text-white" : "text-slate-400"}`} />
+                            <ChevronRight className={`w-5 h-5 flex-shrink-0 ${isSelected ? "text-primary" : "text-muted-foreground"}`} />
                           </div>
-                          <div className="mt-3 flex items-center gap-2">
+                          <div className="mt-3">
                             <Badge className={`text-xs ${
-                              isSelected 
-                                ? "bg-white/20 text-white border-white/30" 
-                                : workflow.status === "completed" 
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                  : workflow.status.includes("document")
-                                    ? "bg-amber-50 text-amber-700 border-amber-200"
-                                    : "bg-blue-50 text-blue-700 border-blue-200"
+                              workflow.status === "completed" 
+                                ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+                                : workflow.status.includes("document")
+                                  ? "bg-amber-500/20 text-amber-300 border-amber-500/30"
+                                  : "bg-blue-500/20 text-blue-300 border-blue-500/30"
                             }`}>
                               {workflow.status.replace(/_/g, " ")}
                             </Badge>
@@ -542,43 +514,40 @@ export default function OnboardingDashboard() {
             </Card>
           </div>
 
-          <div className="col-span-8">
+          {/* Workflow Detail Panel */}
+          <div className="col-span-12 lg:col-span-8">
             {selectedWorkflow ? (
               <div className="space-y-6">
-                <Card className="shadow-lg border-slate-200 overflow-hidden">
-                  <div className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 p-6">
+                <Card className="border-white/10 bg-card/20 overflow-hidden">
+                  {/* Candidate Header */}
+                  <div className="bg-gradient-to-r from-primary/20 to-purple-500/20 border-b border-white/10 p-6">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-white font-bold text-2xl shadow-xl">
+                        <div className="w-14 h-14 rounded-full bg-white/10 backdrop-blur flex items-center justify-center text-white font-bold text-xl">
                           {getInitials(selectedCandidate?.fullName || "?")}
                         </div>
                         <div>
-                          <h2 className="text-2xl font-bold text-white">{selectedCandidate?.fullName}</h2>
-                          <p className="text-blue-100">{selectedCandidate?.email}</p>
-                          <p className="text-blue-200 text-sm">{selectedCandidate?.phone}</p>
+                          <h2 className="text-xl font-bold text-white">{selectedCandidate?.fullName}</h2>
+                          <p className="text-muted-foreground">{selectedCandidate?.email}</p>
+                          <p className="text-muted-foreground text-sm">{selectedCandidate?.phone}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-blue-100 text-sm mb-2">Document Completion</p>
+                        <p className="text-muted-foreground text-sm mb-2">Document Completion</p>
                         <div className="flex items-center gap-3">
-                          <div className="w-32 h-3 bg-white/20 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-white rounded-full transition-all duration-500"
-                              style={{ width: `${getDocumentProgress(documentRequests)}%` }}
-                            />
-                          </div>
-                          <span className="text-2xl font-bold text-white">{getDocumentProgress(documentRequests)}%</span>
+                          <Progress value={getDocumentProgress(documentRequests)} className="w-32 h-2" />
+                          <span className="text-xl font-bold text-white">{getDocumentProgress(documentRequests)}%</span>
                         </div>
                       </div>
                     </div>
                   </div>
                   
                   <Tabs defaultValue="documents" className="w-full">
-                    <div className="border-b border-slate-200 bg-slate-50/50 px-6">
+                    <div className="border-b border-white/10 px-6">
                       <TabsList className="bg-transparent border-0 p-0 h-14">
                         <TabsTrigger 
                           value="documents" 
-                          className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-t-lg border-b-2 border-transparent data-[state=active]:border-blue-500 px-6"
+                          className="data-[state=active]:bg-white/10 rounded-t-lg px-6"
                           data-testid="tab-documents"
                         >
                           <FileText className="w-4 h-4 mr-2" />
@@ -586,7 +555,7 @@ export default function OnboardingDashboard() {
                         </TabsTrigger>
                         <TabsTrigger 
                           value="activity" 
-                          className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-t-lg border-b-2 border-transparent data-[state=active]:border-blue-500 px-6"
+                          className="data-[state=active]:bg-white/10 rounded-t-lg px-6"
                           data-testid="tab-activity"
                         >
                           <Activity className="w-4 h-4 mr-2" />
@@ -606,38 +575,33 @@ export default function OnboardingDashboard() {
                             return (
                               <div
                                 key={doc.id}
-                                className={`p-4 rounded-xl border-2 transition-all hover:shadow-md ${
-                                  doc.status === "verified" ? "border-emerald-200 bg-emerald-50/50" :
-                                  doc.status === "received" ? "border-amber-200 bg-amber-50/50" :
-                                  doc.status === "overdue" ? "border-red-200 bg-red-50/50" :
-                                  "border-slate-200 bg-white"
-                                }`}
+                                className={`p-4 rounded-lg border transition-all bg-card/30 ${config.border}`}
                                 data-testid={`doc-request-${doc.id}`}
                               >
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-4">
-                                    <div className={`p-3 rounded-xl ${config.bg}`}>
-                                      <StatusIcon className={`w-6 h-6 ${config.text}`} />
+                                    <div className={`p-3 rounded-lg ${config.bg}`}>
+                                      <StatusIcon className={`w-5 h-5 ${config.text}`} />
                                     </div>
                                     <div>
                                       <div className="flex items-center gap-2 flex-wrap">
-                                        <p className="font-semibold text-slate-900">{doc.documentName}</p>
+                                        <p className="font-semibold text-white">{doc.documentName}</p>
                                         {doc.isRequired === 1 && (
-                                          <Badge className="bg-blue-100 text-blue-700 text-xs">Required</Badge>
+                                          <Badge className="bg-primary/20 text-primary text-xs border-primary/30">Required</Badge>
                                         )}
                                         <Badge className={`text-xs ${priorityConf.bg} ${priorityConf.text} border ${priorityConf.border}`}>
                                           {doc.priority}
                                         </Badge>
                                       </div>
-                                      <p className="text-sm text-slate-500 mt-1">{doc.description}</p>
+                                      <p className="text-sm text-muted-foreground mt-1">{doc.description}</p>
                                       {doc.dueDate && (
-                                        <div className="flex items-center gap-3 mt-2 text-xs text-slate-400">
+                                        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                                           <span className="flex items-center gap-1">
                                             <Calendar className="w-3 h-3" />
                                             Due: {new Date(doc.dueDate).toLocaleDateString()}
                                           </span>
                                           {doc.reminderCount > 0 && (
-                                            <span className="flex items-center gap-1 text-orange-500">
+                                            <span className="flex items-center gap-1 text-orange-400">
                                               <Bell className="w-3 h-3" />
                                               {doc.reminderCount} reminder{doc.reminderCount > 1 ? "s" : ""} sent
                                             </span>
@@ -647,7 +611,7 @@ export default function OnboardingDashboard() {
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <Badge className={`${config.bg} ${config.text} capitalize`}>
+                                    <Badge className={`${config.bg} ${config.text} capitalize border ${config.border}`}>
                                       {doc.status}
                                     </Badge>
                                     {doc.status === "requested" && (
@@ -657,7 +621,7 @@ export default function OnboardingDashboard() {
                                           variant="outline"
                                           onClick={() => sendReminderMutation.mutate(doc.id)}
                                           disabled={sendReminderMutation.isPending}
-                                          className="gap-1"
+                                          className="gap-1 border-white/10 hover:bg-white/5"
                                           data-testid={`button-remind-${doc.id}`}
                                         >
                                           <Bell className="w-4 h-4" />
@@ -666,7 +630,8 @@ export default function OnboardingDashboard() {
                                           size="sm"
                                           onClick={() => markReceivedMutation.mutate(doc.id)}
                                           disabled={markReceivedMutation.isPending}
-                                          className="bg-amber-500 hover:bg-amber-600"
+                                          variant="outline"
+                                          className="border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300"
                                           data-testid={`button-received-${doc.id}`}
                                         >
                                           Mark Received
@@ -678,7 +643,8 @@ export default function OnboardingDashboard() {
                                         size="sm"
                                         onClick={() => markVerifiedMutation.mutate(doc.id)}
                                         disabled={markVerifiedMutation.isPending}
-                                        className="gap-1 bg-emerald-500 hover:bg-emerald-600"
+                                        variant="outline"
+                                        className="gap-1 border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300"
                                         data-testid={`button-verify-${doc.id}`}
                                       >
                                         <CheckCircle2 className="w-4 h-4" />
@@ -698,7 +664,7 @@ export default function OnboardingDashboard() {
                       <div className="p-6" data-testid="activity-panel">
                         <ScrollArea className="h-[400px] pr-4">
                           <div className="relative">
-                            <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-500 via-purple-500 to-slate-200" />
+                            <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-white/10" />
                             <div className="space-y-6">
                               {agentLogs
                                 .slice()
@@ -706,50 +672,50 @@ export default function OnboardingDashboard() {
                                 .map((log) => {
                                   const channelConf = channelConfig[log.communicationChannel || "system"];
                                   const ChannelIcon = channelConf?.icon || Bot;
-                                  const agentGradient = agentColors[log.agentType] || "from-slate-500 to-slate-600";
+                                  const agentStyle = agentColors[log.agentType] || "from-slate-500/30 to-slate-600/30 border-slate-500/30";
                                   
                                   return (
                                     <div
                                       key={log.id}
-                                      className="relative pl-14"
+                                      className="relative pl-12"
                                       data-testid={`activity-log-${log.id}`}
                                     >
-                                      <div className={`absolute left-3 w-7 h-7 rounded-full bg-gradient-to-br ${agentGradient} flex items-center justify-center shadow-lg ring-4 ring-white`}>
+                                      <div className={`absolute left-2 w-7 h-7 rounded-full bg-gradient-to-br ${agentStyle} border flex items-center justify-center`}>
                                         <ChannelIcon className="w-3.5 h-3.5 text-white" />
                                       </div>
-                                      <div className={`bg-white border rounded-xl p-4 shadow-sm hover:shadow-md transition-all ${
-                                        log.status === "requires_intervention" ? "border-red-200" : "border-slate-200"
+                                      <div className={`bg-card/30 border border-white/10 rounded-lg p-4 ${
+                                        log.status === "requires_intervention" ? "border-red-500/30" : ""
                                       }`}>
                                         <div className="flex items-center justify-between mb-2">
                                           <div className="flex items-center gap-2 flex-wrap">
-                                            <Badge variant="outline" className={`bg-gradient-to-r ${agentGradient} text-white border-0 text-xs`}>
+                                            <Badge variant="outline" className={`bg-gradient-to-r ${agentStyle} text-white text-xs`}>
                                               {log.agentType.replace(/_/g, " ")}
                                             </Badge>
-                                            <span className="font-medium text-slate-900 capitalize">
+                                            <span className="font-medium text-white capitalize">
                                               {log.action.replace(/_/g, " ")}
                                             </span>
                                           </div>
-                                          <span className="text-xs text-slate-400 flex items-center gap-1">
+                                          <span className="text-xs text-muted-foreground flex items-center gap-1">
                                             <Clock className="w-3 h-3" />
                                             {formatTimeAgo(log.createdAt)}
                                           </span>
                                         </div>
                                         {log.messageContent && (
-                                          <div className="mt-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
-                                            <p className="text-sm text-slate-600 italic">"{log.messageContent}"</p>
+                                          <div className="mt-3 p-3 bg-white/5 rounded-lg border border-white/5">
+                                            <p className="text-sm text-muted-foreground italic">"{log.messageContent}"</p>
                                           </div>
                                         )}
                                         {log.details && Object.keys(log.details).length > 0 && (
                                           <div className="mt-3 flex flex-wrap gap-2">
                                             {Object.entries(log.details).slice(0, 3).map(([key, value]) => (
-                                              <span key={key} className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
+                                              <span key={key} className="text-xs bg-white/5 text-muted-foreground px-2 py-1 rounded-full">
                                                 {key}: {String(value).slice(0, 30)}
                                               </span>
                                             ))}
                                           </div>
                                         )}
                                         {log.requiresHumanReview === 1 && !log.reviewedAt && (
-                                          <Badge className="mt-3 bg-red-100 text-red-700 border-red-200">
+                                          <Badge className="mt-3 bg-red-500/20 text-red-300 border-red-500/30">
                                             <AlertCircle className="w-3 h-3 mr-1" />
                                             Requires Review
                                           </Badge>
@@ -767,13 +733,13 @@ export default function OnboardingDashboard() {
                 </Card>
               </div>
             ) : (
-              <Card className="h-full flex items-center justify-center shadow-lg border-slate-200" data-testid="no-selection">
+              <Card className="h-full flex items-center justify-center border-white/10 bg-card/20" data-testid="no-selection">
                 <CardContent className="text-center py-16">
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center mx-auto mb-6">
-                    <Users className="w-10 h-10 text-slate-400" />
+                  <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-6">
+                    <Users className="w-8 h-8 text-muted-foreground" />
                   </div>
-                  <h3 className="text-xl font-semibold text-slate-700 mb-2">Select a Team Member</h3>
-                  <p className="text-slate-500 max-w-sm mx-auto">
+                  <h3 className="text-xl font-semibold text-white mb-2">Select a Team Member</h3>
+                  <p className="text-muted-foreground max-w-sm mx-auto">
                     Choose an employee from the list to view their onboarding progress, documents, and AI agent activity.
                   </p>
                 </CardContent>
@@ -781,14 +747,15 @@ export default function OnboardingDashboard() {
             )}
           </div>
         </div>
-      </div>
+      </main>
 
+      {/* Resolution Dialog */}
       <Dialog open={!!interventionDialog} onOpenChange={() => setInterventionDialog(null)}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg bg-card border-white/10">
           <DialogHeader>
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <AlertTriangle className="w-5 h-5 text-red-600" />
+              <div className="p-2 bg-red-500/20 rounded-lg">
+                <AlertTriangle className="w-5 h-5 text-red-400" />
               </div>
               <div>
                 <DialogTitle>Resolve Escalation</DialogTitle>
@@ -800,44 +767,44 @@ export default function OnboardingDashboard() {
           </DialogHeader>
           {interventionDialog && (
             <div className="space-y-4 py-4">
-              <div className="bg-gradient-to-r from-red-50 to-rose-50 rounded-xl p-4 border border-red-100">
+              <div className="bg-red-500/10 rounded-lg p-4 border border-red-500/20">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-400 to-rose-500 flex items-center justify-center text-white font-bold">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500/30 to-rose-500/30 border border-red-500/30 flex items-center justify-center text-red-300 font-bold">
                     {getInitials(getCandidateName(interventionDialog.candidateId || ""))}
                   </div>
                   <div>
-                    <p className="font-semibold text-slate-900">
+                    <p className="font-semibold text-white">
                       {getCandidateName(interventionDialog.candidateId || "")}
                     </p>
-                    <p className="text-sm text-slate-500 capitalize">
+                    <p className="text-sm text-muted-foreground capitalize">
                       {interventionDialog.action.replace(/_/g, " ")}
                     </p>
                   </div>
                 </div>
-                <div className="bg-white/60 rounded-lg p-3">
-                  <p className="text-sm text-red-700 font-medium">
+                <div className="bg-card/50 rounded-lg p-3 border border-white/5">
+                  <p className="text-sm text-red-300 font-medium">
                     Issue: {(interventionDialog.details as any)?.reason || "Manual review required"}
                   </p>
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Step: {interventionDialog.stepName} • {formatTimeAgo(interventionDialog.createdAt)}
                   </p>
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Resolution Notes</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-2">Resolution Notes</label>
                 <Textarea
                   value={resolutionNotes}
                   onChange={(e) => setResolutionNotes(e.target.value)}
                   placeholder="Describe how you resolved this issue..."
                   rows={4}
-                  className="resize-none"
+                  className="resize-none bg-card/50 border-white/10"
                   data-testid="input-resolution-notes"
                 />
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setInterventionDialog(null)}>
+            <Button variant="outline" onClick={() => setInterventionDialog(null)} className="border-white/10">
               Cancel
             </Button>
             <Button
@@ -846,7 +813,7 @@ export default function OnboardingDashboard() {
                 notes: resolutionNotes,
               })}
               disabled={resolveInterventionMutation.isPending || !resolutionNotes}
-              className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700"
+              className="bg-emerald-500/20 border-emerald-500/30 hover:bg-emerald-500/30 text-emerald-300"
               data-testid="button-confirm-resolve"
             >
               {resolveInterventionMutation.isPending ? "Resolving..." : "Mark Resolved"}
