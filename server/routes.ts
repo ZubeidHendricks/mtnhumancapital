@@ -430,14 +430,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/jobs/conversation/create", async (req, res) => {
     try {
-      const { sessionId, isDraft = false } = req.body;
+      const { sessionId, isDraft = false, jobSpec: editedJobSpec } = req.body;
 
       if (!sessionId) {
         return res.status(400).json({ message: "Session ID is required" });
       }
 
       const agent = getOrCreateConversation(sessionId);
-      const jobSpec = agent.getJobSpec();
+      const originalJobSpec = agent.getJobSpec();
+      
+      const rawJobSpec = editedJobSpec || originalJobSpec;
+      
+      const parseOptionalNumber = (val: any): number | undefined => {
+        if (val === undefined || val === null || val === '') return undefined;
+        const parsed = typeof val === 'number' ? val : parseInt(String(val), 10);
+        return Number.isNaN(parsed) ? undefined : parsed;
+      };
+      
+      const jobSpec = {
+        ...rawJobSpec,
+        salaryMin: parseOptionalNumber(rawJobSpec.salaryMin),
+        salaryMax: parseOptionalNumber(rawJobSpec.salaryMax),
+        minYearsExperience: parseOptionalNumber(rawJobSpec.minYearsExperience),
+      };
 
       // Validate required fields (only title is strictly required for active jobs)
       if (!isDraft && !jobSpec.title) {

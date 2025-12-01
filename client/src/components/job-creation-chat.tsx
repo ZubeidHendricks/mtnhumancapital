@@ -5,7 +5,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Send, Sparkles, CheckCircle2, Bot, FileText, MessageSquare, Upload } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Loader2, Send, Sparkles, CheckCircle2, Bot, FileText, MessageSquare, Upload, Pencil, Save, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 
@@ -31,8 +32,43 @@ export function JobCreationChat({ onJobCreated, onCancel }: JobCreationChatProps
   const [mode, setMode] = useState<"chat" | "paste">("chat");
   const [fullJobSpec, setFullJobSpec] = useState("");
   const [isParsing, setIsParsing] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedJobSpec, setEditedJobSpec] = useState<any>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleStartEdit = () => {
+    setEditedJobSpec({ ...jobSpec });
+    setIsEditing(true);
+  };
+
+  const handleSaveEdit = () => {
+    setJobSpec(editedJobSpec);
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditedJobSpec(null);
+    setIsEditing(false);
+  };
+
+  const updateEditedField = (field: string, value: any) => {
+    setEditedJobSpec((prev: any) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const parseNumericInput = (value: string): number | undefined => {
+    if (value === '' || value === null || value === undefined) return undefined;
+    const parsed = parseInt(value, 10);
+    return Number.isNaN(parsed) ? undefined : parsed;
+  };
+
+  const formatNumericValue = (value: number | undefined | null): string => {
+    if (value === undefined || value === null) return '';
+    return String(value);
+  };
 
   // Start conversation automatically when in chat mode
   useEffect(() => {
@@ -174,9 +210,18 @@ export function JobCreationChat({ onJobCreated, onCancel }: JobCreationChatProps
   const handleCreateJob = async (isDraft: boolean = false) => {
     setIsLoading(true);
     try {
+      let finalJobSpec = jobSpec;
+      
+      if (isEditing && editedJobSpec) {
+        finalJobSpec = editedJobSpec;
+        setJobSpec(editedJobSpec);
+        setIsEditing(false);
+      }
+      
       await api.post("/jobs/conversation/create", {
         sessionId,
         isDraft,
+        jobSpec: finalJobSpec,
       });
 
       await api.delete(`/jobs/conversation/${sessionId}`);
@@ -513,18 +558,57 @@ Benefits: Medical aid, retirement fund, flexible hours`}
 
         {/* Collected Data Panel */}
         {showCollectedData && (
-          <Card className="w-72 flex-shrink-0 p-4 bg-card/50 border-white/10 overflow-hidden relative">
+          <Card className="w-80 flex-shrink-0 p-4 bg-card/50 border-white/10 overflow-hidden relative">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-sm">Extracted Information</h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowCollectedData(false)}
-                className="h-6 w-6 p-0"
-                data-testid="button-hide-collected-data"
-              >
-                ✕
-              </Button>
+              <h3 className="font-semibold text-sm">{isEditing ? 'Edit Job Details' : 'Extracted Information'}</h3>
+              <div className="flex items-center gap-1">
+                {hasAnyData && !isEditing && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleStartEdit}
+                    className="h-6 w-6 p-0 hover:bg-white/10"
+                    data-testid="button-edit-job-spec"
+                    title="Edit job details"
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </Button>
+                )}
+                {isEditing ? (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleSaveEdit}
+                      className="h-6 w-6 p-0 hover:bg-green-500/20 text-green-400"
+                      data-testid="button-save-edit"
+                      title="Save changes"
+                    >
+                      <Save className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCancelEdit}
+                      className="h-6 w-6 p-0 hover:bg-red-500/20 text-red-400"
+                      data-testid="button-cancel-edit"
+                      title="Cancel editing"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowCollectedData(false)}
+                    className="h-6 w-6 p-0"
+                    data-testid="button-hide-collected-data"
+                  >
+                    ✕
+                  </Button>
+                )}
+              </div>
             </div>
             
             <ScrollArea className="h-[calc(100%-3rem)]">
@@ -535,6 +619,124 @@ Benefits: Medical aid, retirement fund, flexible hours`}
                     : "Paste a job spec and click 'Extract Job Details' to analyze it..."
                   }
                 </p>
+              ) : isEditing ? (
+                <div className="space-y-4 text-xs">
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Job Title *</Label>
+                    <Input
+                      value={editedJobSpec?.title || ''}
+                      onChange={(e) => updateEditedField('title', e.target.value)}
+                      className="mt-1 h-8 text-xs bg-background/50 border-white/10"
+                      placeholder="e.g., Senior Software Engineer"
+                      data-testid="input-edit-title"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Department</Label>
+                    <Input
+                      value={editedJobSpec?.department || ''}
+                      onChange={(e) => updateEditedField('department', e.target.value)}
+                      className="mt-1 h-8 text-xs bg-background/50 border-white/10"
+                      placeholder="e.g., Engineering"
+                      data-testid="input-edit-department"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Location</Label>
+                    <Input
+                      value={editedJobSpec?.location || ''}
+                      onChange={(e) => updateEditedField('location', e.target.value)}
+                      className="mt-1 h-8 text-xs bg-background/50 border-white/10"
+                      placeholder="e.g., Johannesburg, Gauteng"
+                      data-testid="input-edit-location"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Employment Type</Label>
+                    <Input
+                      value={editedJobSpec?.employmentType || ''}
+                      onChange={(e) => updateEditedField('employmentType', e.target.value)}
+                      className="mt-1 h-8 text-xs bg-background/50 border-white/10"
+                      placeholder="e.g., Full-time, Contract"
+                      data-testid="input-edit-employment-type"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Min Salary (R)</Label>
+                      <Input
+                        type="number"
+                        value={formatNumericValue(editedJobSpec?.salaryMin)}
+                        onChange={(e) => updateEditedField('salaryMin', parseNumericInput(e.target.value))}
+                        className="mt-1 h-8 text-xs bg-background/50 border-white/10"
+                        placeholder="Min"
+                        data-testid="input-edit-salary-min"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Max Salary (R)</Label>
+                      <Input
+                        type="number"
+                        value={formatNumericValue(editedJobSpec?.salaryMax)}
+                        onChange={(e) => updateEditedField('salaryMax', parseNumericInput(e.target.value))}
+                        className="mt-1 h-8 text-xs bg-background/50 border-white/10"
+                        placeholder="Max"
+                        data-testid="input-edit-salary-max"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Min. Years Experience</Label>
+                    <Input
+                      type="number"
+                      value={formatNumericValue(editedJobSpec?.minYearsExperience)}
+                      onChange={(e) => updateEditedField('minYearsExperience', parseNumericInput(e.target.value))}
+                      className="mt-1 h-8 text-xs bg-background/50 border-white/10"
+                      placeholder="Years"
+                      data-testid="input-edit-experience"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Description</Label>
+                    <Textarea
+                      value={editedJobSpec?.description || ''}
+                      onChange={(e) => updateEditedField('description', e.target.value)}
+                      className="mt-1 min-h-[80px] text-xs bg-background/50 border-white/10"
+                      placeholder="Job description..."
+                      data-testid="input-edit-description"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Requirements (one per line)</Label>
+                    <Textarea
+                      value={(editedJobSpec?.requirements || []).join('\n')}
+                      onChange={(e) => updateEditedField('requirements', e.target.value.split('\n').filter(r => r.trim()))}
+                      className="mt-1 min-h-[60px] text-xs bg-background/50 border-white/10"
+                      placeholder="Enter requirements..."
+                      data-testid="input-edit-requirements"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Responsibilities (one per line)</Label>
+                    <Textarea
+                      value={(editedJobSpec?.responsibilities || []).join('\n')}
+                      onChange={(e) => updateEditedField('responsibilities', e.target.value.split('\n').filter(r => r.trim()))}
+                      className="mt-1 min-h-[60px] text-xs bg-background/50 border-white/10"
+                      placeholder="Enter responsibilities..."
+                      data-testid="input-edit-responsibilities"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Benefits (comma separated)</Label>
+                    <Input
+                      value={(editedJobSpec?.benefits || []).join(', ')}
+                      onChange={(e) => updateEditedField('benefits', e.target.value.split(',').map(b => b.trim()).filter(b => b))}
+                      className="mt-1 h-8 text-xs bg-background/50 border-white/10"
+                      placeholder="e.g., Medical aid, Pension, Flexible hours"
+                      data-testid="input-edit-benefits"
+                    />
+                  </div>
+                </div>
               ) : (
                 <div className="space-y-3 text-xs">
                   {jobSpec?.title && (
