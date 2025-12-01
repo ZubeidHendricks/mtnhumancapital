@@ -56,7 +56,9 @@ import {
   List,
   FileArchive,
   ExternalLink,
-  MessageCircle
+  MessageCircle,
+  BookOpen,
+  Timer
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { motion } from "framer-motion";
@@ -469,14 +471,16 @@ BENEFITS:
           </Alert>
         )}
 
-        <Tabs defaultValue="recruitment" className="space-y-6" onValueChange={setActiveTab}>
+        <Tabs defaultValue="jobs" className="space-y-6" onValueChange={setActiveTab}>
           <div className="flex items-center gap-3 flex-wrap">
-            <TabsList className="grid grid-cols-2 md:grid-cols-5 lg:w-[700px] bg-card/50 border border-white/5">
-              <TabsTrigger value="recruitment">Recruitment</TabsTrigger>
+            <TabsList className="grid grid-cols-2 md:grid-cols-7 lg:w-[900px] bg-card/50 border border-white/5">
               <TabsTrigger value="jobs">Jobs</TabsTrigger>
+              <TabsTrigger value="recruitment">Recruitment</TabsTrigger>
               <TabsTrigger value="integrity">Integrity</TabsTrigger>
               <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
               <TabsTrigger value="performance">Performance</TabsTrigger>
+              <TabsTrigger value="lms">LMS</TabsTrigger>
+              <TabsTrigger value="time-attendance">Time & Attendance</TabsTrigger>
             </TabsList>
             <Link href="/workforce-intelligence">
               <Button variant="outline" className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/30 hover:border-amber-500/50 hover:bg-amber-500/20 text-amber-400">
@@ -1545,6 +1549,380 @@ BENEFITS:
                         <div className="flex justify-between text-xs text-muted-foreground">
                           <span>Achieved: {kpi.achieved}{typeof kpi.achieved === 'number' && kpi.achieved < 10 ? '%' : ''}</span>
                           <span>Target: {kpi.target}{typeof kpi.target === 'number' && kpi.target < 10 ? '%' : ''}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* LMS TAB - Learning Management System */}
+          <TabsContent value="lms" className="space-y-6">
+            {/* LMS Overview Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card className="border-white/10 bg-card/20">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Active Courses</p>
+                      <h3 className="text-2xl font-bold mt-2">24</h3>
+                      <p className="text-xs text-blue-400 mt-1">Across all departments</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-blue-500/10">
+                      <BookOpen className="w-6 h-6 text-blue-400" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-white/10 bg-card/20">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Enrolled Employees</p>
+                      <h3 className="text-2xl font-bold mt-2">156</h3>
+                      <p className="text-xs text-green-400 mt-1">+12 this month</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-green-500/10">
+                      <Users className="w-6 h-6 text-green-400" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-white/10 bg-card/20">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Completion Rate</p>
+                      <h3 className="text-2xl font-bold mt-2">78%</h3>
+                      <p className="text-xs text-amber-400 mt-1">Target: 85%</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-amber-500/10">
+                      <TrendingUp className="w-6 h-6 text-amber-400" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-white/10 bg-card/20">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Certifications</p>
+                      <h3 className="text-2xl font-bold mt-2">42</h3>
+                      <p className="text-xs text-purple-400 mt-1">Issued this quarter</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-purple-500/10">
+                      <Award className="w-6 h-6 text-purple-400" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Active Courses */}
+            <Card className="border-white/10 bg-card/20">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <BookOpen className="w-5 h-5 text-primary" />
+                      Active Training Courses
+                    </CardTitle>
+                    <CardDescription>Current learning programs and progress</CardDescription>
+                  </div>
+                  <Button className="bg-primary hover:bg-primary/90">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Course
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {[
+                    { name: "Compliance Training 2024", category: "Compliance", enrolled: 120, completed: 95, deadline: "Dec 31, 2024", status: "Active" },
+                    { name: "Leadership Development", category: "Management", enrolled: 24, completed: 18, deadline: "Jan 15, 2025", status: "Active" },
+                    { name: "Cybersecurity Awareness", category: "IT Security", enrolled: 156, completed: 142, deadline: "Dec 20, 2024", status: "Active" },
+                    { name: "Diversity & Inclusion", category: "HR", enrolled: 156, completed: 130, deadline: "Ongoing", status: "Active" },
+                  ].map((course, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-4 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors">
+                      <div className="flex items-center gap-4 flex-1">
+                        <div className="p-2 rounded-lg bg-primary/20">
+                          <BookOpen className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium">{course.name}</p>
+                          <p className="text-sm text-muted-foreground">{course.category}</p>
+                        </div>
+                        <div className="text-sm text-center">
+                          <p className="text-muted-foreground">Enrolled</p>
+                          <p className="font-medium">{course.enrolled}</p>
+                        </div>
+                        <div className="text-sm text-center">
+                          <p className="text-muted-foreground">Completed</p>
+                          <p className="font-medium text-green-400">{course.completed}</p>
+                        </div>
+                        <div className="text-sm text-center">
+                          <p className="text-muted-foreground">Deadline</p>
+                          <p className="font-medium">{course.deadline}</p>
+                        </div>
+                        <div className="w-24">
+                          <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-green-500"
+                              style={{ width: `${Math.round((course.completed / course.enrolled) * 100)}%` }}
+                            />
+                          </div>
+                          <p className="text-xs text-center mt-1 text-muted-foreground">
+                            {Math.round((course.completed / course.enrolled) * 100)}%
+                          </p>
+                        </div>
+                        <Button variant="ghost" size="sm">
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Employee Learning Progress */}
+            <Card className="border-white/10 bg-card/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <GraduationCap className="w-5 h-5 text-amber-400" />
+                  Employee Learning Progress
+                </CardTitle>
+                <CardDescription>Individual training completion status</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {[
+                    { employee: "Sarah Jenkins", courses: 5, completed: 5, inProgress: 0, certificates: 3 },
+                    { employee: "Marcus Johnson", courses: 4, completed: 3, inProgress: 1, certificates: 2 },
+                    { employee: "David Chen", courses: 6, completed: 4, inProgress: 2, certificates: 4 },
+                    { employee: "Emily Davis", courses: 3, completed: 2, inProgress: 1, certificates: 1 },
+                  ].map((emp, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-4 rounded-lg border border-white/10 bg-white/5">
+                      <div className="flex items-center gap-4">
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback className="bg-primary/20 text-primary">
+                            {emp.employee.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{emp.employee}</p>
+                          <p className="text-sm text-muted-foreground">{emp.courses} courses assigned</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-6">
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-green-400">{emp.completed}</p>
+                          <p className="text-xs text-muted-foreground">Completed</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-amber-400">{emp.inProgress}</p>
+                          <p className="text-xs text-muted-foreground">In Progress</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-purple-400">{emp.certificates}</p>
+                          <p className="text-xs text-muted-foreground">Certificates</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* TIME & ATTENDANCE TAB */}
+          <TabsContent value="time-attendance" className="space-y-6">
+            {/* Time & Attendance Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card className="border-white/10 bg-card/20">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Present Today</p>
+                      <h3 className="text-2xl font-bold mt-2">142</h3>
+                      <p className="text-xs text-green-400 mt-1">92% attendance rate</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-green-500/10">
+                      <CheckCircle2 className="w-6 h-6 text-green-400" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-white/10 bg-card/20">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">On Leave</p>
+                      <h3 className="text-2xl font-bold mt-2">8</h3>
+                      <p className="text-xs text-blue-400 mt-1">Approved leave</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-blue-500/10">
+                      <Calendar className="w-6 h-6 text-blue-400" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-white/10 bg-card/20">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Late Arrivals</p>
+                      <h3 className="text-2xl font-bold mt-2">5</h3>
+                      <p className="text-xs text-amber-400 mt-1">Today</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-amber-500/10">
+                      <Clock className="w-6 h-6 text-amber-400" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-white/10 bg-card/20">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Overtime Hours</p>
+                      <h3 className="text-2xl font-bold mt-2">48</h3>
+                      <p className="text-xs text-purple-400 mt-1">This week</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-purple-500/10">
+                      <Timer className="w-6 h-6 text-purple-400" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Today's Attendance */}
+            <Card className="border-white/10 bg-card/20">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Timer className="w-5 h-5 text-primary" />
+                      Today's Attendance
+                    </CardTitle>
+                    <CardDescription>Real-time employee attendance tracking</CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="border-white/10">
+                      <Download className="w-4 h-4 mr-2" />
+                      Export Report
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {[
+                    { employee: "Sarah Jenkins", clockIn: "08:45 AM", clockOut: "-", status: "Present", hours: "4h 15m", department: "Operations" },
+                    { employee: "Marcus Johnson", clockIn: "09:15 AM", clockOut: "-", status: "Late", hours: "3h 45m", department: "Management" },
+                    { employee: "David Chen", clockIn: "08:30 AM", clockOut: "-", status: "Present", hours: "4h 30m", department: "Finance" },
+                    { employee: "Emily Davis", clockIn: "-", clockOut: "-", status: "On Leave", hours: "-", department: "Design" },
+                    { employee: "Robert Brown", clockIn: "08:00 AM", clockOut: "12:30 PM", status: "Left Early", hours: "4h 30m", department: "Engineering" },
+                  ].map((record, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-4 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors">
+                      <div className="flex items-center gap-4 flex-1">
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback className="bg-primary/20 text-primary">
+                            {record.employee.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <p className="font-medium">{record.employee}</p>
+                          <p className="text-sm text-muted-foreground">{record.department}</p>
+                        </div>
+                        <div className="text-sm text-center">
+                          <p className="text-muted-foreground">Clock In</p>
+                          <p className="font-medium">{record.clockIn}</p>
+                        </div>
+                        <div className="text-sm text-center">
+                          <p className="text-muted-foreground">Clock Out</p>
+                          <p className="font-medium">{record.clockOut}</p>
+                        </div>
+                        <div className="text-sm text-center">
+                          <p className="text-muted-foreground">Hours</p>
+                          <p className="font-medium">{record.hours}</p>
+                        </div>
+                        <Badge 
+                          className={
+                            record.status === "Present" ? "bg-green-500/20 text-green-400 border-green-500/30" :
+                            record.status === "Late" ? "bg-amber-500/20 text-amber-400 border-amber-500/30" :
+                            record.status === "On Leave" ? "bg-blue-500/20 text-blue-400 border-blue-500/30" :
+                            "bg-red-500/20 text-red-400 border-red-500/30"
+                          }
+                        >
+                          {record.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Leave Requests */}
+            <Card className="border-white/10 bg-card/20">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Calendar className="w-5 h-5 text-blue-400" />
+                      Pending Leave Requests
+                    </CardTitle>
+                    <CardDescription>Approve or reject employee leave requests</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {[
+                    { employee: "John Smith", type: "Annual Leave", from: "Dec 20, 2024", to: "Dec 27, 2024", days: 5, reason: "Family vacation" },
+                    { employee: "Lisa Wong", type: "Sick Leave", from: "Dec 16, 2024", to: "Dec 17, 2024", days: 2, reason: "Medical appointment" },
+                    { employee: "Michael Brown", type: "Personal Leave", from: "Dec 18, 2024", to: "Dec 18, 2024", days: 1, reason: "Personal matters" },
+                  ].map((leave, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-4 rounded-lg border border-white/10 bg-white/5">
+                      <div className="flex items-center gap-4 flex-1">
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback className="bg-primary/20 text-primary">
+                            {leave.employee.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <p className="font-medium">{leave.employee}</p>
+                          <p className="text-sm text-muted-foreground">{leave.type}</p>
+                        </div>
+                        <div className="text-sm">
+                          <p className="text-muted-foreground">Duration</p>
+                          <p className="font-medium">{leave.from} - {leave.to}</p>
+                        </div>
+                        <div className="text-sm text-center">
+                          <p className="text-muted-foreground">Days</p>
+                          <p className="font-medium">{leave.days}</p>
+                        </div>
+                        <div className="text-sm max-w-[150px]">
+                          <p className="text-muted-foreground">Reason</p>
+                          <p className="font-medium truncate">{leave.reason}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" className="bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/30">
+                            Approve
+                          </Button>
+                          <Button size="sm" variant="outline" className="border-red-500/30 text-red-400 hover:bg-red-500/20">
+                            Reject
+                          </Button>
                         </div>
                       </div>
                     </div>
