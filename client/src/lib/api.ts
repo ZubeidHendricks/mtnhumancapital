@@ -42,6 +42,10 @@ export const jobsService = {
     const response = await api.get("/jobs");
     return response.data;
   },
+  getArchived: async (): Promise<Job[]> => {
+    const response = await api.get("/jobs/archived");
+    return response.data;
+  },
   getById: async (id: string): Promise<Job> => {
     const response = await api.get(`/jobs/${id}`);
     return response.data;
@@ -56,6 +60,14 @@ export const jobsService = {
   },
   delete: async (id: string): Promise<void> => {
     await api.delete(`/jobs/${id}`);
+  },
+  archive: async (id: string, reason?: string): Promise<Job> => {
+    const response = await api.post(`/jobs/${id}/archive`, { reason });
+    return response.data;
+  },
+  restore: async (id: string): Promise<Job> => {
+    const response = await api.post(`/jobs/${id}/restore`);
+    return response.data;
   }
 };
 

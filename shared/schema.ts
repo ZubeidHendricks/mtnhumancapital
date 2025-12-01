@@ -48,6 +48,10 @@ export const jobs = pgTable("jobs", {
   // RAG Embeddings
   requirementsEmbedding: vector("requirements_embedding", { dimensions: 1536 }),
   
+  // Archival (soft delete for historical data preservation)
+  archivedAt: timestamp("archived_at"),
+  archivedReason: text("archived_reason"),
+  
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => ({

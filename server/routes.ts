@@ -347,6 +347,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Archive job (soft delete - preserves historical data)
+  app.post("/api/jobs/:id/archive", async (req, res) => {
+    try {
+      const { reason } = req.body;
+      const job = await storage.archiveJob(req.tenant.id, req.params.id, reason);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      res.json(job);
+    } catch (error) {
+      console.error("Error archiving job:", error);
+      res.status(500).json({ message: "Failed to archive job" });
+    }
+  });
+
+  // Restore archived job
+  app.post("/api/jobs/:id/restore", async (req, res) => {
+    try {
+      const job = await storage.restoreJob(req.tenant.id, req.params.id);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      res.json(job);
+    } catch (error) {
+      console.error("Error restoring job:", error);
+      res.status(500).json({ message: "Failed to restore job" });
+    }
+  });
+
+  // Get archived jobs
+  app.get("/api/jobs/archived", async (req, res) => {
+    try {
+      const archivedJobs = await storage.getArchivedJobs(req.tenant.id);
+      res.json(archivedJobs);
+    } catch (error) {
+      console.error("Error fetching archived jobs:", error);
+      res.status(500).json({ message: "Failed to fetch archived jobs" });
+    }
+  });
+
   // AI-Powered Conversational Job Creation
   app.post("/api/jobs/conversation/chat", async (req, res) => {
     try {

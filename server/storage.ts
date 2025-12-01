@@ -89,18 +89,21 @@ import {
   onboardingDocumentRequests
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, lte } from "drizzle-orm";
+import { eq, desc, and, lte, sql, isNull, isNotNull } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   
-  getAllJobs(tenantId: string): Promise<Job[]>;
+  getAllJobs(tenantId: string, includeArchived?: boolean): Promise<Job[]>;
+  getArchivedJobs(tenantId: string): Promise<Job[]>;
   getJob(tenantId: string, id: string): Promise<Job | undefined>;
   createJob(tenantId: string, job: InsertJob): Promise<Job>;
   updateJob(tenantId: string, id: string, job: Partial<InsertJob>): Promise<Job | undefined>;
   deleteJob(tenantId: string, id: string): Promise<boolean>;
+  archiveJob(tenantId: string, id: string, reason?: string): Promise<Job | undefined>;
+  restoreJob(tenantId: string, id: string): Promise<Job | undefined>;
   
   getAllCandidates(tenantId: string): Promise<Candidate[]>;
   getCandidate(tenantId: string, id: string): Promise<Candidate | undefined>;
@@ -310,8 +313,19 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async getAllJobs(tenantId: string): Promise<Job[]> {
-    return await db.select().from(jobs).where(eq(jobs.tenantId, tenantId)).orderBy(desc(jobs.createdAt));
+  async getAllJobs(tenantId: string, includeArchived: boolean = false): Promise<Job[]> {
+    if (includeArchived) {
+      return await db.select().from(jobs).where(eq(jobs.tenantId, tenantId)).orderBy(desc(jobs.createdAt));
+    }
+    return await db.select().from(jobs).where(
+      and(eq(jobs.tenantId, tenantId), sql`${jobs.archivedAt} IS NULL`)
+    ).orderBy(desc(jobs.createdAt));
+  }
+
+  async getArchivedJobs(tenantId: string): Promise<Job[]> {
+    return await db.select().from(jobs).where(
+      and(eq(jobs.tenantId, tenantId), sql`${jobs.archivedAt} IS NOT NULL`)
+    ).orderBy(desc(jobs.archivedAt));
   }
 
   async getJob(tenantId: string, id: string): Promise<Job | undefined> {
@@ -339,6 +353,32 @@ export class DatabaseStorage implements IStorage {
   async deleteJob(tenantId: string, id: string): Promise<boolean> {
     const result = await db.delete(jobs).where(and(eq(jobs.id, id), eq(jobs.tenantId, tenantId)));
     return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async archiveJob(tenantId: string, id: string, reason?: string): Promise<Job | undefined> {
+    const [job] = await db
+      .update(jobs)
+      .set({ 
+        archivedAt: new Date(), 
+        archivedReason: reason || null,
+        updatedAt: new Date() 
+      })
+      .where(and(eq(jobs.id, id), eq(jobs.tenantId, tenantId)))
+      .returning();
+    return job || undefined;
+  }
+
+  async restoreJob(tenantId: string, id: string): Promise<Job | undefined> {
+    const [job] = await db
+      .update(jobs)
+      .set({ 
+        archivedAt: null, 
+        archivedReason: null,
+        updatedAt: new Date() 
+      })
+      .where(and(eq(jobs.id, id), eq(jobs.tenantId, tenantId)))
+      .returning();
+    return job || undefined;
   }
 
   async getAllCandidates(tenantId: string): Promise<Candidate[]> {

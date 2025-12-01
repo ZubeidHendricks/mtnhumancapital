@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { jobsService, candidateService } from "@/lib/api";
+import { jobsService, candidateService, api } from "@/lib/api";
 import { Navbar } from "@/components/layout/navbar";
 import { useTenantQueryKey } from "@/hooks/useTenant";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -58,7 +58,8 @@ import {
   ExternalLink,
   MessageCircle,
   BookOpen,
-  Timer
+  Timer,
+  RotateCcw
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { motion } from "framer-motion";
@@ -95,6 +96,7 @@ export default function HRDashboard() {
   const [activeTab, setActiveTab] = useState("recruitment");
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isCreateJobOpen, setIsCreateJobOpen] = useState(false);
+  const [showArchivedJobs, setShowArchivedJobs] = useState(false);
   const [isEmailOpen, setIsEmailOpen] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
   const [emailSubject, setEmailSubject] = useState("");
@@ -365,6 +367,25 @@ BENEFITS:
     placeholderData: [] 
   });
 
+  const archivedJobsKey = useTenantQueryKey("archivedJobs");
+  const { 
+    data: archivedJobs = [], 
+    isLoading: loadingArchivedJobs
+  } = useQuery({
+    queryKey: archivedJobsKey,
+    queryFn: async () => {
+      try {
+        return await jobsService.getArchived();
+      } catch (e) {
+        console.error("Failed to fetch archived jobs:", e);
+        return [];
+      }
+    },
+    enabled: showArchivedJobs,
+    retry: 1,
+    placeholderData: [] 
+  });
+
   const { 
     data: candidates, 
     isLoading: loadingCandidates,
@@ -560,6 +581,15 @@ BENEFITS:
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      className="gap-2 border-white/10 hover:bg-white/5"
+                      onClick={() => setShowArchivedJobs(!showArchivedJobs)}
+                      data-testid="toggle-archived-jobs"
+                    >
+                      <FileArchive className="h-4 w-4" />
+                      {showArchivedJobs ? 'Hide Archived' : 'Show Archived'}
+                    </Button>
                     <Dialog open={isCreateJobOpen} onOpenChange={setIsCreateJobOpen}>
                       <DialogTrigger asChild>
                         <Button variant="outline" className="gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10">
@@ -608,13 +638,59 @@ BENEFITS:
                                 {job.status}
                               </Badge>
                             </div>
-                            <div className="col-span-2 text-right">
+                            <div className="col-span-2 text-right flex justify-end gap-2">
                               <Link href={`/candidates-list?jobId=${job.id}`}>
                                 <Button variant="outline" size="sm" className="gap-2 border-white/10 hover:bg-white/5" data-testid={`button-view-candidates-${job.id}`}>
                                   <Eye className="h-4 w-4" />
-                                  View Details
+                                  View
                                 </Button>
                               </Link>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" data-testid={`button-job-actions-${job.id}`}>
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48">
+                                  <DropdownMenuLabel>Job Actions</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem 
+                                    onClick={async () => {
+                                      try {
+                                        await api.post(`/jobs/${job.id}/archive`, { reason: 'Archived from Jobs list' });
+                                        queryClient.invalidateQueries({ queryKey: jobsKey });
+                                        toast.success("Job archived successfully");
+                                      } catch (error) {
+                                        toast.error("Failed to archive job");
+                                      }
+                                    }}
+                                    className="cursor-pointer"
+                                    data-testid={`button-archive-job-${job.id}`}
+                                  >
+                                    <FileArchive className="h-4 w-4 mr-2" />
+                                    Archive Job
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem 
+                                    onClick={async () => {
+                                      if (confirm("Are you sure you want to permanently delete this job? This cannot be undone.")) {
+                                        try {
+                                          await api.delete(`/jobs/${job.id}`);
+                                          queryClient.invalidateQueries({ queryKey: jobsKey });
+                                          toast.success("Job deleted successfully");
+                                        } catch (error) {
+                                          toast.error("Failed to delete job");
+                                        }
+                                      }
+                                    }}
+                                    className="cursor-pointer text-red-400 focus:text-red-400"
+                                    data-testid={`button-delete-job-${job.id}`}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Delete Job
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
                           </div>
                         );
@@ -636,6 +712,84 @@ BENEFITS:
                 </div>
               </CardContent>
             </Card>
+
+            {/* ARCHIVED JOBS */}
+            {showArchivedJobs && (
+              <Card className="border-white/10 bg-card/20">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <FileArchive className="h-5 w-5 text-gray-400" />
+                        Archived Roles
+                      </CardTitle>
+                      <CardDescription>
+                        {loadingArchivedJobs ? "Loading archived positions..." : `${archivedJobs.length} archived job${archivedJobs.length !== 1 ? 's' : ''}`}
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="rounded-md border border-white/10 overflow-hidden">
+                    <div className="bg-white/5 px-4 py-3 grid grid-cols-12 text-sm font-medium text-muted-foreground">
+                      <div className="col-span-4">Job Title</div>
+                      <div className="col-span-3">Department</div>
+                      <div className="col-span-3">Archived On</div>
+                      <div className="col-span-2 text-right">Actions</div>
+                    </div>
+                    <ScrollArea className="h-[200px]">
+                      {loadingArchivedJobs ? (
+                        <div className="flex flex-col items-center justify-center h-32 gap-2 text-muted-foreground">
+                          <Loader2 className="w-6 h-6 animate-spin" />
+                          <p>Loading archived jobs...</p>
+                        </div>
+                      ) : archivedJobs.length > 0 ? (
+                        archivedJobs.map((job: any) => (
+                          <div key={job.id} className="px-4 py-3 grid grid-cols-12 items-center border-t border-white/5 hover:bg-white/5 transition-colors">
+                            <div className="col-span-4">
+                              <div className="font-medium text-gray-400">{job.title}</div>
+                              <div className="text-xs text-muted-foreground mt-0.5">
+                                {job.location || "No location"}
+                              </div>
+                            </div>
+                            <div className="col-span-3 text-sm text-muted-foreground">{job.department || 'General'}</div>
+                            <div className="col-span-3 text-sm text-muted-foreground">
+                              {job.archivedAt ? new Date(job.archivedAt).toLocaleDateString() : 'Unknown'}
+                            </div>
+                            <div className="col-span-2 text-right flex justify-end gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="gap-2 border-green-500/20 hover:bg-green-500/10 text-green-400"
+                                onClick={async () => {
+                                  try {
+                                    await jobsService.restore(job.id);
+                                    queryClient.invalidateQueries({ queryKey: jobsKey });
+                                    queryClient.invalidateQueries({ queryKey: archivedJobsKey });
+                                    toast.success("Job restored successfully");
+                                  } catch (error) {
+                                    toast.error("Failed to restore job");
+                                  }
+                                }}
+                                data-testid={`button-restore-job-${job.id}`}
+                              >
+                                <RotateCcw className="h-4 w-4" />
+                                Restore
+                              </Button>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-32 gap-2 text-muted-foreground">
+                          <FileArchive className="h-8 w-8 opacity-50" />
+                          <p>No archived jobs</p>
+                        </div>
+                      )}
+                    </ScrollArea>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* SHORTLISTED CANDIDATES */}
             <Card className="border-white/10 bg-card/20">

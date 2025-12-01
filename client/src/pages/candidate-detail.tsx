@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Mail, Phone, MapPin, Briefcase, Calendar, Award, Languages, FileText, ShieldCheck, Mic, ChevronDown, Clock, MessageCircle, User, Bot, ArrowLeft } from "lucide-react";
+import { Mail, Phone, MapPin, Briefcase, Calendar, Award, Languages, FileText, ShieldCheck, Mic, ChevronDown, Clock, MessageCircle, User, Bot, ArrowLeft, Download, ExternalLink, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import type { Candidate, InterviewSession } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -155,6 +156,102 @@ export default function CandidateDetail() {
             </CardHeader>
             <CardContent>
               <p className="text-sm leading-relaxed" data-testid="text-summary">{candidate.summary}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* CV / Resume */}
+        {candidate.cvUrl && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                CV / Resume
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <FileText className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Resume Document</p>
+                    <p className="text-sm text-muted-foreground">
+                      {candidate.cvUrl.split('/').pop() || 'Resume.pdf'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-2" data-testid="button-view-cv">
+                        <Eye className="h-4 w-4" />
+                        View
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl h-[80vh]">
+                      <DialogHeader>
+                        <DialogTitle>CV Preview - {candidate.fullName}</DialogTitle>
+                      </DialogHeader>
+                      <div className="flex-1 overflow-hidden rounded-lg border">
+                        {candidate.cvUrl.endsWith('.pdf') ? (
+                          <iframe
+                            src={candidate.cvUrl}
+                            className="w-full h-full min-h-[60vh]"
+                            title="CV Preview"
+                          />
+                        ) : candidate.cvUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                          <img 
+                            src={candidate.cvUrl} 
+                            alt="CV Preview" 
+                            className="w-full h-auto object-contain"
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+                            <FileText className="h-16 w-16 text-muted-foreground mb-4" />
+                            <p className="text-lg font-medium">Preview not available</p>
+                            <p className="text-sm text-muted-foreground mb-4">
+                              This file type cannot be previewed in the browser.
+                            </p>
+                            <a 
+                              href={candidate.cvUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                            >
+                              <Button className="gap-2">
+                                <ExternalLink className="h-4 w-4" />
+                                Open in New Tab
+                              </Button>
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                  <a 
+                    href={candidate.cvUrl} 
+                    download 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                  >
+                    <Button variant="outline" size="sm" className="gap-2" data-testid="button-download-cv">
+                      <Download className="h-4 w-4" />
+                      Download
+                    </Button>
+                  </a>
+                  <a 
+                    href={candidate.cvUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                  >
+                    <Button variant="outline" size="sm" className="gap-2" data-testid="button-open-cv">
+                      <ExternalLink className="h-4 w-4" />
+                      Open
+                    </Button>
+                  </a>
+                </div>
+              </div>
             </CardContent>
           </Card>
         )}

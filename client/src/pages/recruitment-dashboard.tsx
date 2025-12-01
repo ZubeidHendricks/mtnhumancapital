@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { candidateService, jobsService } from "@/lib/api";
 import { useTenantQueryKey } from "@/hooks/useTenant";
 import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -35,7 +37,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   XCircle,
-  Filter
+  Filter,
+  Eye
 } from "lucide-react";
 
 // Data from Vianna's Excel file
@@ -568,14 +571,28 @@ export default function RecruitmentDashboard() {
               candidates.map((candidate) => (
                 <div key={candidate.id} className="p-4 bg-white/5 rounded-lg border border-white/10">
                   <div className="flex justify-between items-start">
-                    <div>
+                    <div className="flex-1">
                       <h3 className="font-semibold">{candidate.fullName}</h3>
                       <p className="text-sm text-gray-400">{candidate.email}</p>
                       {candidate.phone && <p className="text-sm text-gray-400">{candidate.phone}</p>}
+                      {candidate.role && <p className="text-sm text-gray-500 mt-1">{candidate.role}</p>}
                     </div>
-                    <div className="text-right">
-                      <Badge className="bg-purple-500/20 text-purple-300">{candidate.stage}</Badge>
-                      <p className="text-xs text-gray-500 mt-1">{candidate.status}</p>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <Badge className="bg-purple-500/20 text-purple-300">{candidate.stage}</Badge>
+                        <p className="text-xs text-gray-500 mt-1">{candidate.status}</p>
+                      </div>
+                      <Link href={`/candidates/${candidate.id}`}>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="gap-1 border-white/20 hover:bg-white/10"
+                          data-testid={`button-view-profile-${candidate.id}`}
+                        >
+                          <Eye className="w-4 h-4" />
+                          View
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                 </div>
@@ -599,12 +616,26 @@ export default function RecruitmentDashboard() {
             {candidates?.filter(c => c.stage === "Shortlisted").map((candidate) => (
               <div key={candidate.id} className="p-4 bg-white/5 rounded-lg border border-white/10">
                 <div className="flex justify-between items-start">
-                  <div>
+                  <div className="flex-1">
                     <h3 className="font-semibold">{candidate.fullName}</h3>
                     <p className="text-sm text-gray-400">{candidate.email}</p>
                     {candidate.phone && <p className="text-sm text-gray-400">{candidate.phone}</p>}
+                    {candidate.role && <p className="text-sm text-gray-500 mt-1">{candidate.role}</p>}
                   </div>
-                  <Badge className="bg-blue-500/20 text-blue-300">{candidate.status}</Badge>
+                  <div className="flex items-center gap-3">
+                    <Badge className="bg-blue-500/20 text-blue-300">{candidate.status}</Badge>
+                    <Link href={`/candidates/${candidate.id}`}>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="gap-1 border-white/20 hover:bg-white/10"
+                        data-testid={`button-view-shortlisted-${candidate.id}`}
+                      >
+                        <Eye className="w-4 h-4" />
+                        View
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}
@@ -616,7 +647,7 @@ export default function RecruitmentDashboard() {
       </Dialog>
 
       <Dialog open={selectedModal === 'placements'} onOpenChange={() => setSelectedModal(null)}>
-        <DialogContent className="bg-black border-white/10 text-white max-w-3xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="bg-black border-white/10 text-white max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Successful Placements</DialogTitle>
             <DialogDescription className="text-gray-400">
@@ -627,11 +658,25 @@ export default function RecruitmentDashboard() {
             {candidates?.filter(c => c.stage === "Hired").map((candidate) => (
               <div key={candidate.id} className="p-4 bg-white/5 rounded-lg border border-white/10">
                 <div className="flex justify-between items-start">
-                  <div>
+                  <div className="flex-1">
                     <h3 className="font-semibold">{candidate.fullName}</h3>
                     <p className="text-sm text-gray-400">{candidate.email}</p>
+                    {candidate.role && <p className="text-sm text-gray-500 mt-1">{candidate.role}</p>}
                   </div>
-                  <Badge className="bg-green-500/20 text-green-300">Hired</Badge>
+                  <div className="flex items-center gap-3">
+                    <Badge className="bg-green-500/20 text-green-300">Hired</Badge>
+                    <Link href={`/candidates/${candidate.id}`}>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="gap-1 border-white/20 hover:bg-white/10"
+                        data-testid={`button-view-hired-${candidate.id}`}
+                      >
+                        <Eye className="w-4 h-4" />
+                        View
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}
@@ -654,13 +699,27 @@ export default function RecruitmentDashboard() {
             {candidates?.filter(c => c.stage === "Lost" || c.status === "Rejected").map((candidate) => (
               <div key={candidate.id} className="p-4 bg-white/5 rounded-lg border border-white/10">
                 <div className="flex justify-between items-start">
-                  <div>
+                  <div className="flex-1">
                     <h3 className="font-semibold">{candidate.fullName}</h3>
                     <p className="text-sm text-gray-400">{candidate.email}</p>
+                    {candidate.role && <p className="text-sm text-gray-500 mt-1">{candidate.role}</p>}
                   </div>
-                  <div className="text-right">
-                    <Badge className="bg-red-500/20 text-red-300">{candidate.stage}</Badge>
-                    <p className="text-xs text-gray-500 mt-1">{candidate.status}</p>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <Badge className="bg-red-500/20 text-red-300">{candidate.stage}</Badge>
+                      <p className="text-xs text-gray-500 mt-1">{candidate.status}</p>
+                    </div>
+                    <Link href={`/candidates/${candidate.id}`}>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="gap-1 border-white/20 hover:bg-white/10"
+                        data-testid={`button-view-lost-${candidate.id}`}
+                      >
+                        <Eye className="w-4 h-4" />
+                        View
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </div>
