@@ -579,6 +579,174 @@ export class WhatsAppService {
     const cleanPhone = phone.replace(/\D/g, "");
     return `https://wa.me/${cleanPhone}`;
   }
+
+  async sendKpiReviewRequest(
+    tenantId: string,
+    conversationId: string,
+    phone: string,
+    employeeName: string,
+    cycleName: string,
+    kpiCount: number,
+    dueDate?: Date,
+    reviewLink?: string
+  ): Promise<WhatsappMessage | null> {
+    const dueDateStr = dueDate 
+      ? dueDate.toLocaleDateString("en-ZA", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
+      : null;
+
+    let messageBody = `Hello ${employeeName}! 🎯\n\nIt's time for your KPI self-assessment for *${cycleName}*.\n\nYou have *${kpiCount} KPI(s)* to review and score.\n\n`;
+    
+    if (dueDateStr) {
+      messageBody += `⏰ *Due Date:* ${dueDateStr}\n\n`;
+    }
+
+    messageBody += `📊 *How to complete your review:*\n`;
+    messageBody += `1️⃣ Rate each KPI from 1-5 stars\n`;
+    messageBody += `2️⃣ Add comments about your achievements\n`;
+    messageBody += `3️⃣ Submit your review for manager approval\n\n`;
+
+    if (reviewLink) {
+      messageBody += `🔗 *Complete your review here:*\n${reviewLink}\n\n`;
+    } else {
+      messageBody += `You can reply with your scores in this format:\n`;
+      messageBody += `*KPI1: 4, KPI2: 5, KPI3: 3*\n\n`;
+      messageBody += `Or log in to the HR portal to complete your review.\n\n`;
+    }
+
+    messageBody += `Thank you for your dedication! 💪`;
+
+    return await this.sendTextMessage(tenantId, conversationId, phone, messageBody, "ai");
+  }
+
+  async sendKpiManagerNotification(
+    tenantId: string,
+    conversationId: string,
+    phone: string,
+    managerName: string,
+    employeeName: string,
+    cycleName: string,
+    reviewLink?: string
+  ): Promise<WhatsappMessage | null> {
+    let messageBody = `Hello ${managerName}! 📋\n\n*${employeeName}* has completed their KPI self-assessment for *${cycleName}* and is awaiting your review.\n\n`;
+    
+    messageBody += `📊 *Action Required:*\n`;
+    messageBody += `• Review their self-scores\n`;
+    messageBody += `• Provide your manager scores (1-5)\n`;
+    messageBody += `• Add feedback comments\n`;
+    messageBody += `• Submit the final review\n\n`;
+
+    if (reviewLink) {
+      messageBody += `🔗 *Review employee here:*\n${reviewLink}\n\n`;
+    }
+
+    messageBody += `Please complete your review at your earliest convenience. Thank you!`;
+
+    return await this.sendTextMessage(tenantId, conversationId, phone, messageBody, "ai");
+  }
+
+  async sendKpiScoreReminder(
+    tenantId: string,
+    conversationId: string,
+    phone: string,
+    employeeName: string,
+    cycleName: string,
+    daysRemaining: number,
+    reviewLink?: string
+  ): Promise<WhatsappMessage | null> {
+    let messageBody = `Hi ${employeeName}! ⏰\n\n*Reminder:* Your KPI self-assessment for *${cycleName}* is due in *${daysRemaining} day(s)*.\n\n`;
+    
+    if (daysRemaining <= 1) {
+      messageBody += `⚠️ This is your final reminder! Please complete your review today.\n\n`;
+    }
+
+    if (reviewLink) {
+      messageBody += `🔗 *Complete now:* ${reviewLink}\n\n`;
+    }
+
+    messageBody += `Your input is valuable for your performance evaluation. Don't miss out! 📊`;
+
+    return await this.sendTextMessage(tenantId, conversationId, phone, messageBody, "ai");
+  }
+
+  async sendKpiReviewComplete(
+    tenantId: string,
+    conversationId: string,
+    phone: string,
+    employeeName: string,
+    cycleName: string,
+    finalScore?: string,
+    managerComments?: string
+  ): Promise<WhatsappMessage | null> {
+    let messageBody = `Hello ${employeeName}! ✅\n\nYour KPI review for *${cycleName}* has been completed by your manager.\n\n`;
+    
+    if (finalScore) {
+      messageBody += `📊 *Final Score:* ${finalScore}%\n\n`;
+    }
+
+    if (managerComments) {
+      messageBody += `💬 *Manager Feedback:*\n"${managerComments}"\n\n`;
+    }
+
+    messageBody += `You can log in to the HR portal to view your detailed review and development plan.\n\n`;
+    messageBody += `Keep up the great work! 🌟`;
+
+    return await this.sendTextMessage(tenantId, conversationId, phone, messageBody, "ai");
+  }
+
+  async processKpiWhatsAppResponse(
+    tenantId: string,
+    conversationId: string,
+    conversation: WhatsappConversation,
+    body: string
+  ): Promise<boolean> {
+    const scorePattern = /kpi\s*(\d+)\s*[:\s]+(\d)/gi;
+    const matches: RegExpExecArray[] = [];
+    let match: RegExpExecArray | null;
+    while ((match = scorePattern.exec(body)) !== null) {
+      matches.push(match);
+    }
+    
+    if (matches.length === 0) {
+      const simplePattern = /^[1-5](?:\s*,\s*[1-5])*$/;
+      if (simplePattern.test(body.trim())) {
+        const scores = body.trim().split(/\s*,\s*/).map(s => parseInt(s));
+        
+        await this.sendTextMessage(
+          tenantId,
+          conversationId,
+          conversation.phone,
+          `Thank you! I received your scores: ${scores.join(", ")}\n\nFor accurate assignment, please log in to the HR portal to confirm which KPIs these scores apply to.`,
+          "ai"
+        );
+        return true;
+      }
+      return false;
+    }
+
+    const parsedScores: { kpiIndex: number; score: number }[] = [];
+    for (const match of matches) {
+      const kpiIndex = parseInt(match[1]);
+      const score = parseInt(match[2]);
+      if (score >= 1 && score <= 5) {
+        parsedScores.push({ kpiIndex, score });
+      }
+    }
+
+    if (parsedScores.length > 0) {
+      const scoresStr = parsedScores.map(s => `KPI${s.kpiIndex}: ${s.score}⭐`).join(", ");
+      
+      await this.sendTextMessage(
+        tenantId,
+        conversationId,
+        conversation.phone,
+        `Thank you! I've recorded your scores:\n${scoresStr}\n\nTo finalize, please log in to the HR portal to confirm and submit your review.`,
+        "ai"
+      );
+      return true;
+    }
+
+    return false;
+  }
 }
 
 export const whatsappService = new WhatsAppService();

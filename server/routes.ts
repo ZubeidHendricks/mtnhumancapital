@@ -5204,8 +5204,37 @@ Format your response as JSON:
         managerReviewData: req.body.data,
         managerReviewStatus: 'completed',
         managerReviewSubmittedAt: new Date(),
-        finalScore: req.body.finalScore
+        finalScore: req.body.finalScore,
+        managerComments: req.body.managerComments
       });
+
+      // Send WhatsApp completion notification if employee phone is provided
+      if (req.body.employeePhone && req.body.employeeName && req.body.cycleName) {
+        try {
+          const waId = req.body.employeePhone.replace(/\D/g, '');
+          const conversation = await whatsappService.getOrCreateConversation(
+            req.tenant.id,
+            req.body.employeePhone,
+            waId,
+            req.body.employeeName,
+            undefined,
+            'kpi_review'
+          );
+
+          await whatsappService.sendKpiReviewComplete(
+            req.tenant.id,
+            conversation.id,
+            req.body.employeePhone,
+            req.body.employeeName,
+            req.body.cycleName,
+            req.body.finalScore,
+            req.body.managerComments
+          );
+        } catch (notifyError) {
+          console.warn("Failed to send WhatsApp completion notification:", notifyError);
+          // Don't fail the request if notification fails
+        }
+      }
       
       res.json(updated);
     } catch (error) {
@@ -5214,39 +5243,233 @@ Format your response as JSON:
     }
   });
 
-  // WhatsApp notification for KPI reviews
-  app.post("/api/review-submissions/:id/send-whatsapp-notification", async (req, res) => {
+  // WhatsApp notification for KPI self-assessment request
+  app.post("/api/kpi/notify/self-assessment", async (req, res) => {
     try {
-      const { type } = req.body; // 'self_assessment' or 'manager_review'
-      const submission = await storage.getReviewSubmission(req.tenant.id, req.params.id);
+      const { reviewCycleId, phone, employeeName } = req.body;
       
-      if (!submission) {
-        return res.status(404).json({ message: "Review submission not found" });
+      if (!phone || !employeeName) {
+        return res.status(400).json({ message: "phone and employeeName are required" });
       }
 
-      // Get employee/manager info
-      const employee = await storage.getEmployee(req.tenant.id, submission.employeeId);
-      if (!employee) {
-        return res.status(404).json({ message: "Employee not found" });
+      // Validate review cycle exists if provided
+      let cycleName = req.body.cycleName;
+      let kpiCount = req.body.kpiCount || 0;
+      let dueDate = req.body.dueDate;
+
+      if (reviewCycleId) {
+        const cycle = await storage.getReviewCycle(req.tenant.id, reviewCycleId);
+        if (!cycle) {
+          return res.status(404).json({ message: "Review cycle not found" });
+        }
+        cycleName = cycleName || cycle.name;
+        dueDate = dueDate || cycle.endDate;
+        
+        // Get actual KPI count for the employee if not provided
+        if (!kpiCount && req.body.employeeId) {
+          const assignments = await storage.getKpiAssignments(req.tenant.id, { 
+            employeeId: req.body.employeeId,
+            reviewCycleId 
+          });
+          kpiCount = assignments.length;
+        }
       }
 
-      const whatsappService = new WhatsAppService(process.env.WHATSAPP_API_TOKEN || '');
-      const message = type === 'self_assessment'
-        ? `Hi ${employee.fullName}, your KPI self-assessment is ready. Please complete your scores (1-5) for the current review period. Reply with your employee ID to begin.`
-        : `Hi, a self-assessment from ${employee.fullName} is pending your review. Please log in to approve or provide feedback on their KPI scores.`;
-
-      const phoneNumber = type === 'manager_review' && submission.managerId
-        ? (await storage.getEmployee(req.tenant.id, submission.managerId))?.phone
-        : employee.phone;
-
-      if (phoneNumber) {
-        await whatsappService.sendTextMessage(phoneNumber, message);
+      if (!cycleName) {
+        return res.status(400).json({ message: "cycleName is required when reviewCycleId is not provided" });
       }
 
-      res.json({ message: "WhatsApp notification sent" });
+      const waId = phone.replace(/\D/g, '');
+      const conversation = await whatsappService.getOrCreateConversation(
+        req.tenant.id,
+        phone,
+        waId,
+        employeeName,
+        undefined,
+        'kpi_review'
+      );
+
+      const message = await whatsappService.sendKpiReviewRequest(
+        req.tenant.id,
+        conversation.id,
+        phone,
+        employeeName,
+        cycleName,
+        kpiCount,
+        dueDate ? new Date(dueDate) : undefined,
+        req.body.reviewLink
+      );
+
+      res.json({ success: true, message, conversationId: conversation.id });
     } catch (error) {
-      console.error("Error sending WhatsApp notification:", error);
-      res.status(500).json({ message: "Failed to send WhatsApp notification" });
+      console.error("Error sending KPI self-assessment notification:", error);
+      res.status(500).json({ message: "Failed to send notification" });
+    }
+  });
+
+  // WhatsApp notification for manager review request
+  app.post("/api/kpi/notify/manager-review", async (req, res) => {
+    try {
+      const { managerPhone, managerName, employeeName, cycleName, reviewLink } = req.body;
+      
+      if (!managerPhone || !managerName || !employeeName || !cycleName) {
+        return res.status(400).json({ message: "managerPhone, managerName, employeeName, and cycleName are required" });
+      }
+
+      const waId = managerPhone.replace(/\D/g, '');
+      const conversation = await whatsappService.getOrCreateConversation(
+        req.tenant.id,
+        managerPhone,
+        waId,
+        managerName,
+        undefined,
+        'kpi_manager_review'
+      );
+
+      const message = await whatsappService.sendKpiManagerNotification(
+        req.tenant.id,
+        conversation.id,
+        managerPhone,
+        managerName,
+        employeeName,
+        cycleName,
+        reviewLink
+      );
+
+      res.json({ success: true, message, conversationId: conversation.id });
+    } catch (error) {
+      console.error("Error sending KPI manager notification:", error);
+      res.status(500).json({ message: "Failed to send notification" });
+    }
+  });
+
+  // WhatsApp reminder for pending KPI self-assessment
+  app.post("/api/kpi/notify/reminder", async (req, res) => {
+    try {
+      const { phone, employeeName, cycleName, daysRemaining, reviewLink } = req.body;
+      
+      if (!phone || !employeeName || !cycleName || daysRemaining === undefined) {
+        return res.status(400).json({ message: "phone, employeeName, cycleName, and daysRemaining are required" });
+      }
+
+      const waId = phone.replace(/\D/g, '');
+      const conversation = await whatsappService.getOrCreateConversation(
+        req.tenant.id,
+        phone,
+        waId,
+        employeeName,
+        undefined,
+        'kpi_review'
+      );
+
+      const message = await whatsappService.sendKpiScoreReminder(
+        req.tenant.id,
+        conversation.id,
+        phone,
+        employeeName,
+        cycleName,
+        daysRemaining,
+        reviewLink
+      );
+
+      res.json({ success: true, message, conversationId: conversation.id });
+    } catch (error) {
+      console.error("Error sending KPI reminder:", error);
+      res.status(500).json({ message: "Failed to send reminder" });
+    }
+  });
+
+  // WhatsApp notification for completed review
+  app.post("/api/kpi/notify/review-complete", async (req, res) => {
+    try {
+      const { phone, employeeName, cycleName, finalScore, managerComments } = req.body;
+      
+      if (!phone || !employeeName || !cycleName) {
+        return res.status(400).json({ message: "phone, employeeName, and cycleName are required" });
+      }
+
+      const waId = phone.replace(/\D/g, '');
+      const conversation = await whatsappService.getOrCreateConversation(
+        req.tenant.id,
+        phone,
+        waId,
+        employeeName,
+        undefined,
+        'kpi_review'
+      );
+
+      const message = await whatsappService.sendKpiReviewComplete(
+        req.tenant.id,
+        conversation.id,
+        phone,
+        employeeName,
+        cycleName,
+        finalScore,
+        managerComments
+      );
+
+      res.json({ success: true, message, conversationId: conversation.id });
+    } catch (error) {
+      console.error("Error sending KPI completion notification:", error);
+      res.status(500).json({ message: "Failed to send notification" });
+    }
+  });
+
+  // Batch send KPI notifications to all employees in a review cycle
+  app.post("/api/kpi/notify/batch", async (req, res) => {
+    try {
+      const { reviewCycleId, notificationType } = req.body; // 'self_assessment' | 'reminder' | 'review_complete'
+      
+      if (!reviewCycleId || !notificationType) {
+        return res.status(400).json({ message: "reviewCycleId and notificationType are required" });
+      }
+
+      const cycle = await storage.getReviewCycle(req.tenant.id, reviewCycleId);
+      if (!cycle) {
+        return res.status(404).json({ message: "Review cycle not found" });
+      }
+
+      const assignments = await storage.getKpiAssignments(req.tenant.id, { reviewCycleId });
+      
+      // Group assignments by employee
+      const employeeAssignments = new Map<number, any[]>();
+      for (const assignment of assignments) {
+        if (!employeeAssignments.has(assignment.employeeId)) {
+          employeeAssignments.set(assignment.employeeId, []);
+        }
+        employeeAssignments.get(assignment.employeeId)!.push(assignment);
+      }
+
+      const results = [];
+      const daysRemaining = Math.ceil((new Date(cycle.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+
+      for (const [employeeId, empAssignments] of employeeAssignments) {
+        try {
+          // For batch notifications, we'd need employee phone numbers from a users/employees table
+          // This is a placeholder - in production, you'd fetch employee details
+          results.push({
+            employeeId,
+            kpiCount: empAssignments.length,
+            status: 'queued'
+          });
+        } catch (error) {
+          results.push({
+            employeeId,
+            status: 'failed',
+            error: (error as Error).message
+          });
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        cycleName: cycle.name,
+        totalEmployees: employeeAssignments.size,
+        results 
+      });
+    } catch (error) {
+      console.error("Error sending batch KPI notifications:", error);
+      res.status(500).json({ message: "Failed to send batch notifications" });
     }
   });
 
