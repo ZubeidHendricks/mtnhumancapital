@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Cpu, LayoutDashboard, Building2, Mic, Video, ChevronDown, UserSearch, Shield, Settings, Users, Briefcase, TrendingUp, FileText, MessageCircle, ClipboardList, Sparkles } from "lucide-react";
+import { Menu, X, Cpu, LayoutDashboard, Building2, Mic, Video, ChevronDown, UserSearch, Shield, Settings, Users, Briefcase, TrendingUp, FileText, MessageCircle, ClipboardList, Sparkles, Target } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -149,6 +149,12 @@ export function Navbar() {
                 <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
                   <MessageCircle className="w-4 h-4 mr-2 text-green-400" />
                   <span>WhatsApp Monitor</span>
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/kpi-management">
+                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                  <Target className="w-4 h-4 mr-2 text-blue-400" />
+                  <span>KPI Management</span>
                 </DropdownMenuItem>
               </Link>
               <DropdownMenuSeparator className="bg-white/10" />

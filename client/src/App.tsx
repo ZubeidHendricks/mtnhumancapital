@@ -33,6 +33,7 @@ import OnboardingDashboard from "@/pages/onboarding-dashboard";
 import HRConversations from "@/pages/hr-conversations";
 import InterviewConsole from "@/pages/interview-console";
 import Recommendations from "@/pages/recommendations";
+import KpiManagement from "@/pages/kpi-management";
 
 function Router() {
   return (
@@ -65,6 +66,7 @@ function Router() {
       <Route path="/hr-conversations" component={HRConversations} />
       <Route path="/interview-console" component={InterviewConsole} />
       <Route path="/recommendations" component={Recommendations} />
+      <Route path="/kpi-management" component={KpiManagement} />
       <Route component={NotFound} />
     </Switch>
   );
