@@ -55,6 +55,17 @@ interface Candidate {
   phone: string;
 }
 
+interface DocumentRequirement {
+  id: string;
+  candidateId: string;
+  documentType: string;
+  description?: string;
+  referenceCode: string;
+  status: 'pending' | 'submitted' | 'verified' | 'rejected';
+  dueDate?: string;
+  createdAt: string;
+}
+
 const DOC_TYPE_OPTIONS = [
   { value: "id_document", label: "ID Document" },
   { value: "proof_of_address", label: "Proof of Address" },
@@ -77,6 +88,7 @@ export default function HRConversations() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterMode, setFilterMode] = useState<'all' | 'ai' | 'human' | 'unread'>('all');
   const [showQuickAction, setShowQuickAction] = useState<'document' | 'appointment' | null>(null);
+  const [documentRequirements, setDocumentRequirements] = useState<DocumentRequirement[]>([]);
   const { toast } = useToast();
 
   const fetchConversations = useCallback(async () => {
@@ -181,9 +193,30 @@ export default function HRConversations() {
     setFilteredConversations(filtered);
   }, [conversations, searchQuery, filterMode, candidates]);
 
+  const fetchDocumentRequirements = async (candidateId: string) => {
+    try {
+      const response = await fetch(`/api/candidates/${candidateId}/document-requirements`);
+      if (response.ok) {
+        const data = await response.json();
+        setDocumentRequirements(data);
+      } else {
+        setDocumentRequirements([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch document requirements:", error);
+      setDocumentRequirements([]);
+    }
+  };
+
   const handleSelectConversation = (conv: WhatsappConversation) => {
     setActiveConversation(conv);
     fetchMessages(conv.id);
+    // Fetch document requirements if linked to a candidate
+    if (conv.candidateId) {
+      fetchDocumentRequirements(conv.candidateId);
+    } else {
+      setDocumentRequirements([]);
+    }
     // Mark as read
     fetch(`/api/whatsapp/conversations/${conv.id}/mark-read`, { method: "POST" });
   };
@@ -556,6 +589,55 @@ export default function HRConversations() {
                     </div>
                   </div>
                 </CardHeader>
+
+                {/* Reference Codes Panel */}
+                {documentRequirements.length > 0 && (
+                  <div className="px-4 py-3 bg-amber-50 border-b border-amber-200">
+                    <div className="flex items-center gap-2 mb-2">
+                      <FileUp className="h-4 w-4 text-amber-600" />
+                      <span className="text-sm font-medium text-amber-800">Active Document Requests</span>
+                      <Badge variant="outline" className="text-xs bg-amber-100 text-amber-700 border-amber-300">
+                        {documentRequirements.filter(r => r.status === 'pending').length} pending
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {documentRequirements.map((req) => (
+                        <div 
+                          key={req.id}
+                          className={`flex items-center justify-between px-3 py-2 rounded-md text-sm ${
+                            req.status === 'pending' 
+                              ? 'bg-white border border-amber-200' 
+                              : req.status === 'submitted'
+                              ? 'bg-blue-50 border border-blue-200'
+                              : req.status === 'verified'
+                              ? 'bg-green-50 border border-green-200'
+                              : 'bg-red-50 border border-red-200'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <code className="text-xs font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-700">
+                              {req.referenceCode}
+                            </code>
+                            <span className="text-gray-700">
+                              {req.description || DOC_TYPE_OPTIONS.find(d => d.value === req.documentType)?.label || req.documentType}
+                            </span>
+                          </div>
+                          <Badge 
+                            variant="outline" 
+                            className={`text-xs ${
+                              req.status === 'pending' ? 'text-amber-600 border-amber-300' :
+                              req.status === 'submitted' ? 'text-blue-600 border-blue-300' :
+                              req.status === 'verified' ? 'text-green-600 border-green-300' :
+                              'text-red-600 border-red-300'
+                            }`}
+                          >
+                            {req.status}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
                   {/* Messages */}

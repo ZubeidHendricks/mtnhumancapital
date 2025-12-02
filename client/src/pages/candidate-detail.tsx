@@ -1346,6 +1346,43 @@ export default function CandidateDetail() {
             )}
           </DialogHeader>
 
+          {/* Reference Codes Panel */}
+          {documentRequirements.filter(r => r.status === 'pending' || r.status === 'requested').length > 0 && (
+            <div className="px-4 py-3 bg-amber-50 border-b border-amber-200">
+              <div className="flex items-center gap-2 mb-2">
+                <FileUp className="h-4 w-4 text-amber-600" />
+                <span className="text-sm font-medium text-amber-800">Active Document Requests</span>
+                <Badge variant="outline" className="text-xs bg-amber-100 text-amber-700 border-amber-300">
+                  {documentRequirements.filter(r => r.status === 'pending' || r.status === 'requested').length} pending
+                </Badge>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {documentRequirements
+                  .filter(r => r.status === 'pending' || r.status === 'requested')
+                  .map((req) => (
+                    <div 
+                      key={req.id}
+                      className="flex items-center justify-between px-3 py-2 rounded-md text-sm bg-white border border-amber-200"
+                    >
+                      <div className="flex items-center gap-2">
+                        <code className="text-xs font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-700">
+                          {req.referenceCode}
+                        </code>
+                        <span className="text-gray-700 text-xs">
+                          {getDocTypeLabel(req.documentType)}
+                        </span>
+                      </div>
+                      {req.dueDate && (
+                        <span className="text-xs text-amber-600">
+                          Due: {format(new Date(req.dueDate), 'MMM d')}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
           <div className="flex-1 flex overflow-hidden">
             {/* Conversations List */}
             {conversations.length > 1 && (
