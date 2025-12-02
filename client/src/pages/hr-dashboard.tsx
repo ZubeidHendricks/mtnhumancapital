@@ -500,7 +500,13 @@ BENEFITS:
             <Link href="/whatsapp-monitor">
               <Button variant="outline" className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/30 hover:border-green-500/50 hover:bg-green-500/20 text-green-400">
                 <MessageCircle className="h-4 w-4 mr-2" />
-                WhatsApp
+                WhatsApp Monitor
+              </Button>
+            </Link>
+            <Link href="/hr-conversations">
+              <Button variant="outline" className="bg-gradient-to-r from-teal-500/10 to-cyan-500/10 border-teal-500/30 hover:border-teal-500/50 hover:bg-teal-500/20 text-teal-400">
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Conversations
               </Button>
             </Link>
           </div>

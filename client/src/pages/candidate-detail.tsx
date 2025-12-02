@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useRoute, Link, useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,9 +8,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Mail, Phone, MapPin, Briefcase, Calendar, Award, Languages, FileText, ShieldCheck, Mic, ChevronDown, Clock, MessageCircle, User, Bot, ArrowLeft, Download, ExternalLink, Eye, Plus, CheckCircle, AlertCircle, FileCheck, Send, RefreshCcw } from "lucide-react";
+import { Mail, Phone, MapPin, Briefcase, Calendar, Award, Languages, FileText, ShieldCheck, Mic, ChevronDown, Clock, MessageCircle, User, Bot, ArrowLeft, Download, ExternalLink, Eye, Plus, CheckCircle, AlertCircle, FileCheck, Send, RefreshCcw, MessageSquare, UserCheck, Zap, CalendarClock, FileUp, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Candidate, InterviewSession, IntegrityDocumentRequirement, CandidateDocument } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -34,6 +36,36 @@ interface CollectedDocument {
   referenceCode: string;
   collectedVia: string;
   createdAt?: string;
+}
+
+interface WhatsappConversation {
+  id: string;
+  candidateId: string | null;
+  phone: string;
+  name: string;
+  status: string;
+  type: string;
+  handoffMode: 'ai' | 'human';
+  handoffAt?: string;
+  handoffBy?: string;
+  assignedTo?: string;
+  unreadCount: number;
+  lastMessageAt?: string;
+  lastMessagePreview?: string;
+  createdAt: string;
+}
+
+interface WhatsappMessage {
+  id: string;
+  conversationId: string;
+  direction: 'inbound' | 'outbound';
+  senderType: 'candidate' | 'ai' | 'human' | 'system';
+  messageType: string;
+  body: string;
+  mediaUrl?: string;
+  mediaType?: string;
+  status: string;
+  createdAt: string;
 }
 
 const DOC_TYPE_OPTIONS = [
@@ -90,6 +122,19 @@ export default function CandidateDetail() {
   const [newDocDescription, setNewDocDescription] = useState("");
   const [newDocDueDate, setNewDocDueDate] = useState("");
   const { toast } = useToast();
+
+  // Conversation panel state
+  const [conversations, setConversations] = useState<WhatsappConversation[]>([]);
+  const [activeConversation, setActiveConversation] = useState<WhatsappConversation | null>(null);
+  const [messages, setMessages] = useState<WhatsappMessage[]>([]);
+  const [messageInput, setMessageInput] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [showConversationPanel, setShowConversationPanel] = useState(false);
+  const [conversationLoading, setConversationLoading] = useState(false);
+  const [showQuickActions, setShowQuickActions] = useState(false);
+  const [quickActionType, setQuickActionType] = useState<'document' | 'appointment' | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (params?.id) {
@@ -153,6 +198,218 @@ export default function CandidateDetail() {
       console.error("Failed to fetch collected documents:", error);
     }
   };
+
+  // Conversation functions
+  const fetchConversations = useCallback(async (candidateId: string) => {
+    try {
+      const response = await fetch(`/api/whatsapp/candidates/${candidateId}/conversations`);
+      if (response.ok) {
+        const data = await response.json();
+        setConversations(data);
+        // Auto-select first conversation if none selected
+        if (data.length > 0 && !activeConversation) {
+          setActiveConversation(data[0]);
+          fetchMessages(data[0].id);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch conversations:", error);
+    }
+  }, [activeConversation]);
+
+  const fetchMessages = async (conversationId: string, silent = false) => {
+    if (!silent) setConversationLoading(true);
+    try {
+      const response = await fetch(`/api/whatsapp/conversations/${conversationId}/messages`);
+      if (response.ok) {
+        const data = await response.json();
+        setMessages(data);
+        // Scroll to bottom on new messages
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, 100);
+      }
+    } catch (error) {
+      console.error("Failed to fetch messages:", error);
+    } finally {
+      if (!silent) setConversationLoading(false);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!messageInput.trim() || !activeConversation || sendingMessage) return;
+    
+    setSendingMessage(true);
+    try {
+      const response = await fetch(`/api/whatsapp/conversations/${activeConversation.id}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          body: messageInput,
+          senderType: "human",
+        }),
+      });
+      
+      if (response.ok) {
+        setMessageInput("");
+        fetchMessages(activeConversation.id, true);
+        toast({
+          title: "Message Sent",
+          description: "Your message has been sent",
+        });
+      } else {
+        throw new Error("Failed to send message");
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
+  const handleTakeover = async () => {
+    if (!activeConversation) return;
+    
+    try {
+      const response = await fetch(`/api/whatsapp/conversations/${activeConversation.id}/takeover`, {
+        method: "POST",
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setActiveConversation(data.conversation);
+        if (params?.id) fetchConversations(params.id);
+        toast({
+          title: "Takeover Successful",
+          description: "You are now controlling this conversation. AI will not auto-respond.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to take over conversation",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleReleaseToAI = async () => {
+    if (!activeConversation) return;
+    
+    try {
+      const response = await fetch(`/api/whatsapp/conversations/${activeConversation.id}/release`, {
+        method: "POST",
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setActiveConversation(data.conversation);
+        if (params?.id) fetchConversations(params.id);
+        toast({
+          title: "Released to AI",
+          description: "AI will now handle this conversation automatically.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to release conversation",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleQuickDocRequest = async (docType: string, description: string) => {
+    if (!activeConversation) return;
+    
+    try {
+      const response = await fetch(`/api/whatsapp/conversations/${activeConversation.id}/document-request`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          documentType: docType,
+          documentName: description,
+          description,
+        }),
+      });
+      
+      if (response.ok) {
+        setQuickActionType(null);
+        setShowQuickActions(false);
+        fetchMessages(activeConversation.id, true);
+        toast({
+          title: "Document Request Sent",
+          description: `Requested ${description} from candidate`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send document request",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleQuickAppointment = async (appointmentType: string, title: string, scheduledAt: string) => {
+    if (!activeConversation) return;
+    
+    try {
+      const response = await fetch(`/api/whatsapp/conversations/${activeConversation.id}/appointment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          appointmentType,
+          title,
+          scheduledAt,
+          duration: 30,
+        }),
+      });
+      
+      if (response.ok) {
+        setQuickActionType(null);
+        setShowQuickActions(false);
+        fetchMessages(activeConversation.id, true);
+        toast({
+          title: "Appointment Scheduled",
+          description: `${title} scheduled successfully`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to schedule appointment",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Polling for real-time updates
+  useEffect(() => {
+    if (showConversationPanel && activeConversation) {
+      // Start polling
+      pollingRef.current = setInterval(() => {
+        fetchMessages(activeConversation.id, true);
+      }, 5000); // Poll every 5 seconds
+      
+      return () => {
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current);
+        }
+      };
+    }
+  }, [showConversationPanel, activeConversation?.id]);
+
+  // Fetch conversations when panel opens
+  useEffect(() => {
+    if (showConversationPanel && params?.id) {
+      fetchConversations(params.id);
+    }
+  }, [showConversationPanel, params?.id, fetchConversations]);
 
   const handleAddDocumentRequirement = async () => {
     if (!newDocType || !params?.id) return;
@@ -278,12 +535,28 @@ export default function CandidateDetail() {
           </Button>
         </Link>
         
-        <Link href={`/integrity-agent?candidateId=${candidate.id}`}>
-          <Button variant="default" size="sm" data-testid="button-integrity-check">
-            <ShieldCheck className="h-4 w-4 mr-2" />
-            Run Integrity Check
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setShowConversationPanel(true)}
+            data-testid="button-open-conversation"
+          >
+            <MessageSquare className="h-4 w-4 mr-2" />
+            WhatsApp Chat
+            {conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0) > 0 && (
+              <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                {conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0)}
+              </Badge>
+            )}
           </Button>
-        </Link>
+          <Link href={`/integrity-agent?candidateId=${candidate.id}`}>
+            <Button variant="default" size="sm" data-testid="button-integrity-check">
+              <ShieldCheck className="h-4 w-4 mr-2" />
+              Run Integrity Check
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="space-y-6">
@@ -1019,6 +1292,355 @@ export default function CandidateDetail() {
           </CardContent>
         </Card>
       </div>
+
+      {/* WhatsApp Conversation Panel */}
+      <Dialog open={showConversationPanel} onOpenChange={setShowConversationPanel}>
+        <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0" data-testid="dialog-conversation">
+          <DialogHeader className="px-6 py-4 border-b">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-green-500" />
+                WhatsApp Conversations - {candidate.fullName}
+              </DialogTitle>
+              {activeConversation && (
+                <div className="flex items-center gap-2">
+                  {activeConversation.handoffMode === 'ai' ? (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={handleTakeover}
+                      className="gap-2"
+                      data-testid="button-takeover"
+                    >
+                      <UserCheck className="h-4 w-4" />
+                      Take Over
+                    </Button>
+                  ) : (
+                    <Button 
+                      size="sm" 
+                      variant="secondary"
+                      onClick={handleReleaseToAI}
+                      className="gap-2"
+                      data-testid="button-release"
+                    >
+                      <Bot className="h-4 w-4" />
+                      Release to AI
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+            {activeConversation && (
+              <div className="flex items-center gap-2 mt-2">
+                <Badge variant={activeConversation.handoffMode === 'human' ? 'default' : 'secondary'}>
+                  {activeConversation.handoffMode === 'human' ? (
+                    <><UserCheck className="h-3 w-3 mr-1" /> HR Control</>
+                  ) : (
+                    <><Bot className="h-3 w-3 mr-1" /> AI Control</>
+                  )}
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  {activeConversation.phone}
+                </span>
+              </div>
+            )}
+          </DialogHeader>
+
+          <div className="flex-1 flex overflow-hidden">
+            {/* Conversations List */}
+            {conversations.length > 1 && (
+              <div className="w-64 border-r overflow-y-auto">
+                {conversations.map((conv) => (
+                  <button
+                    key={conv.id}
+                    onClick={() => {
+                      setActiveConversation(conv);
+                      fetchMessages(conv.id);
+                    }}
+                    className={`w-full p-3 text-left border-b hover:bg-muted/50 transition-colors ${
+                      activeConversation?.id === conv.id ? 'bg-muted' : ''
+                    }`}
+                    data-testid={`button-conversation-${conv.id}`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="font-medium text-sm truncate">{conv.phone}</div>
+                      {conv.unreadCount > 0 && (
+                        <Badge variant="destructive" className="h-5 min-w-5 p-0 flex items-center justify-center text-xs">
+                          {conv.unreadCount}
+                        </Badge>
+                      )}
+                    </div>
+                    {conv.lastMessagePreview && (
+                      <p className="text-xs text-muted-foreground truncate mt-1">
+                        {conv.lastMessagePreview}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-1 mt-1">
+                      <Badge variant="outline" className="text-xs h-5">
+                        {conv.handoffMode === 'human' ? 'HR' : 'AI'}
+                      </Badge>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Messages Area */}
+            <div className="flex-1 flex flex-col">
+              {conversationLoading ? (
+                <div className="flex-1 flex items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : messages.length > 0 ? (
+                <ScrollArea className="flex-1 p-4">
+                  <div className="space-y-3">
+                    {messages.map((msg) => (
+                      <div
+                        key={msg.id}
+                        className={`flex gap-2 ${msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}
+                        data-testid={`message-${msg.id}`}
+                      >
+                        {msg.direction === 'inbound' && (
+                          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                            <User className="h-4 w-4 text-gray-600" />
+                          </div>
+                        )}
+                        <div className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                          msg.direction === 'outbound'
+                            ? msg.senderType === 'ai' 
+                              ? 'bg-purple-100 text-purple-900' 
+                              : 'bg-blue-100 text-blue-900'
+                            : 'bg-gray-100 text-gray-900'
+                        }`}>
+                          {msg.senderType === 'ai' && msg.direction === 'outbound' && (
+                            <div className="text-xs text-purple-600 mb-1 flex items-center gap-1">
+                              <Bot className="h-3 w-3" /> AI
+                            </div>
+                          )}
+                          {msg.senderType === 'human' && msg.direction === 'outbound' && (
+                            <div className="text-xs text-blue-600 mb-1 flex items-center gap-1">
+                              <UserCheck className="h-3 w-3" /> HR
+                            </div>
+                          )}
+                          <p className="text-sm whitespace-pre-wrap">{msg.body}</p>
+                          {msg.mediaUrl && (
+                            <div className="mt-2">
+                              {msg.mediaType?.startsWith('image') ? (
+                                <img 
+                                  src={msg.mediaUrl} 
+                                  alt="Attachment" 
+                                  className="max-w-full rounded"
+                                />
+                              ) : (
+                                <a 
+                                  href={msg.mediaUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-xs underline"
+                                >
+                                  View Attachment
+                                </a>
+                              )}
+                            </div>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {format(new Date(msg.createdAt), 'HH:mm')}
+                          </p>
+                        </div>
+                        {msg.direction === 'outbound' && (
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                            msg.senderType === 'ai' ? 'bg-purple-200' : 'bg-blue-200'
+                          }`}>
+                            {msg.senderType === 'ai' ? (
+                              <Bot className="h-4 w-4 text-purple-600" />
+                            ) : (
+                              <UserCheck className="h-4 w-4 text-blue-600" />
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    <div ref={messagesEndRef} />
+                  </div>
+                </ScrollArea>
+              ) : activeConversation ? (
+                <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                  No messages yet
+                </div>
+              ) : (
+                <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                  {conversations.length === 0 
+                    ? "No WhatsApp conversations with this candidate" 
+                    : "Select a conversation to view messages"}
+                </div>
+              )}
+
+              {/* Quick Actions & Message Input */}
+              {activeConversation && (
+                <div className="border-t p-4 space-y-3">
+                  {/* Quick Actions */}
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setQuickActionType(quickActionType === 'document' ? null : 'document')}
+                      className="gap-1"
+                      data-testid="button-quick-document"
+                    >
+                      <FileUp className="h-4 w-4" />
+                      Request Doc
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setQuickActionType(quickActionType === 'appointment' ? null : 'appointment')}
+                      className="gap-1"
+                      data-testid="button-quick-appointment"
+                    >
+                      <CalendarClock className="h-4 w-4" />
+                      Schedule
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => activeConversation && fetchMessages(activeConversation.id)}
+                      data-testid="button-refresh-messages"
+                    >
+                      <RefreshCcw className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* Quick Action Panels */}
+                  {quickActionType === 'document' && (
+                    <Card className="p-3">
+                      <h5 className="text-sm font-medium mb-2">Request Document</h5>
+                      <div className="grid grid-cols-3 gap-2">
+                        {DOC_TYPE_OPTIONS.slice(0, 6).map((doc) => (
+                          <Button
+                            key={doc.value}
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleQuickDocRequest(doc.value, doc.label)}
+                            className="text-xs h-8"
+                            data-testid={`button-request-${doc.value}`}
+                          >
+                            {doc.label}
+                          </Button>
+                        ))}
+                      </div>
+                    </Card>
+                  )}
+
+                  {quickActionType === 'appointment' && (
+                    <Card className="p-3">
+                      <h5 className="text-sm font-medium mb-2">Schedule Appointment</h5>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const tomorrow = new Date();
+                            tomorrow.setDate(tomorrow.getDate() + 1);
+                            tomorrow.setHours(10, 0, 0, 0);
+                            handleQuickAppointment('voice_interview', 'Voice Interview', tomorrow.toISOString());
+                          }}
+                          className="text-xs h-8"
+                          data-testid="button-schedule-voice"
+                        >
+                          <Mic className="h-3 w-3 mr-1" />
+                          Voice Interview
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const tomorrow = new Date();
+                            tomorrow.setDate(tomorrow.getDate() + 1);
+                            tomorrow.setHours(14, 0, 0, 0);
+                            handleQuickAppointment('video_interview', 'Video Interview', tomorrow.toISOString());
+                          }}
+                          className="text-xs h-8"
+                          data-testid="button-schedule-video"
+                        >
+                          <Eye className="h-3 w-3 mr-1" />
+                          Video Interview
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const nextWeek = new Date();
+                            nextWeek.setDate(nextWeek.getDate() + 7);
+                            nextWeek.setHours(9, 0, 0, 0);
+                            handleQuickAppointment('onboarding', 'Onboarding Session', nextWeek.toISOString());
+                          }}
+                          className="text-xs h-8"
+                          data-testid="button-schedule-onboarding"
+                        >
+                          <UserCheck className="h-3 w-3 mr-1" />
+                          Onboarding
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const dayAfter = new Date();
+                            dayAfter.setDate(dayAfter.getDate() + 2);
+                            dayAfter.setHours(11, 0, 0, 0);
+                            handleQuickAppointment('hr_meeting', 'HR Meeting', dayAfter.toISOString());
+                          }}
+                          className="text-xs h-8"
+                          data-testid="button-schedule-hr"
+                        >
+                          <Briefcase className="h-3 w-3 mr-1" />
+                          HR Meeting
+                        </Button>
+                      </div>
+                    </Card>
+                  )}
+
+                  {/* Message Input */}
+                  <div className="flex gap-2">
+                    <Textarea
+                      placeholder={activeConversation.handoffMode === 'human' 
+                        ? "Type your message..." 
+                        : "Take over to send messages manually..."}
+                      value={messageInput}
+                      onChange={(e) => setMessageInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      disabled={activeConversation.handoffMode !== 'human'}
+                      className="flex-1 min-h-[44px] max-h-32 resize-none"
+                      data-testid="input-message"
+                    />
+                    <Button
+                      onClick={handleSendMessage}
+                      disabled={!messageInput.trim() || sendingMessage || activeConversation.handoffMode !== 'human'}
+                      className="self-end"
+                      data-testid="button-send-message"
+                    >
+                      {sendingMessage ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  {activeConversation.handoffMode !== 'human' && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      Click "Take Over" to send messages manually. AI is currently managing this conversation.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

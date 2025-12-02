@@ -30,6 +30,7 @@ import DocumentAutomation from "@/pages/document-automation";
 import WhatsAppMonitor from "@/pages/whatsapp-monitor";
 import InterviewInvite from "@/pages/interview-invite";
 import OnboardingDashboard from "@/pages/onboarding-dashboard";
+import HRConversations from "@/pages/hr-conversations";
 
 function Router() {
   return (
@@ -59,6 +60,7 @@ function Router() {
       <Route path="/document-automation" component={DocumentAutomation} />
       <Route path="/whatsapp-monitor" component={WhatsAppMonitor} />
       <Route path="/onboarding-dashboard" component={OnboardingDashboard} />
+      <Route path="/hr-conversations" component={HRConversations} />
       <Route component={NotFound} />
     </Switch>
   );
