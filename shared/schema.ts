@@ -961,10 +961,15 @@ export const whatsappConversations = pgTable("whatsapp_conversations", {
   subject: text("subject"), // Brief description of conversation purpose
   status: text("status").notNull().default("active"), // 'active', 'resolved', 'pending', 'escalated'
   assignedTo: varchar("assigned_to").references(() => users.id), // HR staff assigned
+  handoffMode: text("handoff_mode").notNull().default("ai"), // 'ai' | 'human' - who controls responses
+  handoffAt: timestamp("handoff_at"), // When handoff occurred
+  handoffBy: varchar("handoff_by"), // User ID who took over
   priority: text("priority").default("normal"), // 'low', 'normal', 'high', 'urgent'
   lastMessageAt: timestamp("last_message_at"),
   lastMessagePreview: text("last_message_preview"),
   unreadCount: integer("unread_count").default(0),
+  lastReadAt: timestamp("last_read_at"), // When HR last read messages
+  lastReadBy: varchar("last_read_by"), // Which HR user last read
   metadata: jsonb("metadata"), // Additional context
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -974,6 +979,7 @@ export const whatsappConversations = pgTable("whatsapp_conversations", {
   waIdIdx: index("whatsapp_conversations_wa_id_idx").on(table.waId),
   statusIdx: index("whatsapp_conversations_status_idx").on(table.status),
   typeIdx: index("whatsapp_conversations_type_idx").on(table.type),
+  handoffModeIdx: index("whatsapp_conversations_handoff_mode_idx").on(table.handoffMode),
 }));
 
 export const whatsappMessages = pgTable("whatsapp_messages", {

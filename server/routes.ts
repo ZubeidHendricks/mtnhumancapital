@@ -3988,8 +3988,11 @@ Format your response as JSON:
   // Mark conversation as read
   app.post("/api/whatsapp/conversations/:id/mark-read", async (req, res) => {
     try {
+      const userId = (req as any).user?.id;
       const conversation = await storage.updateWhatsappConversation(req.tenant.id, req.params.id, {
         unreadCount: 0,
+        lastReadAt: new Date(),
+        lastReadBy: userId,
       });
       
       if (!conversation) {
@@ -4000,6 +4003,76 @@ Format your response as JSON:
     } catch (error) {
       console.error("Error marking conversation as read:", error);
       res.status(500).json({ message: "Failed to mark as read" });
+    }
+  });
+
+  // HR takeover - switch from AI to human control
+  app.post("/api/whatsapp/conversations/:id/takeover", async (req, res) => {
+    try {
+      const userId = (req as any).user?.id;
+      const conversation = await storage.updateWhatsappConversation(req.tenant.id, req.params.id, {
+        handoffMode: "human",
+        handoffAt: new Date(),
+        handoffBy: userId,
+        assignedTo: userId,
+      });
+      
+      if (!conversation) {
+        return res.status(404).json({ message: "Conversation not found" });
+      }
+      
+      res.json({ success: true, conversation });
+    } catch (error) {
+      console.error("Error taking over conversation:", error);
+      res.status(500).json({ message: "Failed to take over conversation" });
+    }
+  });
+
+  // Release handoff - give control back to AI
+  app.post("/api/whatsapp/conversations/:id/release", async (req, res) => {
+    try {
+      const conversation = await storage.updateWhatsappConversation(req.tenant.id, req.params.id, {
+        handoffMode: "ai",
+        handoffAt: null,
+        handoffBy: null,
+      });
+      
+      if (!conversation) {
+        return res.status(404).json({ message: "Conversation not found" });
+      }
+      
+      res.json({ success: true, conversation });
+    } catch (error) {
+      console.error("Error releasing conversation:", error);
+      res.status(500).json({ message: "Failed to release conversation" });
+    }
+  });
+
+  // Get conversations by candidate ID
+  app.get("/api/whatsapp/candidates/:candidateId/conversations", async (req, res) => {
+    try {
+      const conversations = await storage.getWhatsappConversationsByCandidateId(
+        req.tenant.id, 
+        req.params.candidateId
+      );
+      res.json(conversations);
+    } catch (error) {
+      console.error("Error fetching candidate conversations:", error);
+      res.status(500).json({ message: "Failed to fetch conversations" });
+    }
+  });
+
+  // Get messages for a conversation
+  app.get("/api/whatsapp/conversations/:id/messages", async (req, res) => {
+    try {
+      const messages = await storage.getWhatsappMessages(
+        req.tenant.id, 
+        req.params.id
+      );
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching conversation messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
     }
   });
 

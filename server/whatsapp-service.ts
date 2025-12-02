@@ -324,8 +324,11 @@ export class WhatsAppService {
       unreadCount: (conversation.unreadCount || 0) + 1,
     });
 
-    // Handle document collection tracking
-    if (conversation.candidateId) {
+    // Handle document collection tracking - only if AI is in control
+    // Check handoff mode before AI auto-responds
+    const handoffMode = (conversation as any).handoffMode || 'ai';
+    
+    if (conversation.candidateId && handoffMode === 'ai') {
       await this.handleDocumentCollection(
         tenantId,
         conversation,
