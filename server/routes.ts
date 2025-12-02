@@ -838,11 +838,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Interview routes
+  // Interview routes - enhanced with candidate info
   app.get("/api/interviews", async (req, res) => {
     try {
       const interviews = await storage.getAllInterviews(req.tenant.id);
-      res.json(interviews);
+      // Enrich interviews with candidate names
+      const enrichedInterviews = await Promise.all(
+        interviews.map(async (interview) => {
+          let candidateName = null;
+          if (interview.candidateId) {
+            const candidate = await storage.getCandidate(req.tenant.id, interview.candidateId);
+            candidateName = candidate?.fullName || null;
+          }
+          return {
+            ...interview,
+            candidateName,
+            jobTitle: (interview.metadata as any)?.jobRole || interview.type + " Interview",
+            interviewType: interview.type,
+          };
+        })
+      );
+      res.json(enrichedInterviews);
     } catch (error) {
       console.error("Error fetching interviews:", error);
       res.status(500).json({ message: "Failed to fetch interviews" });
@@ -855,7 +871,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!interview) {
         return res.status(404).json({ message: "Interview not found" });
       }
-      res.json(interview);
+      // Enrich with candidate info
+      let candidateName = null;
+      if (interview.candidateId) {
+        const candidate = await storage.getCandidate(req.tenant.id, interview.candidateId);
+        candidateName = candidate?.fullName || null;
+      }
+      // Return in InterviewDetails format expected by frontend
+      res.json({
+        session: {
+          ...interview,
+          candidateName,
+          jobTitle: (interview.metadata as any)?.jobRole || interview.type + " Interview",
+          interviewType: interview.type,
+        },
+        recordings: [],
+        transcripts: [],
+        feedback: [],
+      });
     } catch (error) {
       console.error("Error fetching interview:", error);
       res.status(500).json({ message: "Failed to fetch interview" });
