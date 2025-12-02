@@ -193,15 +193,40 @@ export default function HRConversations() {
     setFilteredConversations(filtered);
   }, [conversations, searchQuery, filterMode, candidates]);
 
-  const fetchDocumentRequirements = async (candidateId: string) => {
+  const fetchDocumentRequirements = async (conversationId: string, candidateId?: string | null) => {
     try {
-      const response = await fetch(`/api/candidates/${candidateId}/document-requirements`);
-      if (response.ok) {
-        const data = await response.json();
-        setDocumentRequirements(data);
-      } else {
-        setDocumentRequirements([]);
+      // First try to get WhatsApp-specific document requests for the conversation
+      const whatsappResponse = await fetch(`/api/whatsapp/conversations/${conversationId}`);
+      if (whatsappResponse.ok) {
+        const convData = await whatsappResponse.json();
+        if (convData.documentRequests && convData.documentRequests.length > 0) {
+          // Map WhatsApp document requests to the expected format
+          const mappedRequests = convData.documentRequests.map((req: any) => ({
+            id: req.id,
+            candidateId: req.candidateId,
+            documentType: req.documentType,
+            description: req.description || req.documentName,
+            referenceCode: req.referenceCode || 'N/A',
+            status: req.status === 'requested' ? 'pending' : req.status,
+            dueDate: req.dueDate,
+            createdAt: req.createdAt,
+          }));
+          setDocumentRequirements(mappedRequests);
+          return;
+        }
       }
+      
+      // Fallback to candidate's integrity document requirements
+      if (candidateId) {
+        const response = await fetch(`/api/candidates/${candidateId}/document-requirements`);
+        if (response.ok) {
+          const data = await response.json();
+          setDocumentRequirements(data);
+          return;
+        }
+      }
+      
+      setDocumentRequirements([]);
     } catch (error) {
       console.error("Failed to fetch document requirements:", error);
       setDocumentRequirements([]);
@@ -211,12 +236,8 @@ export default function HRConversations() {
   const handleSelectConversation = (conv: WhatsappConversation) => {
     setActiveConversation(conv);
     fetchMessages(conv.id);
-    // Fetch document requirements if linked to a candidate
-    if (conv.candidateId) {
-      fetchDocumentRequirements(conv.candidateId);
-    } else {
-      setDocumentRequirements([]);
-    }
+    // Fetch document requirements for this conversation
+    fetchDocumentRequirements(conv.id, conv.candidateId);
     // Mark as read
     fetch(`/api/whatsapp/conversations/${conv.id}/mark-read`, { method: "POST" });
   };

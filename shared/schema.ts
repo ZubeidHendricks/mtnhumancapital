@@ -1023,6 +1023,7 @@ export const whatsappDocumentRequests = pgTable("whatsapp_document_requests", {
   documentType: text("document_type").notNull(), // 'id_document', 'proof_of_address', 'qualification', 'reference', 'cv', 'other'
   documentName: text("document_name").notNull(), // Human-readable name
   description: text("description"), // Additional context
+  referenceCode: text("reference_code"), // Unique tracking code (e.g., "DOC-M8XYZ-1ABC")
   status: text("status").notNull().default("requested"), // 'requested', 'received', 'verified', 'rejected', 'expired'
   dueDate: timestamp("due_date"),
   receivedAt: timestamp("received_at"),
@@ -1037,6 +1038,7 @@ export const whatsappDocumentRequests = pgTable("whatsapp_document_requests", {
   conversationIdIdx: index("whatsapp_document_requests_conversation_id_idx").on(table.conversationId),
   candidateIdIdx: index("whatsapp_document_requests_candidate_id_idx").on(table.candidateId),
   statusIdx: index("whatsapp_document_requests_status_idx").on(table.status),
+  referenceCodeIdx: index("whatsapp_document_requests_ref_code_idx").on(table.referenceCode),
 }));
 
 export const whatsappAppointments = pgTable("whatsapp_appointments", {

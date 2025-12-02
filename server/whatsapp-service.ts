@@ -130,7 +130,10 @@ export class WhatsAppService {
     description?: string,
     dueDate?: Date
   ): Promise<{ message: WhatsappMessage | null; request: any }> {
-    const requestBody = `Hello! We need you to submit the following document:\n\n📄 *${documentName}*\n${description ? `\n${description}` : ""}\n${dueDate ? `\n⏰ Please submit by: ${dueDate.toLocaleDateString()}` : ""}\n\nPlease reply to this message with a photo or document file.\n\nThank you!`;
+    // Generate a unique reference code for tracking
+    const referenceCode = `DOC-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    
+    const requestBody = `Hello! We need you to submit the following document:\n\n📄 *${documentName}*\n${description ? `\n${description}` : ""}\n${dueDate ? `\n⏰ Please submit by: ${dueDate.toLocaleDateString()}` : ""}\n\n🔖 *Reference Code:* \`${referenceCode}\`\n\nPlease reply with your reference code or document type, then send your photo or document file.\n\nThank you!`;
 
     const message = await this.sendTextMessage(
       tenantId,
@@ -148,6 +151,7 @@ export class WhatsAppService {
       status: "requested",
       dueDate,
       messageId: message?.id,
+      referenceCode,
     });
 
     return { message, request };
