@@ -1162,7 +1162,7 @@ BENEFITS:
                       </Button>
                     </div>
                     <Badge variant="outline" className="border-zinc-600">
-                      {jobSpecDocuments.length} Jobs
+                      {displayJobs.length + jobSpecDocuments.length} Jobs
                     </Badge>
                     <Link href="/recruitment-agent">
                       <Button variant="outline" size="sm" className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10">
@@ -1193,51 +1193,129 @@ BENEFITS:
                 </div>
               </CardHeader>
               <CardContent>
-                {loadingJobSpecs ? (
+                {loadingJobs && loadingJobSpecs ? (
                   <div className="text-center py-12">
                     <Loader2 className="h-8 w-8 animate-spin text-purple-400 mx-auto" />
                   </div>
-                ) : jobSpecDocuments.length === 0 ? (
+                ) : displayJobs.length === 0 && jobSpecDocuments.length === 0 ? (
                   <div className="text-center py-12">
                     <Briefcase className="h-16 w-16 text-zinc-600 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-zinc-300 mb-2">No job specs uploaded yet</h3>
-                    <p className="text-zinc-500 mb-4">Upload job specifications to see them here</p>
-                    <Link href="/document-automation">
+                    <h3 className="text-lg font-medium text-zinc-300 mb-2">No jobs yet</h3>
+                    <p className="text-zinc-500 mb-4">Create a job using the AI assistant or upload job specifications</p>
+                    <div className="flex gap-3 justify-center">
                       <Button 
-                        variant="outline" 
-                        className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
+                        onClick={() => setIsCreateJobOpen(true)}
+                        className="bg-primary hover:bg-primary/90"
                       >
-                        <UploadCloud className="h-4 w-4 mr-2" />
-                        Upload Job Specs
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Create with AI
                       </Button>
-                    </Link>
+                      <Link href="/document-automation">
+                        <Button 
+                          variant="outline" 
+                          className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
+                        >
+                          <UploadCloud className="h-4 w-4 mr-2" />
+                          Upload Job Specs
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
                 ) : jobSpecViewMode === "grid" ? (
                   <ScrollArea className="h-[600px] pr-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
+                      {/* AI-Created Jobs */}
+                      {displayJobs.map((job: any) => (
+                        <div 
+                          key={job.id}
+                          className="p-4 rounded-xl bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 hover:from-zinc-800 hover:to-zinc-900 transition-all border border-zinc-700/50 hover:border-purple-500/30 group"
+                          data-testid={`card-job-${job.id}`}
+                        >
+                          <div className="flex items-start gap-3 mb-3">
+                            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+                              <Briefcase className="h-6 w-6 text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-white truncate">{job.title}</h3>
+                              <p className="text-purple-400 text-sm truncate flex items-center gap-1">
+                                <Building2 className="h-3 w-3" />
+                                {job.department || 'General'}
+                              </p>
+                            </div>
+                            <Badge className={`${job.status === 'Active' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'} border-0 text-xs`}>
+                              {job.status}
+                            </Badge>
+                          </div>
+
+                          <div className="space-y-1.5 mb-3">
+                            {job.location && (
+                              <div className="flex items-center gap-2 text-xs text-zinc-400">
+                                <MapPin className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">{job.location}</span>
+                              </div>
+                            )}
+                            {(job.salaryMin || job.salaryMax) && (
+                              <div className="flex items-center gap-2 text-xs text-zinc-400">
+                                <span className="truncate">
+                                  R{job.salaryMin?.toLocaleString() || '0'} - R{job.salaryMax?.toLocaleString() || job.salaryMin?.toLocaleString() || '0'} {job.payRateUnit || 'monthly'}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex gap-2 pt-2 border-t border-zinc-700/50">
+                            <Link href={`/recruitment-agent?jobId=${job.id}`} className="flex-1">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="w-full border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
+                                data-testid={`button-start-search-grid-${job.id}`}
+                              >
+                                <Search className="h-3 w-3 mr-1" />
+                                Start Search
+                              </Button>
+                            </Link>
+                            <Link href={`/candidates-list?jobId=${job.id}`}>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="text-zinc-400 hover:text-white"
+                                data-testid={`button-view-candidates-grid-${job.id}`}
+                              >
+                                <Eye className="h-3 w-3" />
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {/* Uploaded Job Spec Documents */}
                       {jobSpecDocuments.map((doc) => {
                         const extracted = doc.extractedData as any;
                         return (
                           <div 
                             key={doc.id}
-                            className="p-4 rounded-xl bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 hover:from-zinc-800 hover:to-zinc-900 transition-all border border-zinc-700/50 hover:border-purple-500/30 group"
+                            className="p-4 rounded-xl bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 hover:from-zinc-800 hover:to-zinc-900 transition-all border border-zinc-700/50 hover:border-blue-500/30 group"
                             data-testid={`card-job-spec-${doc.id}`}
                           >
                             <div className="flex items-start gap-3 mb-3">
-                              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
-                                <Briefcase className="h-6 w-6 text-white" />
+                              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center">
+                                <FileText className="h-6 w-6 text-white" />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <h3 className="font-semibold text-white truncate">
                                   {extracted?.title || extracted?.jobTitle || doc.originalFilename}
                                 </h3>
                                 {extracted?.company && (
-                                  <p className="text-purple-400 text-sm truncate flex items-center gap-1">
+                                  <p className="text-blue-400 text-sm truncate flex items-center gap-1">
                                     <Building2 className="h-3 w-3" />
                                     {extracted.company}
                                   </p>
                                 )}
                               </div>
+                              <Badge className="bg-blue-500/20 text-blue-400 border-0 text-xs">
+                                Uploaded
+                              </Badge>
                             </div>
 
                             <div className="space-y-1.5 mb-3">
@@ -1253,50 +1331,19 @@ BENEFITS:
                                   <span className="truncate">{extracted.department}</span>
                                 </div>
                               )}
-                              {extracted?.employmentType && (
-                                <div className="flex items-center gap-2 text-xs text-zinc-400">
-                                  <Clock className="h-3 w-3 flex-shrink-0" />
-                                  <span>{extracted.employmentType}</span>
-                                </div>
-                              )}
-                              {(extracted?.salaryRange || extracted?.salary) && (
-                                <div className="flex items-center gap-2 text-xs text-green-400">
-                                  <Award className="h-3 w-3 flex-shrink-0" />
-                                  <span>{extracted.salaryRange || extracted.salary}</span>
-                                </div>
-                              )}
                             </div>
 
-                            {extracted?.requiredSkills && extracted.requiredSkills.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mb-3">
-                                {extracted.requiredSkills.slice(0, 3).map((skill: string, i: number) => (
-                                  <Badge key={i} variant="outline" className="text-xs border-purple-500/30 text-purple-300 px-1.5 py-0">
-                                    {skill}
-                                  </Badge>
-                                ))}
-                                {extracted.requiredSkills.length > 3 && (
-                                  <Badge variant="outline" className="text-xs border-zinc-600 text-zinc-500 px-1.5 py-0">
-                                    +{extracted.requiredSkills.length - 3}
-                                  </Badge>
-                                )}
-                              </div>
-                            )}
-
-                            <div className="flex items-center justify-between pt-3 border-t border-zinc-700/50">
-                              <span className="text-xs text-zinc-500">
-                                {new Date(doc.createdAt).toLocaleDateString()}
-                              </span>
-                              <div className="flex items-center gap-1">
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
-                                  className="h-7 px-2 text-zinc-400" 
-                                  data-testid={`button-view-job-${doc.id}`}
-                                  onClick={() => setSelectedJobSpec(doc)}
-                                >
-                                  <Eye className="h-3.5 w-3.5" />
-                                </Button>
-                              </div>
+                            <div className="flex gap-2 pt-2 border-t border-zinc-700/50">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="flex-1 border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+                                onClick={() => setSelectedJobSpec(doc)}
+                                data-testid={`button-view-spec-${doc.id}`}
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
+                                View Details
+                              </Button>
                             </div>
                           </div>
                         );
@@ -1310,22 +1357,66 @@ BENEFITS:
                         <thead>
                           <tr className="border-b border-zinc-800">
                             <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">Title</th>
-                            <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">Company</th>
+                            <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">Department</th>
                             <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">Location</th>
-                            <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">Skills</th>
-                            <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">Uploaded</th>
+                            <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">Status</th>
+                            <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">Created</th>
                             <th className="text-right px-4 py-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-800/50">
+                          {/* AI-Created Jobs */}
+                          {displayJobs.map((job: any) => (
+                            <tr key={job.id} className="hover:bg-zinc-800/30 transition-colors" data-testid={`row-job-${job.id}`}>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
+                                    <Briefcase className="h-4 w-4 text-white" />
+                                  </div>
+                                  <span className="font-medium text-white truncate max-w-[200px]">{job.title}</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="text-zinc-400 text-sm">{job.department || 'General'}</span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="text-zinc-400 text-sm">{job.location || '-'}</span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <Badge className={`${job.status === 'Active' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'} border-0 text-xs`}>
+                                  {job.status}
+                                </Badge>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="text-zinc-500 text-xs">{new Date(job.createdAt).toLocaleDateString()}</span>
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                  <Link href={`/recruitment-agent?jobId=${job.id}`}>
+                                    <Button variant="ghost" size="sm" className="h-7 px-2 text-purple-400">
+                                      <Search className="h-3.5 w-3.5 mr-1" />
+                                      Search
+                                    </Button>
+                                  </Link>
+                                  <Link href={`/candidates-list?jobId=${job.id}`}>
+                                    <Button variant="ghost" size="sm" className="h-7 px-2 text-zinc-400">
+                                      <Eye className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </Link>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                          
+                          {/* Uploaded Job Spec Documents */}
                           {jobSpecDocuments.map((doc) => {
                             const extracted = doc.extractedData as any;
                             return (
                               <tr key={doc.id} className="hover:bg-zinc-800/30 transition-colors" data-testid={`row-job-spec-${doc.id}`}>
                                 <td className="px-4 py-3">
                                   <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
-                                      <Briefcase className="h-4 w-4 text-white" />
+                                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center flex-shrink-0">
+                                      <FileText className="h-4 w-4 text-white" />
                                     </div>
                                     <span className="font-medium text-white truncate max-w-[200px]">
                                       {extracted?.title || extracted?.jobTitle || doc.originalFilename}
@@ -1333,24 +1424,13 @@ BENEFITS:
                                   </div>
                                 </td>
                                 <td className="px-4 py-3">
-                                  <span className="text-zinc-400 text-sm">{extracted?.company || '-'}</span>
+                                  <span className="text-zinc-400 text-sm">{extracted?.department || extracted?.company || '-'}</span>
                                 </td>
                                 <td className="px-4 py-3">
                                   <span className="text-zinc-400 text-sm">{extracted?.location || '-'}</span>
                                 </td>
                                 <td className="px-4 py-3">
-                                  <div className="flex flex-wrap gap-1">
-                                    {extracted?.requiredSkills?.slice(0, 2).map((skill: string, i: number) => (
-                                      <Badge key={i} variant="outline" className="text-xs border-purple-500/30 text-purple-300 px-1.5 py-0">
-                                        {skill}
-                                      </Badge>
-                                    ))}
-                                    {extracted?.requiredSkills?.length > 2 && (
-                                      <Badge variant="outline" className="text-xs border-zinc-600 text-zinc-500 px-1.5 py-0">
-                                        +{extracted.requiredSkills.length - 2}
-                                      </Badge>
-                                    )}
-                                  </div>
+                                  <Badge className="bg-blue-500/20 text-blue-400 border-0 text-xs">Uploaded</Badge>
                                 </td>
                                 <td className="px-4 py-3">
                                   <span className="text-zinc-500 text-xs">{new Date(doc.createdAt).toLocaleDateString()}</span>
