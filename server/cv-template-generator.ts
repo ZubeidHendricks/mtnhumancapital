@@ -205,17 +205,17 @@ Return ONLY the JSON object, no explanations.`;
 
     const headerChildren: Paragraph[] = [];
     
-    // Add logo if available
+    // Add logo if available - positioned on the left
     if (logoBuffer) {
       headerChildren.push(
         new Paragraph({
-          alignment: AlignmentType.CENTER,
+          alignment: AlignmentType.LEFT,
           children: [
             new ImageRun({
               data: logoBuffer,
               transformation: {
-                width: 200,
-                height: 60,
+                width: 180,
+                height: 55,
               },
               type: "png",
             }),
@@ -234,16 +234,16 @@ Return ONLY the JSON object, no explanations.`;
           }),
         },
         children: [
-          // Add logo in document body as well for visibility
+          // Add logo in document body - positioned on the left
           ...(logoBuffer ? [
             new Paragraph({
-              alignment: AlignmentType.CENTER,
+              alignment: AlignmentType.LEFT,
               children: [
                 new ImageRun({
                   data: logoBuffer,
                   transformation: {
-                    width: 250,
-                    height: 75,
+                    width: 220,
+                    height: 65,
                   },
                   type: "png",
                 }),
@@ -368,12 +368,12 @@ Return ONLY the JSON object, no explanations.`;
     return new Table({
       width: { size: 100, type: WidthType.PERCENTAGE },
       borders: {
-        top: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-        bottom: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-        left: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-        right: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-        insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-        insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+        top: { style: BorderStyle.SINGLE, size: 1, color: "2E5A8B" },
+        bottom: { style: BorderStyle.SINGLE, size: 1, color: "2E5A8B" },
+        left: { style: BorderStyle.SINGLE, size: 1, color: "2E5A8B" },
+        right: { style: BorderStyle.SINGLE, size: 1, color: "2E5A8B" },
+        insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "2E5A8B" },
+        insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "2E5A8B" },
       },
       rows: rows.map(([label, value]) => 
         new TableRow({
@@ -383,7 +383,7 @@ Return ONLY the JSON object, no explanations.`;
               children: [new Paragraph({
                 children: [new TextRun({ text: label, bold: true, size: 22 })],
               })],
-              shading: label ? { fill: "F0F0F0", type: ShadingType.CLEAR } : undefined,
+              shading: label ? { fill: "E8F0F8", type: ShadingType.CLEAR } : undefined,
             }),
             new TableCell({
               width: { size: 65, type: WidthType.PERCENTAGE },
@@ -401,12 +401,12 @@ Return ONLY the JSON object, no explanations.`;
     return new Table({
       width: { size: 100, type: WidthType.PERCENTAGE },
       borders: {
-        top: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-        bottom: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-        left: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-        right: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-        insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-        insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+        top: { style: BorderStyle.SINGLE, size: 1, color: "2E5A8B" },
+        bottom: { style: BorderStyle.SINGLE, size: 1, color: "2E5A8B" },
+        left: { style: BorderStyle.SINGLE, size: 1, color: "2E5A8B" },
+        right: { style: BorderStyle.SINGLE, size: 1, color: "2E5A8B" },
+        insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "2E5A8B" },
+        insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "2E5A8B" },
       },
       rows: rows.map(([label, value]) => 
         new TableRow({
@@ -416,7 +416,7 @@ Return ONLY the JSON object, no explanations.`;
               children: [new Paragraph({
                 children: [new TextRun({ text: label, bold: true, size: 22 })],
               })],
-              shading: { fill: "F0F0F0", type: ShadingType.CLEAR },
+              shading: { fill: "E8F0F8", type: ShadingType.CLEAR },
             }),
             new TableCell({
               width: { size: 70, type: WidthType.PERCENTAGE },
@@ -444,12 +444,12 @@ Return ONLY the JSON object, no explanations.`;
     return new Table({
       width: { size: 100, type: WidthType.PERCENTAGE },
       borders: {
-        top: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-        bottom: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-        left: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-        right: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-        insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
-        insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+        top: { style: BorderStyle.SINGLE, size: 1, color: "2E5A8B" },
+        bottom: { style: BorderStyle.SINGLE, size: 1, color: "2E5A8B" },
+        left: { style: BorderStyle.SINGLE, size: 1, color: "2E5A8B" },
+        right: { style: BorderStyle.SINGLE, size: 1, color: "2E5A8B" },
+        insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "2E5A8B" },
+        insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "2E5A8B" },
       },
       rows: [
         new TableRow({
@@ -457,7 +457,7 @@ Return ONLY the JSON object, no explanations.`;
             new TableCell({
               width: { size: 30, type: WidthType.PERCENTAGE },
               children: [new Paragraph({ children: [new TextRun({ text: "Name of Employer", bold: true, size: 22 })] })],
-              shading: { fill: "F0F0F0", type: ShadingType.CLEAR },
+              shading: { fill: "E8F0F8", type: ShadingType.CLEAR },
             }),
             new TableCell({
               width: { size: 70, type: WidthType.PERCENTAGE },
@@ -469,7 +469,7 @@ Return ONLY the JSON object, no explanations.`;
           children: [
             new TableCell({
               children: [new Paragraph({ children: [new TextRun({ text: "Period of Service", bold: true, size: 22 })] })],
-              shading: { fill: "F0F0F0", type: ShadingType.CLEAR },
+              shading: { fill: "E8F0F8", type: ShadingType.CLEAR },
             }),
             new TableCell({
               children: [new Paragraph({ children: [new TextRun({ text: job.periodOfService || "", size: 22 })] })],
@@ -480,7 +480,7 @@ Return ONLY the JSON object, no explanations.`;
           children: [
             new TableCell({
               children: [new Paragraph({ children: [new TextRun({ text: "Position", bold: true, size: 22 })] })],
-              shading: { fill: "F0F0F0", type: ShadingType.CLEAR },
+              shading: { fill: "E8F0F8", type: ShadingType.CLEAR },
             }),
             new TableCell({
               children: [new Paragraph({ children: [new TextRun({ text: job.position || "", size: 22 })] })],
@@ -491,7 +491,7 @@ Return ONLY the JSON object, no explanations.`;
           children: [
             new TableCell({
               children: [new Paragraph({ children: [new TextRun({ text: "Main Responsibilities", bold: true, size: 22 })] })],
-              shading: { fill: "F0F0F0", type: ShadingType.CLEAR },
+              shading: { fill: "E8F0F8", type: ShadingType.CLEAR },
             }),
             new TableCell({
               children: [new Paragraph({ children: [new TextRun({ text: job.mainResponsibilities || "", size: 22 })] })],
@@ -502,7 +502,7 @@ Return ONLY the JSON object, no explanations.`;
           children: [
             new TableCell({
               children: [new Paragraph({ children: [new TextRun({ text: "Reason for Leaving", bold: true, size: 22 })] })],
-              shading: { fill: "F0F0F0", type: ShadingType.CLEAR },
+              shading: { fill: "E8F0F8", type: ShadingType.CLEAR },
             }),
             new TableCell({
               children: [new Paragraph({ children: [new TextRun({ text: job.reasonForLeaving || "", size: 22 })] })],
@@ -523,20 +523,28 @@ Return ONLY the JSON object, no explanations.`;
   private createOtherEmploymentTable(employment: NonNullable<CVTemplateData["otherEmployment"]>): Table {
     return new Table({
       width: { size: 100, type: WidthType.PERCENTAGE },
+      borders: {
+        top: { style: BorderStyle.SINGLE, size: 1, color: "2E5A8B" },
+        bottom: { style: BorderStyle.SINGLE, size: 1, color: "2E5A8B" },
+        left: { style: BorderStyle.SINGLE, size: 1, color: "2E5A8B" },
+        right: { style: BorderStyle.SINGLE, size: 1, color: "2E5A8B" },
+        insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "2E5A8B" },
+        insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "2E5A8B" },
+      },
       rows: [
         new TableRow({
           children: [
             new TableCell({
               children: [new Paragraph({ children: [new TextRun({ text: "Employment", bold: true, size: 22 })] })],
-              shading: { fill: "E8E8E8", type: ShadingType.CLEAR },
+              shading: { fill: "E8F0F8", type: ShadingType.CLEAR },
             }),
             new TableCell({
               children: [new Paragraph({ children: [new TextRun({ text: "Position", bold: true, size: 22 })] })],
-              shading: { fill: "E8E8E8", type: ShadingType.CLEAR },
+              shading: { fill: "E8F0F8", type: ShadingType.CLEAR },
             }),
             new TableCell({
               children: [new Paragraph({ children: [new TextRun({ text: "Dates Employed", bold: true, size: 22 })] })],
-              shading: { fill: "E8E8E8", type: ShadingType.CLEAR },
+              shading: { fill: "E8F0F8", type: ShadingType.CLEAR },
             }),
           ],
         }),
