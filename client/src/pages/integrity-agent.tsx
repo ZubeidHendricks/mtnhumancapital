@@ -595,7 +595,7 @@ export default function IntegrityAgent() {
                                     </div>
                                   </div>
                                 </CardHeader>
-                                <CardContent className="space-y-2">
+                                <CardContent className="space-y-2 overflow-hidden">
                                   {check.riskScore !== null && check.riskScore !== undefined && (
                                     <div className="flex items-center justify-between text-xs">
                                       <span className="text-muted-foreground">Risk Score:</span>
@@ -629,10 +629,10 @@ export default function IntegrityAgent() {
                                               }
 
                                               return (
-                                                <div key={checkType} className="space-y-2">
-                                                  <div className="p-2 rounded bg-black/20 border border-white/5 overflow-hidden">
+                                                <div key={checkType} className="space-y-2 w-full">
+                                                  <div className="p-2 rounded bg-black/20 border border-white/5 overflow-hidden w-full">
                                                     <div className="text-[10px] font-semibold text-primary mb-1 uppercase">{checkType} Check:</div>
-                                                    <div className="text-[10px] text-muted-foreground whitespace-pre-wrap break-words" style={{ overflowWrap: 'anywhere' }}>
+                                                    <div className="text-[10px] text-muted-foreground whitespace-pre-wrap" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                                                       {checkData.findings || 'No findings available'}
                                                     </div>
                                                     
@@ -658,7 +658,7 @@ export default function IntegrityAgent() {
                                                           <Bell className="w-3 h-3 shrink-0" />
                                                           <span className="text-[10px] font-semibold">HR Follow-Up Required:</span>
                                                         </div>
-                                                        <div className="text-[10px] text-orange-500/80 break-words">
+                                                        <div className="text-[10px] text-orange-500/80" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                                                           {checkData.followUpReason || 'Manual verification needed'}
                                                         </div>
                                                       </div>
@@ -670,9 +670,9 @@ export default function IntegrityAgent() {
                                           </>
                                         ) : (
                                           /* Fallback for string-based findings (legacy checks or in-progress status) */
-                                          <div className="p-2 rounded bg-black/20 border border-white/5 overflow-hidden">
+                                          <div className="p-2 rounded bg-black/20 border border-white/5 overflow-hidden w-full">
                                             <div className="text-[10px] font-semibold text-primary mb-1">Findings:</div>
-                                            <div className="text-[10px] text-muted-foreground whitespace-pre-wrap break-words" style={{ overflowWrap: 'anywhere' }}>
+                                            <div className="text-[10px] text-muted-foreground whitespace-pre-wrap" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                                               {String(parsedFindings)}
                                             </div>
                                           </div>
