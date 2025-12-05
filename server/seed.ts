@@ -1,27 +1,54 @@
 import { db } from "./db";
-import { users, jobs, candidates, whatsappConversations, whatsappMessages, whatsappDocumentRequests, whatsappAppointments, tenantConfig, integrityChecks, interviews, recruitmentSessions, interviewAssessments, documents, documentBatches, candidateDocuments, integrityDocumentRequirements } from "@shared/schema";
+import { sql } from "drizzle-orm";
+import { users, jobs, candidates, whatsappConversations, whatsappMessages, whatsappDocumentRequests, whatsappAppointments, tenantConfig, integrityChecks, interviews, recruitmentSessions, interviewAssessments, documents, documentBatches, candidateDocuments, integrityDocumentRequirements, candidateSocialConsent, candidateSocialProfiles, socialScreeningFindings, socialScreeningPosts, interviewSessions, interviewFeedback, interviewRecordings, interviewTranscripts, candidateRecommendations, modelTrainingEvents, onboardingAgentLogs, onboardingDocumentRequests, onboardingWorkflows, whatsappDocumentSessions } from "@shared/schema";
 
 async function seedDatabase() {
   console.log("🌱 Starting database seed...");
 
   try {
-    console.log("Clearing existing data...");
-    await db.delete(candidateDocuments);
-    await db.delete(integrityDocumentRequirements);
-    await db.delete(whatsappAppointments);
-    await db.delete(whatsappDocumentRequests);
-    await db.delete(whatsappMessages);
-    await db.delete(whatsappConversations);
-    await db.delete(interviewAssessments);
-    await db.delete(interviews);
-    await db.delete(recruitmentSessions);
-    await db.delete(integrityChecks);
-    await db.delete(documents);
-    await db.delete(documentBatches);
-    await db.delete(candidates);
-    await db.delete(jobs);
-    await db.delete(users);
-    await db.delete(tenantConfig);
+    console.log("Clearing existing data using CASCADE TRUNCATE...");
+    // Use raw SQL TRUNCATE CASCADE for reliable clearing
+    await db.execute(sql`
+      TRUNCATE TABLE 
+        social_screening_posts,
+        social_screening_findings,
+        candidate_social_profiles,
+        candidate_social_consent,
+        candidate_documents,
+        integrity_document_requirements,
+        whatsapp_appointments,
+        whatsapp_document_sessions,
+        whatsapp_document_requests,
+        whatsapp_messages,
+        interview_transcripts,
+        interview_recordings,
+        interview_feedback,
+        candidate_recommendations,
+        model_training_events,
+        interview_sessions,
+        whatsapp_conversations,
+        interview_assessments,
+        interviews,
+        onboarding_agent_logs,
+        onboarding_document_requests,
+        onboarding_workflows,
+        recruitment_sessions,
+        integrity_checks,
+        documents,
+        document_batches,
+        kpi_scores,
+        kpi_assignments,
+        feedback_360_responses,
+        feedback_360_requests,
+        review_submissions,
+        review_cycles,
+        kpi_templates,
+        candidates,
+        jobs,
+        users,
+        tenant_config
+      CASCADE
+    `);
 
     console.log("Creating users...");
     const userRecords = await db.insert(users).values([
@@ -771,12 +798,453 @@ async function seedDatabase() {
 
     console.log(`✓ Created ${documentRecords.length} candidate documents`);
 
+    // Social Screening Seed Data
+    console.log("Creating social screening consents...");
+    const consentRecords = await db.insert(candidateSocialConsent).values([
+      {
+        tenantId: tenantRecord[0].id,
+        candidateId: siphoCandidate.id,
+        consentStatus: "granted",
+        grantedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3),
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 87), // 87 days remaining
+        ipAddress: "41.13.45.67",
+        userAgent: "WhatsApp/2.23.20.76",
+        metadata: {
+          platforms: ["facebook", "twitter", "linkedin"],
+          handles: {
+            facebook: "sipho.dlamini.sa",
+            twitter: "@siphodlamini",
+            linkedin: "siphodlamini"
+          },
+          consentVersion: "1.0",
+          dataRetentionDays: 90
+        }
+      },
+      {
+        tenantId: tenantRecord[0].id,
+        candidateId: leratoCandidate.id,
+        consentStatus: "granted",
+        grantedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5),
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 85),
+        ipAddress: "102.89.23.45",
+        userAgent: "WhatsApp/2.23.20.76",
+        metadata: {
+          platforms: ["facebook", "twitter"],
+          handles: {
+            facebook: "lerato.molefe",
+            twitter: "@lerato_codes"
+          },
+          consentVersion: "1.0",
+          dataRetentionDays: 90
+        }
+      },
+      {
+        tenantId: tenantRecord[0].id,
+        candidateId: thandiCandidate.id,
+        consentStatus: "pending",
+        requestedAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
+        metadata: {
+          platforms: ["facebook", "twitter", "linkedin"],
+          requestMethod: "whatsapp"
+        }
+      },
+      {
+        tenantId: tenantRecord[0].id,
+        candidateId: nomvulaCandidate.id,
+        consentStatus: "granted",
+        grantedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1),
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 89),
+        ipAddress: "197.234.56.78",
+        userAgent: "Mozilla/5.0",
+        metadata: {
+          platforms: ["twitter", "linkedin"],
+          handles: {
+            twitter: "@nomvula_devops",
+            linkedin: "nomvulakhumalo"
+          },
+          consentVersion: "1.0",
+          dataRetentionDays: 90
+        }
+      },
+      {
+        tenantId: tenantRecord[0].id,
+        candidateId: zaneleCandidate.id,
+        consentStatus: "denied",
+        deniedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
+        metadata: {
+          platforms: ["facebook", "twitter"],
+          denialReason: "Privacy concerns"
+        }
+      },
+      {
+        tenantId: tenantRecord[0].id,
+        candidateId: chloeCandidate.id,
+        consentStatus: "granted",
+        grantedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7),
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 83),
+        ipAddress: "154.117.89.12",
+        userAgent: "WhatsApp/2.23.20.76",
+        metadata: {
+          platforms: ["facebook", "twitter", "linkedin"],
+          handles: {
+            facebook: "chloe.smith.dev",
+            twitter: "@chloedev",
+            linkedin: "chloesmith"
+          },
+          consentVersion: "1.0",
+          dataRetentionDays: 90
+        }
+      }
+    ]).returning();
+    console.log(`✓ Created ${consentRecords.length} social screening consents`);
+
+    // Social Profiles
+    console.log("Creating social profiles...");
+    const profileRecords = await db.insert(candidateSocialProfiles).values([
+      {
+        tenantId: tenantRecord[0].id,
+        candidateId: siphoCandidate.id,
+        platform: "facebook",
+        profileUrl: "https://facebook.com/sipho.dlamini.sa",
+        profileUsername: "sipho.dlamini.sa",
+        displayName: "Sipho Dlamini",
+        verified: true,
+        verifiedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3),
+        followerCount: 892,
+        accountAge: 8,
+        lastActivityDate: new Date(Date.now() - 1000 * 60 * 60 * 2),
+        profileData: { bio: "Backend Dev | Node.js | Python | Cloud", location: "Johannesburg, SA" }
+      },
+      {
+        tenantId: tenantRecord[0].id,
+        candidateId: siphoCandidate.id,
+        platform: "twitter",
+        profileUrl: "https://x.com/siphodlamini",
+        profileUsername: "siphodlamini",
+        displayName: "Sipho Dlamini 🚀",
+        verified: true,
+        verifiedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3),
+        followerCount: 1247,
+        accountAge: 6,
+        lastActivityDate: new Date(Date.now() - 1000 * 60 * 30),
+        profileData: { bio: "Software Engineer | Tech enthusiast | Building the future", location: "Gauteng" }
+      },
+      {
+        tenantId: tenantRecord[0].id,
+        candidateId: leratoCandidate.id,
+        platform: "facebook",
+        profileUrl: "https://facebook.com/lerato.molefe",
+        profileUsername: "lerato.molefe",
+        displayName: "Lerato Molefe",
+        verified: true,
+        verifiedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5),
+        followerCount: 543,
+        accountAge: 5,
+        lastActivityDate: new Date(Date.now() - 1000 * 60 * 60 * 12),
+        profileData: { bio: "Coder & Coffee lover ☕", location: "Cape Town" }
+      },
+      {
+        tenantId: tenantRecord[0].id,
+        candidateId: leratoCandidate.id,
+        platform: "twitter",
+        profileUrl: "https://x.com/lerato_codes",
+        profileUsername: "lerato_codes",
+        displayName: "Lerato | Developer",
+        verified: true,
+        verifiedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5),
+        followerCount: 2100,
+        accountAge: 4,
+        lastActivityDate: new Date(Date.now() - 1000 * 60 * 60 * 1),
+        profileData: { bio: "Full-stack developer | TypeScript | GraphQL", location: "Western Cape, SA" }
+      },
+      {
+        tenantId: tenantRecord[0].id,
+        candidateId: nomvulaCandidate.id,
+        platform: "twitter",
+        profileUrl: "https://x.com/nomvula_devops",
+        profileUsername: "nomvula_devops",
+        displayName: "Nomvula | DevOps 🔧",
+        verified: true,
+        verifiedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1),
+        followerCount: 3500,
+        accountAge: 5,
+        lastActivityDate: new Date(Date.now() - 1000 * 60 * 45),
+        profileData: { bio: "DevOps Engineer | AWS | K8s | Terraform | Cloud Native", location: "Johannesburg" }
+      },
+      {
+        tenantId: tenantRecord[0].id,
+        candidateId: chloeCandidate.id,
+        platform: "twitter",
+        profileUrl: "https://x.com/chloedev",
+        profileUsername: "chloedev",
+        displayName: "Chloe Smith",
+        verified: true,
+        verifiedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7),
+        followerCount: 4200,
+        accountAge: 7,
+        lastActivityDate: new Date(Date.now() - 1000 * 60 * 15),
+        profileData: { bio: "Lead Backend Engineer | Python | Django | FastAPI | Speaker", location: "Pretoria, SA" }
+      },
+      {
+        tenantId: tenantRecord[0].id,
+        candidateId: chloeCandidate.id,
+        platform: "facebook",
+        profileUrl: "https://facebook.com/chloe.smith.dev",
+        profileUsername: "chloe.smith.dev",
+        displayName: "Chloe Smith",
+        verified: true,
+        verifiedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7),
+        followerCount: 1560,
+        accountAge: 9,
+        lastActivityDate: new Date(Date.now() - 1000 * 60 * 60 * 4),
+        profileData: { bio: "Software engineer, speaker, mentor", location: "Gauteng, South Africa" }
+      }
+    ]).returning();
+    console.log(`✓ Created ${profileRecords.length} social profiles`);
+
+    // Social Screening Findings
+    console.log("Creating social screening findings...");
+    const findingRecords = await db.insert(socialScreeningFindings).values([
+      {
+        tenantId: tenantRecord[0].id,
+        candidateId: siphoCandidate.id,
+        screeningStatus: "completed",
+        platformsAnalyzed: ["facebook", "twitter"],
+        totalPostsAnalyzed: 156,
+        dateRangeStart: new Date(Date.now() - 1000 * 60 * 60 * 24 * 180),
+        dateRangeEnd: new Date(),
+        cultureFitScore: 87,
+        professionalismScore: 91,
+        communicationScore: 85,
+        riskLevel: "low",
+        sentimentAnalysis: { positive: 72, negative: 8, neutral: 20 },
+        topicsIdentified: ["technology", "programming", "career", "sports", "community"],
+        redFlags: [],
+        positiveIndicators: [
+          { type: "professional_engagement", description: "Active in tech community discussions", evidence: "Regular tech posts" },
+          { type: "thought_leadership", description: "Shares industry insights", evidence: "Educational content" }
+        ],
+        culturalAlignmentFactors: { 
+          values: ["innovation", "collaboration", "continuous_learning"],
+          interests: ["open_source", "mentorship", "tech_events"],
+          behavior: ["helpful", "professional", "engaged"]
+        },
+        aiSummary: "Sipho demonstrates excellent professional presence online with consistent engagement in technology discussions. His social media activity shows strong alignment with company values including innovation, teamwork, and continuous learning. No concerning content identified.",
+        aiRecommendation: "proceed",
+        aiConfidence: 92,
+        humanReviewStatus: "approved",
+        humanReviewedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
+        humanReviewNotes: "Excellent candidate. Professional online presence confirmed.",
+        analysisVersion: "groq-llama-3.3-70b",
+        processingTimeMs: 4500,
+        tokensUsed: 8500
+      },
+      {
+        tenantId: tenantRecord[0].id,
+        candidateId: leratoCandidate.id,
+        screeningStatus: "completed",
+        platformsAnalyzed: ["facebook", "twitter"],
+        totalPostsAnalyzed: 98,
+        dateRangeStart: new Date(Date.now() - 1000 * 60 * 60 * 24 * 180),
+        dateRangeEnd: new Date(),
+        cultureFitScore: 78,
+        professionalismScore: 82,
+        communicationScore: 80,
+        riskLevel: "low",
+        sentimentAnalysis: { positive: 65, negative: 12, neutral: 23 },
+        topicsIdentified: ["coding", "tech_events", "music", "travel", "food"],
+        redFlags: [],
+        positiveIndicators: [
+          { type: "community_engagement", description: "Participates in tech meetups", evidence: "Event posts" },
+          { type: "creative_interests", description: "Well-rounded personality", evidence: "Diverse content" }
+        ],
+        culturalAlignmentFactors: {
+          values: ["creativity", "teamwork", "work_life_balance"],
+          interests: ["hackathons", "music", "travel"],
+          behavior: ["friendly", "collaborative", "curious"]
+        },
+        aiSummary: "Lerato shows a well-balanced online presence with professional tech engagement and healthy personal interests. Active in the developer community with no red flags identified.",
+        aiRecommendation: "proceed",
+        aiConfidence: 88,
+        humanReviewStatus: "pending",
+        analysisVersion: "groq-llama-3.3-70b",
+        processingTimeMs: 3800,
+        tokensUsed: 7200
+      },
+      {
+        tenantId: tenantRecord[0].id,
+        candidateId: nomvulaCandidate.id,
+        screeningStatus: "in_progress",
+        platformsAnalyzed: ["twitter"],
+        totalPostsAnalyzed: 45,
+        dateRangeStart: new Date(Date.now() - 1000 * 60 * 60 * 24 * 180),
+        dateRangeEnd: new Date(),
+        cultureFitScore: 0,
+        professionalismScore: 0,
+        communicationScore: 0,
+        riskLevel: "unknown",
+        sentimentAnalysis: { positive: 0, negative: 0, neutral: 0 },
+        topicsIdentified: [],
+        aiSummary: "Analysis in progress. Twitter profile being analyzed.",
+        humanReviewStatus: "pending",
+        analysisVersion: "groq-llama-3.3-70b",
+        processingTimeMs: 0,
+        tokensUsed: 0
+      },
+      {
+        tenantId: tenantRecord[0].id,
+        candidateId: chloeCandidate.id,
+        screeningStatus: "completed",
+        platformsAnalyzed: ["facebook", "twitter"],
+        totalPostsAnalyzed: 234,
+        dateRangeStart: new Date(Date.now() - 1000 * 60 * 60 * 24 * 180),
+        dateRangeEnd: new Date(),
+        cultureFitScore: 94,
+        professionalismScore: 96,
+        communicationScore: 92,
+        riskLevel: "low",
+        sentimentAnalysis: { positive: 78, negative: 5, neutral: 17 },
+        topicsIdentified: ["python", "backend", "leadership", "mentorship", "conferences", "diversity_in_tech"],
+        redFlags: [],
+        positiveIndicators: [
+          { type: "thought_leadership", description: "Conference speaker and community leader", evidence: "Speaking engagements" },
+          { type: "mentorship", description: "Active mentor in tech community", evidence: "Mentorship posts" },
+          { type: "diversity_advocate", description: "Supports diversity in tech", evidence: "D&I content" }
+        ],
+        culturalAlignmentFactors: {
+          values: ["leadership", "mentorship", "diversity", "excellence"],
+          interests: ["public_speaking", "open_source", "community_building"],
+          behavior: ["inspirational", "supportive", "professional"]
+        },
+        aiSummary: "Chloe exhibits exceptional professional presence with strong thought leadership and mentorship activities. Her advocacy for diversity in tech and active conference participation demonstrate outstanding cultural alignment. Highly recommended.",
+        aiRecommendation: "proceed",
+        aiConfidence: 96,
+        humanReviewStatus: "approved",
+        humanReviewedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5),
+        humanReviewNotes: "Outstanding candidate. Verified speaker at multiple conferences.",
+        analysisVersion: "groq-llama-3.3-70b",
+        processingTimeMs: 6200,
+        tokensUsed: 12000
+      }
+    ]).returning();
+    console.log(`✓ Created ${findingRecords.length} social screening findings`);
+
+    // Social Screening Posts (sample posts that were analyzed)
+    console.log("Creating social screening posts...");
+    const siphoFinding = findingRecords.find(f => f.candidateId === siphoCandidate.id)!;
+    const leratoFinding = findingRecords.find(f => f.candidateId === leratoCandidate.id)!;
+    const chloeFinding = findingRecords.find(f => f.candidateId === chloeCandidate.id)!;
+
+    const postRecords = await db.insert(socialScreeningPosts).values([
+      {
+        tenantId: tenantRecord[0].id,
+        findingId: siphoFinding.id,
+        platform: "twitter",
+        postDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5),
+        contentType: "text",
+        contentSummary: "Shared excitement about learning new cloud technologies and completing AWS certification",
+        sentiment: "positive",
+        relevanceScore: 85,
+        flagged: 0,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 85)
+      },
+      {
+        tenantId: tenantRecord[0].id,
+        findingId: siphoFinding.id,
+        platform: "twitter",
+        postDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 12),
+        contentType: "text",
+        contentSummary: "Discussed best practices for microservices architecture with other developers",
+        sentiment: "positive",
+        relevanceScore: 90,
+        flagged: 0,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 78)
+      },
+      {
+        tenantId: tenantRecord[0].id,
+        findingId: siphoFinding.id,
+        platform: "facebook",
+        postDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 20),
+        contentType: "text",
+        contentSummary: "Celebrated team achievement after successful product launch",
+        sentiment: "positive",
+        relevanceScore: 75,
+        flagged: 0,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 70)
+      },
+      {
+        tenantId: tenantRecord[0].id,
+        findingId: leratoFinding.id,
+        platform: "twitter",
+        postDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3),
+        contentType: "text",
+        contentSummary: "Shared insights from attending local JavaScript meetup",
+        sentiment: "positive",
+        relevanceScore: 80,
+        flagged: 0,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 87)
+      },
+      {
+        tenantId: tenantRecord[0].id,
+        findingId: leratoFinding.id,
+        platform: "twitter",
+        postDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 8),
+        contentType: "text",
+        contentSummary: "Posted about debugging a complex TypeScript issue with helpful solution",
+        sentiment: "neutral",
+        relevanceScore: 85,
+        flagged: 0,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 82)
+      },
+      {
+        tenantId: tenantRecord[0].id,
+        findingId: chloeFinding.id,
+        platform: "twitter",
+        postDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
+        contentType: "text",
+        contentSummary: "Announced upcoming conference talk on Python best practices",
+        sentiment: "positive",
+        relevanceScore: 95,
+        flagged: 0,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 88)
+      },
+      {
+        tenantId: tenantRecord[0].id,
+        findingId: chloeFinding.id,
+        platform: "twitter",
+        postDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 15),
+        contentType: "text",
+        contentSummary: "Shared article about mentoring junior developers with personal insights",
+        sentiment: "positive",
+        relevanceScore: 90,
+        flagged: 0,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 75)
+      },
+      {
+        tenantId: tenantRecord[0].id,
+        findingId: chloeFinding.id,
+        platform: "facebook",
+        postDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30),
+        contentType: "text",
+        contentSummary: "Posted about diversity in tech event she organized",
+        sentiment: "positive",
+        relevanceScore: 88,
+        flagged: 0,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 60)
+      }
+    ]).returning();
+    console.log(`✓ Created ${postRecords.length} social screening posts`);
+
     console.log("\n✅ Database seeded successfully!");
     console.log("\nSummary:");
     console.log(`- ${userRecords.length} users`);
     console.log(`- ${jobRecords.length} jobs`);
     console.log(`- ${candidateRecords.length} candidates`);
     console.log(`- ${conversationRecords.length} WhatsApp conversations with messages, documents, and appointments`);
+    console.log(`- ${consentRecords.length} social screening consents`);
+    console.log(`- ${profileRecords.length} social profiles`);
+    console.log(`- ${findingRecords.length} social screening findings`);
+    console.log(`- ${postRecords.length} social screening posts`);
     
   } catch (error) {
     console.error("❌ Error seeding database:", error);
