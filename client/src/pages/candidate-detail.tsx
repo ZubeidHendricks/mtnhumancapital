@@ -1226,6 +1226,35 @@ export default function CandidateDetail() {
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-purple-600"
+                                onClick={async () => {
+                                  try {
+                                    const response = await fetch(`/api/candidate-documents/${doc.id}/download`);
+                                    if (!response.ok) {
+                                      const error = await response.json();
+                                      throw new Error(error.message || "Download failed");
+                                    }
+                                    const blob = await response.blob();
+                                    const url = window.URL.createObjectURL(blob);
+                                    const a = document.createElement("a");
+                                    a.href = url;
+                                    a.download = doc.fileName;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    window.URL.revokeObjectURL(url);
+                                    document.body.removeChild(a);
+                                    toast({ title: "Success", description: "Document downloaded" });
+                                  } catch (error: any) {
+                                    toast({ title: "Error", description: error.message || "Failed to download", variant: "destructive" });
+                                  }
+                                }}
+                                data-testid={`button-download-${doc.id}`}
+                              >
+                                <Download className="h-3 w-3" />
+                              </Button>
                               {doc.status === 'received' && (
                                 <>
                                   <Button
