@@ -494,6 +494,30 @@ BENEFITS:
     ? Math.round((completedAssignments.length / totalAssignments) * 100)
     : 0;
 
+  // Social Screening Stats Query
+  const socialStatsKey = useTenantQueryKey(['socialScreeningStats']);
+  const { data: socialStats } = useQuery({
+    queryKey: socialStatsKey,
+    queryFn: async () => {
+      const res = await fetch("/api/social-screening/stats");
+      if (!res.ok) return null;
+      return res.json();
+    },
+    retry: 1,
+  });
+
+  // Social Screening Pending Reviews Query
+  const socialPendingKey = useTenantQueryKey(['socialScreeningPending']);
+  const { data: socialPendingReviews = [] } = useQuery({
+    queryKey: socialPendingKey,
+    queryFn: async () => {
+      const res = await fetch("/api/social-screening/findings/pending-review");
+      if (!res.ok) return [];
+      return res.json();
+    },
+    retry: 1,
+  });
+
   const displayCandidates = candidatesError ? MOCK_CANDIDATES : (Array.isArray(candidates) ? candidates : []);
   const displayJobs = jobsError ? [] : (Array.isArray(jobs) ? jobs : []);
   const jobCount = displayJobs.length || 12;
@@ -1573,6 +1597,161 @@ BENEFITS:
                     <AlertCircle className="w-10 h-10 mx-auto mb-2 opacity-50" />
                     <p>Select a candidate to view detailed risk analysis</p>
                   </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Social Screening Section */}
+            <div className="rounded-lg bg-gradient-to-r from-purple-900/20 to-pink-500/20 border border-purple-500/20 p-6 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold flex items-center gap-2 text-white">
+                  <Users className="w-5 h-5 text-purple-400" />
+                  Social Intelligence Screening
+                </h3>
+                <p className="text-muted-foreground text-sm mt-1">
+                  AI-powered culture fit assessment via social media analysis (Facebook, X, Reddit) with POPIA compliance.
+                </p>
+              </div>
+              <Link href="/social-screening">
+                <Button className="bg-purple-500 text-purple-950 hover:bg-purple-400 shadow-lg shadow-purple-500/20">
+                  <Search className="w-4 h-4 mr-2" />
+                  View Social Screening
+                </Button>
+              </Link>
+            </div>
+
+            {/* Social Screening Dashboard Stats */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card className="border-white/10 bg-card/20">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Consent Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Granted</span>
+                      <Badge className="bg-green-500/20 text-green-400">{socialStats?.consentGranted || 0}</Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Pending</span>
+                      <Badge className="bg-yellow-500/20 text-yellow-400">{socialStats?.consentPending || 0}</Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Denied</span>
+                      <Badge className="bg-red-500/20 text-red-400">{socialStats?.consentDenied || 0}</Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-white/10 bg-card/20">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Screening Progress</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Total Screenings</span>
+                      <span className="font-bold">{socialStats?.totalScreenings || 0}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Completed</span>
+                      <Badge className="bg-green-500/20 text-green-400">{socialStats?.screeningsCompleted || 0}</Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Pending Review</span>
+                      <Badge className="bg-purple-500/20 text-purple-400">{socialStats?.pendingHumanReview || 0}</Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-white/10 bg-card/20">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Risk Distribution</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-green-500"></span> Low Risk
+                      </span>
+                      <span>{socialStats?.riskDistribution?.low || 0}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-yellow-500"></span> Medium
+                      </span>
+                      <span>{socialStats?.riskDistribution?.medium || 0}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-orange-500"></span> High
+                      </span>
+                      <span>{socialStats?.riskDistribution?.high || 0}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-red-500"></span> Critical
+                      </span>
+                      <span>{socialStats?.riskDistribution?.critical || 0}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Pending Human Reviews */}
+              <Card className="border-white/10 bg-card/20 lg:col-span-3">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Eye className="w-5 h-5 text-purple-400" />
+                    Pending Human Reviews
+                  </CardTitle>
+                  <CardDescription>Social screening findings requiring HR review</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {socialPendingReviews.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <CheckCircle2 className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                      <p>No pending reviews. All social screenings are up to date.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {socialPendingReviews.slice(0, 5).map((finding: any) => (
+                        <div key={finding.id} className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/5">
+                          <div className="flex items-center gap-4">
+                            <div className={`w-3 h-3 rounded-full ${
+                              finding.riskLevel === 'low' ? 'bg-green-500' :
+                              finding.riskLevel === 'medium' ? 'bg-yellow-500' :
+                              finding.riskLevel === 'high' ? 'bg-orange-500' : 'bg-red-500'
+                            }`}></div>
+                            <div>
+                              <p className="font-medium">Candidate #{finding.candidateId?.slice(-6)}</p>
+                              <p className="text-sm text-muted-foreground">
+                                Culture Fit: {finding.cultureFitScore || 'N/A'}% | 
+                                Risk: {finding.riskLevel || 'Unknown'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Badge className={
+                              finding.aiRecommendation === 'proceed' ? 'bg-green-500/20 text-green-400' :
+                              finding.aiRecommendation === 'review' ? 'bg-yellow-500/20 text-yellow-400' :
+                              finding.aiRecommendation === 'caution' ? 'bg-orange-500/20 text-orange-400' :
+                              'bg-red-500/20 text-red-400'
+                            }>
+                              AI: {finding.aiRecommendation || 'Pending'}
+                            </Badge>
+                            <Link href={`/social-screening/${finding.id}`}>
+                              <Button size="sm" variant="outline">
+                                Review
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
