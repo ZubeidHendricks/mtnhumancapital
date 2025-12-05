@@ -7,7 +7,6 @@ async function seedDatabase() {
 
   try {
     console.log("Clearing existing data using CASCADE TRUNCATE...");
-    // Use raw SQL TRUNCATE CASCADE for reliable clearing
     await db.execute(sql`
       TRUNCATE TABLE 
         social_screening_posts,
@@ -50,17 +49,40 @@ async function seedDatabase() {
       CASCADE
     `);
 
+    console.log("Creating default tenant...");
+    const [tenant] = await db.insert(tenantConfig).values({
+      companyName: "Avatar Human Capital",
+      subdomain: "ahc",
+      logoUrl: "/logo.png",
+      primaryColor: "#6366f1",
+      secondaryColor: "#8b5cf6",
+      tagline: "AI-Powered HR Management",
+      industry: "Technology",
+      modulesEnabled: { recruitment: true, whatsapp: true, integrity: true },
+      apiKeysConfigured: {},
+      settings: {
+        timezone: "Africa/Johannesburg",
+        currency: "ZAR",
+        language: "en-ZA"
+      }
+    }).returning();
+    const tenantId = tenant.id;
+    console.log(`✓ Created tenant: ${tenant.companyName} (${tenantId})`);
+
     console.log("Creating users...");
     const userRecords = await db.insert(users).values([
       {
+        tenantId,
         username: "admin",
         password: "admin123"
       },
       {
+        tenantId,
         username: "hr_manager",
         password: "hr123"
       },
       {
+        tenantId,
         username: "recruiter",
         password: "recruiter123"
       }
@@ -71,6 +93,7 @@ async function seedDatabase() {
     console.log("Creating job postings...");
     const jobRecords = await db.insert(jobs).values([
       {
+        tenantId,
         title: "Senior Backend Developer",
         department: "Engineering",
         location: "Gauteng",
@@ -80,6 +103,7 @@ async function seedDatabase() {
         status: "Active"
       },
       {
+        tenantId,
         title: "Frontend React Developer",
         department: "Engineering",
         location: "Western Cape",
@@ -89,6 +113,7 @@ async function seedDatabase() {
         status: "Active"
       },
       {
+        tenantId,
         title: "DevOps Engineer",
         department: "Infrastructure",
         location: "Gauteng",
@@ -98,6 +123,7 @@ async function seedDatabase() {
         status: "Active"
       },
       {
+        tenantId,
         title: "Product Manager",
         department: "Product",
         location: "Western Cape",
@@ -107,6 +133,7 @@ async function seedDatabase() {
         status: "Active"
       },
       {
+        tenantId,
         title: "HR Business Partner",
         department: "Human Resources",
         location: "KwaZulu-Natal",
@@ -122,6 +149,7 @@ async function seedDatabase() {
     console.log("Creating candidates...");
     const candidateRecords = await db.insert(candidates).values([
       {
+        tenantId,
         jobId: jobRecords[0].id,
         fullName: "Sipho Dlamini",
         email: "sipho.dlamini@email.com",
@@ -146,6 +174,7 @@ async function seedDatabase() {
         }
       },
       {
+        tenantId,
         jobId: jobRecords[0].id,
         fullName: "Lerato Molefe",
         email: "lerato.molefe@email.com",
@@ -163,6 +192,7 @@ async function seedDatabase() {
         }
       },
       {
+        tenantId,
         jobId: jobRecords[1].id,
         fullName: "Thandi Ndlovu",
         email: "thandi.ndlovu@email.com",
@@ -181,6 +211,7 @@ async function seedDatabase() {
         }
       },
       {
+        tenantId,
         jobId: jobRecords[1].id,
         fullName: "Michael Van Der Merwe",
         email: "michael.vdm@email.com",
@@ -200,6 +231,7 @@ async function seedDatabase() {
         }
       },
       {
+        tenantId,
         jobId: jobRecords[2].id,
         fullName: "Nomvula Khumalo",
         email: "nomvula.khumalo@email.com",
@@ -219,6 +251,7 @@ async function seedDatabase() {
         }
       },
       {
+        tenantId,
         jobId: jobRecords[2].id,
         fullName: "David Botha",
         email: "david.botha@email.com",
@@ -236,6 +269,7 @@ async function seedDatabase() {
         }
       },
       {
+        tenantId,
         jobId: jobRecords[3].id,
         fullName: "Zanele Mthembu",
         email: "zanele.mthembu@email.com",
@@ -255,6 +289,7 @@ async function seedDatabase() {
         }
       },
       {
+        tenantId,
         jobId: jobRecords[4].id,
         fullName: "Bongani Sithole",
         email: "bongani.sithole@email.com",
@@ -272,6 +307,7 @@ async function seedDatabase() {
         }
       },
       {
+        tenantId,
         jobId: jobRecords[0].id,
         fullName: "Chloe Smith",
         email: "chloe.smith@email.com",
@@ -290,6 +326,7 @@ async function seedDatabase() {
         }
       },
       {
+        tenantId,
         jobId: jobRecords[1].id,
         fullName: "Katlego Mokoena",
         email: "katlego.mokoena@email.com",
@@ -311,17 +348,6 @@ async function seedDatabase() {
 
     console.log(`✓ Created ${candidateRecords.length} candidates`);
 
-    console.log("Creating default tenant config...");
-    const tenantRecord = await db.insert(tenantConfig).values({
-      companyName: "Avatar Human Capital",
-      subdomain: "pps",
-      primaryColor: "#8B5CF6",
-      tagline: "AI-Powered HR Management",
-      industry: "Technology",
-      modulesEnabled: { recruitment: true, whatsapp: true, integrity: true },
-      apiKeysConfigured: {}
-    }).returning();
-
     console.log("Creating WhatsApp conversations...");
     const siphoCandidate = candidateRecords.find(c => c.fullName === "Sipho Dlamini")!;
     const leratoCandidate = candidateRecords.find(c => c.fullName === "Lerato Molefe")!;
@@ -329,7 +355,7 @@ async function seedDatabase() {
 
     const conversationRecords = await db.insert(whatsappConversations).values([
       {
-        tenantId: tenantRecord[0].id,
+        tenantId,
         candidateId: siphoCandidate.id,
         phone: "+27823456789",
         waId: "27823456789",
@@ -342,7 +368,7 @@ async function seedDatabase() {
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2)
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId,
         candidateId: leratoCandidate.id,
         phone: "+27834567890",
         waId: "27834567890",
@@ -355,7 +381,7 @@ async function seedDatabase() {
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5)
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId,
         candidateId: thandiCandidate.id,
         phone: "+27845678901",
         waId: "27845678901",
@@ -379,7 +405,7 @@ async function seedDatabase() {
     await db.insert(whatsappMessages).values([
       {
         conversationId: siphoConv.id,
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         waMessageId: "wamid_" + Date.now() + "_1",
         direction: "outbound",
         senderType: "ai",
@@ -389,7 +415,7 @@ async function seedDatabase() {
       },
       {
         conversationId: siphoConv.id,
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         waMessageId: "wamid_" + Date.now() + "_2",
         direction: "inbound",
         senderType: "candidate",
@@ -399,7 +425,7 @@ async function seedDatabase() {
       },
       {
         conversationId: siphoConv.id,
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         waMessageId: "wamid_" + Date.now() + "_3",
         direction: "outbound",
         senderType: "ai",
@@ -409,7 +435,7 @@ async function seedDatabase() {
       },
       {
         conversationId: siphoConv.id,
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         waMessageId: "wamid_" + Date.now() + "_4",
         direction: "inbound",
         senderType: "candidate",
@@ -419,7 +445,7 @@ async function seedDatabase() {
       },
       {
         conversationId: leratoConv.id,
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         waMessageId: "wamid_" + Date.now() + "_5",
         direction: "outbound",
         senderType: "human",
@@ -429,7 +455,7 @@ async function seedDatabase() {
       },
       {
         conversationId: leratoConv.id,
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         waMessageId: "wamid_" + Date.now() + "_6",
         direction: "inbound",
         senderType: "candidate",
@@ -439,7 +465,7 @@ async function seedDatabase() {
       },
       {
         conversationId: leratoConv.id,
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         waMessageId: "wamid_" + Date.now() + "_7",
         direction: "outbound",
         senderType: "human",
@@ -449,7 +475,7 @@ async function seedDatabase() {
       },
       {
         conversationId: leratoConv.id,
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         waMessageId: "wamid_" + Date.now() + "_8",
         direction: "inbound",
         senderType: "candidate",
@@ -461,7 +487,7 @@ async function seedDatabase() {
       },
       {
         conversationId: thandiConv.id,
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         waMessageId: "wamid_" + Date.now() + "_9",
         direction: "outbound",
         senderType: "ai",
@@ -471,7 +497,7 @@ async function seedDatabase() {
       },
       {
         conversationId: thandiConv.id,
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         waMessageId: "wamid_" + Date.now() + "_10",
         direction: "inbound",
         senderType: "candidate",
@@ -481,7 +507,7 @@ async function seedDatabase() {
       },
       {
         conversationId: thandiConv.id,
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         waMessageId: "wamid_" + Date.now() + "_11",
         direction: "outbound",
         senderType: "ai",
@@ -491,7 +517,7 @@ async function seedDatabase() {
       },
       {
         conversationId: thandiConv.id,
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         waMessageId: "wamid_" + Date.now() + "_12",
         direction: "inbound",
         senderType: "candidate",
@@ -507,7 +533,7 @@ async function seedDatabase() {
     await db.insert(whatsappDocumentRequests).values([
       {
         conversationId: siphoConv.id,
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: siphoCandidate.id,
         documentType: "cv",
         documentName: "Updated CV / Resume",
@@ -516,7 +542,7 @@ async function seedDatabase() {
       },
       {
         conversationId: leratoConv.id,
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: leratoCandidate.id,
         documentType: "proof_of_address",
         documentName: "Proof of Address",
@@ -532,7 +558,7 @@ async function seedDatabase() {
     await db.insert(whatsappAppointments).values([
       {
         conversationId: thandiConv.id,
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: thandiCandidate.id,
         appointmentType: "interview",
         title: "First Round Interview",
@@ -557,7 +583,7 @@ async function seedDatabase() {
     
     const documentRecords = await db.insert(candidateDocuments).values([
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: siphoCandidate.id,
         documentType: "cv",
         fileName: "Sipho_Dlamini_CV.pdf",
@@ -572,7 +598,7 @@ async function seedDatabase() {
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7)
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: siphoCandidate.id,
         documentType: "id_document",
         fileName: "Sipho_Dlamini_ID.pdf",
@@ -588,7 +614,7 @@ async function seedDatabase() {
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5)
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: siphoCandidate.id,
         documentType: "police_clearance",
         fileName: "Sipho_Dlamini_Police_Clearance.pdf",
@@ -601,7 +627,7 @@ async function seedDatabase() {
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2)
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: leratoCandidate.id,
         documentType: "cv",
         fileName: "Lerato_Molefe_CV.pdf",
@@ -616,7 +642,7 @@ async function seedDatabase() {
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 6)
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: leratoCandidate.id,
         documentType: "proof_of_address",
         fileName: "Lerato_Molefe_Proof_of_Address.pdf",
@@ -632,7 +658,7 @@ async function seedDatabase() {
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3)
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: thandiCandidate.id,
         documentType: "cv",
         fileName: "Thandi_Ndlovu_CV.pdf",
@@ -647,7 +673,7 @@ async function seedDatabase() {
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 8)
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: thandiCandidate.id,
         documentType: "qualification",
         fileName: "Thandi_Ndlovu_Degree_Certificate.pdf",
@@ -662,7 +688,7 @@ async function seedDatabase() {
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5)
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: nomvulaCandidate.id,
         documentType: "cv",
         fileName: "Nomvula_Khumalo_CV.pdf",
@@ -677,7 +703,7 @@ async function seedDatabase() {
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4)
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: nomvulaCandidate.id,
         documentType: "police_clearance",
         fileName: "Nomvula_Khumalo_Police_Clearance.pdf",
@@ -691,7 +717,7 @@ async function seedDatabase() {
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1)
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: zaneleCandidate.id,
         documentType: "cv",
         fileName: "Zanele_Mthembu_CV.pdf",
@@ -706,7 +732,7 @@ async function seedDatabase() {
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3)
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: zaneleCandidate.id,
         documentType: "id_document",
         fileName: "Zanele_Mthembu_ID.pdf",
@@ -722,7 +748,7 @@ async function seedDatabase() {
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2)
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: chloeCandidate.id,
         documentType: "cv",
         fileName: "Chloe_Smith_CV.pdf",
@@ -737,7 +763,7 @@ async function seedDatabase() {
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5)
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: chloeCandidate.id,
         documentType: "bank_confirmation",
         fileName: "Chloe_Smith_Bank_Confirmation.pdf",
@@ -752,7 +778,7 @@ async function seedDatabase() {
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2)
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: chloeCandidate.id,
         documentType: "police_clearance",
         fileName: "Chloe_Smith_Police_Clearance.pdf",
@@ -768,7 +794,7 @@ async function seedDatabase() {
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3)
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: bonganiCandidate.id,
         documentType: "cv",
         fileName: "Bongani_Sithole_CV.pdf",
@@ -781,7 +807,7 @@ async function seedDatabase() {
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1)
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: bonganiCandidate.id,
         documentType: "qualification",
         fileName: "Bongani_Sithole_HR_Certificate.pdf",
@@ -802,7 +828,7 @@ async function seedDatabase() {
     console.log("Creating social screening consents...");
     const consentRecords = await db.insert(candidateSocialConsent).values([
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: siphoCandidate.id,
         consentStatus: "granted",
         grantedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3),
@@ -821,7 +847,7 @@ async function seedDatabase() {
         }
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: leratoCandidate.id,
         consentStatus: "granted",
         grantedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5),
@@ -839,7 +865,7 @@ async function seedDatabase() {
         }
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: thandiCandidate.id,
         consentStatus: "pending",
         requestedAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
@@ -849,7 +875,7 @@ async function seedDatabase() {
         }
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: nomvulaCandidate.id,
         consentStatus: "granted",
         grantedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1),
@@ -867,7 +893,7 @@ async function seedDatabase() {
         }
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: zaneleCandidate.id,
         consentStatus: "denied",
         deniedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
@@ -877,7 +903,7 @@ async function seedDatabase() {
         }
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: chloeCandidate.id,
         consentStatus: "granted",
         grantedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7),
@@ -902,7 +928,7 @@ async function seedDatabase() {
     console.log("Creating social profiles...");
     const profileRecords = await db.insert(candidateSocialProfiles).values([
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: siphoCandidate.id,
         platform: "facebook",
         profileUrl: "https://facebook.com/sipho.dlamini.sa",
@@ -916,7 +942,7 @@ async function seedDatabase() {
         profileData: { bio: "Backend Dev | Node.js | Python | Cloud", location: "Johannesburg, SA" }
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: siphoCandidate.id,
         platform: "twitter",
         profileUrl: "https://x.com/siphodlamini",
@@ -930,7 +956,7 @@ async function seedDatabase() {
         profileData: { bio: "Software Engineer | Tech enthusiast | Building the future", location: "Gauteng" }
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: leratoCandidate.id,
         platform: "facebook",
         profileUrl: "https://facebook.com/lerato.molefe",
@@ -944,7 +970,7 @@ async function seedDatabase() {
         profileData: { bio: "Coder & Coffee lover ☕", location: "Cape Town" }
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: leratoCandidate.id,
         platform: "twitter",
         profileUrl: "https://x.com/lerato_codes",
@@ -958,7 +984,7 @@ async function seedDatabase() {
         profileData: { bio: "Full-stack developer | TypeScript | GraphQL", location: "Western Cape, SA" }
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: nomvulaCandidate.id,
         platform: "twitter",
         profileUrl: "https://x.com/nomvula_devops",
@@ -972,7 +998,7 @@ async function seedDatabase() {
         profileData: { bio: "DevOps Engineer | AWS | K8s | Terraform | Cloud Native", location: "Johannesburg" }
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: chloeCandidate.id,
         platform: "twitter",
         profileUrl: "https://x.com/chloedev",
@@ -986,7 +1012,7 @@ async function seedDatabase() {
         profileData: { bio: "Lead Backend Engineer | Python | Django | FastAPI | Speaker", location: "Pretoria, SA" }
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: chloeCandidate.id,
         platform: "facebook",
         profileUrl: "https://facebook.com/chloe.smith.dev",
@@ -1006,7 +1032,7 @@ async function seedDatabase() {
     console.log("Creating social screening findings...");
     const findingRecords = await db.insert(socialScreeningFindings).values([
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: siphoCandidate.id,
         screeningStatus: "completed",
         platformsAnalyzed: ["facebook", "twitter"],
@@ -1040,7 +1066,7 @@ async function seedDatabase() {
         tokensUsed: 8500
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: leratoCandidate.id,
         screeningStatus: "completed",
         platformsAnalyzed: ["facebook", "twitter"],
@@ -1072,7 +1098,7 @@ async function seedDatabase() {
         tokensUsed: 7200
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: nomvulaCandidate.id,
         screeningStatus: "in_progress",
         platformsAnalyzed: ["twitter"],
@@ -1092,7 +1118,7 @@ async function seedDatabase() {
         tokensUsed: 0
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         candidateId: chloeCandidate.id,
         screeningStatus: "completed",
         platformsAnalyzed: ["facebook", "twitter"],
@@ -1137,7 +1163,7 @@ async function seedDatabase() {
 
     const postRecords = await db.insert(socialScreeningPosts).values([
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         findingId: siphoFinding.id,
         platform: "twitter",
         postDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5),
@@ -1149,7 +1175,7 @@ async function seedDatabase() {
         expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 85)
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         findingId: siphoFinding.id,
         platform: "twitter",
         postDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 12),
@@ -1161,7 +1187,7 @@ async function seedDatabase() {
         expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 78)
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         findingId: siphoFinding.id,
         platform: "facebook",
         postDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 20),
@@ -1173,7 +1199,7 @@ async function seedDatabase() {
         expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 70)
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         findingId: leratoFinding.id,
         platform: "twitter",
         postDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3),
@@ -1185,7 +1211,7 @@ async function seedDatabase() {
         expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 87)
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         findingId: leratoFinding.id,
         platform: "twitter",
         postDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 8),
@@ -1197,7 +1223,7 @@ async function seedDatabase() {
         expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 82)
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         findingId: chloeFinding.id,
         platform: "twitter",
         postDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
@@ -1209,7 +1235,7 @@ async function seedDatabase() {
         expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 88)
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         findingId: chloeFinding.id,
         platform: "twitter",
         postDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 15),
@@ -1221,7 +1247,7 @@ async function seedDatabase() {
         expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 75)
       },
       {
-        tenantId: tenantRecord[0].id,
+        tenantId: tenantId,
         findingId: chloeFinding.id,
         platform: "facebook",
         postDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30),
