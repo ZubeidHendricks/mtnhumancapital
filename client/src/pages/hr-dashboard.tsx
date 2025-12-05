@@ -99,6 +99,7 @@ export default function HRDashboard() {
   const [showArchivedJobs, setShowArchivedJobs] = useState(false);
   const [isEmailOpen, setIsEmailOpen] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
+  const [selectedRiskCandidate, setSelectedRiskCandidate] = useState<any>(null);
   const [emailSubject, setEmailSubject] = useState("");
   const [emailMessage, setEmailMessage] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -402,6 +403,76 @@ BENEFITS:
     },
     retry: 1,
   });
+
+  // Fetch integrity checks for all candidates
+  const integrityChecksKey = useTenantQueryKey(['integrity-checks']);
+  const { data: allIntegrityChecks = [] } = useQuery({
+    queryKey: integrityChecksKey,
+    queryFn: async () => {
+      try {
+        const res = await fetch('/api/integrity-checks');
+        if (!res.ok) throw new Error('Failed to fetch integrity checks');
+        return res.json();
+      } catch (e) {
+        console.error("Failed to fetch integrity checks:", e);
+        return [];
+      }
+    },
+    retry: 1,
+  });
+
+  // Fetch social screenings for all candidates
+  const socialScreeningsKey = useTenantQueryKey(['social-screenings']);
+  const { data: allSocialScreenings = [] } = useQuery({
+    queryKey: socialScreeningsKey,
+    queryFn: async () => {
+      try {
+        const res = await fetch('/api/social-screenings');
+        if (!res.ok) throw new Error('Failed to fetch social screenings');
+        return res.json();
+      } catch (e) {
+        console.error("Failed to fetch social screenings:", e);
+        return [];
+      }
+    },
+    retry: 1,
+  });
+
+  // Get risk data for a specific candidate
+  const getCandidateRiskData = (candidateId: string) => {
+    const integrityCheck = allIntegrityChecks.find((check: any) => check.candidateId === candidateId);
+    const socialScreening = allSocialScreenings.find((screening: any) => screening.candidateId === candidateId);
+    
+    let overallRiskScore = 0;
+    let riskLevel: 'low' | 'medium' | 'high' | 'critical' = 'low';
+    let hasData = false;
+
+    if (integrityCheck) {
+      hasData = true;
+      overallRiskScore = integrityCheck.riskScore || 0;
+    }
+
+    if (socialScreening?.results?.aggregatedResults) {
+      hasData = true;
+      const socialScore = 100 - (socialScreening.results.aggregatedResults.overallScore || 50);
+      overallRiskScore = integrityCheck 
+        ? Math.round((overallRiskScore + socialScore) / 2)
+        : socialScore;
+    }
+
+    if (overallRiskScore <= 25) riskLevel = 'low';
+    else if (overallRiskScore <= 50) riskLevel = 'medium';
+    else if (overallRiskScore <= 75) riskLevel = 'high';
+    else riskLevel = 'critical';
+
+    return {
+      hasData,
+      integrityCheck,
+      socialScreening,
+      overallRiskScore,
+      riskLevel
+    };
+  };
 
   interface JobSpecDocument {
     id: string;
