@@ -442,6 +442,58 @@ BENEFITS:
     retry: 1,
   });
 
+  // KPI & Performance Data Queries
+  const reviewCyclesKey = useTenantQueryKey(['reviewCycles']);
+  const { data: reviewCycles = [] } = useQuery({
+    queryKey: reviewCyclesKey,
+    queryFn: async () => {
+      const res = await fetch("/api/review-cycles");
+      if (!res.ok) return [];
+      return res.json();
+    },
+    retry: 1,
+  });
+
+  const kpiAssignmentsKey = useTenantQueryKey(['kpiAssignments']);
+  const { data: kpiAssignments = [] } = useQuery({
+    queryKey: kpiAssignmentsKey,
+    queryFn: async () => {
+      const res = await fetch("/api/kpi-assignments");
+      if (!res.ok) return [];
+      return res.json();
+    },
+    retry: 1,
+  });
+
+  const reviewSubmissionsKey = useTenantQueryKey(['reviewSubmissions']);
+  const { data: reviewSubmissions = [] } = useQuery({
+    queryKey: reviewSubmissionsKey,
+    queryFn: async () => {
+      const res = await fetch("/api/review-submissions");
+      if (!res.ok) return [];
+      return res.json();
+    },
+    retry: 1,
+  });
+
+  // Calculate KPI statistics
+  const activeReviewCycles = reviewCycles.filter((c: any) => c.status === 'active');
+  const pendingAssignments = kpiAssignments.filter((a: any) => a.status === 'pending' || a.status === 'in_progress');
+  const completedAssignments = kpiAssignments.filter((a: any) => a.status === 'completed');
+  const pendingSubmissions = reviewSubmissions.filter((s: any) => s.selfAssessmentStatus === 'pending' || s.managerReviewStatus === 'pending');
+  const completedSubmissions = reviewSubmissions.filter((s: any) => s.status === 'completed');
+  
+  // Calculate average score from completed submissions
+  const avgScore = completedSubmissions.length > 0 
+    ? (completedSubmissions.reduce((sum: number, s: any) => sum + (s.finalScore || 0), 0) / completedSubmissions.length).toFixed(1)
+    : '0.0';
+  
+  // Calculate completion rate
+  const totalAssignments = kpiAssignments.length;
+  const completionRate = totalAssignments > 0 
+    ? Math.round((completedAssignments.length / totalAssignments) * 100)
+    : 0;
+
   const displayCandidates = candidatesError ? MOCK_CANDIDATES : (Array.isArray(candidates) ? candidates : []);
   const displayJobs = jobsError ? [] : (Array.isArray(jobs) ? jobs : []);
   const jobCount = displayJobs.length || 12;
@@ -1589,22 +1641,48 @@ BENEFITS:
           {/* PERFORMANCE TAB - Employee Performance Management */}
            <TabsContent value="performance" className="space-y-6">
             
+            {/* Quick Actions Bar */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/30">
+                  {activeReviewCycles.length} Active Cycle{activeReviewCycles.length !== 1 ? 's' : ''}
+                </Badge>
+                <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/30">
+                  {pendingSubmissions.length} Pending Review{pendingSubmissions.length !== 1 ? 's' : ''}
+                </Badge>
+              </div>
+              <div className="flex gap-2">
+                <Link href="/kpi-management">
+                  <Button variant="outline" className="border-white/10" data-testid="link-kpi-management">
+                    <Target className="w-4 h-4 mr-2" />
+                    Manage KPIs
+                  </Button>
+                </Link>
+                <Link href="/kpi-hr-dashboard">
+                  <Button className="bg-primary hover:bg-primary/90" data-testid="link-kpi-dashboard">
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    Full KPI Dashboard
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
             {/* Performance Overview KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card className="border-white/10 bg-card/20">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Total Employees</p>
-                      <h3 className="text-2xl font-bold mt-2" data-testid="metric-total-employees">
-                        {(candidates ?? []).filter(c => c.stage === "Hired").length}
+                      <p className="text-sm font-medium text-muted-foreground">Active KPI Cycles</p>
+                      <h3 className="text-2xl font-bold mt-2" data-testid="metric-active-cycles">
+                        {activeReviewCycles.length}
                       </h3>
                       <p className="text-xs text-blue-400 mt-1">
-                        Active workforce
+                        {reviewCycles.length} total cycles
                       </p>
                     </div>
                     <div className="p-3 rounded-lg bg-blue-500/10">
-                      <Users className="w-6 h-6 text-blue-400" />
+                      <Calendar className="w-6 h-6 text-blue-400" />
                     </div>
                   </div>
                 </CardContent>
@@ -1616,10 +1694,10 @@ BENEFITS:
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Avg Performance</p>
                       <h3 className="text-2xl font-bold mt-2" data-testid="metric-avg-performance">
-                        4.2<span className="text-lg text-muted-foreground">/5.0</span>
+                        {avgScore}<span className="text-lg text-muted-foreground">/5.0</span>
                       </h3>
                       <p className="text-xs text-green-500 mt-1">
-                        +0.3 from last quarter
+                        From {completedSubmissions.length} review{completedSubmissions.length !== 1 ? 's' : ''}
                       </p>
                     </div>
                     <div className="p-3 rounded-lg bg-green-500/10">
@@ -1635,10 +1713,10 @@ BENEFITS:
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Pending Reviews</p>
                       <h3 className="text-2xl font-bold mt-2" data-testid="metric-pending-reviews">
-                        8
+                        {pendingSubmissions.length}
                       </h3>
                       <p className="text-xs text-amber-400 mt-1">
-                        3 overdue
+                        {pendingAssignments.length} assignments in progress
                       </p>
                     </div>
                     <div className="p-3 rounded-lg bg-amber-500/10">
@@ -1652,12 +1730,12 @@ BENEFITS:
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">KPI Achievement</p>
+                      <p className="text-sm font-medium text-muted-foreground">KPI Completion</p>
                       <h3 className="text-2xl font-bold mt-2" data-testid="metric-kpi-achievement">
-                        87%
+                        {completionRate}%
                       </h3>
                       <p className="text-xs text-purple-400 mt-1">
-                        Goals on track
+                        {completedAssignments.length}/{totalAssignments} completed
                       </p>
                     </div>
                     <div className="p-3 rounded-lg bg-purple-500/10">
@@ -1668,143 +1746,211 @@ BENEFITS:
               </Card>
             </div>
 
-            {/* Performance Reviews Section */}
+            {/* Active Review Cycles Section */}
+            <Card className="border-white/10 bg-card/20">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Calendar className="w-5 h-5 text-primary" />
+                      Active Review Cycles
+                    </CardTitle>
+                    <CardDescription>Current KPI review periods</CardDescription>
+                  </div>
+                  <Link href="/kpi-management">
+                    <Button className="bg-primary hover:bg-primary/90" data-testid="button-new-cycle">
+                      <Plus className="w-4 h-4 mr-2" />
+                      New Cycle
+                    </Button>
+                  </Link>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {activeReviewCycles.length > 0 ? (
+                    activeReviewCycles.map((cycle: any) => (
+                      <div key={cycle.id} className="flex items-center justify-between p-4 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors" data-testid={`cycle-item-${cycle.id}`}>
+                        <div className="flex items-center gap-4 flex-1">
+                          <div className="p-2 rounded-lg bg-primary/10">
+                            <Target className="w-5 h-5 text-primary" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium">{cycle.name}</p>
+                            <p className="text-sm text-muted-foreground">{cycle.cycleType?.replace('_', ' ').toUpperCase() || 'Review Cycle'}</p>
+                          </div>
+                          <div className="text-sm">
+                            <p className="text-muted-foreground">Period</p>
+                            <p className="font-medium">
+                              {cycle.startDate ? new Date(cycle.startDate).toLocaleDateString() : 'N/A'} - {cycle.endDate ? new Date(cycle.endDate).toLocaleDateString() : 'N/A'}
+                            </p>
+                          </div>
+                          <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                            Active
+                          </Badge>
+                          <Link href="/kpi-hr-dashboard">
+                            <Button variant="ghost" size="sm">
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <p>No active review cycles</p>
+                      <Link href="/kpi-management">
+                        <Button variant="link" className="text-primary mt-2">Create a review cycle</Button>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Review Submissions Section */}
             <Card className="border-white/10 bg-card/20">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       <FileCheck className="w-5 h-5 text-primary" />
-                      Performance Reviews
+                      Recent Submissions
                     </CardTitle>
-                    <CardDescription>Employee review status and schedules</CardDescription>
+                    <CardDescription>Employee KPI review submissions</CardDescription>
                   </div>
-                  <Button className="bg-primary hover:bg-primary/90" data-testid="button-schedule-review">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Schedule Review
-                  </Button>
+                  <Link href="/kpi-hr-dashboard">
+                    <Button variant="outline" className="border-white/10" data-testid="button-view-all-submissions">
+                      View All
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {[
-                    { employee: "Marcus Johnson", role: "Operations Lead", status: "Scheduled", date: "Dec 15, 2024", rating: null, reviewer: "John Smith" },
-                    { employee: "Sarah Jenkins", role: "Senior Project Manager", status: "In Progress", date: "Dec 10, 2024", rating: null, reviewer: "Emily Davis" },
-                    { employee: "David Chen", role: "Financial Analyst", status: "Completed", date: "Nov 28, 2024", rating: 4.5, reviewer: "Robert Brown" },
-                    { employee: "Emily Davis", role: "UX Designer", status: "Overdue", date: "Nov 20, 2024", rating: null, reviewer: "Sarah Lee" },
-                  ].map((review, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-4 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors" data-testid={`review-item-${idx}`}>
-                      <div className="flex items-center gap-4 flex-1">
-                        <Avatar className="h-10 w-10">
-                          <AvatarFallback className="bg-primary/20 text-primary">
-                            {review.employee.split(' ').map(n => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <p className="font-medium">{review.employee}</p>
-                          <p className="text-sm text-muted-foreground">{review.role}</p>
+                  {reviewSubmissions.length > 0 ? (
+                    reviewSubmissions.slice(0, 5).map((submission: any) => (
+                      <div key={submission.id} className="flex items-center justify-between p-4 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors" data-testid={`submission-item-${submission.id}`}>
+                        <div className="flex items-center gap-4 flex-1">
+                          <Avatar className="h-10 w-10">
+                            <AvatarFallback className="bg-primary/20 text-primary">
+                              {submission.employeeId?.toString().slice(0, 2) || 'E'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <p className="font-medium">Employee #{submission.employeeId}</p>
+                            <p className="text-sm text-muted-foreground">
+                              Self: {submission.selfAssessmentStatus || 'pending'} | Manager: {submission.managerReviewStatus || 'pending'}
+                            </p>
+                          </div>
+                          <div className="text-sm">
+                            <p className="text-muted-foreground">Score</p>
+                            <p className="font-medium">
+                              {submission.finalScore ? `${submission.finalScore}/5` : 'Pending'}
+                            </p>
+                          </div>
+                          <Badge 
+                            className={
+                              submission.status === 'completed' ? "bg-green-500/20 text-green-400 border-green-500/30" :
+                              submission.status === 'in_progress' ? "bg-blue-500/20 text-blue-400 border-blue-500/30" :
+                              "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                            }
+                          >
+                            {submission.status || 'Pending'}
+                          </Badge>
+                          <Link href={`/kpi-review/${submission.id}`}>
+                            <Button variant="ghost" size="sm">
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          </Link>
                         </div>
-                        <div className="text-sm">
-                          <p className="text-muted-foreground">Reviewer</p>
-                          <p className="font-medium">{review.reviewer}</p>
-                        </div>
-                        <div className="text-sm">
-                          <p className="text-muted-foreground">Due Date</p>
-                          <p className="font-medium">{review.date}</p>
-                        </div>
-                        <div className="min-w-[100px]">
-                          {review.status === "Completed" && review.rating ? (
-                            <div className="flex items-center gap-1">
-                              <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                              <span className="font-bold text-amber-400">{review.rating}</span>
-                              <span className="text-muted-foreground">/5.0</span>
-                            </div>
-                          ) : (
-                            <Badge 
-                              variant={review.status === "Overdue" ? "destructive" : review.status === "Completed" ? "default" : "secondary"}
-                              className={
-                                review.status === "Scheduled" ? "bg-blue-500/20 text-blue-400 border-blue-500/30" :
-                                review.status === "In Progress" ? "bg-purple-500/20 text-purple-400 border-purple-500/30" :
-                                review.status === "Overdue" ? "bg-red-500/20 text-red-400 border-red-500/30" :
-                                "bg-green-500/20 text-green-400 border-green-500/30"
-                              }
-                            >
-                              {review.status}
-                            </Badge>
-                          )}
-                        </div>
-                        <Button variant="ghost" size="sm">
-                          <Eye className="w-4 h-4" />
-                        </Button>
                       </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <FileCheck className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <p>No review submissions yet</p>
+                      <p className="text-sm mt-1">Submissions will appear here when employees complete their KPI reviews</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Employee KPIs/Goals */}
+            {/* KPI Assignments Section */}
             <Card className="border-white/10 bg-card/20">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="w-5 h-5 text-amber-400" />
-                  Employee KPIs & Goals
-                </CardTitle>
-                <CardDescription>Current quarter performance objectives</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Target className="w-5 h-5 text-amber-400" />
+                      KPI Assignments
+                    </CardTitle>
+                    <CardDescription>Current quarter performance objectives</CardDescription>
+                  </div>
+                  <Link href="/kpi-management">
+                    <Button variant="outline" className="border-white/10" data-testid="button-manage-assignments">
+                      Manage
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {[
-                    { employee: "Marcus Johnson", goal: "Complete 5 major projects", progress: 80, target: 5, achieved: 4, status: "On Track" },
-                    { employee: "Sarah Jenkins", goal: "Reduce operational costs by 15%", progress: 95, target: 15, achieved: 14.2, status: "Excellent" },
-                    { employee: "David Chen", goal: "Improve team productivity by 20%", progress: 60, target: 20, achieved: 12, status: "At Risk" },
-                    { employee: "Emily Davis", goal: "Complete certification training", progress: 100, target: 1, achieved: 1, status: "Achieved" },
-                  ].map((kpi, idx) => (
-                    <div key={idx} className="p-4 rounded-lg border border-white/10 bg-white/5" data-testid={`kpi-item-${idx}`}>
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="bg-primary/20 text-primary text-xs">
-                              {kpi.employee.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium text-sm">{kpi.employee}</p>
-                            <p className="text-xs text-muted-foreground">{kpi.goal}</p>
+                  {kpiAssignments.length > 0 ? (
+                    kpiAssignments.slice(0, 4).map((assignment: any) => (
+                      <div key={assignment.id} className="p-4 rounded-lg border border-white/10 bg-white/5" data-testid={`kpi-item-${assignment.id}`}>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="bg-primary/20 text-primary text-xs">
+                                {assignment.employeeId?.toString().slice(0, 2) || 'E'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium text-sm">Employee #{assignment.employeeId}</p>
+                              <p className="text-xs text-muted-foreground">{assignment.notes || 'KPI Assignment'}</p>
+                            </div>
+                          </div>
+                          <Badge 
+                            className={
+                              assignment.status === 'completed' ? "bg-green-500/20 text-green-400 border-green-500/30" :
+                              assignment.status === 'in_progress' ? "bg-blue-500/20 text-blue-400 border-blue-500/30" :
+                              "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                            }
+                          >
+                            {assignment.status || 'Pending'}
+                          </Badge>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Target</span>
+                            <span className="font-medium">{assignment.targetValue || 'N/A'}</span>
+                          </div>
+                          <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full transition-all ${
+                                assignment.status === 'completed' ? "bg-green-500" :
+                                assignment.status === 'in_progress' ? "bg-blue-500" :
+                                "bg-amber-500"
+                              }`}
+                              style={{ width: assignment.status === 'completed' ? '100%' : assignment.status === 'in_progress' ? '50%' : '0%' }}
+                            />
                           </div>
                         </div>
-                        <Badge 
-                          className={
-                            kpi.status === "Excellent" || kpi.status === "Achieved" ? "bg-green-500/20 text-green-400 border-green-500/30" :
-                            kpi.status === "On Track" ? "bg-blue-500/20 text-blue-400 border-blue-500/30" :
-                            "bg-amber-500/20 text-amber-400 border-amber-500/30"
-                          }
-                        >
-                          {kpi.status}
-                        </Badge>
                       </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Progress</span>
-                          <span className="font-medium">{kpi.progress}%</span>
-                        </div>
-                        <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full transition-all ${
-                              kpi.progress >= 90 ? "bg-green-500" :
-                              kpi.progress >= 70 ? "bg-blue-500" :
-                              "bg-amber-500"
-                            }`}
-                            style={{ width: `${kpi.progress}%` }}
-                          />
-                        </div>
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>Achieved: {kpi.achieved}{typeof kpi.achieved === 'number' && kpi.achieved < 10 ? '%' : ''}</span>
-                          <span>Target: {kpi.target}{typeof kpi.target === 'number' && kpi.target < 10 ? '%' : ''}</span>
-                        </div>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Target className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <p>No KPI assignments</p>
+                      <Link href="/kpi-management">
+                        <Button variant="link" className="text-primary mt-2">Create KPI assignments</Button>
+                      </Link>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
