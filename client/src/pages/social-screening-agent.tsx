@@ -131,6 +131,9 @@ export default function SocialScreeningAgent() {
   const [overallProgress, setOverallProgress] = useState(0);
   const [screeningResult, setScreeningResult] = useState<any>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
+  const logsCountRef = useRef(0);
+  const isRunningRef = useRef(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const candidatesKey = useTenantQueryKey(['candidates']);
   const consentsKey = useTenantQueryKey(['social-screening-consents']);
 
@@ -168,7 +171,11 @@ export default function SocialScreeningAgent() {
   const selectedConsent = consents.find((c: any) => c.candidateId === selectedCandidateId);
 
   const addLog = (agent: string, message: string, level: LogEntry['level'] = 'info') => {
-    setLogs(prev => [...prev, { timestamp: new Date(), agent, message, level }]);
+    setLogs(prev => {
+      const newLogs = [...prev, { timestamp: new Date(), agent, message, level }];
+      logsCountRef.current = newLogs.length;
+      return newLogs;
+    });
   };
 
   const startSocialScreening = async () => {
@@ -183,7 +190,9 @@ export default function SocialScreeningAgent() {
     }
 
     setIsRunningScreening(true);
+    isRunningRef.current = true;
     setLogs([]);
+    logsCountRef.current = 0;
     setScreeningResult(null);
     setOverallProgress(0);
     
@@ -223,39 +232,44 @@ export default function SocialScreeningAgent() {
           const run = await statusRes.json();
           
           if (run.agents && run.agents.length > 0) {
-            run.agents.forEach((agent: any, idx: number) => {
-              const stepIdx = workflowSteps.findIndex(s => 
-                s.id === agent.agentName.toLowerCase().replace(' agent', '').replace('x (twitter)', 'twitter')
-              );
-              
-              if (stepIdx >= 0) {
-                setWorkflowSteps(prev => prev.map((step, i) => {
-                  if (i === stepIdx) {
-                    let status: WorkflowStep['status'] = 'pending';
-                    if (agent.status === 'running') status = 'processing';
-                    else if (agent.status === 'completed') status = 'completed';
-                    else if (agent.status === 'error') status = 'failed';
-                    
-                    return {
-                      ...step,
-                      status,
-                      postsAnalyzed: agent.postsAnalyzed,
-                      findings: agent.findings,
-                      details: agent.currentStep ? [agent.currentStep] : step.details,
-                    };
-                  }
-                  return step;
-                }));
+            setWorkflowSteps(prev => {
+              const updated = [...prev];
+              run.agents.forEach((agent: any) => {
+                const agentId = agent.agentName.toLowerCase()
+                  .replace(' agent', '')
+                  .replace('x (twitter)', 'twitter')
+                  .replace('consent verification', 'consent_check')
+                  .replace('sentiment analysis', 'sentiment')
+                  .replace('culture fit assessment', 'culture_fit')
+                  .replace('risk scoring', 'risk_scoring');
+                  
+                const stepIdx = updated.findIndex(s => s.id === agentId);
                 
-                if (agent.status === 'running') {
-                  setCurrentStepIndex(stepIdx);
+                if (stepIdx >= 0) {
+                  let status: WorkflowStep['status'] = 'pending';
+                  if (agent.status === 'running') status = 'processing';
+                  else if (agent.status === 'completed') status = 'completed';
+                  else if (agent.status === 'error') status = 'failed';
+                  
+                  updated[stepIdx] = {
+                    ...updated[stepIdx],
+                    status,
+                    postsAnalyzed: agent.postsAnalyzed,
+                    findings: agent.findings,
+                    details: agent.currentStep ? [agent.currentStep] : updated[stepIdx].details,
+                  };
+                  
+                  if (agent.status === 'running') {
+                    setCurrentStepIndex(stepIdx);
+                  }
                 }
-              }
+              });
+              return updated;
             });
           }
 
-          if (run.logs && run.logs.length > logs.length) {
-            const newLogs = run.logs.slice(logs.length);
+          if (run.logs && run.logs.length > logsCountRef.current) {
+            const newLogs = run.logs.slice(logsCountRef.current);
             newLogs.forEach((log: any) => {
               addLog(log.agent, log.message, log.level);
             });
@@ -265,7 +279,12 @@ export default function SocialScreeningAgent() {
 
           if (run.status === 'completed') {
             clearInterval(pollInterval);
+            if (timeoutRef.current) {
+              clearTimeout(timeoutRef.current);
+              timeoutRef.current = null;
+            }
             setIsRunningScreening(false);
+            isRunningRef.current = false;
             setOverallProgress(100);
             
             setWorkflowSteps(prev => prev.map(step => ({
@@ -281,7 +300,12 @@ export default function SocialScreeningAgent() {
             
           } else if (run.status === 'failed') {
             clearInterval(pollInterval);
+            if (timeoutRef.current) {
+              clearTimeout(timeoutRef.current);
+              timeoutRef.current = null;
+            }
             setIsRunningScreening(false);
+            isRunningRef.current = false;
             addLog("Orchestrator", "❌ Screening workflow failed", "error");
             toast.error("Social screening failed");
           }
@@ -290,10 +314,11 @@ export default function SocialScreeningAgent() {
         }
       }, 1500);
 
-      setTimeout(() => {
+      timeoutRef.current = setTimeout(() => {
         clearInterval(pollInterval);
-        if (isRunningScreening) {
+        if (isRunningRef.current) {
           setIsRunningScreening(false);
+          isRunningRef.current = false;
           addLog("Orchestrator", "⚠️ Screening timeout - results may be incomplete", "warning");
           toast.error("Screening timeout");
         }
@@ -301,6 +326,7 @@ export default function SocialScreeningAgent() {
 
     } catch (error) {
       setIsRunningScreening(false);
+      isRunningRef.current = false;
       addLog("Orchestrator", "❌ Failed to initiate screening workflow", "error");
       toast.error("Failed to start social screening");
       console.error("Screening error:", error);
