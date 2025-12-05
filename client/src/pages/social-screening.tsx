@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRoute, Link } from "wouter";
+import { useRoute, Link, useLocation } from "wouter";
 import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -276,6 +276,7 @@ function AgentVisualization({ run, onClose }: { run: OrchestratorRun | null; onC
 }
 
 export default function SocialScreening() {
+  const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedCandidate, setSelectedCandidate] = useState<string | null>(null);
   const [isRequestConsentOpen, setIsRequestConsentOpen] = useState(false);
@@ -471,10 +472,10 @@ export default function SocialScreening() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
       <Navbar />
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="flex-1 pt-20 container mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-8">
           <div>
             <div className="flex items-center gap-3 mb-2">
@@ -494,75 +495,14 @@ export default function SocialScreening() {
             </p>
           </div>
           
-          <Dialog open={isRequestConsentOpen} onOpenChange={setIsRequestConsentOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-purple-500 hover:bg-purple-400 text-purple-950">
-                <Send className="w-4 h-4 mr-2" />
-                Request Consent
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Request Social Media Consent</DialogTitle>
-                <DialogDescription>
-                  Select a candidate to request their consent for social media screening.
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label>Select Candidate</Label>
-                  <Select onValueChange={setSelectedCandidate}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a candidate" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {candidatesWithoutConsent.map((c: any) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.fullName} - {c.email}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Platforms to Screen</Label>
-                  <div className="flex flex-wrap gap-4">
-                    {["facebook", "twitter", "reddit", "linkedin"].map((platform) => (
-                      <div key={platform} className="flex items-center gap-2">
-                        <Checkbox
-                          id={platform}
-                          checked={selectedPlatforms.includes(platform)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedPlatforms([...selectedPlatforms, platform]);
-                            } else {
-                              setSelectedPlatforms(selectedPlatforms.filter(p => p !== platform));
-                            }
-                          }}
-                        />
-                        <Label htmlFor={platform} className="capitalize">{platform}</Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsRequestConsentOpen(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  onClick={() => selectedCandidate && requestConsentMutation.mutate(selectedCandidate)}
-                  disabled={!selectedCandidate || requestConsentMutation.isPending}
-                >
-                  {requestConsentMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  Send Request
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button 
+            className="bg-purple-500 hover:bg-purple-400 text-purple-950"
+            onClick={() => navigate('/social-screening-agent')}
+            data-testid="button-open-agent"
+          >
+            <Brain className="w-4 h-4 mr-2" />
+            Open AI Agent
+          </Button>
         </div>
 
         {/* Stats Overview */}
