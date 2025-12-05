@@ -306,6 +306,228 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/candidates/:id/cv-template", async (req, res) => {
+    try {
+      const candidateId = req.params.id;
+      const candidate = await storage.getCandidate(req.tenant.id, candidateId);
+      
+      if (!candidate) {
+        return res.status(404).json({ message: "Candidate not found" });
+      }
+
+      const templateData = {
+        personalProfile: {
+          jobApplication: candidate.role || "",
+          employmentEquityStatus: null,
+          nationality: null,
+          fullName: candidate.fullName,
+          idNumber: null,
+          residentialLocation: candidate.location || "",
+          currentCompany: (candidate.experience as any[])?.[0]?.company || "",
+          currentPosition: (candidate.experience as any[])?.[0]?.title || candidate.role || "",
+          currentRemuneration: null,
+          expectedRemuneration: null,
+          noticePeriod: null,
+        },
+        education: {
+          secondary: null,
+          tertiary: ((candidate.education as any[]) || []).map((edu: any) => ({
+            institution: edu.institution || "",
+            courses: edu.degree || edu.field || "",
+            yearCompleted: edu.endDate || edu.year || "",
+          })),
+          otherCourses: candidate.certifications?.join(", ") || null,
+        },
+        computerLiteracy: candidate.skills?.filter((s: string) => 
+          s.toLowerCase().includes('excel') || 
+          s.toLowerCase().includes('word') ||
+          s.toLowerCase().includes('office') ||
+          s.toLowerCase().includes('computer') ||
+          s.toLowerCase().includes('software')
+        ).join(", ") || "MS Word, MS Excel",
+        attributesAchievementsSkills: candidate.skills?.join(", ") || "",
+        employmentHistory: ((candidate.experience as any[]) || []).map((exp: any) => ({
+          employer: exp.company || "",
+          periodOfService: `${exp.startDate || ""} - ${exp.endDate || "Present"}`,
+          position: exp.title || "",
+          mainResponsibilities: exp.description || "",
+          reasonForLeaving: exp.endDate ? "Career advancement" : "Currently Employed",
+        })),
+        otherEmployment: [],
+      };
+
+      const doc = cvTemplateGenerator.generateDocument(templateData);
+      const buffer = await Packer.toBuffer(doc);
+      
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      res.setHeader('Content-Disposition', `attachment; filename="CV_Template_${candidate.fullName.replace(/\s+/g, '_')}.docx"`);
+      res.send(buffer);
+    } catch (error) {
+      console.error("Error generating CV template from candidate:", error);
+      res.status(500).json({ 
+        message: "Failed to generate CV template",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  app.post("/api/candidates/bulk-cv-template", async (req, res) => {
+    try {
+      const { candidateIds } = req.body;
+      
+      if (!Array.isArray(candidateIds) || candidateIds.length === 0) {
+        return res.status(400).json({ message: "No candidate IDs provided" });
+      }
+
+      const results: Array<{ candidateId: string; fullName: string; status: string; error?: string }> = [];
+      const successfulDocs: Array<{ buffer: Buffer; filename: string }> = [];
+
+      const buildTemplateData = (candidate: any) => ({
+        personalProfile: {
+          jobApplication: candidate.role || "",
+          employmentEquityStatus: null,
+          nationality: null,
+          fullName: candidate.fullName || "Unknown",
+          idNumber: null,
+          residentialLocation: candidate.location || "",
+          currentCompany: Array.isArray(candidate.experience) && candidate.experience[0]?.company || "",
+          currentPosition: (Array.isArray(candidate.experience) && candidate.experience[0]?.title) || candidate.role || "",
+          currentRemuneration: null,
+          expectedRemuneration: null,
+          noticePeriod: null,
+        },
+        education: {
+          secondary: null,
+          tertiary: (Array.isArray(candidate.education) ? candidate.education : []).map((edu: any) => ({
+            institution: edu?.institution || "",
+            courses: edu?.degree || edu?.field || "",
+            yearCompleted: edu?.endDate || edu?.year || "",
+          })),
+          otherCourses: Array.isArray(candidate.certifications) ? candidate.certifications.join(", ") : null,
+        },
+        computerLiteracy: Array.isArray(candidate.skills) 
+          ? candidate.skills.filter((s: string) => 
+              typeof s === 'string' && (
+                s.toLowerCase().includes('excel') || 
+                s.toLowerCase().includes('word') ||
+                s.toLowerCase().includes('office') ||
+                s.toLowerCase().includes('computer') ||
+                s.toLowerCase().includes('software')
+              )
+            ).join(", ") || "MS Word, MS Excel"
+          : "MS Word, MS Excel",
+        attributesAchievementsSkills: Array.isArray(candidate.skills) ? candidate.skills.join(", ") : "",
+        employmentHistory: (Array.isArray(candidate.experience) ? candidate.experience : []).map((exp: any) => ({
+          employer: exp?.company || "",
+          periodOfService: `${exp?.startDate || ""} - ${exp?.endDate || "Present"}`,
+          position: exp?.title || "",
+          mainResponsibilities: exp?.description || "",
+          reasonForLeaving: exp?.endDate ? "Career advancement" : "Currently Employed",
+        })),
+        otherEmployment: [],
+      });
+
+      for (const candidateId of candidateIds) {
+        try {
+          const candidate = await storage.getCandidate(req.tenant.id, candidateId);
+          
+          if (!candidate) {
+            results.push({ candidateId, fullName: "Unknown", status: "not_found", error: "Candidate not found" });
+            continue;
+          }
+
+          const templateData = buildTemplateData(candidate);
+          const doc = cvTemplateGenerator.generateDocument(templateData);
+          const buffer = await Packer.toBuffer(doc);
+          
+          const safeFilename = (candidate.fullName || "Unknown").replace(/[^a-zA-Z0-9\s_-]/g, '').replace(/\s+/g, '_');
+          successfulDocs.push({
+            buffer,
+            filename: `CV_Template_${safeFilename}.docx`
+          });
+          
+          results.push({ candidateId, fullName: candidate.fullName, status: "success" });
+        } catch (error) {
+          console.error(`Error generating CV template for candidate ${candidateId}:`, error);
+          results.push({ 
+            candidateId, 
+            fullName: "Unknown", 
+            status: "failed", 
+            error: error instanceof Error ? error.message : "Unknown error" 
+          });
+        }
+      }
+
+      if (successfulDocs.length === 0) {
+        const zip = new AdmZip();
+        const manifestContent = `CV Template Generation Report
+=============================
+Date: ${new Date().toISOString()}
+Total Requested: ${candidateIds.length}
+Successful: 0
+Failed: ${results.length}
+
+Errors:
+${results.map(r => `- ${r.candidateId}: ${r.error || 'Unknown error'}`).join('\n')}
+`;
+        zip.addFile("_generation_report.txt", Buffer.from(manifestContent, 'utf-8'));
+        
+        const zipBuffer = zip.toBuffer();
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', `attachment; filename="CV_Templates_Bulk_Failed.zip"`);
+        res.setHeader('X-Generation-Status', 'failed');
+        res.setHeader('X-Templates-Generated', '0');
+        res.setHeader('X-Templates-Failed', String(results.length));
+        return res.send(zipBuffer);
+      }
+
+      if (successfulDocs.length === 1 && results.filter(r => r.status !== 'success').length === 0) {
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        res.setHeader('Content-Disposition', `attachment; filename="${successfulDocs[0].filename}"`);
+        res.setHeader('X-Generation-Status', 'success');
+        res.setHeader('X-Templates-Generated', '1');
+        return res.send(successfulDocs[0].buffer);
+      }
+
+      const zip = new AdmZip();
+      for (const doc of successfulDocs) {
+        zip.addFile(doc.filename, doc.buffer);
+      }
+      
+      const failedResults = results.filter(r => r.status !== 'success');
+      if (failedResults.length > 0) {
+        const manifestContent = `CV Template Generation Report
+=============================
+Date: ${new Date().toISOString()}
+Total Requested: ${candidateIds.length}
+Successful: ${successfulDocs.length}
+Failed: ${failedResults.length}
+
+Failed Candidates:
+${failedResults.map(r => `- ${r.fullName} (${r.candidateId}): ${r.error || r.status}`).join('\n')}
+
+Successfully Generated:
+${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('\n')}
+`;
+        zip.addFile("_generation_report.txt", Buffer.from(manifestContent, 'utf-8'));
+      }
+      
+      const zipBuffer = zip.toBuffer();
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename="CV_Templates_Bulk.zip"`);
+      res.setHeader('X-Generation-Status', failedResults.length > 0 ? 'partial' : 'success');
+      res.setHeader('X-Templates-Generated', String(successfulDocs.length));
+      res.setHeader('X-Templates-Failed', String(failedResults.length));
+      res.send(zipBuffer);
+    } catch (error) {
+      console.error("Error generating bulk CV templates:", error);
+      res.status(500).json({ 
+        message: "Failed to generate bulk CV templates",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   app.post("/api/candidates/bulk-import", async (req, res) => {
     try {
       const { candidates } = req.body;

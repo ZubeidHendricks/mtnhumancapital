@@ -40,6 +40,7 @@ import KpiHRDashboard from "@/pages/kpi-hr-dashboard";
 import DocumentLibrary from "@/pages/document-library";
 import SocialScreening from "@/pages/social-screening";
 import SocialScreeningAgent from "@/pages/social-screening-agent";
+import CVTemplatePage from "@/pages/cv-template";
 
 function Router() {
   return (
@@ -80,6 +81,7 @@ function Router() {
       <Route path="/document-library" component={DocumentLibrary} />
       <Route path="/social-screening" component={SocialScreening} />
       <Route path="/social-screening-agent" component={SocialScreeningAgent} />
+      <Route path="/cv-template" component={CVTemplatePage} />
       <Route component={NotFound} />
     </Switch>
   );
