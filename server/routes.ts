@@ -5848,7 +5848,7 @@ Format your response as JSON:
     }
   });
 
-  // Initiate social screening for a candidate
+  // Initiate social screening for a candidate (legacy simple endpoint)
   app.post("/api/social-screening/initiate/:candidateId", async (req, res) => {
     try {
       const candidateId = req.params.candidateId;
@@ -5905,6 +5905,66 @@ Format your response as JSON:
     } catch (error) {
       console.error("Error initiating social screening:", error);
       res.status(500).json({ message: "Failed to initiate social screening" });
+    }
+  });
+  
+  // Start orchestrated social screening with agent visualization
+  app.post("/api/social-screening/orchestrator/start/:candidateId", async (req, res) => {
+    try {
+      const candidateId = req.params.candidateId;
+      
+      const candidate = await storage.getCandidate(req.tenant.id, candidateId);
+      if (!candidate) {
+        return res.status(404).json({ message: "Candidate not found" });
+      }
+      
+      const { createOrchestrator } = await import("./social-screening-orchestrator");
+      const orchestrator = createOrchestrator(storage);
+      
+      const runId = await orchestrator.initiateScreening(req.tenant.id, candidateId);
+      
+      res.status(201).json({ 
+        runId,
+        message: "Orchestrated screening started",
+        statusUrl: `/api/social-screening/orchestrator/status/${runId}`
+      });
+    } catch (error) {
+      console.error("Error starting orchestrated screening:", error);
+      res.status(500).json({ message: "Failed to start orchestrated screening" });
+    }
+  });
+  
+  // Get orchestrator run status
+  app.get("/api/social-screening/orchestrator/status/:runId", async (req, res) => {
+    try {
+      const { createOrchestrator } = await import("./social-screening-orchestrator");
+      const orchestrator = createOrchestrator(storage);
+      
+      const run = orchestrator.getActiveRun(req.params.runId);
+      if (!run) {
+        return res.status(404).json({ message: "Run not found or expired" });
+      }
+      
+      res.json(run);
+    } catch (error) {
+      console.error("Error fetching orchestrator status:", error);
+      res.status(500).json({ message: "Failed to fetch status" });
+    }
+  });
+  
+  // Get all active orchestrator runs
+  app.get("/api/social-screening/orchestrator/runs", async (req, res) => {
+    try {
+      const { createOrchestrator } = await import("./social-screening-orchestrator");
+      const orchestrator = createOrchestrator(storage);
+      
+      const runs = orchestrator.getAllActiveRuns()
+        .filter(run => run.tenantId === req.tenant.id);
+      
+      res.json(runs);
+    } catch (error) {
+      console.error("Error fetching orchestrator runs:", error);
+      res.status(500).json({ message: "Failed to fetch runs" });
     }
   });
 
