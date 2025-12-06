@@ -65,7 +65,7 @@ function extractUniqueLocations(candidates: any[]): string[] {
 export default function CandidatesList() {
   const [location] = useLocation();
   const urlParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
-  const jobId = urlParams.get('jobId');
+  const jobIdFromUrl = urlParams.get('jobId');
   const candidateIdFromUrl = urlParams.get('candidateId');
 
   const [activeTab, setActiveTab] = useState("candidates");
@@ -80,6 +80,26 @@ export default function CandidatesList() {
   // Profile Dialog State
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileCandidate, setProfileCandidate] = useState<any>(null);
+  
+  // When viewing a specific candidate, we disable job filtering
+  // effectiveJobId is null if candidateId is in URL (viewing specific candidate from any job)
+  const [effectiveJobId, setEffectiveJobId] = useState<string | null>(candidateIdFromUrl ? null : jobIdFromUrl);
+
+  // Sync effectiveJobId when URL changes (e.g., user navigates between jobs)
+  useEffect(() => {
+    // If navigating away from candidateId view back to a job view, restore job filtering
+    if (!candidateIdFromUrl && jobIdFromUrl) {
+      setEffectiveJobId(jobIdFromUrl);
+    }
+    // If navigating to a candidateId view, disable job filtering
+    else if (candidateIdFromUrl) {
+      setEffectiveJobId(null);
+    }
+    // If no job or candidate specified, show all
+    else if (!candidateIdFromUrl && !jobIdFromUrl) {
+      setEffectiveJobId(null);
+    }
+  }, [candidateIdFromUrl, jobIdFromUrl, location]);
 
   const queryClient = useQueryClient();
   const candidatesKey = useTenantQueryKey(['candidates']);
@@ -115,22 +135,36 @@ export default function CandidatesList() {
     },
   });
 
-  // Open profile dialog when candidateId is in URL
+  // Open profile dialog when candidateId is in URL - search in ALL candidates, not filtered ones
   useEffect(() => {
     if (candidateIdFromUrl && candidates && candidates.length > 0) {
       const targetCandidate = candidates.find((c: any) => c.id === candidateIdFromUrl);
       if (targetCandidate) {
+        // Clear filters to ensure candidate is visible in the list
+        setActiveCriteria([]);
+        setLocationFilter(null);
+        
+        // Switch to the correct tab based on candidate's stage
+        if (targetCandidate.stage === 'Shortlisted') {
+          setActiveTab('shortlisted');
+        } else {
+          setActiveTab('candidates');
+        }
+        
         setProfileCandidate(targetCandidate);
         setProfileOpen(true);
+      } else {
+        // Candidate not found in current data
+        toast.error('Candidate not found. They may have been removed.');
       }
     }
   }, [candidateIdFromUrl, candidates]);
 
-  // Find the current job if jobId is present
+  // Find the current job based on effective job ID (null when viewing specific candidate)
   const currentJob = useMemo(() => {
-    if (!jobId || !jobs) return null;
-    return jobs.find((job: any) => job.id === jobId);
-  }, [jobId, jobs]);
+    if (!effectiveJobId || !jobs) return null;
+    return jobs.find((job: any) => job.id === effectiveJobId);
+  }, [effectiveJobId, jobs]);
 
   // Extract unique skills and locations from all candidates
   const allSkills = useMemo(() => extractUniqueSkills(candidates || []), [candidates]);
@@ -139,15 +173,15 @@ export default function CandidatesList() {
   // Note: Skills filter starts empty - users add skills to filter by
   // This ensures all candidates are shown initially
 
-  // Filter candidates by jobId, location, and skills
+  // Filter candidates by effectiveJobId, location, and skills
   const filteredCandidates = useMemo(() => {
     if (!candidates) return [];
     
     let filtered = candidates;
     
-    // Filter by jobId if present
-    if (jobId) {
-      filtered = filtered.filter((c: any) => c.jobId === jobId);
+    // Filter by jobId if present (disabled when viewing specific candidate)
+    if (effectiveJobId) {
+      filtered = filtered.filter((c: any) => c.jobId === effectiveJobId);
     }
     
     // Filter by location if selected
@@ -174,7 +208,7 @@ export default function CandidatesList() {
     }
     
     return filtered;
-  }, [candidates, jobId, locationFilter, activeCriteria]);
+  }, [candidates, effectiveJobId, locationFilter, activeCriteria]);
 
   // Separate candidates by tab
   const regularCandidates = useMemo(() => {
