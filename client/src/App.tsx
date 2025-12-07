@@ -77,7 +77,7 @@ function Router() {
       <Route path="/interview-console" component={InterviewConsole} />
       <Route path="/recommendations" component={Recommendations} />
       <Route path="/kpi-management" component={KpiManagement} />
-      <Route path="/kpi-review" component={KpiReview} />
+      <Route path="/kpi-review/:id?" component={KpiReview} />
       <Route path="/kpi-manager-review" component={KpiManagerReview} />
       <Route path="/kpi-hr-dashboard" component={KpiHRDashboard} />
       <Route path="/document-library" component={DocumentLibrary} />
