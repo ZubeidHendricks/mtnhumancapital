@@ -245,7 +245,13 @@ export default function KpiManagement() {
               </Card>
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {filteredTemplates.map((template) => (
+                {filteredTemplates.map((template) => {
+                  const ownerDisplay = template.ownerType === "person" 
+                    ? employees.find(e => e.id === template.ownerId)?.fullName || "Not assigned"
+                    : template.ownerType === "department" 
+                      ? template.ownerDepartment || "Not assigned"
+                      : template.ownerDivision || "Not assigned";
+                  return (
                   <Card key={template.id} className="bg-gray-800/50 border-gray-700 hover:border-blue-500/50 transition-colors" data-testid={`card-template-${template.id}`}>
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between">
@@ -261,9 +267,34 @@ export default function KpiManagement() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex items-center justify-between text-sm text-gray-400 mb-3">
-                        <span>Weight: {template.weight}%</span>
-                        <span>Target: {template.targetValue}</span>
+                      <div className="grid grid-cols-2 gap-2 text-sm text-gray-400 mb-3">
+                        <div className="flex items-center gap-1">
+                          <span className="text-gray-500">Weight:</span>
+                          <span className="text-white">{template.weight}%</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-gray-500">Target:</span>
+                          <span className="text-white">{template.targetValue}</span>
+                          {template.targetTimePeriod && (
+                            <span className="text-gray-500">/ {template.targetTimePeriod}</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-gray-500">Frequency:</span>
+                          <span className="text-white capitalize">{template.frequency || "Quarterly"}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-gray-500">Data:</span>
+                          <span className="text-white truncate">{template.dataSource || "Not set"}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 text-sm text-gray-400 mb-3">
+                        <User className="h-3 w-3 text-gray-500" />
+                        <span className="text-gray-500">Owner:</span>
+                        <span className="text-white">{ownerDisplay}</span>
+                        {template.ownerType && (
+                          <Badge variant="secondary" className="text-xs ml-1 capitalize">{template.ownerType}</Badge>
+                        )}
                       </div>
                       <div className="flex gap-2">
                         <Button
@@ -286,7 +317,8 @@ export default function KpiManagement() {
                       </div>
                     </CardContent>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             )}
           </TabsContent>
@@ -561,6 +593,7 @@ export default function KpiManagement() {
         template={editingTemplate}
         onSubmit={(data) => createTemplateMutation.mutate(data)}
         isLoading={createTemplateMutation.isPending}
+        employees={employees}
       />
 
       <CycleDialog
@@ -589,25 +622,80 @@ export default function KpiManagement() {
   );
 }
 
+const DATA_SOURCES = [
+  "CRM System",
+  "Sales Reports",
+  "Customer Surveys",
+  "Financial Reports",
+  "HR System",
+  "Project Management",
+  "Quality Management",
+  "Production System",
+  "Custom/Manual Entry"
+];
+
+const FREQUENCIES = [
+  { value: "monthly", label: "Monthly" },
+  { value: "quarterly", label: "Quarterly" },
+  { value: "annually", label: "Annually" }
+];
+
+const OWNER_TYPES = [
+  { value: "person", label: "Person" },
+  { value: "department", label: "Department" },
+  { value: "division", label: "Division" }
+];
+
+const DEPARTMENTS = [
+  "Sales",
+  "Marketing",
+  "Finance",
+  "Operations",
+  "Human Resources",
+  "IT",
+  "Customer Service",
+  "Engineering",
+  "Research & Development"
+];
+
+const DIVISIONS = [
+  "North Region",
+  "South Region",
+  "East Region",
+  "West Region",
+  "Corporate",
+  "Retail",
+  "Wholesale"
+];
+
 function TemplateDialog({
   open,
   onOpenChange,
   template,
   onSubmit,
-  isLoading
+  isLoading,
+  employees = []
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   template: KpiTemplate | null;
   onSubmit: (data: Partial<KpiTemplate>) => void;
   isLoading: boolean;
+  employees?: Employee[];
 }) {
   const [name, setName] = useState(template?.name || "");
   const [description, setDescription] = useState(template?.description || "");
   const [category, setCategory] = useState(template?.category || "Performance");
   const [weight, setWeight] = useState(template?.weight || 20);
   const [targetValue, setTargetValue] = useState(template?.targetValue?.toString() || "");
+  const [targetTimePeriod, setTargetTimePeriod] = useState(template?.targetTimePeriod || "quarterly");
   const [measurementType, setMeasurementType] = useState(template?.measurementType || "scale");
+  const [dataSource, setDataSource] = useState(template?.dataSource || "");
+  const [frequency, setFrequency] = useState(template?.frequency || "quarterly");
+  const [ownerType, setOwnerType] = useState(template?.ownerType || "person");
+  const [ownerId, setOwnerId] = useState(template?.ownerId || "");
+  const [ownerDepartment, setOwnerDepartment] = useState(template?.ownerDepartment || "");
+  const [ownerDivision, setOwnerDivision] = useState(template?.ownerDivision || "");
 
   const handleSubmit = () => {
     onSubmit({
@@ -616,14 +704,21 @@ function TemplateDialog({
       category,
       weight,
       targetValue: parseFloat(targetValue) || 0,
+      targetTimePeriod,
       measurementType,
+      dataSource,
+      frequency,
+      ownerType,
+      ownerId: ownerType === "person" ? ownerId : null,
+      ownerDepartment: ownerType === "department" ? ownerDepartment : null,
+      ownerDivision: ownerType === "division" ? ownerDivision : null,
       isActive: 1
     });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-md">
+      <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{template ? "Edit" : "Create"} KPI Template</DialogTitle>
           <DialogDescription className="text-gray-400">
@@ -676,7 +771,7 @@ function TemplateDialog({
               data-testid="slider-template-weight"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <Label>Target Value</Label>
               <Input
@@ -687,6 +782,19 @@ function TemplateDialog({
                 className="bg-gray-800 border-gray-700"
                 data-testid="input-template-target"
               />
+            </div>
+            <div>
+              <Label>Target Time Period</Label>
+              <Select value={targetTimePeriod} onValueChange={setTargetTimePeriod}>
+                <SelectTrigger className="bg-gray-800 border-gray-700" data-testid="select-template-target-period">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-700">
+                  {FREQUENCIES.map((f) => (
+                    <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label>Measurement Type</Label>
@@ -701,6 +809,100 @@ function TemplateDialog({
                   <SelectItem value="boolean">Yes/No</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Data Source</Label>
+              <Select value={dataSource} onValueChange={setDataSource}>
+                <SelectTrigger className="bg-gray-800 border-gray-700" data-testid="select-template-data-source">
+                  <SelectValue placeholder="Select data source" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-700">
+                  {DATA_SOURCES.map((source) => (
+                    <SelectItem key={source} value={source}>{source}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Measurement Frequency</Label>
+              <Select value={frequency} onValueChange={setFrequency}>
+                <SelectTrigger className="bg-gray-800 border-gray-700" data-testid="select-template-frequency">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-700">
+                  {FREQUENCIES.map((f) => (
+                    <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="border-t border-gray-700 pt-4">
+            <Label className="text-base font-medium">Owner</Label>
+            <p className="text-sm text-gray-400 mb-3">Who is responsible for this KPI?</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Owner Type</Label>
+                <Select value={ownerType} onValueChange={setOwnerType}>
+                  <SelectTrigger className="bg-gray-800 border-gray-700" data-testid="select-template-owner-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700">
+                    {OWNER_TYPES.map((t) => (
+                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                {ownerType === "person" && (
+                  <>
+                    <Label>Owner (Person)</Label>
+                    <Select value={ownerId} onValueChange={setOwnerId}>
+                      <SelectTrigger className="bg-gray-800 border-gray-700" data-testid="select-template-owner-person">
+                        <SelectValue placeholder="Select person" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-800 border-gray-700">
+                        {employees.map((emp) => (
+                          <SelectItem key={emp.id} value={emp.id}>{emp.fullName}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </>
+                )}
+                {ownerType === "department" && (
+                  <>
+                    <Label>Owner (Department)</Label>
+                    <Select value={ownerDepartment} onValueChange={setOwnerDepartment}>
+                      <SelectTrigger className="bg-gray-800 border-gray-700" data-testid="select-template-owner-department">
+                        <SelectValue placeholder="Select department" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-800 border-gray-700">
+                        {DEPARTMENTS.map((dept) => (
+                          <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </>
+                )}
+                {ownerType === "division" && (
+                  <>
+                    <Label>Owner (Division)</Label>
+                    <Select value={ownerDivision} onValueChange={setOwnerDivision}>
+                      <SelectTrigger className="bg-gray-800 border-gray-700" data-testid="select-template-owner-division">
+                        <SelectValue placeholder="Select division" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-800 border-gray-700">
+                        {DIVISIONS.map((div) => (
+                          <SelectItem key={div} value={div}>{div}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
