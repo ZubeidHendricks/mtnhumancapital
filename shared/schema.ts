@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, jsonb, vector, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, jsonb, vector, index, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -1527,8 +1527,10 @@ export const kpiTemplates = pgTable("kpi_templates", {
   description: text("description"),
   category: text("category"), // 'performance', 'growth', 'teamwork', 'leadership', 'innovation'
   measurementType: text("measurement_type").notNull().default("scale"), // 'scale', 'percentage', 'number', 'boolean'
+  currentValue: real("current_value"), // Current measured value (updated by manual entry or data sync)
   targetValue: integer("target_value"), // Target to achieve
   targetTimePeriod: text("target_time_period"), // 'monthly', 'quarterly', 'annually' - time period for target
+  lastMeasuredAt: timestamp("last_measured_at"), // When the value was last updated
   weight: integer("weight").default(1), // Weight in overall score calculation
   dataSource: text("data_source"), // Legacy: text description of data source
   dataSourceId: varchar("data_source_id").references(() => dataSources.id), // Link to actual data source

@@ -2247,7 +2247,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateKpiTemplateCurrentValue(tenantId: string, id: string, currentValue: number): Promise<KpiTemplate | undefined> {
     const [template] = await db.update(kpiTemplates)
-      .set({ currentValue, updatedAt: new Date() })
+      .set({ currentValue, lastMeasuredAt: new Date(), updatedAt: new Date() })
       .where(and(eq(kpiTemplates.id, id), eq(kpiTemplates.tenantId, tenantId)))
       .returning();
     return template || undefined;

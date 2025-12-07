@@ -8,10 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Database, RefreshCw, ArrowLeft, CheckCircle, Clock, XCircle, Activity,
   AlertCircle, Loader2, Zap, Settings, Calendar, Link as LinkIcon,
-  BarChart3, FileText, History, Target
+  BarChart3, FileText, History, Target, Edit2, Save
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { format, formatDistanceToNow } from "date-fns";
@@ -23,6 +25,8 @@ export default function DataSourceDetailPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [testingConnection, setTestingConnection] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [manualValues, setManualValues] = useState<Record<string, string>>({});
+  const [savingValues, setSavingValues] = useState(false);
 
   const queryClient = useQueryClient();
   const dataSourceKey = useTenantQueryKey(["data-source", sourceId || ""]);
@@ -88,6 +92,41 @@ export default function DataSourceDetailPage() {
       setSyncing(false);
     }
   });
+
+  const saveManualValuesMutation = useMutation({
+    mutationFn: async (updates: { kpiId: string; value: number }[]) => {
+      setSavingValues(true);
+      const promises = updates.map(({ kpiId, value }) => 
+        api.patch(`/kpi-templates/${kpiId}`, { 
+          currentValue: value,
+          lastMeasuredAt: new Date().toISOString()
+        })
+      );
+      return Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: linkedKpisKey });
+      queryClient.invalidateQueries({ queryKey: dataSourceKey });
+      setManualValues({});
+      setSavingValues(false);
+    },
+    onError: () => {
+      setSavingValues(false);
+    }
+  });
+
+  const handleSaveManualValues = () => {
+    const updates = Object.entries(manualValues)
+      .filter(([_, value]) => value !== "" && !isNaN(parseFloat(value)))
+      .map(([kpiId, value]) => ({
+        kpiId,
+        value: parseFloat(value)
+      }));
+    
+    if (updates.length > 0) {
+      saveManualValuesMutation.mutate(updates);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     const config: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; icon: any; color: string }> = {
@@ -288,6 +327,12 @@ export default function DataSourceDetailPage() {
               <Target className="h-4 w-4 mr-2" />
               Linked KPIs
             </TabsTrigger>
+            {source.type === "manual" && (
+              <TabsTrigger value="entry" className="data-[state=active]:bg-blue-600">
+                <Edit2 className="h-4 w-4 mr-2" />
+                Data Entry
+              </TabsTrigger>
+            )}
             <TabsTrigger value="settings" className="data-[state=active]:bg-blue-600">
               <Settings className="h-4 w-4 mr-2" />
               Settings
@@ -503,6 +548,115 @@ export default function DataSourceDetailPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {source.type === "manual" && (
+            <TabsContent value="entry" className="space-y-4">
+              <Card className="bg-gray-900/50 border-gray-800">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <Edit2 className="h-5 w-5 text-purple-400" />
+                    Manual Data Entry
+                  </CardTitle>
+                  <CardDescription className="text-gray-400">
+                    Enter values for KPIs linked to this manual data source
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {linkedKpis.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Target className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+                      <p className="text-gray-400 mb-2">No KPIs linked to this data source</p>
+                      <p className="text-gray-500 text-sm mb-4">
+                        Create a KPI template and select this data source to enable manual data entry
+                      </p>
+                      <Link href="/kpi-management">
+                        <Button className="bg-blue-600 hover:bg-blue-700">
+                          <Target className="h-4 w-4 mr-2" />
+                          Create KPI Template
+                        </Button>
+                      </Link>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-4">
+                        {linkedKpis.map((kpi) => (
+                          <div
+                            key={kpi.id}
+                            className="p-4 bg-gray-800/50 rounded-lg border border-gray-700"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <Label className="text-white font-medium">{kpi.name}</Label>
+                                <p className="text-gray-400 text-sm mt-1">{kpi.description}</p>
+                                <div className="flex items-center gap-4 mt-2 text-sm flex-wrap">
+                                  <span className="text-gray-500">
+                                    Type: <span className="text-gray-300 capitalize">{kpi.measurementType || "Value"}</span>
+                                  </span>
+                                  {kpi.currentValue !== null && kpi.currentValue !== undefined && (
+                                    <span className="text-gray-500">
+                                      Current: <span className="text-green-400 font-medium">{kpi.currentValue}</span>
+                                    </span>
+                                  )}
+                                  {kpi.targetValue !== null && kpi.targetValue !== undefined && (
+                                    <span className="text-gray-500">
+                                      Target: <span className="text-blue-400">{kpi.targetValue}</span>
+                                    </span>
+                                  )}
+                                  {kpi.lastMeasuredAt && (
+                                    <span className="text-gray-500">
+                                      Last updated: <span className="text-gray-400">{new Date(kpi.lastMeasuredAt).toLocaleString()}</span>
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="w-40">
+                                <Input
+                                  type="number"
+                                  step="any"
+                                  placeholder="Enter value"
+                                  value={manualValues[kpi.id] || ""}
+                                  onChange={(e) => setManualValues({
+                                    ...manualValues,
+                                    [kpi.id]: e.target.value
+                                  })}
+                                  className="bg-gray-800 border-gray-700 text-white"
+                                  data-testid={`input-kpi-${kpi.id}`}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className="flex items-center justify-between pt-4 border-t border-gray-800">
+                        <p className="text-gray-400 text-sm">
+                          {Object.values(manualValues).filter(v => v !== "").length} value(s) ready to save
+                        </p>
+                        <Button
+                          onClick={handleSaveManualValues}
+                          disabled={savingValues || Object.values(manualValues).filter(v => v !== "").length === 0}
+                          className="bg-purple-600 hover:bg-purple-700"
+                          data-testid="button-save-values"
+                        >
+                          {savingValues ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="h-4 w-4 mr-2" />
+                              Save Values
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
           <TabsContent value="settings" className="space-y-4">
             <Card className="bg-gray-900/50 border-gray-800">
