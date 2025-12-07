@@ -1449,8 +1449,15 @@ export const kpiTemplates = pgTable("kpi_templates", {
   category: text("category"), // 'performance', 'growth', 'teamwork', 'leadership', 'innovation'
   measurementType: text("measurement_type").notNull().default("scale"), // 'scale', 'percentage', 'number', 'boolean'
   targetValue: integer("target_value"), // Target to achieve
+  targetTimePeriod: text("target_time_period"), // 'monthly', 'quarterly', 'annually' - time period for target
   weight: integer("weight").default(1), // Weight in overall score calculation
-  department: text("department"), // Optional department filter
+  dataSource: text("data_source"), // Source for measurement data (e.g., "CRM System", "Sales Reports", "Customer Surveys")
+  frequency: text("frequency").default("quarterly"), // 'monthly', 'quarterly', 'annually' - how often KPI is measured
+  ownerId: varchar("owner_id").references(() => users.id), // Person responsible for this KPI
+  ownerType: text("owner_type"), // 'person', 'department', 'division' - type of owner
+  ownerDepartment: text("owner_department"), // Department responsible if ownerType is 'department'
+  ownerDivision: text("owner_division"), // Division responsible if ownerType is 'division'
+  department: text("department"), // Optional department filter for who this KPI applies to
   role: text("role"), // Optional role filter
   isActive: integer("is_active").default(1),
   createdBy: varchar("created_by").references(() => users.id),
@@ -1460,6 +1467,7 @@ export const kpiTemplates = pgTable("kpi_templates", {
   tenantIdIdx: index("kpi_templates_tenant_id_idx").on(table.tenantId),
   categoryIdx: index("kpi_templates_category_idx").on(table.category),
   departmentIdx: index("kpi_templates_department_idx").on(table.department),
+  ownerIdIdx: index("kpi_templates_owner_id_idx").on(table.ownerId),
 }));
 
 // Review Cycles - Periods for performance reviews (quarterly, annual, etc.)
