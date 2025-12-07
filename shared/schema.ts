@@ -1532,6 +1532,8 @@ export const kpiTemplates = pgTable("kpi_templates", {
   weight: integer("weight").default(1), // Weight in overall score calculation
   dataSource: text("data_source"), // Legacy: text description of data source
   dataSourceId: varchar("data_source_id").references(() => dataSources.id), // Link to actual data source
+  sourceFieldMapping: text("source_field_mapping"), // Field name or query to extract from data source
+  aggregationMethod: text("aggregation_method"), // 'sum', 'average', 'count', 'latest', 'min', 'max'
   frequency: text("frequency").default("quarterly"), // 'monthly', 'quarterly', 'annually' - how often KPI is measured
   ownerId: varchar("owner_id").references(() => users.id), // Person responsible for this KPI
   ownerType: text("owner_type"), // 'person', 'department', 'division' - type of owner

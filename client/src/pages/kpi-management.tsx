@@ -16,7 +16,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   Search, Plus, Target, FileText, Users, Calendar, Edit2, Trash2,
   Download, CheckCircle, Clock, AlertCircle, ChevronRight, BarChart3,
-  MessageSquare, Star, User, Loader2, Send, Eye
+  MessageSquare, Star, User, Loader2, Send, Eye, Database, Link
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { format } from "date-fns";
@@ -622,16 +622,8 @@ export default function KpiManagement() {
   );
 }
 
-const DATA_SOURCES = [
-  "CRM System",
-  "Sales Reports",
-  "Customer Surveys",
-  "Financial Reports",
-  "HR System",
-  "Project Management",
-  "Quality Management",
-  "Production System",
-  "Custom/Manual Entry"
+const LEGACY_DATA_SOURCES = [
+  "Manual Entry",
 ];
 
 const FREQUENCIES = [
@@ -696,6 +688,20 @@ function TemplateDialog({
   const [ownerId, setOwnerId] = useState(template?.ownerId || "");
   const [ownerDepartment, setOwnerDepartment] = useState(template?.ownerDepartment || "");
   const [ownerDivision, setOwnerDivision] = useState(template?.ownerDivision || "");
+  const [sourceFieldMapping, setSourceFieldMapping] = useState<string>(template?.sourceFieldMapping?.toString() || "");
+  const [aggregationMethod, setAggregationMethod] = useState(template?.aggregationMethod || "sum");
+
+  const dataSourcesKey = useTenantQueryKey(["data-sources-active"]);
+  const { data: activeSources = [] } = useQuery<{ id: string; name: string; type: string }[]>({
+    queryKey: dataSourcesKey,
+    queryFn: async () => {
+      const response = await api.get("/data-sources/active");
+      return response.data;
+    },
+    enabled: open
+  });
+
+  const selectedSource = activeSources.find(s => s.id === dataSource);
 
   const handleSubmit = () => {
     onSubmit({
@@ -811,33 +817,102 @@ function TemplateDialog({
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Data Source</Label>
-              <Select value={dataSource} onValueChange={setDataSource}>
-                <SelectTrigger className="bg-gray-800 border-gray-700" data-testid="select-template-data-source">
-                  <SelectValue placeholder="Select data source" />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-700">
-                  {DATA_SOURCES.map((source) => (
-                    <SelectItem key={source} value={source}>{source}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="border-t border-gray-700 pt-4">
+            <Label className="text-base font-medium flex items-center gap-2">
+              <Database className="h-4 w-4 text-blue-400" />
+              Data Collection
+            </Label>
+            <p className="text-sm text-gray-400 mb-3">Configure how KPI data is collected</p>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Data Source</Label>
+                <Select value={dataSource} onValueChange={setDataSource}>
+                  <SelectTrigger className="bg-gray-800 border-gray-700" data-testid="select-template-data-source">
+                    <SelectValue placeholder="Select data source" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700">
+                    {LEGACY_DATA_SOURCES.map((source) => (
+                      <SelectItem key={source} value={source}>{source}</SelectItem>
+                    ))}
+                    {activeSources.length > 0 && (
+                      <>
+                        <div className="px-2 py-1 text-xs text-gray-500 font-medium border-t border-gray-700 mt-1">
+                          Connected Sources
+                        </div>
+                        {activeSources.map((source) => (
+                          <SelectItem key={source.id} value={source.id}>
+                            <div className="flex items-center gap-2">
+                              <span>{source.name}</span>
+                              <Badge variant="secondary" className="text-xs">{source.type}</Badge>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Measurement Frequency</Label>
+                <Select value={frequency} onValueChange={setFrequency}>
+                  <SelectTrigger className="bg-gray-800 border-gray-700" data-testid="select-template-frequency">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700">
+                    {FREQUENCIES.map((f) => (
+                      <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div>
-              <Label>Measurement Frequency</Label>
-              <Select value={frequency} onValueChange={setFrequency}>
-                <SelectTrigger className="bg-gray-800 border-gray-700" data-testid="select-template-frequency">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-700">
-                  {FREQUENCIES.map((f) => (
-                    <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+
+            {selectedSource && (
+              <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg space-y-4">
+                <div className="flex items-center gap-2">
+                  <Link className="h-4 w-4 text-blue-400" />
+                  <span className="font-medium text-blue-400">Field Mapping - {selectedSource.name}</span>
+                </div>
+                <p className="text-sm text-gray-400">
+                  Configure how data from this source maps to the KPI value
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Source Field / Query</Label>
+                    <Input
+                      value={sourceFieldMapping}
+                      onChange={(e) => setSourceFieldMapping(e.target.value)}
+                      placeholder="e.g., total_sales, revenue_amount"
+                      className="bg-gray-800 border-gray-700"
+                      data-testid="input-field-mapping"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Field name or query to extract from the data source
+                    </p>
+                  </div>
+                  <div>
+                    <Label>Aggregation Method</Label>
+                    <Select value={aggregationMethod} onValueChange={setAggregationMethod}>
+                      <SelectTrigger className="bg-gray-800 border-gray-700" data-testid="select-aggregation">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-800 border-gray-700">
+                        <SelectItem value="sum">Sum</SelectItem>
+                        <SelectItem value="average">Average</SelectItem>
+                        <SelectItem value="count">Count</SelectItem>
+                        <SelectItem value="latest">Latest Value</SelectItem>
+                        <SelectItem value="min">Minimum</SelectItem>
+                        <SelectItem value="max">Maximum</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      How to aggregate multiple records
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <div className="border-t border-gray-700 pt-4">
             <Label className="text-base font-medium">Owner</Label>
