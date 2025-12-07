@@ -690,9 +690,14 @@ function TemplateDialog({
   const [ownerDivision, setOwnerDivision] = useState(template?.ownerDivision || "");
   const [sourceFieldMapping, setSourceFieldMapping] = useState<string>(template?.sourceFieldMapping?.toString() || "");
   const [aggregationMethod, setAggregationMethod] = useState(template?.aggregationMethod || "sum");
+  
+  const [showQuickSourceDialog, setShowQuickSourceDialog] = useState(false);
+  const [quickSourceName, setQuickSourceName] = useState("");
+  const [quickSourceDescription, setQuickSourceDescription] = useState("");
+  const [creatingSource, setCreatingSource] = useState(false);
 
   const dataSourcesKey = useTenantQueryKey(["data-sources-active"]);
-  const { data: activeSources = [] } = useQuery<{ id: string; name: string; type: string }[]>({
+  const { data: activeSources = [], refetch: refetchSources } = useQuery<{ id: string; name: string; type: string }[]>({
     queryKey: dataSourcesKey,
     queryFn: async () => {
       const response = await api.get("/data-sources/active");
@@ -702,6 +707,30 @@ function TemplateDialog({
   });
 
   const selectedSource = activeSources.find(s => s.id === dataSource);
+
+  const handleCreateQuickSource = async () => {
+    if (!quickSourceName.trim()) return;
+    setCreatingSource(true);
+    try {
+      const response = await api.post("/data-sources", {
+        name: quickSourceName,
+        description: quickSourceDescription || `Manual data entry source for KPIs`,
+        type: "manual",
+        status: "active",
+        refreshSchedule: "manual"
+      });
+      const newSource = response.data;
+      await refetchSources();
+      setDataSource(newSource.id);
+      setShowQuickSourceDialog(false);
+      setQuickSourceName("");
+      setQuickSourceDescription("");
+    } catch (error) {
+      console.error("Failed to create data source:", error);
+    } finally {
+      setCreatingSource(false);
+    }
+  };
 
   const handleSubmit = () => {
     onSubmit({
@@ -827,31 +856,44 @@ function TemplateDialog({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Data Source</Label>
-                <Select value={dataSource} onValueChange={setDataSource}>
-                  <SelectTrigger className="bg-gray-800 border-gray-700" data-testid="select-template-data-source">
-                    <SelectValue placeholder="Select data source" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700">
-                    {LEGACY_DATA_SOURCES.map((source) => (
-                      <SelectItem key={source} value={source}>{source}</SelectItem>
-                    ))}
-                    {activeSources.length > 0 && (
-                      <>
-                        <div className="px-2 py-1 text-xs text-gray-500 font-medium border-t border-gray-700 mt-1">
-                          Connected Sources
-                        </div>
-                        {activeSources.map((source) => (
-                          <SelectItem key={source.id} value={source.id}>
-                            <div className="flex items-center gap-2">
-                              <span>{source.name}</span>
-                              <Badge variant="secondary" className="text-xs">{source.type}</Badge>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </>
-                    )}
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Select value={dataSource} onValueChange={setDataSource}>
+                    <SelectTrigger className="bg-gray-800 border-gray-700 flex-1" data-testid="select-template-data-source">
+                      <SelectValue placeholder="Select data source" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      {LEGACY_DATA_SOURCES.map((source) => (
+                        <SelectItem key={source} value={source}>{source}</SelectItem>
+                      ))}
+                      {activeSources.length > 0 && (
+                        <>
+                          <div className="px-2 py-1 text-xs text-gray-500 font-medium border-t border-gray-700 mt-1">
+                            Connected Sources
+                          </div>
+                          {activeSources.map((source) => (
+                            <SelectItem key={source.id} value={source.id}>
+                              <div className="flex items-center gap-2">
+                                <span>{source.name}</span>
+                                <Badge variant="secondary" className="text-xs">{source.type}</Badge>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setShowQuickSourceDialog(true)}
+                    className="border-gray-700 hover:bg-gray-800"
+                    title="Create new manual data source"
+                    data-testid="button-create-quick-source"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
               <div>
                 <Label>Measurement Frequency</Label>
@@ -989,6 +1031,51 @@ function TemplateDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <Dialog open={showQuickSourceDialog} onOpenChange={setShowQuickSourceDialog}>
+        <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create Manual Data Source</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Create a new data source for manual KPI data entry
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Source Name</Label>
+              <Input
+                value={quickSourceName}
+                onChange={(e) => setQuickSourceName(e.target.value)}
+                placeholder="e.g., Sales Team Manual KPIs"
+                className="bg-gray-800 border-gray-700"
+                data-testid="input-quick-source-name"
+              />
+            </div>
+            <div>
+              <Label>Description (Optional)</Label>
+              <Textarea
+                value={quickSourceDescription}
+                onChange={(e) => setQuickSourceDescription(e.target.value)}
+                placeholder="Describe what data will be entered here"
+                className="bg-gray-800 border-gray-700"
+                rows={2}
+                data-testid="input-quick-source-description"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowQuickSourceDialog(false)}>Cancel</Button>
+            <Button 
+              onClick={handleCreateQuickSource} 
+              disabled={!quickSourceName.trim() || creatingSource}
+              data-testid="button-create-source"
+            >
+              {creatingSource && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Create Source
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
