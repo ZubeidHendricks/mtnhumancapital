@@ -5415,7 +5415,14 @@ Format your response as JSON:
 
   app.post("/api/review-cycles", async (req, res) => {
     try {
-      const cycle = await storage.createReviewCycle(req.tenant.id, req.body);
+      const cycleData = {
+        ...req.body,
+        startDate: new Date(req.body.startDate),
+        endDate: new Date(req.body.endDate),
+        selfAssessmentDueDate: req.body.selfAssessmentDueDate ? new Date(req.body.selfAssessmentDueDate) : null,
+        managerReviewDueDate: req.body.managerReviewDueDate ? new Date(req.body.managerReviewDueDate) : null,
+      };
+      const cycle = await storage.createReviewCycle(req.tenant.id, cycleData);
       res.status(201).json(cycle);
     } catch (error) {
       console.error("Error creating review cycle:", error);
@@ -5425,7 +5432,13 @@ Format your response as JSON:
 
   app.patch("/api/review-cycles/:id", async (req, res) => {
     try {
-      const cycle = await storage.updateReviewCycle(req.tenant.id, req.params.id, req.body);
+      const updateData = { ...req.body };
+      if (req.body.startDate) updateData.startDate = new Date(req.body.startDate);
+      if (req.body.endDate) updateData.endDate = new Date(req.body.endDate);
+      if (req.body.selfAssessmentDueDate) updateData.selfAssessmentDueDate = new Date(req.body.selfAssessmentDueDate);
+      if (req.body.managerReviewDueDate) updateData.managerReviewDueDate = new Date(req.body.managerReviewDueDate);
+      
+      const cycle = await storage.updateReviewCycle(req.tenant.id, req.params.id, updateData);
       if (!cycle) {
         return res.status(404).json({ message: "Review cycle not found" });
       }
