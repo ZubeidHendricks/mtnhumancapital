@@ -1665,8 +1665,8 @@ export const reviewSubmissions = pgTable("review_submissions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   tenantId: varchar("tenant_id"),
   reviewCycleId: varchar("review_cycle_id").notNull().references(() => reviewCycles.id),
-  employeeId: varchar("employee_id").notNull().references(() => users.id),
-  managerId: varchar("manager_id").references(() => users.id),
+  employeeId: varchar("employee_id").notNull().references(() => employees.id),
+  managerId: varchar("manager_id").references(() => employees.id),
   selfAssessmentStatus: text("self_assessment_status").notNull().default("pending"), // 'pending', 'in_progress', 'completed'
   managerReviewStatus: text("manager_review_status").notNull().default("pending"),
   overallSelfScore: integer("overall_self_score"), // Weighted average of self-scores

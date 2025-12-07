@@ -5524,6 +5524,43 @@ Format your response as JSON:
         return res.status(400).json({ message: "Assignments must be an array" });
       }
       const created = await storage.createKpiAssignmentsBatch(req.tenant.id, assignments);
+      
+      // Auto-create review submissions for unique employee-cycle pairs
+      const uniquePairs = new Map<string, { employeeId: string; reviewCycleId: string; managerId?: string }>();
+      for (const assignment of created) {
+        const key = `${assignment.reviewCycleId}-${assignment.employeeId}`;
+        if (!uniquePairs.has(key)) {
+          uniquePairs.set(key, {
+            employeeId: assignment.employeeId,
+            reviewCycleId: assignment.reviewCycleId,
+            managerId: assignment.managerId || undefined
+          });
+        }
+      }
+      
+      // Create review submissions for each unique employee-cycle pair
+      for (const pair of Array.from(uniquePairs.values())) {
+        try {
+          // Check if submission already exists
+          const existing = await storage.getReviewSubmissionByEmployee(
+            req.tenant.id, 
+            pair.employeeId, 
+            pair.reviewCycleId
+          );
+          if (!existing) {
+            await storage.createReviewSubmission(req.tenant.id, {
+              reviewCycleId: pair.reviewCycleId,
+              employeeId: pair.employeeId,
+              managerId: pair.managerId || null,
+              selfAssessmentStatus: 'pending',
+              managerReviewStatus: 'pending'
+            });
+          }
+        } catch (subErr) {
+          console.error("Error creating review submission:", subErr);
+        }
+      }
+      
       res.status(201).json(created);
     } catch (error) {
       console.error("Error batch creating KPI assignments:", error);
