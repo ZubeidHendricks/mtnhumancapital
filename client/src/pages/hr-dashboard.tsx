@@ -2227,7 +2227,7 @@ BENEFITS:
                     </CardTitle>
                     <CardDescription>Current KPI review periods</CardDescription>
                   </div>
-                  <Link href="/kpi-management">
+                  <Link href="/kpi-management?tab=cycles&action=new-cycle">
                     <Button className="bg-primary hover:bg-primary/90" data-testid="button-new-cycle">
                       <Plus className="w-4 h-4 mr-2" />
                       New Cycle

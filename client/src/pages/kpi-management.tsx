@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation, useRoute } from "wouter";
 import { useTenantQueryKey } from "@/hooks/useTenant";
 import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +37,7 @@ const CATEGORIES = [
 ];
 
 export default function KpiManagement() {
+  const [location, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("templates");
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
@@ -47,6 +49,33 @@ export default function KpiManagement() {
   const [selectedSubmission, setSelectedSubmission] = useState<ReviewSubmission | null>(null);
   
   const queryClient = useQueryClient();
+
+  // Parse URL query params on mount
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const tab = searchParams.get('tab');
+    const action = searchParams.get('action');
+    
+    if (tab) {
+      setActiveTab(tab);
+    }
+    if (action === 'new-cycle') {
+      setShowCycleDialog(true);
+      setEditingCycle(null);
+    }
+    if (action === 'new-template') {
+      setShowTemplateDialog(true);
+      setEditingTemplate(null);
+    }
+    if (action === 'assign') {
+      setShowAssignDialog(true);
+    }
+    
+    // Clear URL params after applying
+    if (tab || action) {
+      navigate('/kpi-management', { replace: true });
+    }
+  }, []);
   
   const templatesKey = useTenantQueryKey(["kpi-templates"]);
   const cyclesKey = useTenantQueryKey(["review-cycles"]);
