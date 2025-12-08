@@ -622,6 +622,18 @@ BENEFITS:
     retry: 1,
   });
 
+  // LMS Courses Query
+  const lmsCoursesKey = useTenantQueryKey(['lmsCourses']);
+  const { data: lmsCourses = [] } = useQuery({
+    queryKey: lmsCoursesKey,
+    queryFn: async () => {
+      const res = await fetch("/api/lms/courses");
+      if (!res.ok) return [];
+      return res.json();
+    },
+    retry: 1,
+  });
+
   const displayCandidates = candidatesError ? MOCK_CANDIDATES : (Array.isArray(candidates) ? candidates : []);
   const displayJobs = jobsError ? [] : (Array.isArray(jobs) ? jobs : []);
   const jobCount = displayJobs.length || 12;
@@ -2435,8 +2447,8 @@ BENEFITS:
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Active Courses</p>
-                      <h3 className="text-2xl font-bold mt-2">24</h3>
-                      <p className="text-xs text-blue-400 mt-1">Across all departments</p>
+                      <h3 className="text-2xl font-bold mt-2">{lmsCourses.filter((c: any) => c.status === "published").length}</h3>
+                      <p className="text-xs text-blue-400 mt-1">Published courses</p>
                     </div>
                     <div className="p-3 rounded-lg bg-blue-500/10">
                       <BookOpen className="w-6 h-6 text-blue-400" />
@@ -2449,9 +2461,9 @@ BENEFITS:
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Enrolled Employees</p>
-                      <h3 className="text-2xl font-bold mt-2">156</h3>
-                      <p className="text-xs text-green-400 mt-1">+12 this month</p>
+                      <p className="text-sm font-medium text-muted-foreground">Total Courses</p>
+                      <h3 className="text-2xl font-bold mt-2">{lmsCourses.length}</h3>
+                      <p className="text-xs text-green-400 mt-1">All courses</p>
                     </div>
                     <div className="p-3 rounded-lg bg-green-500/10">
                       <Users className="w-6 h-6 text-green-400" />
@@ -2464,9 +2476,9 @@ BENEFITS:
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Completion Rate</p>
-                      <h3 className="text-2xl font-bold mt-2">78%</h3>
-                      <p className="text-xs text-amber-400 mt-1">Target: 85%</p>
+                      <p className="text-sm font-medium text-muted-foreground">Categories</p>
+                      <h3 className="text-2xl font-bold mt-2">{new Set(lmsCourses.map((c: any) => c.category)).size}</h3>
+                      <p className="text-xs text-amber-400 mt-1">Course categories</p>
                     </div>
                     <div className="p-3 rounded-lg bg-amber-500/10">
                       <TrendingUp className="w-6 h-6 text-amber-400" />
@@ -2479,9 +2491,9 @@ BENEFITS:
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Certifications</p>
-                      <h3 className="text-2xl font-bold mt-2">42</h3>
-                      <p className="text-xs text-purple-400 mt-1">Issued this quarter</p>
+                      <p className="text-sm font-medium text-muted-foreground">Total Duration</p>
+                      <h3 className="text-2xl font-bold mt-2">{Math.round(lmsCourses.reduce((sum: number, c: any) => sum + (c.duration || 0), 0) / 60)}h</h3>
+                      <p className="text-xs text-purple-400 mt-1">Learning content</p>
                     </div>
                     <div className="p-3 rounded-lg bg-purple-500/10">
                       <Award className="w-6 h-6 text-purple-400" />
@@ -2502,55 +2514,51 @@ BENEFITS:
                     </CardTitle>
                     <CardDescription>Current learning programs and progress</CardDescription>
                   </div>
-                  <Button className="bg-primary hover:bg-primary/90">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Course
-                  </Button>
+                  <Link href="/learning-management">
+                    <Button className="bg-primary hover:bg-primary/90" data-testid="button-create-course-lms">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Course
+                    </Button>
+                  </Link>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {[
-                    { name: "Compliance Training 2024", category: "Compliance", enrolled: 120, completed: 95, deadline: "Dec 31, 2024", status: "Active" },
-                    { name: "Leadership Development", category: "Management", enrolled: 24, completed: 18, deadline: "Jan 15, 2025", status: "Active" },
-                    { name: "Cybersecurity Awareness", category: "IT Security", enrolled: 156, completed: 142, deadline: "Dec 20, 2024", status: "Active" },
-                    { name: "Diversity & Inclusion", category: "HR", enrolled: 156, completed: 130, deadline: "Ongoing", status: "Active" },
-                  ].map((course, idx) => (
+                  {lmsCourses.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <p>No courses yet</p>
+                      <Link href="/learning-management">
+                        <Button variant="link" className="text-primary mt-2">Create your first course</Button>
+                      </Link>
+                    </div>
+                  ) : lmsCourses.map((course: any, idx: number) => (
                     <div key={idx} className="flex items-center justify-between p-4 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors">
                       <div className="flex items-center gap-4 flex-1">
                         <div className="p-2 rounded-lg bg-primary/20">
                           <BookOpen className="w-5 h-5 text-primary" />
                         </div>
                         <div className="flex-1">
-                          <p className="font-medium">{course.name}</p>
-                          <p className="text-sm text-muted-foreground">{course.category}</p>
+                          <p className="font-medium">{course.title}</p>
+                          <p className="text-sm text-muted-foreground">{course.category || "General"}</p>
                         </div>
                         <div className="text-sm text-center">
-                          <p className="text-muted-foreground">Enrolled</p>
-                          <p className="font-medium">{course.enrolled}</p>
+                          <p className="text-muted-foreground">Difficulty</p>
+                          <p className="font-medium capitalize">{course.difficulty || "beginner"}</p>
                         </div>
                         <div className="text-sm text-center">
-                          <p className="text-muted-foreground">Completed</p>
-                          <p className="font-medium text-green-400">{course.completed}</p>
+                          <p className="text-muted-foreground">Duration</p>
+                          <p className="font-medium">{course.duration || 0} min</p>
                         </div>
                         <div className="text-sm text-center">
-                          <p className="text-muted-foreground">Deadline</p>
-                          <p className="font-medium">{course.deadline}</p>
+                          <p className="text-muted-foreground">Status</p>
+                          <Badge variant="outline" className="capitalize">{course.status || "draft"}</Badge>
                         </div>
-                        <div className="w-24">
-                          <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-green-500"
-                              style={{ width: `${Math.round((course.completed / course.enrolled) * 100)}%` }}
-                            />
-                          </div>
-                          <p className="text-xs text-center mt-1 text-muted-foreground">
-                            {Math.round((course.completed / course.enrolled) * 100)}%
-                          </p>
-                        </div>
-                        <Button variant="ghost" size="sm">
-                          <Eye className="w-4 h-4" />
-                        </Button>
+                        <Link href="/learning-management">
+                          <Button variant="ghost" size="sm">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        </Link>
                       </div>
                     </div>
                   ))}
