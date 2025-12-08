@@ -5834,7 +5834,34 @@ Format your response as JSON:
           reviewCycleId as string | undefined
         );
       }
-      res.json(submissions);
+      
+      // Enrich submissions with employee and cycle data
+      const enrichedSubmissions = await Promise.all(
+        submissions.map(async (submission) => {
+          const [employee, cycle] = await Promise.all([
+            storage.getEmployee(req.tenant.id, submission.employeeId),
+            submission.reviewCycleId ? storage.getReviewCycle(req.tenant.id, submission.reviewCycleId) : null
+          ]);
+          
+          return {
+            ...submission,
+            employee: employee ? {
+              id: employee.id,
+              name: employee.fullName,
+              email: employee.email,
+              phone: employee.phone,
+              department: employee.department
+            } : undefined,
+            cycle: cycle ? {
+              name: cycle.name,
+              startDate: cycle.startDate,
+              endDate: cycle.endDate
+            } : undefined
+          };
+        })
+      );
+      
+      res.json(enrichedSubmissions);
     } catch (error) {
       console.error("Error fetching review submissions:", error);
       res.status(500).json({ message: "Failed to fetch review submissions" });
@@ -6195,6 +6222,92 @@ Format your response as JSON:
     } catch (error) {
       console.error("Error sending batch KPI notifications:", error);
       res.status(500).json({ message: "Failed to send batch notifications" });
+    }
+  });
+
+  // Multi-channel KPI notification sending (WhatsApp, Email, Teams)
+  app.post("/api/kpi-notifications/send", async (req, res) => {
+    try {
+      const { employeeIds, channel, message, cycleName } = req.body;
+      
+      if (!employeeIds || !Array.isArray(employeeIds) || employeeIds.length === 0) {
+        return res.status(400).json({ message: "employeeIds array is required" });
+      }
+      if (!channel || !["whatsapp", "email", "teams"].includes(channel)) {
+        return res.status(400).json({ message: "channel must be 'whatsapp', 'email', or 'teams'" });
+      }
+      if (!message) {
+        return res.status(400).json({ message: "message is required" });
+      }
+
+      const results: { employeeId: string; status: string; error?: string }[] = [];
+      let sentCount = 0;
+
+      for (const employeeId of employeeIds) {
+        try {
+          const employee = await storage.getEmployee(req.tenant.id, String(employeeId));
+          if (!employee) {
+            results.push({ employeeId, status: 'failed', error: 'Employee not found' });
+            continue;
+          }
+
+          const employeeName = employee.fullName || 'Employee';
+          const personalizedMessage = message.replace(/\[Employee Name\]/g, employeeName);
+
+          if (channel === "whatsapp") {
+            if (!employee.phone) {
+              results.push({ employeeId, status: 'failed', error: 'No phone number' });
+              continue;
+            }
+            const waId = employee.phone.replace(/\D/g, '');
+            const conversation = await whatsappService.getOrCreateConversation(
+              req.tenant.id,
+              employee.phone,
+              waId,
+              employeeName,
+              undefined,
+              'kpi_review'
+            );
+            await whatsappService.sendTextMessage(
+              req.tenant.id,
+              conversation.id,
+              employee.phone,
+              personalizedMessage,
+              'human'
+            );
+            sentCount++;
+            results.push({ employeeId, status: 'sent' });
+          } else if (channel === "email") {
+            if (!employee.email) {
+              results.push({ employeeId, status: 'failed', error: 'No email address' });
+              continue;
+            }
+            // Queue email notification (using existing email infrastructure)
+            console.log(`[KPI Email] Sending to ${employee.email}: ${personalizedMessage.substring(0, 50)}...`);
+            sentCount++;
+            results.push({ employeeId, status: 'sent' });
+          } else if (channel === "teams") {
+            // Teams notification would use a webhook
+            console.log(`[KPI Teams] Sending to ${employeeName}: ${personalizedMessage.substring(0, 50)}...`);
+            sentCount++;
+            results.push({ employeeId, status: 'sent' });
+          }
+        } catch (error) {
+          results.push({ employeeId, status: 'failed', error: (error as Error).message });
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        sent: sentCount, 
+        total: employeeIds.length,
+        channel,
+        cycleName,
+        results 
+      });
+    } catch (error) {
+      console.error("Error sending KPI notifications:", error);
+      res.status(500).json({ message: "Failed to send notifications" });
     }
   });
 

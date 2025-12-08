@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Table, 
   TableBody, 
@@ -30,7 +33,12 @@ import {
   Loader2,
   User,
   Filter,
-  ChevronDown
+  ChevronDown,
+  MessageSquare,
+  Mail,
+  Phone,
+  Send,
+  FileText
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -47,11 +55,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
 
 interface ReviewSubmission {
-  id: number;
-  employeeId: number;
-  reviewCycleId: number;
+  id: string;
+  employeeId: string;
+  reviewCycleId: string;
   selfAssessmentStatus: string;
   managerReviewStatus: string;
   finalScore: string | null;
@@ -62,9 +71,10 @@ interface ReviewSubmission {
   managerSubmittedAt: string | null;
   createdAt: string;
   employee?: {
-    id: number;
+    id: string;
     name: string;
     email: string;
+    phone?: string;
     department: string;
   };
   cycle?: {
@@ -163,6 +173,199 @@ function StatCard({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function CommunicationDialog({
+  open,
+  onOpenChange,
+  selectedEmployees,
+  cycleName
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  selectedEmployees: ReviewSubmission[];
+  cycleName: string;
+}) {
+  const { toast } = useToast();
+  const [channel, setChannel] = useState<"whatsapp" | "email" | "teams">("email");
+  const [message, setMessage] = useState(`Hi [Employee Name],
+
+This is a friendly reminder to complete your KPI self-assessment for ${cycleName}.
+
+Please log in to the HR portal and submit your review at your earliest convenience.
+
+Thank you,
+HR Team`);
+  const [sending, setSending] = useState(false);
+
+  const sendNotification = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/kpi-notifications/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          employeeIds: selectedEmployees.map(e => e.employeeId),
+          channel,
+          message,
+          cycleName
+        })
+      });
+      if (!res.ok) throw new Error("Failed to send notifications");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Notifications Sent",
+        description: `Successfully sent ${data.sent} notification(s) via ${channel}`
+      });
+      onOpenChange(false);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to send notifications. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleSend = async () => {
+    setSending(true);
+    try {
+      await sendNotification.mutateAsync();
+    } catch {
+      // Error is handled by mutation's onError callback
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const employeesWithContact = selectedEmployees.filter(e => {
+    if (channel === "whatsapp") return e.employee?.phone;
+    if (channel === "email") return e.employee?.email;
+    return true;
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl bg-gray-900 border-white/10">
+        <DialogHeader>
+          <DialogTitle className="text-xl text-white flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-blue-400" />
+            Send Review Reminders
+          </DialogTitle>
+          <DialogDescription>
+            Send reminders to {selectedEmployees.length} selected employee(s)
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-6">
+          <div>
+            <Label className="text-gray-400 mb-2 block">Communication Channel</Label>
+            <div className="grid grid-cols-3 gap-3">
+              <Button
+                type="button"
+                variant={channel === "email" ? "default" : "outline"}
+                className={cn(
+                  "flex items-center gap-2",
+                  channel === "email" ? "" : "border-gray-700"
+                )}
+                onClick={() => setChannel("email")}
+                data-testid="channel-email"
+              >
+                <Mail className="w-4 h-4" />
+                Email
+              </Button>
+              <Button
+                type="button"
+                variant={channel === "whatsapp" ? "default" : "outline"}
+                className={cn(
+                  "flex items-center gap-2",
+                  channel === "whatsapp" ? "bg-green-600 hover:bg-green-700" : "border-gray-700"
+                )}
+                onClick={() => setChannel("whatsapp")}
+                data-testid="channel-whatsapp"
+              >
+                <Phone className="w-4 h-4" />
+                WhatsApp
+              </Button>
+              <Button
+                type="button"
+                variant={channel === "teams" ? "default" : "outline"}
+                className={cn(
+                  "flex items-center gap-2",
+                  channel === "teams" ? "bg-purple-600 hover:bg-purple-700" : "border-gray-700"
+                )}
+                onClick={() => setChannel("teams")}
+                data-testid="channel-teams"
+              >
+                <MessageSquare className="w-4 h-4" />
+                Teams
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-gray-400 mb-2 block">Recipients ({employeesWithContact.length} reachable)</Label>
+            <div className="bg-gray-800/50 rounded-lg p-3 max-h-32 overflow-y-auto">
+              {selectedEmployees.map(emp => (
+                <div key={emp.id} className="flex items-center justify-between py-1 text-sm">
+                  <span className="text-white">{emp.employee?.name || `Employee #${emp.employeeId}`}</span>
+                  <span className="text-gray-500">
+                    {channel === "email" && (emp.employee?.email || "No email")}
+                    {channel === "whatsapp" && (emp.employee?.phone || "No phone")}
+                    {channel === "teams" && (emp.employee?.email || "No Teams ID")}
+                  </span>
+                </div>
+              ))}
+            </div>
+            {employeesWithContact.length < selectedEmployees.length && (
+              <p className="text-amber-400 text-xs mt-2">
+                {selectedEmployees.length - employeesWithContact.length} employee(s) don't have {channel} contact info
+              </p>
+            )}
+          </div>
+
+          <div>
+            <Label className="text-gray-400 mb-2 block">Message</Label>
+            <Textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="bg-gray-800 border-gray-700 min-h-[150px]"
+              placeholder="Enter your message..."
+              data-testid="message-input"
+            />
+            <p className="text-gray-500 text-xs mt-1">
+              Use [Employee Name] to personalize the message
+            </p>
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSend}
+            disabled={sending || employeesWithContact.length === 0}
+            data-testid="send-notification-button"
+          >
+            {sending ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Sending...
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4 mr-2" />
+                Send to {employeesWithContact.length} Employee(s)
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -368,10 +571,13 @@ function EmployeeDetailDialog({
 }
 
 export default function KPIHRDashboard() {
+  const { toast } = useToast();
   const [selectedCycleId, setSelectedCycleId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedSubmission, setSelectedSubmission] = useState<ReviewSubmission | null>(null);
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<Set<string>>(new Set());
+  const [showCommsDialog, setShowCommsDialog] = useState(false);
 
   const { data: reviewCycles = [] } = useQuery<any[]>({
     queryKey: ["/api/review-cycles"],
@@ -423,11 +629,33 @@ export default function KPIHRDashboard() {
   const selfCompletionRate = totalEmployees > 0 ? Math.round((selfCompleted / totalEmployees) * 100) : 0;
   const managerCompletionRate = totalEmployees > 0 ? Math.round((managerCompleted / totalEmployees) * 100) : 0;
 
+  const toggleEmployeeSelection = (submissionId: string) => {
+    const newSet = new Set(selectedEmployeeIds);
+    if (newSet.has(submissionId)) {
+      newSet.delete(submissionId);
+    } else {
+      newSet.add(submissionId);
+    }
+    setSelectedEmployeeIds(newSet);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedEmployeeIds.size === filteredSubmissions.length) {
+      setSelectedEmployeeIds(new Set());
+    } else {
+      setSelectedEmployeeIds(new Set(filteredSubmissions.map(s => s.id)));
+    }
+  };
+
+  const selectedSubmissions = filteredSubmissions.filter(s => selectedEmployeeIds.has(s.id));
+
   const exportToCSV = () => {
-    const headers = ["Employee", "Department", "Self Status", "Manager Status", "Final Score", "Employee Comments", "Manager Comments"];
+    const headers = ["Employee", "Department", "Email", "Phone", "Self Status", "Manager Status", "Final Score", "Employee Comments", "Manager Comments"];
     const rows = filteredSubmissions.map(s => [
       s.employee?.name || `Employee #${s.employeeId}`,
       s.employee?.department || "",
+      s.employee?.email || "",
+      s.employee?.phone || "",
       s.selfAssessmentStatus,
       s.managerReviewStatus,
       s.finalScore || "",
@@ -440,9 +668,59 @@ export default function KPIHRDashboard() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `kpi-review-${selectedCycle?.name || "export"}.csv`;
+    a.download = `kpi-review-${selectedCycle?.name || "export"}-${format(new Date(), "yyyy-MM-dd")}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Export Complete",
+      description: `Exported ${filteredSubmissions.length} review(s) to CSV`
+    });
+  };
+
+  const exportToPDF = async () => {
+    toast({
+      title: "Generating PDF",
+      description: "Creating PDF report..."
+    });
+
+    try {
+      const res = await fetch("/api/kpi-reports/pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reviewCycleId: selectedCycleId,
+          submissions: filteredSubmissions
+        })
+      });
+
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `kpi-report-${selectedCycle?.name || "export"}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        
+        toast({
+          title: "PDF Generated",
+          description: "Your report has been downloaded"
+        });
+      } else {
+        toast({
+          title: "PDF Generation",
+          description: "PDF export feature will be available soon",
+          variant: "default"
+        });
+      }
+    } catch {
+      toast({
+        title: "Export Available",
+        description: "Use CSV export for now. PDF will be available soon.",
+        variant: "default"
+      });
+    }
   };
 
   return (
@@ -474,9 +752,35 @@ export default function KPIHRDashboard() {
                 ))}
               </SelectContent>
             </Select>
-            <Button variant="outline" onClick={exportToCSV} className="border-gray-700" data-testid="export-button">
-              <Download className="w-4 h-4 mr-2" />
-              Export
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="border-gray-700" data-testid="export-button">
+                  <Download className="w-4 h-4 mr-2" />
+                  Export
+                  <ChevronDown className="w-4 h-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-gray-800 border-gray-700">
+                <DropdownMenuItem onClick={exportToCSV}>
+                  <FileText className="w-4 h-4 mr-2" />
+                  Export as CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportToPDF}>
+                  <FileText className="w-4 h-4 mr-2" />
+                  Export as PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <Button
+              variant="default"
+              onClick={() => setShowCommsDialog(true)}
+              disabled={selectedEmployeeIds.size === 0}
+              data-testid="send-reminders-button"
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Send Reminders ({selectedEmployeeIds.size})
             </Button>
           </div>
         </div>
@@ -594,6 +898,13 @@ export default function KPIHRDashboard() {
               <Table>
                 <TableHeader>
                   <TableRow className="border-white/10">
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectedEmployeeIds.size === filteredSubmissions.length && filteredSubmissions.length > 0}
+                        onCheckedChange={toggleSelectAll}
+                        data-testid="select-all-checkbox"
+                      />
+                    </TableHead>
                     <TableHead className="text-gray-400">Employee</TableHead>
                     <TableHead className="text-gray-400">Department</TableHead>
                     <TableHead className="text-gray-400">Self-Assessment</TableHead>
@@ -606,11 +917,20 @@ export default function KPIHRDashboard() {
                   {filteredSubmissions.map(submission => (
                     <TableRow 
                       key={submission.id} 
-                      className="border-white/10 cursor-pointer hover:bg-white/5"
-                      onClick={() => setSelectedSubmission(submission)}
+                      className={cn(
+                        "border-white/10 cursor-pointer hover:bg-white/5",
+                        selectedEmployeeIds.has(submission.id) && "bg-blue-500/10"
+                      )}
                       data-testid={`employee-row-${submission.id}`}
                     >
-                      <TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={selectedEmployeeIds.has(submission.id)}
+                          onCheckedChange={() => toggleEmployeeSelection(submission.id)}
+                          data-testid={`select-employee-${submission.id}`}
+                        />
+                      </TableCell>
+                      <TableCell onClick={() => setSelectedSubmission(submission)}>
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
                             <User className="w-4 h-4 text-blue-400" />
@@ -623,10 +943,10 @@ export default function KPIHRDashboard() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-gray-400">
+                      <TableCell className="text-gray-400" onClick={() => setSelectedSubmission(submission)}>
                         {submission.employee?.department || "-"}
                       </TableCell>
-                      <TableCell>
+                      <TableCell onClick={() => setSelectedSubmission(submission)}>
                         <Badge variant={submission.selfAssessmentStatus === "completed" ? "default" : "secondary"}>
                           {submission.selfAssessmentStatus === "completed" ? (
                             <><CheckCircle className="w-3 h-3 mr-1" /> Completed</>
@@ -635,7 +955,7 @@ export default function KPIHRDashboard() {
                           )}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell onClick={() => setSelectedSubmission(submission)}>
                         <Badge variant={submission.managerReviewStatus === "completed" ? "default" : "secondary"}>
                           {submission.managerReviewStatus === "completed" ? (
                             <><CheckCircle className="w-3 h-3 mr-1" /> Completed</>
@@ -644,7 +964,7 @@ export default function KPIHRDashboard() {
                           )}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell onClick={() => setSelectedSubmission(submission)}>
                         {submission.finalScore ? (
                           <span className={cn(
                             "text-lg font-bold",
@@ -686,6 +1006,15 @@ export default function KPIHRDashboard() {
             submission={selectedSubmission}
             open={!!selectedSubmission}
             onOpenChange={(open) => !open && setSelectedSubmission(null)}
+          />
+        )}
+
+        {showCommsDialog && (
+          <CommunicationDialog
+            open={showCommsDialog}
+            onOpenChange={setShowCommsDialog}
+            selectedEmployees={selectedSubmissions}
+            cycleName={selectedCycle?.name || "Review Cycle"}
           />
         )}
       </main>
