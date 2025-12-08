@@ -6885,6 +6885,253 @@ Format your response as JSON:
     }
   });
 
+  // ================================
+  // LMS Routes
+  // ================================
+
+  // Get all courses
+  app.get("/api/lms/courses", async (req, res) => {
+    try {
+      const tenantId = req.headers["x-tenant-id"] as string;
+      const courses = await storage.getCourses(tenantId);
+      res.json(courses);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+      res.status(500).json({ message: "Failed to fetch courses" });
+    }
+  });
+
+  // Get single course
+  app.get("/api/lms/courses/:id", async (req, res) => {
+    try {
+      const tenantId = req.headers["x-tenant-id"] as string;
+      const course = await storage.getCourse(req.params.id, tenantId);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      res.json(course);
+    } catch (error) {
+      console.error("Error fetching course:", error);
+      res.status(500).json({ message: "Failed to fetch course" });
+    }
+  });
+
+  // Create course
+  app.post("/api/lms/courses", async (req, res) => {
+    try {
+      const tenantId = req.headers["x-tenant-id"] as string;
+      const userId = req.user?.id;
+      const course = await storage.createCourse({
+        ...req.body,
+        tenantId,
+        createdBy: userId,
+      });
+      res.status(201).json(course);
+    } catch (error) {
+      console.error("Error creating course:", error);
+      res.status(500).json({ message: "Failed to create course" });
+    }
+  });
+
+  // Update course
+  app.patch("/api/lms/courses/:id", async (req, res) => {
+    try {
+      const tenantId = req.headers["x-tenant-id"] as string;
+      const course = await storage.updateCourse(req.params.id, tenantId, req.body);
+      res.json(course);
+    } catch (error) {
+      console.error("Error updating course:", error);
+      res.status(500).json({ message: "Failed to update course" });
+    }
+  });
+
+  // Delete course
+  app.delete("/api/lms/courses/:id", async (req, res) => {
+    try {
+      const tenantId = req.headers["x-tenant-id"] as string;
+      await storage.deleteCourse(req.params.id, tenantId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      res.status(500).json({ message: "Failed to delete course" });
+    }
+  });
+
+  // Get my progress
+  app.get("/api/lms/my-progress", async (req, res) => {
+    try {
+      const tenantId = req.headers["x-tenant-id"] as string;
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const progress = await storage.getLearnerProgress(userId, tenantId);
+      res.json(progress);
+    } catch (error) {
+      console.error("Error fetching progress:", error);
+      res.status(500).json({ message: "Failed to fetch progress" });
+    }
+  });
+
+  // Get progress for specific course
+  app.get("/api/lms/courses/:courseId/progress", async (req, res) => {
+    try {
+      const tenantId = req.headers["x-tenant-id"] as string;
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const progress = await storage.getCourseProgress(userId, req.params.courseId, tenantId);
+      res.json(progress);
+    } catch (error) {
+      console.error("Error fetching course progress:", error);
+      res.status(500).json({ message: "Failed to fetch course progress" });
+    }
+  });
+
+  // Update progress
+  app.post("/api/lms/courses/:courseId/progress", async (req, res) => {
+    try {
+      const tenantId = req.headers["x-tenant-id"] as string;
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const progress = await storage.updateLearnerProgress(
+        userId,
+        req.params.courseId,
+        tenantId,
+        req.body
+      );
+      res.json(progress);
+    } catch (error) {
+      console.error("Error updating progress:", error);
+      res.status(500).json({ message: "Failed to update progress" });
+    }
+  });
+
+  // Get assessments for course
+  app.get("/api/lms/courses/:courseId/assessments", async (req, res) => {
+    try {
+      const tenantId = req.headers["x-tenant-id"] as string;
+      const assessments = await storage.getCourseAssessments(req.params.courseId, tenantId);
+      res.json(assessments);
+    } catch (error) {
+      console.error("Error fetching assessments:", error);
+      res.status(500).json({ message: "Failed to fetch assessments" });
+    }
+  });
+
+  // Submit assessment attempt
+  app.post("/api/lms/assessments/:assessmentId/attempts", async (req, res) => {
+    try {
+      const tenantId = req.headers["x-tenant-id"] as string;
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const result = await storage.submitAssessmentAttempt(
+        req.params.assessmentId,
+        userId,
+        tenantId,
+        req.body.answers
+      );
+      res.json(result);
+    } catch (error) {
+      console.error("Error submitting assessment:", error);
+      res.status(500).json({ message: "Failed to submit assessment" });
+    }
+  });
+
+  // Get my attempts
+  app.get("/api/lms/assessments/:assessmentId/my-attempts", async (req, res) => {
+    try {
+      const tenantId = req.headers["x-tenant-id"] as string;
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const attempts = await storage.getAssessmentAttempts(
+        req.params.assessmentId,
+        userId,
+        tenantId
+      );
+      res.json(attempts);
+    } catch (error) {
+      console.error("Error fetching attempts:", error);
+      res.status(500).json({ message: "Failed to fetch attempts" });
+    }
+  });
+
+  // Get my points
+  app.get("/api/lms/my-points", async (req, res) => {
+    try {
+      const tenantId = req.headers["x-tenant-id"] as string;
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const points = await storage.getLearnerPoints(userId, tenantId);
+      res.json(points || { points: 0, level: 1, rank: null });
+    } catch (error) {
+      console.error("Error fetching points:", error);
+      res.status(500).json({ message: "Failed to fetch points" });
+    }
+  });
+
+  // Get my badges
+  app.get("/api/lms/my-badges", async (req, res) => {
+    try {
+      const tenantId = req.headers["x-tenant-id"] as string;
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const badges = await storage.getLearnerBadges(userId, tenantId);
+      res.json(badges);
+    } catch (error) {
+      console.error("Error fetching badges:", error);
+      res.status(500).json({ message: "Failed to fetch badges" });
+    }
+  });
+
+  // Get leaderboard
+  app.get("/api/lms/leaderboard", async (req, res) => {
+    try {
+      const tenantId = req.headers["x-tenant-id"] as string;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const leaderboard = await storage.getLeaderboard(tenantId, limit);
+      res.json(leaderboard);
+    } catch (error) {
+      console.error("Error fetching leaderboard:", error);
+      res.status(500).json({ message: "Failed to fetch leaderboard" });
+    }
+  });
+
+  // Get available badges
+  app.get("/api/lms/badges", async (req, res) => {
+    try {
+      const tenantId = req.headers["x-tenant-id"] as string;
+      const badges = await storage.getAllBadges(tenantId);
+      res.json(badges);
+    } catch (error) {
+      console.error("Error fetching badges:", error);
+      res.status(500).json({ message: "Failed to fetch badges" });
+    }
+  });
+
+  // Get AI lecturers
+  app.get("/api/lms/ai-lecturers", async (req, res) => {
+    try {
+      const tenantId = req.headers["x-tenant-id"] as string;
+      const lecturers = await storage.getAILecturers(tenantId);
+      res.json(lecturers);
+    } catch (error) {
+      console.error("Error fetching AI lecturers:", error);
+      res.status(500).json({ message: "Failed to fetch AI lecturers" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
