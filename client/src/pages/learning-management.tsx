@@ -7,85 +7,190 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { BookOpen, Clock, Award, Play, Search, Filter, Trophy, Star, TrendingUp } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { BookOpen, Clock, Award, Play, Search, Trophy, Star, TrendingUp, Plus, Users, GraduationCap, Target, Loader2 } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
+import { toast } from "sonner";
+
+interface Course {
+  id: string;
+  title: string;
+  description: string | null;
+  category: string | null;
+  difficulty: string | null;
+  duration: number | null;
+  thumbnailUrl: string | null;
+  learningObjectives: string[] | null;
+  tags: string[] | null;
+  status: string | null;
+  progress?: number;
+  enrolledCount?: number;
+  completedCount?: number;
+}
+
+interface LearnerProgress {
+  courseId: string;
+  courseTitle: string;
+  progress: number;
+  status: string;
+  timeSpent: number;
+}
+
+interface LeaderboardEntry {
+  userId: string;
+  userName: string;
+  points: number;
+  level: number;
+  rank: number;
+}
+
+interface UserBadge {
+  id: string;
+  name: string;
+  description: string;
+  imageUrl: string | null;
+  rarity: string;
+  points: number;
+  earnedAt: string;
+}
+
+interface UserStats {
+  totalPoints: number;
+  level: number;
+  rank: number;
+  coursesCompleted: number;
+  hoursLearned: number;
+  badgesEarned: number;
+}
 
 export default function LearningManagement() {
   const { tenant } = useTenant();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [newCourse, setNewCourse] = useState({
+    title: "",
+    description: "",
+    category: "compliance",
+    difficulty: "beginner",
+    duration: 60,
+    learningObjectives: "",
+    tags: ""
+  });
 
-  // Mock data - replace with actual API calls
-  const courses = [
-    {
-      id: "1",
-      title: "Workplace Safety & Compliance",
-      description: "Essential safety protocols and compliance requirements for all employees",
-      category: "compliance",
-      difficulty: "beginner",
-      duration: 45,
-      thumbnailUrl: "/api/placeholder/400/250",
-      learningObjectives: ["Understand safety regulations", "Identify hazards", "Follow protocols"],
-      tags: ["safety", "compliance", "mandatory"],
-      status: "published",
-      progress: 60,
-    },
-    {
-      id: "2",
-      title: "Leadership Excellence",
-      description: "Develop essential leadership skills for managers and team leads",
-      category: "leadership",
-      difficulty: "intermediate",
-      duration: 120,
-      thumbnailUrl: "/api/placeholder/400/250",
-      learningObjectives: ["Build team culture", "Effective communication", "Decision making"],
-      tags: ["leadership", "management", "soft-skills"],
-      status: "published",
-      progress: 0,
-    },
-    {
-      id: "3",
-      title: "Technical Skills: Advanced Excel",
-      description: "Master advanced Excel functions and data analysis",
-      category: "technical",
-      difficulty: "advanced",
-      duration: 90,
-      thumbnailUrl: "/api/placeholder/400/250",
-      learningObjectives: ["Pivot tables", "VLOOKUP & INDEX", "Macros & VBA"],
-      tags: ["excel", "technical", "data"],
-      status: "published",
-      progress: 100,
-    },
-  ];
+  const { data: courses = [], isLoading: coursesLoading } = useQuery<Course[]>({
+    queryKey: ["/api/lms/courses"],
+    queryFn: async () => {
+      const res = await fetch("/api/lms/courses");
+      if (!res.ok) throw new Error("Failed to fetch courses");
+      return res.json();
+    }
+  });
 
-  const stats = {
-    coursesCompleted: 12,
-    hoursLearned: 45,
-    badgesEarned: 8,
-    currentStreak: 7,
-    points: 1250,
-    rank: 15,
-    level: 5,
+  const { data: myProgress = [] } = useQuery<LearnerProgress[]>({
+    queryKey: ["/api/lms/my-progress"],
+    queryFn: async () => {
+      const res = await fetch("/api/lms/my-progress");
+      if (!res.ok) return [];
+      return res.json();
+    }
+  });
+
+  const { data: leaderboard = [] } = useQuery<LeaderboardEntry[]>({
+    queryKey: ["/api/lms/leaderboard"],
+    queryFn: async () => {
+      const res = await fetch("/api/lms/leaderboard");
+      if (!res.ok) return [];
+      return res.json();
+    }
+  });
+
+  const { data: myBadges = [] } = useQuery<UserBadge[]>({
+    queryKey: ["/api/lms/my-badges"],
+    queryFn: async () => {
+      const res = await fetch("/api/lms/my-badges");
+      if (!res.ok) return [];
+      return res.json();
+    }
+  });
+
+  const { data: myPoints } = useQuery<UserStats>({
+    queryKey: ["/api/lms/my-points"],
+    queryFn: async () => {
+      const res = await fetch("/api/lms/my-points");
+      if (!res.ok) return { totalPoints: 0, level: 1, rank: 0, coursesCompleted: 0, hoursLearned: 0, badgesEarned: 0 };
+      return res.json();
+    }
+  });
+
+  const createCourseMutation = useMutation({
+    mutationFn: async (courseData: typeof newCourse) => {
+      const res = await fetch("/api/lms/courses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: courseData.title,
+          description: courseData.description,
+          category: courseData.category,
+          difficulty: courseData.difficulty,
+          duration: courseData.duration,
+          learningObjectives: courseData.learningObjectives.split(",").map(s => s.trim()).filter(Boolean),
+          tags: courseData.tags.split(",").map(s => s.trim()).filter(Boolean),
+          status: "published"
+        })
+      });
+      if (!res.ok) throw new Error("Failed to create course");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/lms/courses"] });
+      setCreateDialogOpen(false);
+      setNewCourse({ title: "", description: "", category: "compliance", difficulty: "beginner", duration: 60, learningObjectives: "", tags: "" });
+      toast.success("Course created successfully!");
+    },
+    onError: () => {
+      toast.error("Failed to create course");
+    }
+  });
+
+  const enrollMutation = useMutation({
+    mutationFn: async (courseId: string) => {
+      const res = await fetch(`/api/lms/courses/${courseId}/progress`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "in_progress", progress: 0 })
+      });
+      if (!res.ok) throw new Error("Failed to enroll");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/lms/courses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/lms/my-progress"] });
+      toast.success("Enrolled in course!");
+    }
+  });
+
+  const stats = myPoints || {
+    totalPoints: 0,
+    level: 1,
+    rank: 0,
+    coursesCompleted: myProgress.filter(p => p.status === "completed").length,
+    hoursLearned: Math.round(myProgress.reduce((sum, p) => sum + (p.timeSpent || 0), 0) / 60),
+    badgesEarned: myBadges.length
   };
 
-  const badges = [
-    { id: "1", name: "Quick Learner", icon: "⚡", rarity: "epic" },
-    { id: "2", name: "Safety Champion", icon: "🛡️", rarity: "rare" },
-    { id: "3", name: "Team Player", icon: "🤝", rarity: "common" },
-  ];
-
-  const leaderboard = [
-    { rank: 1, name: "Sarah Johnson", points: 2150, avatar: "SJ" },
-    { rank: 2, name: "Michael Chen", points: 1980, avatar: "MC" },
-    { rank: 3, name: "You", points: 1250, avatar: "YO", isCurrentUser: true },
-    { rank: 4, name: "Emma Davis", points: 1120, avatar: "ED" },
-    { rank: 5, name: "David Brown", points: 1050, avatar: "DB" },
-  ];
+  const getProgressForCourse = (courseId: string) => {
+    const progress = myProgress.find(p => p.courseId === courseId);
+    return progress?.progress || 0;
+  };
 
   const filteredCourses = courses.filter(course => {
     const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.description.toLowerCase().includes(searchQuery.toLowerCase());
+      (course.description || "").toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === "all" || course.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -98,7 +203,7 @@ export default function LearningManagement() {
     { id: "soft_skills", label: "Soft Skills", count: courses.filter(c => c.category === "soft_skills").length },
   ];
 
-  const getDifficultyColor = (difficulty: string) => {
+  const getDifficultyColor = (difficulty: string | null) => {
     switch (difficulty) {
       case "beginner": return "bg-green-500/10 text-green-400 border-green-500/20";
       case "intermediate": return "bg-yellow-500/10 text-yellow-400 border-yellow-500/20";
@@ -117,16 +222,176 @@ export default function LearningManagement() {
     }
   };
 
+  const handleCreateCourse = () => {
+    if (!newCourse.title) {
+      toast.error("Please enter a course title");
+      return;
+    }
+    createCourseMutation.mutate(newCourse);
+  };
+
   return (
     <div className="min-h-screen bg-black">
       <Navbar />
       <div className="container mx-auto p-4 md:p-6 space-y-6 pt-20 md:pt-24">
         <BackButton fallbackPath="/hr-dashboard" />
 
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Learning Management</h1>
-          <p className="text-muted-foreground">Develop your skills and advance your career</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Learning Management</h1>
+            <p className="text-muted-foreground">Develop your skills and advance your career</p>
+          </div>
+          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button data-testid="button-create-course">
+                <Plus className="w-4 h-4 mr-2" />
+                Create Course
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Create New Course</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Course Title</Label>
+                  <Input
+                    placeholder="e.g., Workplace Safety Training"
+                    value={newCourse.title}
+                    onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value })}
+                    data-testid="input-course-title"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Description</Label>
+                  <Textarea
+                    placeholder="Describe what employees will learn..."
+                    value={newCourse.description}
+                    onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
+                    data-testid="input-course-description"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Category</Label>
+                    <Select value={newCourse.category} onValueChange={(v) => setNewCourse({ ...newCourse, category: v })}>
+                      <SelectTrigger data-testid="select-course-category">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="compliance">Compliance</SelectItem>
+                        <SelectItem value="technical">Technical</SelectItem>
+                        <SelectItem value="leadership">Leadership</SelectItem>
+                        <SelectItem value="soft_skills">Soft Skills</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Difficulty</Label>
+                    <Select value={newCourse.difficulty} onValueChange={(v) => setNewCourse({ ...newCourse, difficulty: v })}>
+                      <SelectTrigger data-testid="select-course-difficulty">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="beginner">Beginner</SelectItem>
+                        <SelectItem value="intermediate">Intermediate</SelectItem>
+                        <SelectItem value="advanced">Advanced</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Duration (minutes)</Label>
+                  <Input
+                    type="number"
+                    value={newCourse.duration}
+                    onChange={(e) => setNewCourse({ ...newCourse, duration: parseInt(e.target.value) || 60 })}
+                    data-testid="input-course-duration"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Learning Objectives (comma-separated)</Label>
+                  <Input
+                    placeholder="Objective 1, Objective 2, Objective 3"
+                    value={newCourse.learningObjectives}
+                    onChange={(e) => setNewCourse({ ...newCourse, learningObjectives: e.target.value })}
+                    data-testid="input-learning-objectives"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Tags (comma-separated)</Label>
+                  <Input
+                    placeholder="safety, mandatory, hr"
+                    value={newCourse.tags}
+                    onChange={(e) => setNewCourse({ ...newCourse, tags: e.target.value })}
+                    data-testid="input-course-tags"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
+                <Button onClick={handleCreateCourse} disabled={createCourseMutation.isPending} data-testid="button-submit-course">
+                  {createCourseMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Create Course
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="bg-black/40 border-white/10">
+            <CardHeader className="pb-2">
+              <CardDescription className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4" />
+                Active Courses
+              </CardDescription>
+              <CardTitle className="text-2xl text-white">{courses.length}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground">Across all departments</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-black/40 border-white/10">
+            <CardHeader className="pb-2">
+              <CardDescription className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Enrolled Employees
+              </CardDescription>
+              <CardTitle className="text-2xl text-white">{myProgress.length}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground">Your enrollments</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-black/40 border-white/10">
+            <CardHeader className="pb-2">
+              <CardDescription className="flex items-center gap-2">
+                <Target className="w-4 h-4" />
+                Completion Rate
+              </CardDescription>
+              <CardTitle className="text-2xl text-white">
+                {myProgress.length > 0 
+                  ? Math.round((myProgress.filter(p => p.status === "completed").length / myProgress.length) * 100)
+                  : 0}%
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground">Target: 85%</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-black/40 border-white/10">
+            <CardHeader className="pb-2">
+              <CardDescription className="flex items-center gap-2">
+                <GraduationCap className="w-4 h-4" />
+                Certifications
+              </CardDescription>
+              <CardTitle className="text-2xl text-white">{myBadges.length}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground">Badges earned</p>
+            </CardContent>
+          </Card>
         </div>
 
         <Tabs defaultValue="courses" className="space-y-6">
@@ -137,9 +402,7 @@ export default function LearningManagement() {
             <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
           </TabsList>
 
-          {/* Courses Tab */}
           <TabsContent value="courses" className="space-y-6">
-            {/* Search and Filter */}
             <div className="flex flex-col md:flex-row gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -148,6 +411,7 @@ export default function LearningManagement() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 bg-black/40 border-white/10"
+                  data-testid="input-search-courses"
                 />
               </div>
               <div className="flex gap-2 overflow-x-auto">
@@ -157,6 +421,7 @@ export default function LearningManagement() {
                     variant={selectedCategory === cat.id ? "default" : "outline"}
                     onClick={() => setSelectedCategory(cat.id)}
                     className="whitespace-nowrap"
+                    data-testid={`button-category-${cat.id}`}
                   >
                     {cat.label} ({cat.count})
                   </Button>
@@ -164,84 +429,111 @@ export default function LearningManagement() {
               </div>
             </div>
 
-            {/* Course Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredCourses.map((course) => (
-                <Card key={course.id} className="bg-black/40 border-white/10 overflow-hidden group hover:border-primary/50 transition-all">
-                  <div className="relative h-48 bg-gradient-to-br from-primary/20 to-purple-500/20 overflow-hidden">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <BookOpen className="w-16 h-16 text-primary/50" />
-                    </div>
-                    {course.progress > 0 && (
-                      <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
-                        <div
-                          className="h-full bg-primary transition-all"
-                          style={{ width: `${course.progress}%` }}
-                        />
+            {coursesLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : filteredCourses.length === 0 ? (
+              <Card className="bg-black/40 border-white/10">
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <BookOpen className="w-12 h-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium text-white mb-2">No courses found</h3>
+                  <p className="text-muted-foreground text-center mb-4">
+                    {courses.length === 0 ? "Create your first course to get started" : "Try adjusting your search or filters"}
+                  </p>
+                  <Button onClick={() => setCreateDialogOpen(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Course
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredCourses.map((course) => {
+                  const progress = getProgressForCourse(course.id);
+                  return (
+                    <Card key={course.id} className="bg-black/40 border-white/10 overflow-hidden group hover:border-primary/50 transition-all" data-testid={`card-course-${course.id}`}>
+                      <div className="relative h-48 bg-gradient-to-br from-primary/20 to-purple-500/20 overflow-hidden">
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <BookOpen className="w-16 h-16 text-primary/50" />
+                        </div>
+                        {progress > 0 && (
+                          <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
+                            <div
+                              className="h-full bg-primary transition-all"
+                              style={{ width: `${progress}%` }}
+                            />
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  <CardHeader>
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <CardTitle className="text-white text-lg line-clamp-2">{course.title}</CardTitle>
-                      {course.progress === 100 && (
-                        <Award className="w-5 h-5 text-yellow-500 shrink-0" />
-                      )}
-                    </div>
-                    <CardDescription className="line-clamp-2">{course.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant="outline" className={getDifficultyColor(course.difficulty)}>
-                        {course.difficulty}
-                      </Badge>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Clock className="w-3 h-3" />
-                        <span>{course.duration}min</span>
-                      </div>
-                    </div>
-                    <div className="flex gap-2 flex-wrap">
-                      {course.tags.slice(0, 3).map((tag) => (
-                        <Badge key={tag} variant="secondary" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                    <Button className="w-full" variant={course.progress > 0 ? "default" : "outline"}>
-                      <Play className="w-4 h-4 mr-2" />
-                      {course.progress === 0 ? "Start Course" : course.progress === 100 ? "Review" : "Continue"}
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                      <CardHeader>
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <CardTitle className="text-white text-lg line-clamp-2">{course.title}</CardTitle>
+                          {progress === 100 && (
+                            <Award className="w-5 h-5 text-yellow-500 shrink-0" />
+                          )}
+                        </div>
+                        <CardDescription className="line-clamp-2">{course.description || "No description"}</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant="outline" className={getDifficultyColor(course.difficulty)}>
+                            {course.difficulty || "beginner"}
+                          </Badge>
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <Clock className="w-3 h-3" />
+                            <span>{course.duration || 0}min</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 flex-wrap">
+                          {(course.tags || []).slice(0, 3).map((tag) => (
+                            <Badge key={tag} variant="secondary" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                        <Button 
+                          className="w-full" 
+                          variant={progress > 0 ? "default" : "outline"}
+                          onClick={() => progress === 0 && enrollMutation.mutate(course.id)}
+                          disabled={enrollMutation.isPending}
+                          data-testid={`button-enroll-${course.id}`}
+                        >
+                          <Play className="w-4 h-4 mr-2" />
+                          {progress === 0 ? "Start Course" : progress === 100 ? "Review" : `Continue (${progress}%)`}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </TabsContent>
 
-          {/* Progress Tab */}
           <TabsContent value="progress" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card className="bg-black/40 border-white/10">
                 <CardHeader className="pb-3">
                   <CardDescription>Courses Completed</CardDescription>
-                  <CardTitle className="text-3xl text-white">{stats.coursesCompleted}</CardTitle>
+                  <CardTitle className="text-3xl text-white">{myProgress.filter(p => p.status === "completed").length}</CardTitle>
                 </CardHeader>
               </Card>
               <Card className="bg-black/40 border-white/10">
                 <CardHeader className="pb-3">
                   <CardDescription>Hours Learned</CardDescription>
-                  <CardTitle className="text-3xl text-white">{stats.hoursLearned}h</CardTitle>
+                  <CardTitle className="text-3xl text-white">{Math.round(myProgress.reduce((sum, p) => sum + (p.timeSpent || 0), 0) / 60)}h</CardTitle>
                 </CardHeader>
               </Card>
               <Card className="bg-black/40 border-white/10">
                 <CardHeader className="pb-3">
-                  <CardDescription>Current Streak</CardDescription>
-                  <CardTitle className="text-3xl text-white">{stats.currentStreak} days</CardTitle>
+                  <CardDescription>In Progress</CardDescription>
+                  <CardTitle className="text-3xl text-white">{myProgress.filter(p => p.status === "in_progress").length}</CardTitle>
                 </CardHeader>
               </Card>
               <Card className="bg-black/40 border-white/10">
                 <CardHeader className="pb-3">
                   <CardDescription>Badges Earned</CardDescription>
-                  <CardTitle className="text-3xl text-white">{stats.badgesEarned}</CardTitle>
+                  <CardTitle className="text-3xl text-white">{myBadges.length}</CardTitle>
                 </CardHeader>
               </Card>
             </div>
@@ -251,25 +543,28 @@ export default function LearningManagement() {
                 <CardTitle className="text-white">In Progress</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {courses.filter(c => c.progress > 0 && c.progress < 100).map((course) => (
-                  <div key={course.id} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-white font-medium">{course.title}</h3>
-                      <span className="text-sm text-muted-foreground">{course.progress}%</span>
+                {myProgress.filter(p => p.status === "in_progress").length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">No courses in progress. Start learning today!</p>
+                ) : (
+                  myProgress.filter(p => p.status === "in_progress").map((progress) => (
+                    <div key={progress.courseId} className="space-y-2" data-testid={`progress-course-${progress.courseId}`}>
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-white font-medium">{progress.courseTitle}</h3>
+                        <span className="text-sm text-muted-foreground">{progress.progress}%</span>
+                      </div>
+                      <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary transition-all"
+                          style={{ width: `${progress.progress}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary transition-all"
-                        style={{ width: `${course.progress}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Gamification Tab */}
           <TabsContent value="gamification" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card className="bg-gradient-to-br from-primary/20 to-purple-500/20 border-primary/30">
@@ -277,7 +572,7 @@ export default function LearningManagement() {
                   <CardDescription>Total Points</CardDescription>
                   <CardTitle className="text-4xl text-white flex items-center gap-2">
                     <Trophy className="w-8 h-8 text-yellow-500" />
-                    {stats.points}
+                    {stats.totalPoints || 0}
                   </CardTitle>
                 </CardHeader>
               </Card>
@@ -286,7 +581,7 @@ export default function LearningManagement() {
                   <CardDescription>Current Level</CardDescription>
                   <CardTitle className="text-4xl text-white flex items-center gap-2">
                     <Star className="w-8 h-8 text-blue-500" />
-                    {stats.level}
+                    {stats.level || 1}
                   </CardTitle>
                 </CardHeader>
               </Card>
@@ -295,7 +590,7 @@ export default function LearningManagement() {
                   <CardDescription>Global Rank</CardDescription>
                   <CardTitle className="text-4xl text-white flex items-center gap-2">
                     <TrendingUp className="w-8 h-8 text-green-500" />
-                    #{stats.rank}
+                    #{stats.rank || "-"}
                   </CardTitle>
                 </CardHeader>
               </Card>
@@ -307,28 +602,39 @@ export default function LearningManagement() {
                 <CardDescription>Achievements earned through learning excellence</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  {badges.map((badge) => (
-                    <div
-                      key={badge.id}
-                      className={`p-4 rounded-lg bg-black/40 border-2 ${getRarityColor(badge.rarity)} text-center space-y-2 hover:scale-105 transition-transform cursor-pointer`}
-                    >
-                      <div className="text-4xl">{badge.icon}</div>
-                      <p className="text-sm text-white font-medium">{badge.name}</p>
-                      <Badge variant="outline" className="text-xs capitalize">
-                        {badge.rarity}
-                      </Badge>
-                    </div>
-                  ))}
-                  <div className="p-4 rounded-lg bg-black/20 border-2 border-dashed border-white/10 flex items-center justify-center">
-                    <p className="text-sm text-muted-foreground">More to earn!</p>
+                {myBadges.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Award className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Complete courses to earn badges!</p>
                   </div>
-                </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    {myBadges.map((badge) => (
+                      <div
+                        key={badge.id}
+                        className={`p-4 rounded-lg bg-black/40 border-2 ${getRarityColor(badge.rarity)} text-center space-y-2 hover:scale-105 transition-transform cursor-pointer`}
+                        data-testid={`badge-${badge.id}`}
+                      >
+                        {badge.imageUrl ? (
+                          <img src={badge.imageUrl} alt={badge.name} className="w-12 h-12 mx-auto" />
+                        ) : (
+                          <div className="text-4xl">🏆</div>
+                        )}
+                        <p className="text-sm text-white font-medium">{badge.name}</p>
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {badge.rarity}
+                        </Badge>
+                      </div>
+                    ))}
+                    <div className="p-4 rounded-lg bg-black/20 border-2 border-dashed border-white/10 flex items-center justify-center">
+                      <p className="text-sm text-muted-foreground">More to earn!</p>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Leaderboard Tab */}
           <TabsContent value="leaderboard" className="space-y-6">
             <Card className="bg-black/40 border-white/10">
               <CardHeader>
@@ -336,37 +642,42 @@ export default function LearningManagement() {
                 <CardDescription>See how you rank against your peers</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {leaderboard.map((entry) => (
-                    <div
-                      key={entry.rank}
-                      className={`flex items-center gap-4 p-4 rounded-lg ${
-                        entry.isCurrentUser
-                          ? "bg-primary/20 border border-primary/30"
-                          : "bg-black/20 border border-white/5"
-                      }`}
-                    >
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/20 text-primary font-bold">
-                        {entry.rank}
+                {leaderboard.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Trophy className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Complete courses to join the leaderboard!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {leaderboard.map((entry, index) => (
+                      <div
+                        key={entry.userId}
+                        className={`flex items-center gap-4 p-4 rounded-lg bg-black/20 border border-white/5`}
+                        data-testid={`leaderboard-entry-${entry.userId}`}
+                      >
+                        <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold ${
+                          index === 0 ? "bg-yellow-500/20 text-yellow-500" :
+                          index === 1 ? "bg-gray-300/20 text-gray-300" :
+                          index === 2 ? "bg-amber-600/20 text-amber-600" :
+                          "bg-primary/20 text-primary"
+                        }`}>
+                          {entry.rank || index + 1}
+                        </div>
+                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-primary to-purple-500 text-white font-semibold">
+                          {entry.userName?.substring(0, 2).toUpperCase() || "??"}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-white font-medium">{entry.userName}</p>
+                          <p className="text-xs text-muted-foreground">Level {entry.level}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-primary font-bold">{entry.points}</p>
+                          <p className="text-xs text-muted-foreground">points</p>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-primary to-purple-500 text-white font-semibold">
-                        {entry.avatar}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-white font-medium">
-                          {entry.name}
-                          {entry.isCurrentUser && (
-                            <Badge variant="outline" className="ml-2 text-xs">You</Badge>
-                          )}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-primary font-bold">{entry.points}</p>
-                        <p className="text-xs text-muted-foreground">points</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
