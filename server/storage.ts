@@ -177,7 +177,13 @@ import {
   gamificationBadges,
   learnerBadges,
   learnerPoints,
-  aiLecturers
+  aiLecturers,
+  certificateTemplates,
+  issuedCertificates,
+  type CertificateTemplate,
+  type InsertCertificateTemplate,
+  type IssuedCertificate,
+  type InsertIssuedCertificate
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, lte, sql, isNull, isNotNull } from "drizzle-orm";
@@ -3031,6 +3037,74 @@ export class DatabaseStorage implements IStorage {
         }
       }
     }
+  }
+
+  // ================================
+  // Certificate Methods
+  // ================================
+
+  async getCertificateTemplates(tenantId: string) {
+    return await db.select().from(certificateTemplates)
+      .where(and(eq(certificateTemplates.tenantId, tenantId), eq(certificateTemplates.isActive, 1)))
+      .orderBy(desc(certificateTemplates.createdAt));
+  }
+
+  async getCertificateTemplate(templateId: string, tenantId: string) {
+    const [template] = await db.select().from(certificateTemplates)
+      .where(and(eq(certificateTemplates.id, templateId), eq(certificateTemplates.tenantId, tenantId)))
+      .limit(1);
+    return template;
+  }
+
+  async createCertificateTemplate(data: InsertCertificateTemplate) {
+    const [template] = await db.insert(certificateTemplates).values(data).returning();
+    return template;
+  }
+
+  async updateCertificateTemplate(templateId: string, tenantId: string, updates: Partial<CertificateTemplate>) {
+    const [template] = await db.update(certificateTemplates)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(eq(certificateTemplates.id, templateId), eq(certificateTemplates.tenantId, tenantId)))
+      .returning();
+    return template;
+  }
+
+  async issueCertificate(data: InsertIssuedCertificate) {
+    const certNumber = `CERT-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+    const [certificate] = await db.insert(issuedCertificates).values({
+      ...data,
+      certificateNumber: certNumber,
+    }).returning();
+    return certificate;
+  }
+
+  async getUserCertificates(userId: string, tenantId: string) {
+    return await db.select({
+      certificate: issuedCertificates,
+      template: certificateTemplates,
+      course: courses,
+    })
+      .from(issuedCertificates)
+      .leftJoin(certificateTemplates, eq(issuedCertificates.templateId, certificateTemplates.id))
+      .leftJoin(courses, eq(issuedCertificates.courseId, courses.id))
+      .where(and(eq(issuedCertificates.userId, userId), eq(issuedCertificates.tenantId, tenantId)))
+      .orderBy(desc(issuedCertificates.issuedAt));
+  }
+
+  async verifyCertificate(certificateNumber: string) {
+    const [certificate] = await db.select({
+      certificate: issuedCertificates,
+      template: certificateTemplates,
+      user: users,
+      course: courses,
+    })
+      .from(issuedCertificates)
+      .leftJoin(certificateTemplates, eq(issuedCertificates.templateId, certificateTemplates.id))
+      .leftJoin(users, eq(issuedCertificates.userId, users.id))
+      .leftJoin(courses, eq(issuedCertificates.courseId, courses.id))
+      .where(eq(issuedCertificates.certificateNumber, certificateNumber))
+      .limit(1);
+    return certificate;
   }
 }
 

@@ -28,6 +28,9 @@ import TenantManagement from "@/pages/tenant-management";
 import PlatformDocs from "@/pages/platform-docs";
 import WorkforceIntelligence from "@/pages/workforce-intelligence";
 import LearningManagement from "@/pages/learning-management";
+import CertificateTemplates from "@/pages/certificate-templates";
+import MyCertificates from "@/pages/my-certificates";
+import VerifyCertificate from "@/pages/verify-certificate";
 import PlatformSettings from "@/pages/platform-settings";
 import DocumentAutomation from "@/pages/document-automation";
 import WhatsAppMonitor from "@/pages/whatsapp-monitor";
@@ -62,6 +65,9 @@ function Router() {
       <Route path="/tenant-management" component={TenantManagement} />
       <Route path="/platform-docs" component={PlatformDocs} />
       <Route path="/learning-management" component={LearningManagement} />
+      <Route path="/certificate-templates" component={CertificateTemplates} />
+      <Route path="/my-certificates" component={MyCertificates} />
+      <Route path="/verify-certificate/:number" component={VerifyCertificate} />
       <Route path="/persona-management" component={PersonaManagement} />
       <Route path="/recruitment-agent" component={RecruitmentAgent} />
       <Route path="/integrity-agent" component={IntegrityAgent} />

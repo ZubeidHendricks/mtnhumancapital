@@ -7132,6 +7132,118 @@ Format your response as JSON:
     }
   });
 
+  // ================================
+  // Certificate Routes
+  // ================================
+
+  // Get certificate templates
+  app.get("/api/lms/certificate-templates", async (req, res) => {
+    try {
+      const tenantId = req.headers["x-tenant-id"] as string;
+      const templates = await storage.getCertificateTemplates(tenantId);
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching templates:", error);
+      res.status(500).json({ message: "Failed to fetch templates" });
+    }
+  });
+
+  // Upload certificate template
+  app.post("/api/lms/certificate-templates", upload.single("template"), async (req, res) => {
+    try {
+      const tenantId = req.headers["x-tenant-id"] as string;
+      const userId = req.user?.id;
+      
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const filename = `cert-template-${Date.now()}-${req.file.originalname}`;
+      const filepath = path.join(process.cwd(), "uploads", "certificates", filename);
+      
+      const dir = path.dirname(filepath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      
+      fs.writeFileSync(filepath, req.file.buffer);
+
+      const template = await storage.createCertificateTemplate({
+        tenantId,
+        name: req.body.name,
+        description: req.body.description,
+        templateUrl: `/uploads/certificates/${filename}`,
+        templateType: req.file.mimetype.includes("pdf") ? "pdf" : "image",
+        placeholderFields: JSON.parse(req.body.placeholderFields || "[]"),
+        defaultFields: JSON.parse(req.body.defaultFields || "{}"),
+      });
+
+      res.status(201).json(template);
+    } catch (error) {
+      console.error("Error uploading template:", error);
+      res.status(500).json({ message: "Failed to upload template" });
+    }
+  });
+
+  // Issue certificate
+  app.post("/api/lms/certificates/issue", async (req, res) => {
+    try {
+      const tenantId = req.headers["x-tenant-id"] as string;
+      const { templateId, userId, courseId, certificateData } = req.body;
+
+      const template = await storage.getCertificateTemplate(templateId, tenantId);
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+
+      const certificateUrl = `/certificates/${Date.now()}-${userId}.pdf`;
+      
+      const certificate = await storage.issueCertificate({
+        tenantId,
+        templateId,
+        userId,
+        courseId,
+        certificateData,
+        certificateUrl,
+      });
+
+      res.status(201).json(certificate);
+    } catch (error) {
+      console.error("Error issuing certificate:", error);
+      res.status(500).json({ message: "Failed to issue certificate" });
+    }
+  });
+
+  // Get my certificates
+  app.get("/api/lms/my-certificates", async (req, res) => {
+    try {
+      const tenantId = req.headers["x-tenant-id"] as string;
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const certificates = await storage.getUserCertificates(userId, tenantId);
+      res.json(certificates);
+    } catch (error) {
+      console.error("Error fetching certificates:", error);
+      res.status(500).json({ message: "Failed to fetch certificates" });
+    }
+  });
+
+  // Verify certificate
+  app.get("/api/lms/certificates/verify/:number", async (req, res) => {
+    try {
+      const certificate = await storage.verifyCertificate(req.params.number);
+      if (!certificate) {
+        return res.status(404).json({ message: "Certificate not found" });
+      }
+      res.json(certificate);
+    } catch (error) {
+      console.error("Error verifying certificate:", error);
+      res.status(500).json({ message: "Failed to verify certificate" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

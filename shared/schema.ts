@@ -2264,3 +2264,36 @@ export type GamificationBadge = typeof gamificationBadges.$inferSelect;
 export type LearnerBadge = typeof learnerBadges.$inferSelect;
 export type LearnerPoints = typeof learnerPoints.$inferSelect;
 export type AILecturer = typeof aiLecturers.$inferSelect;
+
+// Certificate Templates
+export const certificateTemplates = pgTable("certificate_templates", {
+  id: text("id").primaryKey().default(sql`gen_random_uuid()::text`),
+  tenantId: text("tenant_id").notNull().references(() => tenantConfig.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  templateUrl: text("template_url").notNull(),
+  templateType: text("template_type").default("image"),
+  placeholderFields: jsonb("placeholder_fields").default([]),
+  defaultFields: jsonb("default_fields").default({}),
+  isActive: integer("is_active").default(1),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const issuedCertificates = pgTable("issued_certificates", {
+  id: text("id").primaryKey().default(sql`gen_random_uuid()::text`),
+  tenantId: text("tenant_id").notNull().references(() => tenantConfig.id),
+  templateId: text("template_id").notNull().references(() => certificateTemplates.id),
+  userId: text("user_id").notNull().references(() => users.id),
+  courseId: text("course_id").references(() => courses.id),
+  certificateData: jsonb("certificate_data").notNull(),
+  certificateUrl: text("certificate_url").notNull(),
+  certificateNumber: text("certificate_number"),
+  issuedAt: timestamp("issued_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type CertificateTemplate = typeof certificateTemplates.$inferSelect;
+export type InsertCertificateTemplate = typeof certificateTemplates.$inferInsert;
+export type IssuedCertificate = typeof issuedCertificates.$inferSelect;
+export type InsertIssuedCertificate = typeof issuedCertificates.$inferInsert;
