@@ -1,14 +1,44 @@
 import Groq from "groq-sdk";
+import OpenAI from "openai";
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
 
+// Initialize OpenAI client if API key is available
+const openai = process.env.OPENAI_API_KEY
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null;
+
 /**
- * Embedding Service for Job Requirements
- * Generates vector embeddings from job descriptions for RAG-based candidate matching
+ * Embedding Service for Job Requirements and Candidate Resumes
+ * Generates vector embeddings for RAG-based semantic matching
  */
 export class EmbeddingService {
+  /**
+   * Generate embedding vector using OpenAI or fallback to placeholder
+   */
+  async generateEmbedding(text: string): Promise<number[]> {
+    if (!openai) {
+      console.warn("⚠️  OpenAI API key not configured. Using placeholder embedding.");
+      console.warn("   Set OPENAI_API_KEY environment variable for real embeddings.");
+      return new Array(1536).fill(0);
+    }
+
+    try {
+      const response = await openai.embeddings.create({
+        model: "text-embedding-3-small",
+        input: text,
+        dimensions: 1536,
+      });
+
+      return response.data[0].embedding;
+    } catch (error: any) {
+      console.error("OpenAI embedding error:", error.message);
+      // Fall back to placeholder on error
+      return new Array(1536).fill(0);
+    }
+  }
   /**
    * Generate embedding for job requirements
    * Combines all job details into a comprehensive text representation for embedding
@@ -35,36 +65,87 @@ export class EmbeddingService {
       const requirementsText = this.buildRequirementsText(jobData);
 
       console.log(`Generating embedding for job: ${jobData.title}`);
-      console.log(`Requirements text (${requirementsText.length} chars):`, requirementsText.substring(0, 200) + '...');
+      console.log(`Requirements text (${requirementsText.length} chars)`);
 
-      // Use Groq's LLaMA model to generate embeddings
-      // Note: Groq doesn't have a native embedding model, so we'll use OpenAI's embedding API
-      // For now, we'll return a placeholder - in production, you should use OpenAI's text-embedding-3-small
-      
-      // TODO: Replace with actual OpenAI embedding API call
-      // const response = await fetch('https://api.openai.com/v1/embeddings', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify({
-      //     model: 'text-embedding-3-small',
-      //     input: requirementsText,
-      //     dimensions: 1536,
-      //   }),
-      // });
-      // const data = await response.json();
-      // return data.data[0].embedding;
-
-      // For demonstration purposes, return a zero vector
-      // In production, this should call OpenAI's embedding API
-      console.warn("WARNING: Using placeholder embedding. Configure OPENAI_API_KEY for actual embeddings.");
-      return new Array(1536).fill(0);
+      // Use OpenAI to generate real embeddings
+      return await this.generateEmbedding(requirementsText);
     } catch (error) {
       console.error("Error generating job embedding:", error);
       throw new Error(`Failed to generate job embedding: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  }
+
+  /**
+   * Generate embedding for candidate resume
+   */
+  async generateCandidateEmbedding(candidateData: {
+    fullName: string;
+    role?: string | null;
+    summary?: string | null;
+    skills?: string[] | null;
+    experience?: any[] | null;
+    education?: any[] | null;
+    yearsOfExperience?: number | null;
+  }): Promise<number[]> {
+    try {
+      const resumeText = this.buildCandidateText(candidateData);
+
+      console.log(`Generating embedding for candidate: ${candidateData.fullName}`);
+      
+      return await this.generateEmbedding(resumeText);
+    } catch (error) {
+      console.error("Error generating candidate embedding:", error);
+      throw new Error(`Failed to generate candidate embedding: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Build comprehensive candidate text for embedding
+   */
+  private buildCandidateText(candidateData: {
+    fullName: string;
+    role?: string | null;
+    summary?: string | null;
+    skills?: string[] | null;
+    experience?: any[] | null;
+    education?: any[] | null;
+    yearsOfExperience?: number | null;
+  }): string {
+    const parts: string[] = [];
+
+    parts.push(`Candidate: ${candidateData.fullName}`);
+
+    if (candidateData.role) {
+      parts.push(`Role: ${candidateData.role}`);
+    }
+
+    if (candidateData.yearsOfExperience) {
+      parts.push(`Experience: ${candidateData.yearsOfExperience} years`);
+    }
+
+    if (candidateData.summary) {
+      parts.push(`Summary: ${candidateData.summary}`);
+    }
+
+    if (candidateData.skills && candidateData.skills.length > 0) {
+      parts.push(`Skills: ${candidateData.skills.join(", ")}`);
+    }
+
+    if (candidateData.experience && candidateData.experience.length > 0) {
+      const expText = candidateData.experience.map((exp: any) => 
+        `${exp.title} at ${exp.company} (${exp.duration})`
+      ).join("; ");
+      parts.push(`Experience: ${expText}`);
+    }
+
+    if (candidateData.education && candidateData.education.length > 0) {
+      const eduText = candidateData.education.map((edu: any) =>
+        `${edu.degree} from ${edu.institution}`
+      ).join("; ");
+      parts.push(`Education: ${eduText}`);
+    }
+
+    return parts.join(" | ");
   }
 
   /**

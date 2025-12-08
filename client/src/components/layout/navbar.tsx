@@ -1,6 +1,6 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Cpu, LayoutDashboard, Building2, Mic, Video, ChevronDown, UserSearch, Shield, Settings, Users, Briefcase, TrendingUp, FileText, MessageCircle, ClipboardList, Sparkles, Target, Star, UserCheck, BarChart3 } from "lucide-react";
+import { Menu, X, Cpu, LayoutDashboard, Building2, Mic, Video, ChevronDown, UserSearch, Shield, Settings, Users, Briefcase, TrendingUp, FileText, MessageCircle, ClipboardList, Sparkles, Target, Star, UserCheck, BarChart3, BookOpen } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -12,10 +12,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useTenant } from "@/hooks/useTenant";
+import { TenantSelector } from "@/components/admin/TenantSelector";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { tenant, isModuleEnabled } = useTenant();
+  const [location] = useLocation();
+  
+  // Show tenant selector on admin pages
+  const isAdminPage = location.startsWith('/admin-') || location === '/persona-management' || location === '/tenant-management' || location === '/tenant-requests';
 
   const navLinks = [
     { name: "Solutions", href: "/#solutions" },
@@ -200,6 +205,12 @@ export function Navbar() {
                   <span>System Administration</span>
                 </DropdownMenuItem>
               </Link>
+              <Link href="/tenant-management">
+                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                  <Building2 className="w-4 h-4 mr-2 text-orange-400" />
+                  <span>Tenant Management</span>
+                </DropdownMenuItem>
+              </Link>
               <Link href="/tenant-requests">
                 <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
                   <FileText className="w-4 h-4 mr-2 text-blue-400" />
@@ -212,8 +223,20 @@ export function Navbar() {
                   <span>Persona Management</span>
                 </DropdownMenuItem>
               </Link>
+              <DropdownMenuSeparator className="bg-white/10" />
+              <Link href="/platform-docs">
+                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                  <BookOpen className="w-4 h-4 mr-2 text-cyan-400" />
+                  <span>Platform Documentation</span>
+                </DropdownMenuItem>
+              </Link>
             </DropdownMenuContent>
           </DropdownMenu>
+          
+          {/* Tenant Selector - Show on admin pages */}
+          {isAdminPage && (
+            <TenantSelector currentTenant={tenant} />
+          )}
 
           <Link href="/login">
             <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_20px_-5px_hsl(var(--primary)/0.5)]">

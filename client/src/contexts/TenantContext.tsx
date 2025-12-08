@@ -22,17 +22,29 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     async function loadTenant() {
       try {
-        const response = await axios.get<TenantConfig>('/api/tenant/current');
-        setTenant(response.data);
+        // Check if admin is impersonating a tenant
+        const impersonatedTenantStr = localStorage.getItem('admin_impersonated_tenant');
+        let tenantData: TenantConfig;
+        
+        if (impersonatedTenantStr) {
+          // Use impersonated tenant from localStorage
+          tenantData = JSON.parse(impersonatedTenantStr);
+        } else {
+          // Load tenant from API
+          const response = await axios.get<TenantConfig>('/api/tenant/current');
+          tenantData = response.data;
+        }
+        
+        setTenant(tenantData);
         
         // Apply branding to document
-        if (response.data.primaryColor) {
-          document.documentElement.style.setProperty('--primary', response.data.primaryColor);
+        if (tenantData.primaryColor) {
+          document.documentElement.style.setProperty('--primary', tenantData.primaryColor);
         }
         
         // Update document title
-        if (response.data.companyName) {
-          document.title = `${response.data.companyName} - AHC`;
+        if (tenantData.companyName) {
+          document.title = `${tenantData.companyName} - AHC`;
         }
       } catch (err) {
         console.error('Failed to load tenant:', err);

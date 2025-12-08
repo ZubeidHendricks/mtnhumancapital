@@ -14,6 +14,8 @@ import { api } from "@/lib/api";
 import type { SystemSetting } from "@shared/schema";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
+import { TenantSelector } from "@/components/admin/TenantSelector";
+import { useTenant } from "@/contexts/TenantContext";
 
 interface EnvSecret {
   key: string;
@@ -24,6 +26,7 @@ interface EnvSecret {
 export default function AdminDashboard() {
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
+  const { tenant: currentTenant } = useTenant();
 
   const { data: settings = [], isLoading: settingsLoading } = useQuery<SystemSetting[]>({
     queryKey: ["system-settings"],
@@ -273,15 +276,18 @@ export default function AdminDashboard() {
               </h1>
               <p className="text-sm text-muted-foreground mt-1">Configure system features and manage API integrations</p>
             </div>
-            <Button 
-              onClick={() => navigate("/persona-management")}
-              className="bg-purple-600 hover:bg-purple-700 shrink-0"
-              data-testid="button-persona-management"
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">AI Personas</span>
-              <span className="sm:hidden">Personas</span>
-            </Button>
+            <div className="flex items-center gap-2 shrink-0">
+              <TenantSelector currentTenant={currentTenant} />
+              <Button 
+                onClick={() => navigate("/persona-management")}
+                className="bg-purple-600 hover:bg-purple-700"
+                data-testid="button-persona-management"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">AI Personas</span>
+                <span className="sm:hidden">Personas</span>
+              </Button>
+            </div>
           </div>
         </div>
 

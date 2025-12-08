@@ -1,4 +1,5 @@
 import Groq from "groq-sdk";
+import { Hume, HumeClient } from "hume";
 import { storage } from "./storage";
 import type { 
   InterviewSession, 
@@ -44,8 +45,8 @@ export class InterviewOrchestrator {
     if (process.env.GROQ_API_KEY) {
       this.groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
     }
-    this.humeApiKey = process.env.HUMAI_API_KEY || null;
-    this.humeSecretKey = process.env.HUMAI_SECRET_KEY || null;
+    this.humeApiKey = process.env.HUME_API_KEY || null;
+    this.humeSecretKey = process.env.HUME_SECRET_KEY || null;
     this.tavusApiKey = process.env.TAVUS_API_KEY || null;
   }
 
@@ -419,6 +420,40 @@ Start by introducing yourself and explaining the interview process.`;
       hume: !!(this.humeApiKey && this.humeSecretKey),
       tavus: !!this.tavusApiKey,
     };
+  }
+
+  /**
+   * Generate Hume AI access token for voice interviews
+   * Returns an ephemeral access token for the Hume EVI API
+   */
+  async getHumeAccessToken(sessionId: string): Promise<string | null> {
+    if (!this.humeApiKey || !this.humeSecretKey) {
+      console.warn("⚠️  Hume API credentials not configured");
+      return null;
+    }
+
+    try {
+      const hume = new HumeClient({
+        apiKey: this.humeApiKey,
+        secretKey: this.humeSecretKey,
+      });
+
+      // Fetch access token from Hume
+      const response = await hume.empathicVoice.chat.createChatAccessToken({
+        configId: undefined, // Use default config
+        // Add session metadata if needed
+      });
+
+      if (!response.accessToken) {
+        throw new Error("No access token returned from Hume");
+      }
+
+      console.log(`✅ Generated Hume access token for session ${sessionId}`);
+      return response.accessToken;
+    } catch (error: any) {
+      console.error("Error generating Hume access token:", error.message);
+      return null;
+    }
   }
 }
 

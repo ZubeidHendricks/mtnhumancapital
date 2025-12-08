@@ -24,6 +24,8 @@ import CandidatePipeline from "@/pages/candidate-pipeline";
 import AdminDashboard from "@/pages/admin-dashboard";
 import PersonaManagement from "@/pages/persona-management";
 import TenantRequests from "@/pages/tenant-requests";
+import TenantManagement from "@/pages/tenant-management";
+import PlatformDocs from "@/pages/platform-docs";
 import WorkforceIntelligence from "@/pages/workforce-intelligence";
 import PlatformSettings from "@/pages/platform-settings";
 import DocumentAutomation from "@/pages/document-automation";
@@ -56,6 +58,8 @@ function Router() {
       <Route path="/recruitment-dashboard" component={RecruitmentDashboard} />
       <Route path="/admin-dashboard" component={AdminDashboard} />
       <Route path="/tenant-requests" component={TenantRequests} />
+      <Route path="/tenant-management" component={TenantManagement} />
+      <Route path="/platform-docs" component={PlatformDocs} />
       <Route path="/persona-management" component={PersonaManagement} />
       <Route path="/recruitment-agent" component={RecruitmentAgent} />
       <Route path="/integrity-agent" component={IntegrityAgent} />

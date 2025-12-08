@@ -6810,6 +6810,81 @@ Format your response as JSON:
     }
   });
 
+  // ==================== ADMIN TENANT MANAGEMENT ====================
+  
+  // Get all tenants (admin only)
+  app.get("/api/admin/tenants", async (req, res) => {
+    try {
+      const tenants = await storage.getAllTenants();
+      res.json(tenants);
+    } catch (error) {
+      console.error("Error fetching tenants:", error);
+      res.status(500).json({ message: "Failed to fetch tenants" });
+    }
+  });
+
+  // Get tenant payments
+  app.get("/api/admin/tenants/:tenantId/payments", async (req, res) => {
+    try {
+      const payments = await storage.getTenantPayments(req.params.tenantId);
+      res.json(payments);
+    } catch (error) {
+      console.error("Error fetching tenant payments:", error);
+      res.status(500).json({ message: "Failed to fetch payments" });
+    }
+  });
+
+  // Record a payment
+  app.post("/api/admin/tenants/:tenantId/payments", async (req, res) => {
+    try {
+      const payment = await storage.createTenantPayment({
+        tenantId: req.params.tenantId,
+        ...req.body,
+      });
+      res.json(payment);
+    } catch (error) {
+      console.error("Error recording payment:", error);
+      res.status(500).json({ message: "Failed to record payment" });
+    }
+  });
+
+  // Update tenant subscription
+  app.patch("/api/admin/tenants/:tenantId/subscription", async (req, res) => {
+    try {
+      const tenant = await storage.updateTenantSubscription(req.params.tenantId, req.body);
+      res.json(tenant);
+    } catch (error) {
+      console.error("Error updating subscription:", error);
+      res.status(500).json({ message: "Failed to update subscription" });
+    }
+  });
+
+  // Impersonate tenant (admin only)
+  app.post("/api/admin/impersonate-tenant", async (req, res) => {
+    try {
+      const { tenantId } = req.body;
+      const tenant = await storage.getTenantById(tenantId);
+      if (!tenant) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+      res.json(tenant);
+    } catch (error) {
+      console.error("Error impersonating tenant:", error);
+      res.status(500).json({ message: "Failed to impersonate tenant" });
+    }
+  });
+
+  // Get subscription plans
+  app.get("/api/admin/subscription-plans", async (req, res) => {
+    try {
+      const plans = await storage.getSubscriptionPlans();
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching subscription plans:", error);
+      res.status(500).json({ message: "Failed to fetch subscription plans" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

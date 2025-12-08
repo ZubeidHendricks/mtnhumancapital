@@ -164,7 +164,12 @@ import {
   type InsertSocialScreeningFinding,
   type UpdateSocialScreeningFinding,
   type SocialScreeningPost,
-  type InsertSocialScreeningPost
+  type InsertSocialScreeningPost,
+  tenantPayments,
+  subscriptionPlans,
+  type TenantPayment,
+  type InsertTenantPayment,
+  type SubscriptionPlan
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, lte, sql, isNull, isNotNull } from "drizzle-orm";
@@ -2737,6 +2742,42 @@ export class DatabaseStorage implements IStorage {
     const result = await db.delete(socialScreeningPosts)
       .where(lte(socialScreeningPosts.expiresAt, new Date()));
     return result.rowCount ?? 0;
+  }
+
+  // ==================== ADMIN TENANT MANAGEMENT ====================
+
+  async getAllTenants(): Promise<TenantConfig[]> {
+    return await db.select().from(tenantConfig).orderBy(tenantConfig.companyName);
+  }
+
+  async getTenantById(id: string): Promise<TenantConfig | undefined> {
+    const [tenant] = await db.select().from(tenantConfig).where(eq(tenantConfig.id, id));
+    return tenant || undefined;
+  }
+
+  async getTenantPayments(tenantId: string): Promise<TenantPayment[]> {
+    return await db.select().from(tenantPayments)
+      .where(eq(tenantPayments.tenantId, tenantId))
+      .orderBy(desc(tenantPayments.createdAt));
+  }
+
+  async createTenantPayment(payment: InsertTenantPayment): Promise<TenantPayment> {
+    const [newPayment] = await db.insert(tenantPayments).values(payment).returning();
+    return newPayment;
+  }
+
+  async updateTenantSubscription(tenantId: string, updates: Partial<TenantConfig>): Promise<TenantConfig | undefined> {
+    const [tenant] = await db.update(tenantConfig)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(tenantConfig.id, tenantId))
+      .returning();
+    return tenant || undefined;
+  }
+
+  async getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+    return await db.select().from(subscriptionPlans)
+      .where(eq(subscriptionPlans.isActive, 1))
+      .orderBy(subscriptionPlans.sortOrder);
   }
 }
 

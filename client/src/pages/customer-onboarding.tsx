@@ -49,15 +49,29 @@ export default function CustomerOnboarding() {
 
   const saveTenantMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await api.post("/tenant-config", data);
+      // Use public endpoint for initial setup
+      const response = await api.post("/public/tenant-config", data);
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast.success("Workspace configured successfully!");
-      setTimeout(() => setLocation("/hr-dashboard"), 1000);
+      
+      // Redirect to subdomain
+      const protocol = window.location.protocol;
+      const hostname = window.location.hostname;
+      
+      // For localhost, redirect with tenant query param
+      if (hostname === 'localhost' || hostname.startsWith('127.0.0.1')) {
+        window.location.href = `${protocol}//${hostname}:${window.location.port}?tenant=${data.subdomain}`;
+      } else {
+        // For production, redirect to subdomain
+        const baseDomain = hostname.split('.').slice(-2).join('.');
+        window.location.href = `${protocol}//${data.subdomain}.${baseDomain}`;
+      }
     },
-    onError: () => {
-      toast.error("Failed to save configuration");
+    onError: (error: any) => {
+      const message = error.response?.data?.message || "Failed to save configuration";
+      toast.error(message);
     },
   });
 

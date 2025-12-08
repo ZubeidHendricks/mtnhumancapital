@@ -1,5 +1,101 @@
 # Avatar Human Capital (AHC) - AI-Powered HR Management Platform
 
+## 🚨 IMPORTANT: New Features Deployed - Action Required
+
+### ⚠️ Before Merging This Branch
+
+**Critical Steps Required:**
+
+1. **Backup Database** (MANDATORY!)
+   ```bash
+   pg_dump -U postgres -d your_database > backup_$(date +%Y%m%d).sql
+   ```
+
+2. **Run Database Migration** (REQUIRED!)
+   ```bash
+   psql -U postgres -d your_database -f migrations/add-subscription-tracking.sql
+   ```
+
+3. **Set New Environment Variable** (NEW!)
+   - Go to Replit Secrets
+   - Add: `ADMIN_API_KEY` = (generate a strong random key)
+   - Generate: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+
+4. **Verify Migration Success**
+   ```sql
+   \dt tenant_payments     -- Should exist
+   \dt subscription_plans  -- Should exist
+   SELECT COUNT(*) FROM subscription_plans;  -- Should return 4
+   ```
+
+### What's New in This Branch
+
+**Major Features Added:**
+- ✅ **Payment Tracking System** - Record and monitor all tenant payments
+- ✅ **Subscription Management** - 4 tiers (Free, Basic, Professional, Enterprise)
+- ✅ **Tenant Management Dashboard** - Control everything from `/tenant-management`
+- ✅ **Module Control** - Enable/disable features per tenant in real-time
+- ✅ **Admin Tenant Switching** - View any tenant's workspace
+- ✅ **Interactive Documentation** - Complete guide at `/platform-docs`
+
+**New Pages:**
+- `/platform-docs` - Interactive system documentation
+- `/tenant-management` - Payment & subscription control dashboard
+- TenantSelector component - Dropdown in admin navbar
+
+**New API Endpoints (8 total):**
+- `GET /api/admin/tenants` - List all tenants
+- `GET /api/admin/tenants/:id/payments` - Get payment history
+- `POST /api/admin/tenants/:id/payments` - Record payment
+- `PATCH /api/admin/tenants/:id/subscription` - Update subscription
+- `POST /api/admin/impersonate-tenant` - Switch tenant view
+- `GET /api/admin/subscription-plans` - Get pricing plans
+
+**Database Changes:**
+- New table: `tenant_payments` (payment transactions)
+- New table: `subscription_plans` (pricing tiers)
+- Extended: `tenant_config` with 9 subscription fields
+
+**Documentation (12 files):**
+- Complete deployment guide
+- API reference
+- Feature documentation
+- Quick start guide
+
+### Testing After Deploy
+
+```bash
+# 1. Check documentation loads
+curl http://your-app/platform-docs
+
+# 2. Test admin endpoint
+curl -H "Authorization: Bearer $ADMIN_API_KEY" \
+  http://your-app/api/admin/tenants
+
+# 3. Verify UI pages
+# - /platform-docs
+# - /tenant-management
+# - /admin-dashboard (should have tenant selector)
+```
+
+### Full Deployment Guide
+
+📖 **See**: `REPLIT_DEPLOYMENT_GUIDE.md` for complete step-by-step instructions
+
+### Rollback Plan
+
+If issues occur:
+```bash
+# Rollback code
+git revert HEAD
+git push origin main
+
+# Restore database
+psql -U postgres -d db < backup.sql
+```
+
+---
+
 ## Overview
 
 Avatar Human Capital (AHC) is a comprehensive, AI-powered Human Resources Management platform designed to automate and optimize the entire employee lifecycle—from recruitment to ongoing HR management. The platform leverages advanced AI technologies including LangGraph for agentic workflows, Hume AI for empathic voice interviews, and Tavus for personalized video interactions.
