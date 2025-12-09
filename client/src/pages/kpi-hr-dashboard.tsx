@@ -38,7 +38,8 @@ import {
   Mail,
   Phone,
   Send,
-  FileText
+  FileText,
+  Link2
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -578,6 +579,45 @@ export default function KPIHRDashboard() {
   const [selectedSubmission, setSelectedSubmission] = useState<ReviewSubmission | null>(null);
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<Set<string>>(new Set());
   const [showCommsDialog, setShowCommsDialog] = useState(false);
+  const [sendingLinkFor, setSendingLinkFor] = useState<string | null>(null);
+
+  const sendAssessmentLink = useMutation({
+    mutationFn: async ({ employeeId, reviewCycleId }: { employeeId: string; reviewCycleId: string }) => {
+      const res = await fetch("/api/self-assessment-tokens", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ employeeId, reviewCycleId }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Failed to send link");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setSendingLinkFor(null);
+      if (data.whatsappSent) {
+        toast({
+          title: "Link Sent via WhatsApp",
+          description: `Self-assessment link sent to ${data.employee.name}`,
+        });
+      } else {
+        toast({
+          title: "Link Generated",
+          description: `Link created but WhatsApp not available. Employee has no phone number.`,
+          variant: "default",
+        });
+      }
+    },
+    onError: (error: Error) => {
+      setSendingLinkFor(null);
+      toast({
+        title: "Failed to Send Link",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const { data: reviewCycles = [] } = useQuery<any[]>({
     queryKey: ["/api/review-cycles"],
@@ -981,17 +1021,43 @@ export default function KPIHRDashboard() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedSubmission(submission);
-                          }}
-                          data-testid={`view-details-${submission.id}`}
-                        >
-                          View Details
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          {submission.selfAssessmentStatus !== "completed" && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSendingLinkFor(submission.id);
+                                sendAssessmentLink.mutate({
+                                  employeeId: submission.employeeId,
+                                  reviewCycleId: submission.reviewCycleId,
+                                });
+                              }}
+                              disabled={sendingLinkFor === submission.id}
+                              className="text-blue-400 hover:text-blue-300"
+                              data-testid={`send-link-${submission.id}`}
+                            >
+                              {sendingLinkFor === submission.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Link2 className="w-4 h-4" />
+                              )}
+                              <span className="ml-1 hidden sm:inline">Send Link</span>
+                            </Button>
+                          )}
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedSubmission(submission);
+                            }}
+                            data-testid={`view-details-${submission.id}`}
+                          >
+                            View Details
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
