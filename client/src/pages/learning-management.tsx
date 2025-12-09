@@ -716,11 +716,14 @@ export default function LearningManagement() {
 
             <Card className="bg-black/40 border-white/10">
               <CardHeader>
-                <CardTitle className="text-white">In Progress</CardTitle>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Target className="w-5 h-5 text-yellow-500" />
+                  In Progress
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {allProgress.filter(p => p.status === "in_progress").length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">No courses in progress. Start learning today!</p>
+                  <p className="text-muted-foreground text-center py-8">No courses in progress.</p>
                 ) : (
                   allProgress.filter(p => p.status === "in_progress").map((progress, idx) => (
                     <div key={`${progress.courseId}-${idx}`} className="space-y-2" data-testid={`progress-course-${progress.courseId}`}>
@@ -740,6 +743,114 @@ export default function LearningManagement() {
                     </div>
                   ))
                 )}
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="bg-black/40 border-white/10">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <Award className="w-5 h-5 text-green-500" />
+                    Completed Courses
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {allProgress.filter(p => p.status === "completed").length === 0 ? (
+                    <p className="text-muted-foreground text-center py-4">No completed courses yet.</p>
+                  ) : (
+                    allProgress.filter(p => p.status === "completed").map((progress, idx) => (
+                      <div key={`completed-${idx}`} className="flex items-center justify-between p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                        <div>
+                          <p className="text-white font-medium">{progress.userName}</p>
+                          <p className="text-sm text-muted-foreground">{progress.courseTitle}</p>
+                        </div>
+                        <Badge className="bg-green-500 text-white">100%</Badge>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="bg-black/40 border-white/10">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-gray-400" />
+                    Not Started
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {allProgress.filter(p => p.status === "not_started").length === 0 ? (
+                    <p className="text-muted-foreground text-center py-4">All assigned courses have been started.</p>
+                  ) : (
+                    allProgress.filter(p => p.status === "not_started").map((progress, idx) => (
+                      <div key={`notstarted-${idx}`} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
+                        <div>
+                          <p className="text-white font-medium">{progress.userName}</p>
+                          <p className="text-sm text-muted-foreground">{progress.courseTitle}</p>
+                        </div>
+                        <Badge variant="outline">Pending</Badge>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="bg-black/40 border-white/10">
+              <CardHeader>
+                <CardTitle className="text-white">All Learner Progress</CardTitle>
+                <CardDescription>Complete overview of all employees' training progress</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-white/10">
+                        <th className="text-left p-3 text-muted-foreground font-medium">Employee</th>
+                        <th className="text-left p-3 text-muted-foreground font-medium">Course</th>
+                        <th className="text-left p-3 text-muted-foreground font-medium">Status</th>
+                        <th className="text-left p-3 text-muted-foreground font-medium">Progress</th>
+                        <th className="text-left p-3 text-muted-foreground font-medium">Time Spent</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {allProgress.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="text-center py-8 text-muted-foreground">
+                            No learning progress recorded. Assign courses to employees to get started.
+                          </td>
+                        </tr>
+                      ) : (
+                        allProgress.map((progress, idx) => (
+                          <tr key={`row-${idx}`} className="border-b border-white/5 hover:bg-white/5">
+                            <td className="p-3 text-white">{progress.userName}</td>
+                            <td className="p-3 text-muted-foreground">{progress.courseTitle}</td>
+                            <td className="p-3">
+                              <Badge 
+                                variant={progress.status === "completed" ? "default" : progress.status === "in_progress" ? "secondary" : "outline"}
+                                className={progress.status === "completed" ? "bg-green-500" : ""}
+                              >
+                                {progress.status === "completed" ? "Completed" : progress.status === "in_progress" ? "In Progress" : "Not Started"}
+                              </Badge>
+                            </td>
+                            <td className="p-3">
+                              <div className="flex items-center gap-2">
+                                <div className="w-20 h-2 bg-white/10 rounded-full overflow-hidden">
+                                  <div
+                                    className={`h-full transition-all ${progress.status === "completed" ? "bg-green-500" : "bg-primary"}`}
+                                    style={{ width: `${progress.progress}%` }}
+                                  />
+                                </div>
+                                <span className="text-sm text-muted-foreground">{progress.progress}%</span>
+                              </div>
+                            </td>
+                            <td className="p-3 text-muted-foreground">{Math.round((progress.timeSpent || 0) / 60)}h</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
