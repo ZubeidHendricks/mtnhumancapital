@@ -2228,6 +2228,26 @@ export const aiLecturers = pgTable("ai_lecturers", {
   tenantIdIdx: index("ai_lecturers_tenant_id_idx").on(table.tenantId),
 }));
 
+export const learnerCourseReminders = pgTable("learner_course_reminders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull(),
+  learnerProgressId: varchar("learner_progress_id").notNull().references(() => learnerProgress.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  courseId: varchar("course_id").notNull().references(() => courses.id, { onDelete: "cascade" }),
+  channel: text("channel").notNull().default("whatsapp"),
+  message: text("message").notNull(),
+  status: text("status").notNull().default("pending"),
+  sentAt: timestamp("sent_at"),
+  deliveredAt: timestamp("delivered_at"),
+  sentBy: varchar("sent_by").references(() => users.id),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  tenantIdIdx: index("learner_course_reminders_tenant_id_idx").on(table.tenantId),
+  userIdIdx: index("learner_course_reminders_user_id_idx").on(table.userId),
+  learnerProgressIdIdx: index("learner_course_reminders_progress_id_idx").on(table.learnerProgressId),
+}));
+
 // LMS Schemas
 export const insertCourseSchema = createInsertSchema(courses).omit({
   id: true,
@@ -2264,6 +2284,7 @@ export type GamificationBadge = typeof gamificationBadges.$inferSelect;
 export type LearnerBadge = typeof learnerBadges.$inferSelect;
 export type LearnerPoints = typeof learnerPoints.$inferSelect;
 export type AILecturer = typeof aiLecturers.$inferSelect;
+export type LearnerCourseReminder = typeof learnerCourseReminders.$inferSelect;
 
 // Certificate Templates
 export const certificateTemplates = pgTable("certificate_templates", {
