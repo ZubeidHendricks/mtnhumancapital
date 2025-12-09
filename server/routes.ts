@@ -7385,6 +7385,118 @@ Format your response as JSON:
   });
 
   // ================================
+  // Course Reminder Routes (WhatsApp)
+  // ================================
+
+  // Send reminder to learner via WhatsApp
+  app.post("/api/lms/reminders", async (req, res) => {
+    try {
+      const tenantId = req.headers["x-tenant-id"] as string;
+      const senderId = req.user?.id;
+      const { userId, courseId, learnerProgressId, message, channel } = req.body;
+      
+      if (!userId || !courseId || !learnerProgressId || !message) {
+        return res.status(400).json({ message: "Missing required fields: userId, courseId, learnerProgressId, message" });
+      }
+
+      // Check for recent reminders (throttle - 24 hours)
+      const recentReminders = await storage.getRecentRemindersForUser(userId, courseId, tenantId, 24);
+      if (recentReminders.length > 0) {
+        const lastSent = new Date(recentReminders[0].createdAt);
+        const hoursSince = (Date.now() - lastSent.getTime()) / (1000 * 60 * 60);
+        return res.status(429).json({ 
+          message: `A reminder was sent ${Math.floor(hoursSince)} hours ago. Please wait 24 hours between reminders.`,
+          lastReminderAt: lastSent,
+        });
+      }
+
+      // Get user and employee info for phone number
+      const [user, employee] = await Promise.all([
+        storage.getUser(userId),
+        storage.getEmployee(tenantId, userId),
+      ]);
+
+      const phone = employee?.contactPhone || employee?.phone;
+      
+      // Create the reminder record
+      const reminder = await storage.createCourseReminder({
+        tenantId,
+        learnerProgressId,
+        userId,
+        courseId,
+        message,
+        channel: channel || "whatsapp",
+        sentBy: senderId,
+        metadata: { 
+          userName: user?.username,
+          employeeName: employee?.firstName + " " + employee?.lastName,
+          phone,
+        },
+      });
+
+      // Send via WhatsApp if phone is available and channel is whatsapp
+      if (phone && (!channel || channel === "whatsapp")) {
+        const WhatsAppService = (await import("./whatsapp-service")).WhatsAppService;
+        const whatsappService = new WhatsAppService();
+        
+        if (whatsappService.isConfigured()) {
+          try {
+            // Create or get conversation for this user
+            let conversation = await storage.getWhatsappConversationByPhone(tenantId, phone);
+            if (!conversation) {
+              conversation = await storage.createWhatsappConversation(tenantId, {
+                phone,
+                participantType: "employee",
+                participantId: userId,
+                status: "active",
+              });
+            }
+
+            await whatsappService.sendTextMessage(
+              tenantId,
+              conversation.id,
+              phone,
+              message,
+              "human",
+              senderId
+            );
+            
+            await storage.updateCourseReminderStatus(reminder.id, "sent", new Date());
+            return res.json({ ...reminder, status: "sent", deliveryMethod: "whatsapp" });
+          } catch (error: any) {
+            console.error("WhatsApp delivery failed:", error);
+            await storage.updateCourseReminderStatus(reminder.id, "failed");
+            return res.json({ ...reminder, status: "failed", error: error.message, deliveryMethod: "whatsapp_failed" });
+          }
+        }
+      }
+
+      // If no phone or WhatsApp not configured, mark as pending (in-app only)
+      return res.json({ ...reminder, status: "pending", deliveryMethod: "in_app" });
+    } catch (error) {
+      console.error("Error sending reminder:", error);
+      res.status(500).json({ message: "Failed to send reminder" });
+    }
+  });
+
+  // Get course reminders history
+  app.get("/api/lms/reminders", async (req, res) => {
+    try {
+      const tenantId = req.headers["x-tenant-id"] as string;
+      const { userId, courseId, status } = req.query;
+      const reminders = await storage.getCourseReminders(tenantId, {
+        userId: userId as string,
+        courseId: courseId as string,
+        status: status as string,
+      });
+      res.json(reminders);
+    } catch (error) {
+      console.error("Error fetching reminders:", error);
+      res.status(500).json({ message: "Failed to fetch reminders" });
+    }
+  });
+
+  // ================================
   // Certificate Routes
   // ================================
 
