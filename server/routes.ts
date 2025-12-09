@@ -7262,7 +7262,7 @@ Format your response as JSON:
   app.get("/api/lms/employees", async (req, res) => {
     try {
       const tenantId = req.headers["x-tenant-id"] as string;
-      const employees = await storage.getEmployees(tenantId);
+      const employees = await storage.getAllEmployees(tenantId);
       res.json(employees);
     } catch (error) {
       console.error("Error fetching employees:", error);
