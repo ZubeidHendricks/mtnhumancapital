@@ -1747,6 +1747,32 @@ export const reviewSubmissions = pgTable("review_submissions", {
   managerIdIdx: index("review_submissions_manager_id_idx").on(table.managerId),
 }));
 
+// Self-Assessment Tokens - For employee self-assessment via WhatsApp links
+export const selfAssessmentTokens = pgTable("self_assessment_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull(),
+  token: varchar("token").notNull().unique(),
+  employeeId: varchar("employee_id").notNull().references(() => employees.id),
+  reviewCycleId: varchar("review_cycle_id").notNull().references(() => reviewCycles.id),
+  status: text("status").notNull().default("pending"), // 'pending', 'accessed', 'completed', 'expired'
+  expiresAt: timestamp("expires_at").notNull(),
+  accessedAt: timestamp("accessed_at"),
+  completedAt: timestamp("completed_at"),
+  sentVia: text("sent_via").default("whatsapp"), // 'whatsapp', 'email', 'manual'
+  sentBy: varchar("sent_by").references(() => users.id),
+  sentAt: timestamp("sent_at"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  tenantIdIdx: index("self_assessment_tokens_tenant_id_idx").on(table.tenantId),
+  tokenIdx: index("self_assessment_tokens_token_idx").on(table.token),
+  employeeIdIdx: index("self_assessment_tokens_employee_id_idx").on(table.employeeId),
+  reviewCycleIdIdx: index("self_assessment_tokens_review_cycle_idx").on(table.reviewCycleId),
+}));
+
+export type SelfAssessmentToken = typeof selfAssessmentTokens.$inferSelect;
+export type InsertSelfAssessmentToken = typeof selfAssessmentTokens.$inferInsert;
+
 // ============================================
 // SOCIAL INTELLIGENCE SCREENING SYSTEM
 // ============================================
