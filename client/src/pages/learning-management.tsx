@@ -37,6 +37,16 @@ interface LearnerProgress {
   progress: number;
   status: string;
   timeSpent: number;
+  userName?: string;
+  userId?: string;
+}
+
+interface Employee {
+  id: string;
+  fullName: string;
+  email: string;
+  department: string | null;
+  jobTitle: string | null;
 }
 
 interface LeaderboardEntry {
@@ -95,20 +105,32 @@ export default function LearningManagement() {
     enabled: !!tenantId
   });
 
-  const { data: myProgress = [] } = useQuery<LearnerProgress[]>({
-    queryKey: ["/api/lms/my-progress", tenantId],
+  const { data: allProgress = [] } = useQuery<LearnerProgress[]>({
+    queryKey: ["/api/lms/all-progress", tenantId],
     queryFn: async () => {
-      const res = await fetch("/api/lms/my-progress", { headers });
+      const res = await fetch("/api/lms/all-progress", { headers });
       if (!res.ok) return [];
       const data = await res.json();
       // Transform nested structure to flat structure
-      return data.map((item: { progress: any; course: any }) => ({
+      return data.map((item: { progress: any; course: any; user: any }) => ({
         courseId: item.progress?.courseId || item.course?.id,
         courseTitle: item.course?.title || "Unknown Course",
         progress: item.progress?.progress || 0,
         status: item.progress?.status || "not_started",
-        timeSpent: item.progress?.timeSpent || 0
+        timeSpent: item.progress?.timeSpent || 0,
+        userName: item.user?.username || "Unknown User",
+        userId: item.user?.id
       }));
+    },
+    enabled: !!tenantId
+  });
+
+  const { data: employees = [] } = useQuery<Employee[]>({
+    queryKey: ["/api/lms/employees", tenantId],
+    queryFn: async () => {
+      const res = await fetch("/api/lms/employees", { headers });
+      if (!res.ok) return [];
+      return res.json();
     },
     enabled: !!tenantId
   });
@@ -131,21 +153,22 @@ export default function LearningManagement() {
     enabled: !!tenantId
   });
 
-  const { data: myBadges = [] } = useQuery<UserBadge[]>({
-    queryKey: ["/api/lms/my-badges", tenantId],
+  const { data: allBadges = [] } = useQuery<(UserBadge & { userName?: string })[]>({
+    queryKey: ["/api/lms/all-badges", tenantId],
     queryFn: async () => {
-      const res = await fetch("/api/lms/my-badges", { headers });
+      const res = await fetch("/api/lms/all-badges", { headers });
       if (!res.ok) return [];
       const data = await res.json();
       // Transform nested structure to flat structure
-      return data.map((item: { badge: any; earnedAt: string }) => ({
+      return data.map((item: { badge: any; user: any; earnedAt: string }) => ({
         id: item.badge?.id,
         name: item.badge?.name || "Unknown Badge",
         description: item.badge?.description || "",
         imageUrl: item.badge?.imageUrl,
         rarity: item.badge?.rarity || "common",
         points: item.badge?.points || 0,
-        earnedAt: item.earnedAt
+        earnedAt: item.earnedAt,
+        userName: item.user?.username || "Unknown User"
       }));
     },
     enabled: !!tenantId
@@ -221,13 +244,13 @@ export default function LearningManagement() {
     totalPoints: 0,
     level: 1,
     rank: 0,
-    coursesCompleted: myProgress.filter(p => p.status === "completed").length,
-    hoursLearned: Math.round(myProgress.reduce((sum, p) => sum + (p.timeSpent || 0), 0) / 60),
-    badgesEarned: myBadges.length
+    coursesCompleted: allProgress.filter(p => p.status === "completed").length,
+    hoursLearned: Math.round(allProgress.reduce((sum, p) => sum + (p.timeSpent || 0), 0) / 60),
+    badgesEarned: allBadges.length
   };
 
   const getProgressForCourse = (courseId: string) => {
-    const progress = myProgress.find(p => p.courseId === courseId);
+    const progress = allProgress.find(p => p.courseId === courseId);
     return progress?.progress || 0;
   };
 
@@ -401,10 +424,10 @@ export default function LearningManagement() {
                 <Users className="w-4 h-4" />
                 Enrolled Employees
               </CardDescription>
-              <CardTitle className="text-2xl text-white">{myProgress.length}</CardTitle>
+              <CardTitle className="text-2xl text-white">{allProgress.length}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-muted-foreground">Your enrollments</p>
+              <p className="text-xs text-muted-foreground">Total enrollments</p>
             </CardContent>
           </Card>
           <Card className="bg-black/40 border-white/10">
@@ -414,8 +437,8 @@ export default function LearningManagement() {
                 Completion Rate
               </CardDescription>
               <CardTitle className="text-2xl text-white">
-                {myProgress.length > 0 
-                  ? Math.round((myProgress.filter(p => p.status === "completed").length / myProgress.length) * 100)
+                {allProgress.length > 0 
+                  ? Math.round((allProgress.filter(p => p.status === "completed").length / allProgress.length) * 100)
                   : 0}%
               </CardTitle>
             </CardHeader>
@@ -429,7 +452,7 @@ export default function LearningManagement() {
                 <GraduationCap className="w-4 h-4" />
                 Certifications
               </CardDescription>
-              <CardTitle className="text-2xl text-white">{myBadges.length}</CardTitle>
+              <CardTitle className="text-2xl text-white">{allBadges.length}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground">Badges earned</p>
@@ -438,9 +461,10 @@ export default function LearningManagement() {
         </div>
 
         <Tabs defaultValue="courses" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-black/40 border border-white/10">
+          <TabsList className="grid w-full grid-cols-5 bg-black/40 border border-white/10">
             <TabsTrigger value="courses">Courses</TabsTrigger>
-            <TabsTrigger value="progress">My Progress</TabsTrigger>
+            <TabsTrigger value="assignments">Assign Courses</TabsTrigger>
+            <TabsTrigger value="progress">Learner Progress</TabsTrigger>
             <TabsTrigger value="gamification">Achievements</TabsTrigger>
             <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
           </TabsList>
@@ -553,30 +577,101 @@ export default function LearningManagement() {
             )}
           </TabsContent>
 
+          <TabsContent value="assignments" className="space-y-6">
+            <Card className="bg-black/40 border-white/10">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  Assign Courses to Employees
+                </CardTitle>
+                <CardDescription>Select employees and assign them to training courses</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <Label className="text-white mb-2 block">Select Course</Label>
+                      <Select>
+                        <SelectTrigger className="bg-black/40 border-white/10">
+                          <SelectValue placeholder="Choose a course..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {courses.map(course => (
+                            <SelectItem key={course.id} value={course.id}>{course.title}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-white mb-2 block">Select Employee</Label>
+                      <Select>
+                        <SelectTrigger className="bg-black/40 border-white/10">
+                          <SelectValue placeholder="Choose an employee..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {employees.map(emp => (
+                            <SelectItem key={emp.id} value={emp.id}>{emp.fullName} - {emp.department || 'No Department'}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <Button className="w-full md:w-auto">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Assign Course
+                  </Button>
+                </div>
+
+                <div className="mt-8">
+                  <h4 className="text-white font-medium mb-4">Current Assignments</h4>
+                  <div className="space-y-3">
+                    {allProgress.length === 0 ? (
+                      <p className="text-muted-foreground text-center py-4">No course assignments yet</p>
+                    ) : (
+                      allProgress.map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                          <div>
+                            <p className="text-white font-medium">{item.userName}</p>
+                            <p className="text-sm text-muted-foreground">{item.courseTitle}</p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Badge variant={item.status === "completed" ? "default" : item.status === "in_progress" ? "secondary" : "outline"}>
+                              {item.status === "completed" ? "Completed" : item.status === "in_progress" ? `${item.progress}%` : "Not Started"}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="progress" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card className="bg-black/40 border-white/10">
                 <CardHeader className="pb-3">
                   <CardDescription>Courses Completed</CardDescription>
-                  <CardTitle className="text-3xl text-white">{myProgress.filter(p => p.status === "completed").length}</CardTitle>
+                  <CardTitle className="text-3xl text-white">{allProgress.filter(p => p.status === "completed").length}</CardTitle>
                 </CardHeader>
               </Card>
               <Card className="bg-black/40 border-white/10">
                 <CardHeader className="pb-3">
                   <CardDescription>Hours Learned</CardDescription>
-                  <CardTitle className="text-3xl text-white">{Math.round(myProgress.reduce((sum, p) => sum + (p.timeSpent || 0), 0) / 60)}h</CardTitle>
+                  <CardTitle className="text-3xl text-white">{Math.round(allProgress.reduce((sum, p) => sum + (p.timeSpent || 0), 0) / 60)}h</CardTitle>
                 </CardHeader>
               </Card>
               <Card className="bg-black/40 border-white/10">
                 <CardHeader className="pb-3">
                   <CardDescription>In Progress</CardDescription>
-                  <CardTitle className="text-3xl text-white">{myProgress.filter(p => p.status === "in_progress").length}</CardTitle>
+                  <CardTitle className="text-3xl text-white">{allProgress.filter(p => p.status === "in_progress").length}</CardTitle>
                 </CardHeader>
               </Card>
               <Card className="bg-black/40 border-white/10">
                 <CardHeader className="pb-3">
                   <CardDescription>Badges Earned</CardDescription>
-                  <CardTitle className="text-3xl text-white">{myBadges.length}</CardTitle>
+                  <CardTitle className="text-3xl text-white">{allBadges.length}</CardTitle>
                 </CardHeader>
               </Card>
             </div>
@@ -586,13 +681,16 @@ export default function LearningManagement() {
                 <CardTitle className="text-white">In Progress</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {myProgress.filter(p => p.status === "in_progress").length === 0 ? (
+                {allProgress.filter(p => p.status === "in_progress").length === 0 ? (
                   <p className="text-muted-foreground text-center py-8">No courses in progress. Start learning today!</p>
                 ) : (
-                  myProgress.filter(p => p.status === "in_progress").map((progress) => (
-                    <div key={progress.courseId} className="space-y-2" data-testid={`progress-course-${progress.courseId}`}>
+                  allProgress.filter(p => p.status === "in_progress").map((progress, idx) => (
+                    <div key={`${progress.courseId}-${idx}`} className="space-y-2" data-testid={`progress-course-${progress.courseId}`}>
                       <div className="flex items-center justify-between">
-                        <h3 className="text-white font-medium">{progress.courseTitle}</h3>
+                        <div>
+                          <h3 className="text-white font-medium">{progress.userName}</h3>
+                          <p className="text-sm text-muted-foreground">{progress.courseTitle}</p>
+                        </div>
                         <span className="text-sm text-muted-foreground">{progress.progress}%</span>
                       </div>
                       <div className="h-2 bg-white/10 rounded-full overflow-hidden">
@@ -641,37 +739,40 @@ export default function LearningManagement() {
 
             <Card className="bg-black/40 border-white/10">
               <CardHeader>
-                <CardTitle className="text-white">Your Badges</CardTitle>
-                <CardDescription>Achievements earned through learning excellence</CardDescription>
+                <CardTitle className="text-white">Badges Earned by Employees</CardTitle>
+                <CardDescription>Recognition for learning achievements across the organization</CardDescription>
               </CardHeader>
               <CardContent>
-                {myBadges.length === 0 ? (
+                {allBadges.length === 0 ? (
                   <div className="text-center py-8">
                     <Award className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">Complete courses to earn badges!</p>
+                    <p className="text-muted-foreground">No badges earned yet. Assign courses to get started!</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                    {myBadges.map((badge) => (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {allBadges.map((badge, idx) => (
                       <div
-                        key={badge.id}
-                        className={`p-4 rounded-lg bg-black/40 border-2 ${getRarityColor(badge.rarity)} text-center space-y-2 hover:scale-105 transition-transform cursor-pointer`}
+                        key={`${badge.id}-${idx}`}
+                        className={`p-4 rounded-lg bg-black/40 border-2 ${getRarityColor(badge.rarity)} flex items-center gap-4 hover:scale-[1.02] transition-transform`}
                         data-testid={`badge-${badge.id}`}
                       >
                         {badge.imageUrl ? (
-                          <img src={badge.imageUrl} alt={badge.name} className="w-12 h-12 mx-auto" />
+                          <img src={badge.imageUrl} alt={badge.name} className="w-12 h-12" />
                         ) : (
                           <div className="text-4xl">🏆</div>
                         )}
-                        <p className="text-sm text-white font-medium">{badge.name}</p>
-                        <Badge variant="outline" className="text-xs capitalize">
-                          {badge.rarity}
-                        </Badge>
+                        <div className="flex-1">
+                          <p className="text-white font-medium">{badge.userName}</p>
+                          <p className="text-sm text-muted-foreground">{badge.name}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {badge.rarity}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">+{badge.points} pts</span>
+                          </div>
+                        </div>
                       </div>
                     ))}
-                    <div className="p-4 rounded-lg bg-black/20 border-2 border-dashed border-white/10 flex items-center justify-center">
-                      <p className="text-sm text-muted-foreground">More to earn!</p>
-                    </div>
                   </div>
                 )}
               </CardContent>
@@ -682,7 +783,7 @@ export default function LearningManagement() {
             <Card className="bg-black/40 border-white/10">
               <CardHeader>
                 <CardTitle className="text-white">Top Learners</CardTitle>
-                <CardDescription>See how you rank against your peers</CardDescription>
+                <CardDescription>Employee rankings based on learning achievements</CardDescription>
               </CardHeader>
               <CardContent>
                 {leaderboard.length === 0 ? (

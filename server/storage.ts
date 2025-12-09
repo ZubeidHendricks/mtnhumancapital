@@ -2840,6 +2840,46 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(learnerProgress.lastAccessedAt));
   }
 
+  async getAllLearnersProgress(tenantId: string) {
+    return await db.select({
+      progress: learnerProgress,
+      course: courses,
+      user: users,
+    })
+      .from(learnerProgress)
+      .leftJoin(courses, eq(learnerProgress.courseId, courses.id))
+      .leftJoin(users, eq(learnerProgress.userId, users.id))
+      .where(eq(learnerProgress.tenantId, tenantId))
+      .orderBy(desc(learnerProgress.lastAccessedAt));
+  }
+
+  async getAllBadgesEarned(tenantId: string) {
+    return await db.select({
+      badge: gamificationBadges,
+      user: users,
+      earnedAt: learnerBadges.earnedAt,
+    })
+      .from(learnerBadges)
+      .leftJoin(gamificationBadges, eq(learnerBadges.badgeId, gamificationBadges.id))
+      .leftJoin(users, eq(learnerBadges.userId, users.id))
+      .where(eq(learnerBadges.tenantId, tenantId))
+      .orderBy(desc(learnerBadges.earnedAt));
+  }
+
+  async assignCourseToEmployee(tenantId: string, courseId: string, userId: string) {
+    const existing = await this.getCourseProgress(userId, courseId, tenantId);
+    if (existing) return existing;
+    
+    const [progress] = await db.insert(learnerProgress).values({
+      userId,
+      courseId,
+      tenantId,
+      status: "not_started",
+      progress: 0,
+    }).returning();
+    return progress;
+  }
+
   async getCourseProgress(userId: string, courseId: string, tenantId: string) {
     const [progress] = await db.select().from(learnerProgress)
       .where(and(

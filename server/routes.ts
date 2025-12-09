@@ -7207,7 +7207,7 @@ Format your response as JSON:
     }
   });
 
-  // Get my progress
+  // Get my progress (for individual learner view)
   app.get("/api/lms/my-progress", async (req, res) => {
     try {
       const tenantId = req.headers["x-tenant-id"] as string;
@@ -7218,6 +7218,55 @@ Format your response as JSON:
     } catch (error) {
       console.error("Error fetching progress:", error);
       res.status(500).json({ message: "Failed to fetch progress" });
+    }
+  });
+
+  // Get all learners progress (HR admin view)
+  app.get("/api/lms/all-progress", async (req, res) => {
+    try {
+      const tenantId = req.headers["x-tenant-id"] as string;
+      const progress = await storage.getAllLearnersProgress(tenantId);
+      res.json(progress);
+    } catch (error) {
+      console.error("Error fetching all progress:", error);
+      res.status(500).json({ message: "Failed to fetch learners progress" });
+    }
+  });
+
+  // Get all badges earned (HR admin view)
+  app.get("/api/lms/all-badges", async (req, res) => {
+    try {
+      const tenantId = req.headers["x-tenant-id"] as string;
+      const badges = await storage.getAllBadgesEarned(tenantId);
+      res.json(badges);
+    } catch (error) {
+      console.error("Error fetching all badges:", error);
+      res.status(500).json({ message: "Failed to fetch badges" });
+    }
+  });
+
+  // Assign course to employee
+  app.post("/api/lms/assign-course", async (req, res) => {
+    try {
+      const tenantId = req.headers["x-tenant-id"] as string;
+      const { courseId, userId } = req.body;
+      const assignment = await storage.assignCourseToEmployee(tenantId, courseId, userId);
+      res.json(assignment);
+    } catch (error) {
+      console.error("Error assigning course:", error);
+      res.status(500).json({ message: "Failed to assign course" });
+    }
+  });
+
+  // Get employees for assignment (HR admin)
+  app.get("/api/lms/employees", async (req, res) => {
+    try {
+      const tenantId = req.headers["x-tenant-id"] as string;
+      const employees = await storage.getEmployees(tenantId);
+      res.json(employees);
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+      res.status(500).json({ message: "Failed to fetch employees" });
     }
   });
 
