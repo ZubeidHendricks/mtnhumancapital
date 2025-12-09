@@ -6204,6 +6204,312 @@ Format your response as JSON:
     }
   });
 
+  // ==================== SELF-ASSESSMENT TOKENS (WhatsApp Links) ====================
+
+  // Create and send self-assessment link to employee via WhatsApp
+  app.post("/api/self-assessment-tokens", async (req, res) => {
+    try {
+      const { employeeId, reviewCycleId, expiryDays = 7 } = req.body;
+      
+      if (!employeeId || !reviewCycleId) {
+        return res.status(400).json({ message: "employeeId and reviewCycleId are required" });
+      }
+
+      // Get employee details
+      const employee = await storage.getEmployee(req.tenant.id, employeeId);
+      if (!employee) {
+        return res.status(404).json({ message: "Employee not found" });
+      }
+
+      // Get review cycle details
+      const cycle = await storage.getReviewCycle(req.tenant.id, reviewCycleId);
+      if (!cycle) {
+        return res.status(404).json({ message: "Review cycle not found" });
+      }
+
+      // Generate unique token
+      const crypto = await import('crypto');
+      const token = crypto.randomBytes(32).toString('hex');
+      
+      // Set expiry date
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + expiryDays);
+
+      // Create token record
+      const tokenRecord = await storage.createSelfAssessmentToken({
+        tenantId: req.tenant.id,
+        token,
+        employeeId,
+        reviewCycleId,
+        expiresAt,
+        sentVia: 'whatsapp',
+        sentAt: new Date(),
+      });
+
+      // Build the self-assessment URL
+      const baseUrl = process.env.APP_URL || `https://${req.headers.host}`;
+      const assessmentUrl = `${baseUrl}/self-assessment/${token}`;
+
+      // Send WhatsApp message if employee has phone number
+      let whatsappSent = false;
+      if (employee.phone) {
+        try {
+          const waId = employee.phone.replace(/\D/g, '');
+          const conversation = await whatsappService.getOrCreateConversation(
+            req.tenant.id,
+            employee.phone,
+            waId,
+            `${employee.firstName} ${employee.lastName}`,
+            undefined,
+            'kpi_review'
+          );
+
+          const message = `Hi ${employee.firstName}! 👋\n\nYou have a performance self-assessment to complete for *${cycle.name}*.\n\nPlease rate your performance on your assigned KPIs by clicking the link below:\n\n🔗 ${assessmentUrl}\n\n⏰ This link expires in ${expiryDays} days.\n\nIf you have any questions, please contact your HR department.`;
+
+          await whatsappService.sendMessage(
+            req.tenant.id,
+            conversation.id,
+            employee.phone,
+            message,
+            'self_assessment_link'
+          );
+          whatsappSent = true;
+        } catch (whatsappError) {
+          console.warn("Failed to send WhatsApp self-assessment link:", whatsappError);
+        }
+      }
+
+      res.status(201).json({
+        ...tokenRecord,
+        assessmentUrl,
+        whatsappSent,
+        employee: {
+          id: employee.id,
+          name: `${employee.firstName} ${employee.lastName}`,
+          phone: employee.phone,
+        },
+        cycle: {
+          id: cycle.id,
+          name: cycle.name,
+        }
+      });
+    } catch (error) {
+      console.error("Error creating self-assessment token:", error);
+      res.status(500).json({ message: "Failed to create self-assessment token" });
+    }
+  });
+
+  // Get self-assessment tokens for a review cycle
+  app.get("/api/self-assessment-tokens", async (req, res) => {
+    try {
+      const { reviewCycleId, employeeId } = req.query;
+      
+      let tokens;
+      if (employeeId) {
+        tokens = await storage.getSelfAssessmentTokensByEmployee(req.tenant.id, employeeId as string);
+      } else if (reviewCycleId) {
+        tokens = await storage.getSelfAssessmentTokensByReviewCycle(req.tenant.id, reviewCycleId as string);
+      } else {
+        return res.status(400).json({ message: "reviewCycleId or employeeId is required" });
+      }
+
+      res.json(tokens);
+    } catch (error) {
+      console.error("Error fetching self-assessment tokens:", error);
+      res.status(500).json({ message: "Failed to fetch self-assessment tokens" });
+    }
+  });
+
+  // PUBLIC: Validate and get self-assessment data by token
+  app.get("/api/public/self-assessment/:token", async (req, res) => {
+    try {
+      const tokenRecord = await storage.getSelfAssessmentToken(req.params.token);
+      
+      if (!tokenRecord) {
+        return res.status(404).json({ message: "Assessment link not found or expired" });
+      }
+
+      if (tokenRecord.status === 'completed') {
+        return res.status(400).json({ message: "Self-assessment already completed" });
+      }
+
+      if (new Date(tokenRecord.expiresAt) < new Date()) {
+        await storage.updateSelfAssessmentToken(tokenRecord.id, { status: 'expired' });
+        return res.status(400).json({ message: "Assessment link has expired" });
+      }
+
+      // Mark as accessed if first time
+      if (tokenRecord.status === 'pending') {
+        await storage.updateSelfAssessmentToken(tokenRecord.id, { 
+          status: 'accessed',
+          accessedAt: new Date()
+        });
+      }
+
+      // Get employee details
+      const employee = await storage.getEmployee(tokenRecord.tenantId, tokenRecord.employeeId);
+      if (!employee) {
+        return res.status(404).json({ message: "Employee not found" });
+      }
+
+      // Get review cycle details
+      const cycle = await storage.getReviewCycle(tokenRecord.tenantId, tokenRecord.reviewCycleId);
+      if (!cycle) {
+        return res.status(404).json({ message: "Review cycle not found" });
+      }
+
+      // Get KPI assignments for this employee in this cycle
+      const assignments = await storage.getKpiAssignments(tokenRecord.tenantId, {
+        employeeId: tokenRecord.employeeId,
+        reviewCycleId: tokenRecord.reviewCycleId
+      });
+
+      // Get existing scores if any
+      const scores = await Promise.all(
+        assignments.map(async (assignment) => {
+          const scoreList = await storage.getKpiScores(tokenRecord.tenantId, assignment.id.toString());
+          return scoreList.find(s => s.scorerType === 'self') || null;
+        })
+      );
+
+      // Get or create review submission
+      let submission = await storage.getReviewSubmissionByEmployee(
+        tokenRecord.tenantId, 
+        tokenRecord.employeeId, 
+        tokenRecord.reviewCycleId
+      );
+
+      if (!submission) {
+        submission = await storage.createReviewSubmission(tokenRecord.tenantId, {
+          employeeId: tokenRecord.employeeId,
+          reviewCycleId: tokenRecord.reviewCycleId,
+          selfAssessmentStatus: 'in_progress'
+        });
+      }
+
+      // Get tenant config for branding
+      const allConfigs = await storage.getAllTenantConfigs();
+      const tenantConfig = allConfigs.find(c => c.id === tokenRecord.tenantId);
+
+      res.json({
+        employee: {
+          id: employee.id,
+          name: `${employee.firstName} ${employee.lastName}`,
+          position: employee.position,
+          department: employee.department,
+        },
+        cycle: {
+          id: cycle.id,
+          name: cycle.name,
+          startDate: cycle.startDate,
+          endDate: cycle.endDate,
+        },
+        assignments: assignments.map((a, i) => ({
+          id: a.id,
+          template: a.template,
+          customTarget: a.customTarget,
+          existingScore: scores[i],
+        })),
+        submission,
+        tenantConfig: tenantConfig ? {
+          companyName: tenantConfig.companyName,
+          primaryColor: tenantConfig.primaryColor,
+          logo: tenantConfig.logo,
+        } : null,
+        expiresAt: tokenRecord.expiresAt,
+      });
+    } catch (error) {
+      console.error("Error fetching self-assessment by token:", error);
+      res.status(500).json({ message: "Failed to fetch assessment" });
+    }
+  });
+
+  // PUBLIC: Submit self-assessment scores by token
+  app.post("/api/public/self-assessment/:token/submit", async (req, res) => {
+    try {
+      const tokenRecord = await storage.getSelfAssessmentToken(req.params.token);
+      
+      if (!tokenRecord) {
+        return res.status(404).json({ message: "Assessment link not found" });
+      }
+
+      if (tokenRecord.status === 'completed') {
+        return res.status(400).json({ message: "Self-assessment already completed" });
+      }
+
+      if (new Date(tokenRecord.expiresAt) < new Date()) {
+        return res.status(400).json({ message: "Assessment link has expired" });
+      }
+
+      const { scores, comments } = req.body;
+      
+      if (!scores || !Array.isArray(scores)) {
+        return res.status(400).json({ message: "scores array is required" });
+      }
+
+      // Get employee for scorer info
+      const employee = await storage.getEmployee(tokenRecord.tenantId, tokenRecord.employeeId);
+
+      // Save each score
+      for (const scoreData of scores) {
+        const { assignmentId, score, selfComments } = scoreData;
+        
+        if (!assignmentId || score === undefined) continue;
+
+        // Check if score already exists
+        const existingScores = await storage.getKpiScores(tokenRecord.tenantId, assignmentId.toString());
+        const existingSelfScore = existingScores.find(s => s.scorerType === 'self');
+
+        if (existingSelfScore) {
+          // Update existing score
+          await storage.updateKpiScore(tokenRecord.tenantId, existingSelfScore.id.toString(), {
+            selfScore: score,
+            selfComments: selfComments || null,
+          });
+        } else {
+          // Create new score
+          await storage.createKpiScore(tokenRecord.tenantId, {
+            kpiAssignmentId: assignmentId,
+            scorerId: tokenRecord.employeeId,
+            scorerType: 'self',
+            selfScore: score,
+            selfComments: selfComments || null,
+            status: 'submitted',
+          });
+        }
+      }
+
+      // Update review submission
+      const submission = await storage.getReviewSubmissionByEmployee(
+        tokenRecord.tenantId,
+        tokenRecord.employeeId,
+        tokenRecord.reviewCycleId
+      );
+
+      if (submission) {
+        await storage.updateReviewSubmission(tokenRecord.tenantId, submission.id, {
+          selfAssessmentStatus: 'completed',
+          employeeComments: comments || null,
+          selfSubmittedAt: new Date(),
+        });
+      }
+
+      // Mark token as completed
+      await storage.updateSelfAssessmentToken(tokenRecord.id, {
+        status: 'completed',
+        completedAt: new Date(),
+      });
+
+      res.json({ 
+        success: true, 
+        message: "Self-assessment submitted successfully" 
+      });
+    } catch (error) {
+      console.error("Error submitting self-assessment:", error);
+      res.status(500).json({ message: "Failed to submit self-assessment" });
+    }
+  });
+
   // WhatsApp notification for KPI self-assessment request
   app.post("/api/kpi/notify/self-assessment", async (req, res) => {
     try {

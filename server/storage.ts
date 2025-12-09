@@ -186,6 +186,9 @@ import {
   type InsertIssuedCertificate,
   learnerCourseReminders,
   type LearnerCourseReminder,
+  selfAssessmentTokens,
+  type SelfAssessmentToken,
+  type InsertSelfAssessmentToken,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, lte, sql, isNull, isNotNull } from "drizzle-orm";
@@ -562,6 +565,13 @@ export interface IStorage {
   getSocialScreeningPosts(tenantId: string, findingId: string): Promise<SocialScreeningPost[]>;
   createSocialScreeningPost(tenantId: string, post: InsertSocialScreeningPost): Promise<SocialScreeningPost>;
   deleteExpiredSocialScreeningPosts(): Promise<number>;
+  
+  // Self-Assessment Tokens
+  createSelfAssessmentToken(token: InsertSelfAssessmentToken): Promise<SelfAssessmentToken>;
+  getSelfAssessmentToken(token: string): Promise<SelfAssessmentToken | undefined>;
+  getSelfAssessmentTokensByEmployee(tenantId: string, employeeId: string): Promise<SelfAssessmentToken[]>;
+  getSelfAssessmentTokensByReviewCycle(tenantId: string, reviewCycleId: string): Promise<SelfAssessmentToken[]>;
+  updateSelfAssessmentToken(id: string, updates: Partial<InsertSelfAssessmentToken>): Promise<SelfAssessmentToken | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3322,6 +3332,47 @@ export class DatabaseStorage implements IStorage {
         sql`${learnerCourseReminders.createdAt} >= ${cutoffTime}`
       ))
       .orderBy(desc(learnerCourseReminders.createdAt));
+  }
+
+  // ================================
+  // Self-Assessment Tokens
+  // ================================
+
+  async createSelfAssessmentToken(token: InsertSelfAssessmentToken): Promise<SelfAssessmentToken> {
+    const [newToken] = await db.insert(selfAssessmentTokens).values(token).returning();
+    return newToken;
+  }
+
+  async getSelfAssessmentToken(token: string): Promise<SelfAssessmentToken | undefined> {
+    const [result] = await db.select().from(selfAssessmentTokens)
+      .where(eq(selfAssessmentTokens.token, token));
+    return result || undefined;
+  }
+
+  async getSelfAssessmentTokensByEmployee(tenantId: string, employeeId: string): Promise<SelfAssessmentToken[]> {
+    return await db.select().from(selfAssessmentTokens)
+      .where(and(
+        eq(selfAssessmentTokens.tenantId, tenantId),
+        eq(selfAssessmentTokens.employeeId, employeeId)
+      ))
+      .orderBy(desc(selfAssessmentTokens.createdAt));
+  }
+
+  async getSelfAssessmentTokensByReviewCycle(tenantId: string, reviewCycleId: string): Promise<SelfAssessmentToken[]> {
+    return await db.select().from(selfAssessmentTokens)
+      .where(and(
+        eq(selfAssessmentTokens.tenantId, tenantId),
+        eq(selfAssessmentTokens.reviewCycleId, reviewCycleId)
+      ))
+      .orderBy(desc(selfAssessmentTokens.createdAt));
+  }
+
+  async updateSelfAssessmentToken(id: string, updates: Partial<InsertSelfAssessmentToken>): Promise<SelfAssessmentToken | undefined> {
+    const [updated] = await db.update(selfAssessmentTokens)
+      .set(updates)
+      .where(eq(selfAssessmentTokens.id, id))
+      .returning();
+    return updated || undefined;
   }
 }
 
