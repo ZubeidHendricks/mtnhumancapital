@@ -168,12 +168,12 @@ export function Navbar() {
                   <span>My KPI Review</span>
                 </DropdownMenuItem>
               </Link>
-              <Link href="/learning-management">
+              <a href="http://165.227.113.197" target="_blank" rel="noopener noreferrer">
                 <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
                   <BookOpen className="w-4 h-4 mr-2 text-orange-400" />
                   <span>Learning Management</span>
                 </DropdownMenuItem>
-              </Link>
+              </a>
               <Link href="/kpi-manager-review">
                 <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
                   <UserCheck className="w-4 h-4 mr-2 text-purple-400" />
