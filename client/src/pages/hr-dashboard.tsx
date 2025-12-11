@@ -59,7 +59,8 @@ import {
   MessageCircle,
   BookOpen,
   Timer,
-  RotateCcw
+  RotateCcw,
+  ChevronDown
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { motion } from "framer-motion";
@@ -668,44 +669,92 @@ BENEFITS:
 
         <Tabs defaultValue="jobs" className="space-y-6" onValueChange={setActiveTab}>
           <div className="flex items-center gap-3 flex-wrap">
-            <TabsList className="grid grid-cols-2 md:grid-cols-6 lg:w-[800px] bg-card/50 border border-white/5">
+            {/* Main 4 Tabs */}
+            <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:w-[500px] bg-card/50 border border-white/5">
               <TabsTrigger value="jobs">Jobs</TabsTrigger>
               <TabsTrigger value="recruitment">Recruitment</TabsTrigger>
               <TabsTrigger value="integrity">Integrity</TabsTrigger>
               <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
-              <TabsTrigger value="performance">Performance</TabsTrigger>
-              <TabsTrigger value="time-attendance">Time & Attendance</TabsTrigger>
             </TabsList>
-            <Link href="/workforce-intelligence">
-              <Button variant="outline" className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/30 hover:border-amber-500/50 hover:bg-amber-500/20 text-amber-400">
-                <Brain className="h-4 w-4 mr-2" />
-                Workforce Intelligence
-              </Button>
-            </Link>
-            <Link href="/document-automation">
-              <Button variant="outline" className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-blue-500/30 hover:border-blue-500/50 hover:bg-blue-500/20 text-blue-400">
-                <FileText className="h-4 w-4 mr-2" />
-                Document Automation
-              </Button>
-            </Link>
-            <Link href="/whatsapp-monitor">
-              <Button variant="outline" className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/30 hover:border-green-500/50 hover:bg-green-500/20 text-green-400">
-                <MessageCircle className="h-4 w-4 mr-2" />
-                WhatsApp Monitor
-              </Button>
-            </Link>
-            <Link href="/hr-conversations">
-              <Button variant="outline" className="bg-gradient-to-r from-teal-500/10 to-cyan-500/10 border-teal-500/30 hover:border-teal-500/50 hover:bg-teal-500/20 text-teal-400">
-                <MessageCircle className="h-4 w-4 mr-2" />
-                Conversations
-              </Button>
-            </Link>
-            <Link href="/document-library">
-              <Button variant="outline" className="bg-gradient-to-r from-purple-500/10 to-indigo-500/10 border-purple-500/30 hover:border-purple-500/50 hover:bg-purple-500/20 text-purple-400" data-testid="button-document-library">
-                <FileCheck className="h-4 w-4 mr-2" />
-                Document Library
-              </Button>
-            </Link>
+
+            {/* HR Management Group */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/30 hover:border-amber-500/50 hover:bg-amber-500/20 text-amber-400">
+                  <Users className="h-4 w-4 mr-2" />
+                  HR Management
+                  <ChevronDown className="h-3 w-3 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-zinc-950 border-white/10 text-zinc-200">
+                <Link href="/kpi-hr-dashboard">
+                  <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                    <Target className="w-4 h-4 mr-2 text-blue-400" />
+                    <span>Performance</span>
+                  </DropdownMenuItem>
+                </Link>
+                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10" onClick={() => setActiveTab("time-attendance")}>
+                  <Clock className="w-4 h-4 mr-2 text-green-400" />
+                  <span>Time & Attendance</span>
+                </DropdownMenuItem>
+                <Link href="/workforce-intelligence">
+                  <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                    <Brain className="w-4 h-4 mr-2 text-amber-400" />
+                    <span>Workforce Intelligence</span>
+                  </DropdownMenuItem>
+                </Link>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Documents Group */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-blue-500/30 hover:border-blue-500/50 hover:bg-blue-500/20 text-blue-400">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Documents
+                  <ChevronDown className="h-3 w-3 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-zinc-950 border-white/10 text-zinc-200">
+                <Link href="/document-automation">
+                  <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                    <FileText className="w-4 h-4 mr-2 text-blue-400" />
+                    <span>Document Automation</span>
+                  </DropdownMenuItem>
+                </Link>
+                <Link href="/document-library">
+                  <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                    <FileCheck className="w-4 h-4 mr-2 text-purple-400" />
+                    <span>Document Library</span>
+                  </DropdownMenuItem>
+                </Link>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Communications Group */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/30 hover:border-green-500/50 hover:bg-green-500/20 text-green-400">
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Communications
+                  <ChevronDown className="h-3 w-3 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-zinc-950 border-white/10 text-zinc-200">
+                <Link href="/whatsapp-monitor">
+                  <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                    <MessageCircle className="w-4 h-4 mr-2 text-green-400" />
+                    <span>WhatsApp Monitor</span>
+                  </DropdownMenuItem>
+                </Link>
+                <Link href="/hr-conversations">
+                  <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                    <MessageCircle className="w-4 h-4 mr-2 text-teal-400" />
+                    <span>Conversations</span>
+                  </DropdownMenuItem>
+                </Link>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* RECRUITMENT TAB */}
