@@ -92,11 +92,59 @@ export function Navbar() {
               {isModuleEnabled("hr_management") && (
                 <Link href="/hr-dashboard">
                   <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
-                    <Users className="w-4 h-4 mr-2 text-amber-400" />
-                    <span>HR Management</span>
+                    <LayoutDashboard className="w-4 h-4 mr-2 text-amber-400" />
+                    <span>HR Dashboard</span>
                   </DropdownMenuItem>
                 </Link>
               )}
+              <DropdownMenuSeparator className="bg-white/10" />
+              <DropdownMenuLabel className="text-xs text-muted-foreground">HR Management</DropdownMenuLabel>
+              <Link href="/kpi-hr-dashboard">
+                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                  <Target className="w-4 h-4 mr-2 text-blue-400" />
+                  <span>Performance</span>
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/hr-dashboard?tab=time-attendance">
+                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                  <Cpu className="w-4 h-4 mr-2 text-green-400" />
+                  <span>Time & Attendance</span>
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/workforce-intelligence">
+                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                  <TrendingUp className="w-4 h-4 mr-2 text-amber-400" />
+                  <span>Workforce Intelligence</span>
+                </DropdownMenuItem>
+              </Link>
+              <DropdownMenuSeparator className="bg-white/10" />
+              <DropdownMenuLabel className="text-xs text-muted-foreground">Documents</DropdownMenuLabel>
+              <Link href="/document-automation">
+                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                  <FileText className="w-4 h-4 mr-2 text-cyan-400" />
+                  <span>Document Automation</span>
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/document-library">
+                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                  <ClipboardList className="w-4 h-4 mr-2 text-purple-400" />
+                  <span>Document Library</span>
+                </DropdownMenuItem>
+              </Link>
+              <DropdownMenuSeparator className="bg-white/10" />
+              <DropdownMenuLabel className="text-xs text-muted-foreground">Communications</DropdownMenuLabel>
+              <Link href="/whatsapp-monitor">
+                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                  <MessageCircle className="w-4 h-4 mr-2 text-green-400" />
+                  <span>WhatsApp Monitor</span>
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/hr-conversations">
+                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                  <MessageCircle className="w-4 h-4 mr-2 text-teal-400" />
+                  <span>Conversations</span>
+                </DropdownMenuItem>
+              </Link>
             </DropdownMenuContent>
           </DropdownMenu>
 
