@@ -334,6 +334,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============= PIPELINE WORKFLOW =============
+  
+  // Get candidate pipeline status with history and blockers
+  app.get("/api/pipeline/candidates/:id/status", async (req, res) => {
+    try {
+      const { pipelineOrchestrator } = await import("./pipeline-orchestrator");
+      const status = await pipelineOrchestrator.getCandidatePipelineStatus(
+        req.params.id, 
+        req.tenant.id
+      );
+      
+      if (!status) {
+        return res.status(404).json({ message: "Candidate not found" });
+      }
+      
+      res.json(status);
+    } catch (error) {
+      console.error("Error fetching pipeline status:", error);
+      res.status(500).json({ message: "Failed to fetch pipeline status" });
+    }
+  });
+  
+  // Transition candidate to a new stage
+  app.post("/api/pipeline/candidates/:id/transition", async (req, res) => {
+    try {
+      const { toStage, reason, skipPrerequisites } = req.body;
+      
+      if (!toStage) {
+        return res.status(400).json({ message: "toStage is required" });
+      }
+      
+      const { pipelineOrchestrator } = await import("./pipeline-orchestrator");
+      const result = await pipelineOrchestrator.transitionCandidate(
+        req.params.id,
+        toStage,
+        req.tenant.id,
+        {
+          triggeredBy: "manual",
+          triggeredByUserId: req.user?.id,
+          reason,
+          skipPrerequisites: skipPrerequisites === true,
+        }
+      );
+      
+      if (!result.success) {
+        return res.status(400).json({
+          message: result.error || "Transition failed",
+          blockers: result.blockers,
+        });
+      }
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error transitioning candidate:", error);
+      res.status(500).json({ message: "Failed to transition candidate" });
+    }
+  });
+  
+  // Get available transitions for a candidate
+  app.get("/api/pipeline/candidates/:id/available-transitions", async (req, res) => {
+    try {
+      const { pipelineOrchestrator } = await import("./pipeline-orchestrator");
+      const status = await pipelineOrchestrator.getCandidatePipelineStatus(
+        req.params.id, 
+        req.tenant.id
+      );
+      
+      if (!status) {
+        return res.status(404).json({ message: "Candidate not found" });
+      }
+      
+      res.json({
+        currentStage: status.currentStage,
+        availableTransitions: status.availableTransitions,
+      });
+    } catch (error) {
+      console.error("Error fetching available transitions:", error);
+      res.status(500).json({ message: "Failed to fetch available transitions" });
+    }
+  });
+  
+  // Manually check and auto-advance integrity status
+  app.post("/api/pipeline/candidates/:id/check-integrity", async (req, res) => {
+    try {
+      const { pipelineOrchestrator } = await import("./pipeline-orchestrator");
+      const advanced = await pipelineOrchestrator.checkAndAutoAdvanceIntegrity(
+        req.params.id,
+        req.tenant.id
+      );
+      
+      res.json({ 
+        advanced,
+        message: advanced ? "Candidate advanced based on integrity check results" : "No advancement needed"
+      });
+    } catch (error) {
+      console.error("Error checking integrity status:", error);
+      res.status(500).json({ message: "Failed to check integrity status" });
+    }
+  });
+
   app.post("/api/candidates/:id/send-reminder", async (req, res) => {
     try {
       const candidate = await storage.getCandidate(req.tenant.id, req.params.id);

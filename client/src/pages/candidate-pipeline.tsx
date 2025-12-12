@@ -69,11 +69,22 @@ const DOCUMENT_DEFINITIONS = [
 ] as const;
 
 const PIPELINE_STAGES = [
-  { name: "Screening", color: "bg-blue-400" },
-  { name: "Shortlisted", color: "bg-yellow-500" },
-  { name: "Interview", color: "bg-purple-500" },
-  { name: "Offer", color: "bg-green-500" },
-  { name: "Hired", color: "bg-emerald-600" },
+  { key: "sourcing", name: "Sourcing", color: "bg-slate-400", section: "recruitment" },
+  { key: "screening", name: "Screening", color: "bg-blue-400", section: "recruitment" },
+  { key: "shortlisted", name: "Shortlisted", color: "bg-yellow-500", section: "recruitment" },
+  { key: "interviewing", name: "Interviewing", color: "bg-purple-500", section: "recruitment" },
+  { key: "offer_pending", name: "Offer Pending", color: "bg-amber-500", section: "recruitment" },
+  { key: "offer_accepted", name: "Offer Accepted", color: "bg-green-500", section: "recruitment" },
+  { key: "integrity_checks", name: "Integrity Checks", color: "bg-blue-600", section: "integrity" },
+  { key: "integrity_passed", name: "Checks Passed", color: "bg-emerald-500", section: "integrity" },
+  { key: "onboarding", name: "Onboarding", color: "bg-teal-500", section: "onboarding" },
+  { key: "hired", name: "Hired", color: "bg-emerald-600", section: "onboarding" },
+];
+
+const STAGE_SECTIONS = [
+  { key: "recruitment", name: "Recruitment", color: "bg-gradient-to-r from-blue-500 to-purple-500" },
+  { key: "integrity", name: "Integrity", color: "bg-gradient-to-r from-blue-600 to-emerald-500" },
+  { key: "onboarding", name: "Onboarding", color: "bg-gradient-to-r from-teal-500 to-emerald-600" },
 ];
 
 export default function CandidatePipeline() {
@@ -149,8 +160,8 @@ export default function CandidatePipeline() {
     }
   };
 
-  const shortlistedCandidates = candidates?.filter(c => 
-    c.stage === "Shortlisted" || c.stage === "Interview" || c.stage === "Offer"
+  const pipelineCandidates = candidates?.filter(c => 
+    PIPELINE_STAGES.some(s => s.key.toLowerCase() === (c.stage || '').toLowerCase() || s.name.toLowerCase() === (c.stage || '').toLowerCase())
   ) || [];
 
   const getDocumentStatus = (candidate: Candidate, docKey: string): DocumentStatus => {
@@ -181,11 +192,22 @@ export default function CandidatePipeline() {
   };
 
   const getStageIndex = (stage: string): number => {
-    const index = PIPELINE_STAGES.findIndex(s => s.name === stage);
+    const normalizedStage = (stage || '').toLowerCase();
+    const index = PIPELINE_STAGES.findIndex(s => 
+      s.key.toLowerCase() === normalizedStage || s.name.toLowerCase() === normalizedStage
+    );
     return index === -1 ? 0 : index;
   };
+  
+  const getStageName = (stage: string): string => {
+    const normalizedStage = (stage || '').toLowerCase();
+    const found = PIPELINE_STAGES.find(s => 
+      s.key.toLowerCase() === normalizedStage || s.name.toLowerCase() === normalizedStage
+    );
+    return found?.name || stage || 'Sourcing';
+  };
 
-  const allCandidateStats = shortlistedCandidates.map(c => getCandidateDocumentStats(c));
+  const allCandidateStats = pipelineCandidates.map(c => getCandidateDocumentStats(c));
   const totalDocsComplete = allCandidateStats.filter(s => s.missing === 0).length;
   const totalDocsPending = allCandidateStats.filter(s => s.pending > 0 && s.missing === 0).length;
   const totalDocsMissing = allCandidateStats.filter(s => s.missing > 0).length;
@@ -228,7 +250,7 @@ export default function CandidatePipeline() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">In Pipeline</p>
-                  <p className="text-2xl font-bold">{shortlistedCandidates.length}</p>
+                  <p className="text-2xl font-bold">{pipelineCandidates.length}</p>
                 </div>
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                   <UserCheck className="h-6 w-6 text-primary" />
@@ -292,14 +314,14 @@ export default function CandidatePipeline() {
             <div className="col-span-2 text-center py-12 text-muted-foreground">
               Loading candidates...
             </div>
-          ) : shortlistedCandidates.length === 0 ? (
+          ) : pipelineCandidates.length === 0 ? (
             <div className="col-span-2 text-center py-12">
               <UserCheck className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
               <p className="text-lg font-medium text-muted-foreground">No shortlisted candidates yet</p>
               <p className="text-sm text-muted-foreground mt-2">Shortlist candidates from the candidates page</p>
             </div>
           ) : (
-            shortlistedCandidates.map((candidate, idx) => {
+            pipelineCandidates.map((candidate, idx) => {
               const stats = getCandidateDocumentStats(candidate);
               const progressPercent = (stats.complete / stats.total) * 100;
               const stageIndex = getStageIndex(candidate.stage);

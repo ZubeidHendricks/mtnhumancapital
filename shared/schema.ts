@@ -2344,3 +2344,124 @@ export type CertificateTemplate = typeof certificateTemplates.$inferSelect;
 export type InsertCertificateTemplate = typeof certificateTemplates.$inferInsert;
 export type IssuedCertificate = typeof issuedCertificates.$inferSelect;
 export type InsertIssuedCertificate = typeof issuedCertificates.$inferInsert;
+
+// ============================================
+// PIPELINE WORKFLOW SYSTEM
+// ============================================
+
+// Canonical pipeline stages for the Job → Recruitment → Integrity → Onboarding flow
+export const pipelineStages = [
+  "sourcing",        // Initial candidate discovery
+  "screening",       // AI screening and ranking
+  "shortlisted",     // Passed screening, ready for interview
+  "interviewing",    // In interview process
+  "offer_pending",   // Offer extended, awaiting response
+  "offer_accepted",  // Offer accepted, triggers integrity checks
+  "integrity_checks", // Background verification in progress
+  "integrity_passed", // All checks cleared
+  "integrity_failed", // Check(s) failed
+  "onboarding",      // Onboarding workflow active
+  "hired",           // Successfully onboarded and hired
+  "rejected",        // Candidate rejected at any stage
+  "withdrawn",       // Candidate withdrew
+] as const;
+
+export type PipelineStage = (typeof pipelineStages)[number];
+
+// Candidate Stage History - Tracks all stage transitions for audit and analytics
+export const candidateStageHistory = pgTable("candidate_stage_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id"),
+  candidateId: varchar("candidate_id").notNull().references(() => candidates.id),
+  jobId: varchar("job_id").references(() => jobs.id),
+  fromStage: text("from_stage"),
+  toStage: text("to_stage").notNull(),
+  triggeredBy: text("triggered_by").notNull().default("manual"), // 'manual', 'auto', 'ai_agent'
+  triggeredByUserId: varchar("triggered_by_user_id"),
+  reason: text("reason"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  tenantIdIdx: index("candidate_stage_history_tenant_id_idx").on(table.tenantId),
+  candidateIdIdx: index("candidate_stage_history_candidate_id_idx").on(table.candidateId),
+  jobIdIdx: index("candidate_stage_history_job_id_idx").on(table.jobId),
+  toStageIdx: index("candidate_stage_history_to_stage_idx").on(table.toStage),
+}));
+
+// Job Workflow Configs - Tenant-level automation rules for the pipeline
+export const jobWorkflowConfigs = pgTable("job_workflow_configs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull(),
+  jobId: varchar("job_id").references(() => jobs.id), // null = tenant-wide default
+  
+  // Automation rules
+  autoLaunchRecruitment: integer("auto_launch_recruitment").default(1), // When job activated
+  autoLaunchIntegrity: integer("auto_launch_integrity").default(1), // When offer accepted
+  autoLaunchOnboarding: integer("auto_launch_onboarding").default(1), // When integrity passed
+  
+  // Required integrity check types
+  requiredChecks: text("required_checks").array(), // ['criminal_record', 'credit_check', 'reference_check']
+  
+  // Stage-specific settings
+  screeningThreshold: integer("screening_threshold").default(70), // Min match score to pass screening
+  autoAdvanceFromScreening: integer("auto_advance_from_screening").default(0), // Auto-shortlist high scorers
+  
+  // Notification settings
+  notifyOnStageChange: integer("notify_on_stage_change").default(1),
+  notifyOnBlocker: integer("notify_on_blocker").default(1),
+  
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  tenantIdIdx: index("job_workflow_configs_tenant_id_idx").on(table.tenantId),
+  jobIdIdx: index("job_workflow_configs_job_id_idx").on(table.jobId),
+}));
+
+// Pipeline Blockers - What's preventing a candidate from advancing
+export const pipelineBlockers = pgTable("pipeline_blockers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id"),
+  candidateId: varchar("candidate_id").notNull().references(() => candidates.id),
+  jobId: varchar("job_id").references(() => jobs.id),
+  stage: text("stage").notNull(),
+  blockerType: text("blocker_type").notNull(), // 'missing_document', 'pending_check', 'awaiting_interview', 'pending_approval'
+  blockerDescription: text("blocker_description").notNull(),
+  relatedEntityType: text("related_entity_type"), // 'integrity_check', 'document_requirement', 'interview'
+  relatedEntityId: varchar("related_entity_id"),
+  priority: text("priority").notNull().default("medium"), // 'low', 'medium', 'high', 'critical'
+  status: text("status").notNull().default("active"), // 'active', 'resolved', 'ignored'
+  resolvedAt: timestamp("resolved_at"),
+  resolvedBy: varchar("resolved_by"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  tenantIdIdx: index("pipeline_blockers_tenant_id_idx").on(table.tenantId),
+  candidateIdIdx: index("pipeline_blockers_candidate_id_idx").on(table.candidateId),
+  statusIdx: index("pipeline_blockers_status_idx").on(table.status),
+}));
+
+// Pipeline Schemas
+export const insertCandidateStageHistorySchema = createInsertSchema(candidateStageHistory).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertCandidateStageHistory = z.infer<typeof insertCandidateStageHistorySchema>;
+export type CandidateStageHistory = typeof candidateStageHistory.$inferSelect;
+
+export const insertJobWorkflowConfigSchema = createInsertSchema(jobWorkflowConfigs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertJobWorkflowConfig = z.infer<typeof insertJobWorkflowConfigSchema>;
+export type JobWorkflowConfig = typeof jobWorkflowConfigs.$inferSelect;
+
+export const insertPipelineBlockerSchema = createInsertSchema(pipelineBlockers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertPipelineBlocker = z.infer<typeof insertPipelineBlockerSchema>;
+export type PipelineBlocker = typeof pipelineBlockers.$inferSelect;
