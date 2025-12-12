@@ -33,7 +33,9 @@ import {
   GraduationCap,
   Brain,
   ExternalLink,
-  MessageCircle
+  MessageCircle,
+  ChevronRight,
+  Ban
 } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -94,6 +96,8 @@ export default function CandidatePipeline() {
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
   const [openingWhatsApp, setOpeningWhatsApp] = useState<string | null>(null);
+  const [advancingCandidate, setAdvancingCandidate] = useState<string | null>(null);
+  const [candidateBlockers, setCandidateBlockers] = useState<Record<string, string[]>>({});
   const candidatesKey = useTenantQueryKey(['candidates']);
 
   const { data: candidates, isLoading } = useQuery({
@@ -157,6 +161,52 @@ export default function CandidatePipeline() {
       }
     } finally {
       setOpeningWhatsApp(null);
+    }
+  };
+
+  const getNextStage = (currentStage: string): string | null => {
+    const stageIndex = getStageIndex(currentStage);
+    if (stageIndex < 0 || stageIndex >= PIPELINE_STAGES.length - 1) return null;
+    return PIPELINE_STAGES[stageIndex + 1].key;
+  };
+
+  const handleAdvanceStage = async (candidate: Candidate) => {
+    const nextStage = getNextStage(candidate.stage || 'sourcing');
+    if (!nextStage) {
+      toast.info("Already at final stage", {
+        description: "This candidate has completed the pipeline"
+      });
+      return;
+    }
+
+    setAdvancingCandidate(candidate.id);
+    setCandidateBlockers(prev => ({ ...prev, [candidate.id]: [] }));
+    
+    try {
+      const response = await api.post(`/api/pipeline/candidates/${candidate.id}/transition`, {
+        toStage: nextStage
+      });
+      
+      if (response.data.success) {
+        queryClient.invalidateQueries({ queryKey: candidatesKey });
+        toast.success(`${candidate.fullName} advanced to ${getStageName(nextStage)}`, {
+          description: response.data.triggeredActions?.length 
+            ? `Triggered: ${response.data.triggeredActions.join(", ")}`
+            : undefined
+        });
+      } else {
+        const blockers = response.data.blockers || [response.data.error || "Cannot advance"];
+        setCandidateBlockers(prev => ({ ...prev, [candidate.id]: blockers }));
+        toast.error("Cannot advance stage", {
+          description: blockers[0]
+        });
+      }
+    } catch (error: any) {
+      const message = error.response?.data?.error || error.response?.data?.blockers?.[0] || "Failed to advance stage";
+      setCandidateBlockers(prev => ({ ...prev, [candidate.id]: [message] }));
+      toast.error("Cannot advance stage", { description: message });
+    } finally {
+      setAdvancingCandidate(null);
     }
   };
 
@@ -424,6 +474,24 @@ export default function CandidatePipeline() {
                       </div>
                     </div>
 
+                    {/* Blockers Display */}
+                    {candidateBlockers[candidate.id]?.length > 0 && (
+                      <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Ban className="h-4 w-4 text-red-400" />
+                          <p className="text-sm font-medium text-red-400">Cannot Advance</p>
+                        </div>
+                        <ul className="space-y-1">
+                          {candidateBlockers[candidate.id].map((blocker, i) => (
+                            <li key={i} className="text-xs text-red-300 flex items-start gap-1">
+                              <span className="text-red-400 mt-0.5">•</span>
+                              {blocker}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
                     {/* Actions */}
                     <div className="flex gap-2 pt-2">
                       <Button 
@@ -469,6 +537,29 @@ export default function CandidatePipeline() {
                         View Profile
                       </Button>
                     </div>
+
+                    {/* Advance Stage Button */}
+                    {getNextStage(candidate.stage || 'sourcing') && (
+                      <Button 
+                        size="sm" 
+                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 mt-2"
+                        onClick={() => handleAdvanceStage(candidate)}
+                        disabled={advancingCandidate === candidate.id}
+                        data-testid={`button-advance-stage-${candidate.id}`}
+                      >
+                        {advancingCandidate === candidate.id ? (
+                          <>
+                            <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                            Advancing...
+                          </>
+                        ) : (
+                          <>
+                            <ChevronRight className="h-3 w-3 mr-2" />
+                            Advance to {getStageName(getNextStage(candidate.stage || 'sourcing') || '')}
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               );

@@ -60,7 +60,8 @@ import {
   BookOpen,
   Timer,
   RotateCcw,
-  ChevronDown
+  ChevronDown,
+  ChevronRight
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { motion } from "framer-motion";
@@ -154,45 +155,77 @@ export default function HRDashboard() {
     }
   });
 
+  const PIPELINE_STAGES = [
+    { key: "sourcing", name: "Sourcing" },
+    { key: "screening", name: "Screening" },
+    { key: "shortlisted", name: "Shortlisted" },
+    { key: "interviewing", name: "Interviewing" },
+    { key: "offer_pending", name: "Offer Pending" },
+    { key: "offer_accepted", name: "Offer Accepted" },
+    { key: "integrity_checks", name: "Integrity Checks" },
+    { key: "integrity_passed", name: "Checks Passed" },
+    { key: "onboarding", name: "Onboarding" },
+    { key: "hired", name: "Hired" },
+  ];
+
+  const getStageIndex = (stage: string): number => {
+    const normalizedStage = (stage || '').toLowerCase().replace(/\s+/g, '_');
+    const index = PIPELINE_STAGES.findIndex(s => 
+      s.key.toLowerCase() === normalizedStage || s.name.toLowerCase() === normalizedStage.replace(/_/g, ' ')
+    );
+    return index === -1 ? 0 : index;
+  };
+
+  const getNextStage = (currentStage: string): string | null => {
+    const stageIndex = getStageIndex(currentStage);
+    if (stageIndex < 0 || stageIndex >= PIPELINE_STAGES.length - 1) return null;
+    return PIPELINE_STAGES[stageIndex + 1].key;
+  };
+
+  const getStageName = (stage: string): string => {
+    const normalizedStage = (stage || '').toLowerCase().replace(/\s+/g, '_');
+    const found = PIPELINE_STAGES.find(s => 
+      s.key.toLowerCase() === normalizedStage || s.name.toLowerCase() === normalizedStage.replace(/_/g, ' ')
+    );
+    return found?.name || stage || 'Sourcing';
+  };
+
   const handleMoveToNextStage = async (candidate: any) => {
     if (!candidate?.id) {
       toast.error("Invalid candidate");
       return;
     }
 
-    const currentStage = (candidate.stage || candidate.status || "New").trim();
-    
-    const stageMap: Record<string, string> = {
-      "new": "Screening",
-      "screening": "Interview",
-      "sourcing": "Screening",
-      "interview": "Offer",
-      "interviewing": "Offer",
-      "offer": "Hired",
-      "offer sent": "Hired",
-      "hired": "Hired",
-      "onboarding": "Hired",
-      "rejected": "Rejected",
-      "archived": "Archived"
-    };
-
-    const normalizedStage = currentStage.toLowerCase();
-    const nextStage = stageMap[normalizedStage];
+    const currentStage = (candidate.stage || candidate.status || "sourcing").trim();
+    const nextStage = getNextStage(currentStage);
 
     if (!nextStage) {
-      toast.error(`Cannot determine next stage for "${currentStage}". Please update manually.`);
+      toast.info(`Candidate is already at final stage: ${getStageName(currentStage)}`);
       return;
     }
 
-    if (nextStage === currentStage) {
-      toast.info(`Candidate is already at final stage: ${currentStage}`);
-      return;
+    try {
+      const response = await api.post(`/api/pipeline/candidates/${candidate.id}/transition`, {
+        toStage: nextStage
+      });
+      
+      if (response.data.success) {
+        queryClient.invalidateQueries({ queryKey: candidatesKey });
+        toast.success(`${candidate.fullName || candidate.name} advanced to ${getStageName(nextStage)}`, {
+          description: response.data.triggeredActions?.length 
+            ? `Triggered: ${response.data.triggeredActions.join(", ")}`
+            : undefined
+        });
+      } else {
+        const blockers = response.data.blockers || [response.data.error || "Cannot advance"];
+        toast.error("Cannot advance stage", {
+          description: blockers[0]
+        });
+      }
+    } catch (error: any) {
+      const message = error.response?.data?.error || error.response?.data?.blockers?.[0] || "Failed to advance stage";
+      toast.error("Cannot advance stage", { description: message });
     }
-
-    await updateCandidateMutation.mutateAsync({
-      id: candidate.id,
-      data: { stage: nextStage, status: nextStage }
-    });
   };
 
   const handleSendEmail = (candidate: any) => {
