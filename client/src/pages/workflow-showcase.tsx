@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { jobsService, candidateService, api } from "@/lib/api";
 import { useTenantQueryKey } from "@/hooks/useTenant";
@@ -13,7 +13,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { Switch } from "@/components/ui/switch";
 import { 
   Briefcase,
   Users,
@@ -34,12 +33,8 @@ import {
   Clock,
   Target,
   Sparkles,
-  UserPlus,
   Zap,
-  CircleDot,
-  AlertCircle,
-  FileText,
-  ArrowDown
+  CircleDot
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Candidate, Job } from "@shared/schema";
@@ -68,46 +63,22 @@ const STAGE_ACTIONS: Record<string, { title: string; description: string; automa
   "hired": { title: "Successfully Hired!", description: "Employee is fully onboarded and ready.", automations: ["Add to workforce", "Assign manager", "Set KPIs"] }
 };
 
-interface DemoCandidate {
-  id: string;
-  fullName: string;
-  role: string;
-  match: number;
-  stage: string;
-  email: string;
-  integrityStatus?: string;
-  interviewScore?: number;
-  onboardingProgress?: number;
-}
-
-const DEMO_CANDIDATES: DemoCandidate[] = [
-  { id: "demo-1", fullName: "Sarah Chen", role: "Senior Developer", match: 94, stage: "sourcing", email: "sarah@demo.com" },
-  { id: "demo-2", fullName: "Marcus Johnson", role: "Senior Developer", match: 88, stage: "sourcing", email: "marcus@demo.com" },
-  { id: "demo-3", fullName: "Emily Watson", role: "Senior Developer", match: 82, stage: "sourcing", email: "emily@demo.com" },
-];
-
-const DEMO_TIMELINE: { step: number; stageName: string; actions: string[] }[] = [
-  { step: 1, stageName: "create_job", actions: ["Job requisition created", "AI generated job description", "Posted to 5 job boards"] },
-  { step: 2, stageName: "sourcing", actions: ["3 candidates found via LinkedIn", "CVs parsed and extracted", "Match scores calculated"] },
-  { step: 3, stageName: "screening", actions: ["AI analyzed all CVs", "Skills matched to requirements", "Red flags: None detected"] },
-  { step: 4, stageName: "shortlisted", actions: ["Top 2 candidates shortlisted", "Sarah (94%) and Marcus (88%)", "Interview invites sent"] },
-  { step: 5, stageName: "interviewing", actions: ["Voice interviews completed", "Sarah scored 92/100", "Video interview scheduled"] },
-  { step: 6, stageName: "offer", actions: ["Offer letter generated for Sarah", "E-signature sent", "Offer accepted!"] },
-  { step: 7, stageName: "integrity", actions: ["Background check initiated", "Credit check: Clear", "References verified: 3/3"] },
-  { step: 8, stageName: "onboarding", actions: ["Welcome email sent", "IT equipment ordered", "Training courses assigned"] },
-  { step: 9, stageName: "hired", actions: ["Employee added to workforce", "Manager assigned", "First day: Monday"] },
-];
+const PIPELINE_STAGES_MAP: Record<string, string[]> = {
+  "sourcing": ["sourcing"],
+  "screening": ["screening"],
+  "shortlisted": ["shortlisted"],
+  "interviewing": ["interviewing"],
+  "offer": ["offer_pending", "offer_accepted"],
+  "integrity": ["integrity_checks", "integrity_passed"],
+  "onboarding": ["onboarding"],
+  "hired": ["hired"],
+};
 
 export default function WorkflowShowcase() {
   const queryClient = useQueryClient();
   const [activeStep, setActiveStep] = useState(1);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [advancingCandidate, setAdvancingCandidate] = useState<string | null>(null);
-  const [isRunningDemo, setIsRunningDemo] = useState(false);
-  const [useDemoMode, setUseDemoMode] = useState(true);
-  const [demoCandidates, setDemoCandidates] = useState<DemoCandidate[]>([]);
-  const [demoTimeline, setDemoTimeline] = useState<typeof DEMO_TIMELINE[0][]>([]);
-  const [demoJobCreated, setDemoJobCreated] = useState(false);
   
   const [jobTitle, setJobTitle] = useState("");
   const [department, setDepartment] = useState("");
@@ -117,11 +88,24 @@ export default function WorkflowShowcase() {
   const candidatesKey = useTenantQueryKey(['candidates']);
   const integrityKey = useTenantQueryKey(['integrity-checks']);
 
-  const { data: jobs = [] } = useQuery({ queryKey: jobsKey, queryFn: jobsService.getAll });
-  const { data: candidates = [] } = useQuery({ queryKey: candidatesKey, queryFn: candidateService.getAll });
+  const { data: jobs = [], isLoading: loadingJobs } = useQuery({ 
+    queryKey: jobsKey, 
+    queryFn: jobsService.getAll 
+  });
+  
+  const { data: candidates = [], isLoading: loadingCandidates } = useQuery({ 
+    queryKey: candidatesKey, 
+    queryFn: candidateService.getAll 
+  });
+  
   const { data: integrityChecks = [] } = useQuery({
     queryKey: integrityKey,
-    queryFn: async () => { try { const r = await fetch('/api/integrity-checks'); return r.ok ? r.json() : []; } catch { return []; } }
+    queryFn: async () => { 
+      try { 
+        const r = await fetch('/api/integrity-checks'); 
+        return r.ok ? r.json() : []; 
+      } catch { return []; } 
+    }
   });
 
   const createJobMutation = useMutation({
@@ -129,8 +113,10 @@ export default function WorkflowShowcase() {
     onSuccess: (newJob) => {
       queryClient.invalidateQueries({ queryKey: jobsKey });
       setSelectedJobId(newJob.id);
-      setJobTitle(""); setDepartment(""); setJobDescription("");
-      toast.success("Job created!");
+      setJobTitle(""); 
+      setDepartment(""); 
+      setJobDescription("");
+      toast.success("Job created successfully!");
       setActiveStep(2);
     },
     onError: () => toast.error("Failed to create job")
@@ -138,126 +124,69 @@ export default function WorkflowShowcase() {
 
   const activeJobs = jobs.filter((j: Job) => j.status === 'Active');
   const selectedJob = activeJobs.find((j: Job) => j.id === selectedJobId);
-  const jobCandidates = selectedJobId ? candidates.filter((c: Candidate) => c.jobId === selectedJobId) : [];
+  const jobCandidates = selectedJobId 
+    ? candidates.filter((c: Candidate) => c.jobId === selectedJobId) 
+    : [];
 
-  const getStageForStep = (stepKey: string): string[] => {
-    const map: Record<string, string[]> = {
-      "sourcing": ["sourcing"], "screening": ["screening"], "shortlisted": ["shortlisted"],
-      "interviewing": ["interviewing"], "offer": ["offer_pending", "offer_accepted"],
-      "integrity": ["integrity_checks", "integrity_passed"], "onboarding": ["onboarding"], "hired": ["hired"]
-    };
-    return map[stepKey] || [];
-  };
-
-  const getCandidatesForStep = (stepKey: string): (Candidate | DemoCandidate)[] => {
-    if (useDemoMode && demoCandidates.length > 0) {
-      const stages = getStageForStep(stepKey);
-      return demoCandidates.filter(c => stages.some(s => c.stage === s || c.stage.includes(s.replace('_', ''))));
-    }
-    const stages = getStageForStep(stepKey);
+  const getCandidatesForStep = (stepKey: string): Candidate[] => {
+    const stages = PIPELINE_STAGES_MAP[stepKey] || [];
     return jobCandidates.filter((c: Candidate) => {
       const stage = (c.stage || 'sourcing').toLowerCase().replace(/\s+/g, '_');
-      return stages.some(s => stage === s);
+      return stages.some(s => stage === s || stage.includes(s.replace('_', '')));
     });
   };
 
   const getStepStats = (stepKey: string) => {
     const count = getCandidatesForStep(stepKey).length;
-    const total = useDemoMode ? demoCandidates.length : jobCandidates.length;
-    return { count, percentage: total ? Math.round((count / total) * 100) : 0 };
+    return { count, percentage: jobCandidates.length ? Math.round((count / jobCandidates.length) * 100) : 0 };
   };
 
-  const handleAdvanceCandidate = async (candidate: Candidate | DemoCandidate, toStage: string) => {
-    if (useDemoMode) {
-      setDemoCandidates(prev => prev.map(c => c.id === candidate.id ? { ...c, stage: toStage } : c));
-      toast.success(`${candidate.fullName} advanced to ${toStage}`);
-      return;
-    }
-    
+  const handleAdvanceCandidate = async (candidate: Candidate, toStage: string) => {
     setAdvancingCandidate(candidate.id);
     try {
       const response = await api.post(`/api/pipeline/candidates/${candidate.id}/transition`, { toStage });
       if (response.data.success) {
         queryClient.invalidateQueries({ queryKey: candidatesKey });
-        toast.success(`${candidate.fullName} advanced!`);
+        toast.success(`${candidate.fullName} advanced to ${toStage}!`, {
+          description: response.data.triggeredActions?.join(", ") || undefined
+        });
       } else {
-        toast.error("Cannot advance", { description: response.data.blockers?.[0] });
+        toast.error("Cannot advance", { description: response.data.blockers?.[0] || response.data.error });
       }
     } catch (error: any) {
-      toast.error("Cannot advance");
+      toast.error("Cannot advance", { description: error.response?.data?.blockers?.[0] || "Failed to advance" });
     } finally {
       setAdvancingCandidate(null);
     }
   };
 
   const handleCreateJob = () => {
-    if (!jobTitle) { toast.error("Enter a job title"); return; }
-    if (useDemoMode) {
-      setDemoJobCreated(true);
-      setDemoCandidates(DEMO_CANDIDATES.map(c => ({ ...c })));
-      setDemoTimeline([DEMO_TIMELINE[0]]);
-      toast.success("Demo job created!");
-      setActiveStep(2);
-      return;
+    if (!jobTitle) { 
+      toast.error("Please enter a job title"); 
+      return; 
     }
     createJobMutation.mutate({
-      title: jobTitle, department: department || "General",
+      title: jobTitle, 
+      department: department || "General",
       description: jobDescription || `Position for ${jobTitle}`,
-      status: "Active", salaryMin: 800000, salaryMax: 1200000, location: "Johannesburg"
+      status: "Active", 
+      salaryMin: 800000, 
+      salaryMax: 1200000, 
+      location: "Johannesburg, Gauteng"
     });
   };
 
-  const runDemoWorkflow = async () => {
-    if (!useDemoMode) { toast.error("Enable Demo Mode first"); return; }
-    setIsRunningDemo(true);
-    
-    setDemoJobCreated(true);
-    setDemoCandidates(DEMO_CANDIDATES.map(c => ({ ...c })));
-    setDemoTimeline([DEMO_TIMELINE[0]]);
-    setActiveStep(1);
-    await new Promise(r => setTimeout(r, 600));
-
-    const stageProgression = ["sourcing", "screening", "shortlisted", "interviewing", "offer_accepted", "integrity_passed", "onboarding", "hired"];
-    
-    for (let i = 0; i < stageProgression.length; i++) {
-      const stage = stageProgression[i];
-      const stepIndex = i + 2;
-      
-      setActiveStep(stepIndex);
-      setDemoTimeline(prev => [...prev, DEMO_TIMELINE[stepIndex - 1]]);
-      
-      await new Promise(r => setTimeout(r, 400));
-      
-      if (stage === "shortlisted") {
-        setDemoCandidates(prev => prev.slice(0, 2).map(c => ({ ...c, stage })));
-      } else if (stage === "interviewing") {
-        setDemoCandidates(prev => prev.map(c => ({ ...c, stage, interviewScore: c.id === "demo-1" ? 92 : 85 })));
-      } else if (stage === "offer_accepted" || stage === "integrity_passed" || stage === "onboarding" || stage === "hired") {
-        setDemoCandidates(prev => prev.filter(c => c.id === "demo-1").map(c => ({ 
-          ...c, 
-          stage, 
-          integrityStatus: stage === "integrity_passed" || stage === "onboarding" || stage === "hired" ? "passed" : undefined,
-          onboardingProgress: stage === "onboarding" ? 60 : stage === "hired" ? 100 : undefined
-        })));
-      } else {
-        setDemoCandidates(prev => prev.map(c => ({ ...c, stage })));
-      }
-      
-      await new Promise(r => setTimeout(r, 600));
+  const handleStart = () => {
+    if (activeJobs.length > 0 && !selectedJobId) {
+      setSelectedJobId(activeJobs[0].id);
+      setActiveStep(2);
+      toast.success("Started with existing job: " + activeJobs[0].title);
+    } else if (selectedJobId) {
+      setActiveStep(2);
+      toast.success("Continuing with selected job");
+    } else {
+      toast.info("Create a job first to start the workflow");
     }
-    
-    setIsRunningDemo(false);
-    toast.success("Demo complete! Sarah Chen has been hired.");
-  };
-
-  const resetDemo = () => {
-    setDemoCandidates([]);
-    setDemoTimeline([]);
-    setDemoJobCreated(false);
-    setActiveStep(1);
-    setJobTitle("Senior Developer");
-    setDepartment("Engineering");
-    toast.info("Demo reset - ready to run again");
   };
 
   const currentStep = WORKFLOW_STEPS[activeStep - 1];
@@ -265,12 +194,8 @@ export default function WorkflowShowcase() {
   const progressPercent = ((activeStep - 1) / (WORKFLOW_STEPS.length - 1)) * 100;
   const IconComponent = currentStep.icon;
 
-  useEffect(() => {
-    if (useDemoMode) {
-      setJobTitle("Senior Developer");
-      setDepartment("Engineering");
-    }
-  }, [useDemoMode]);
+  const getIntegrityForCandidate = (candidateId: string) => 
+    integrityChecks.find((ic: any) => ic.candidateId === candidateId);
 
   return (
     <div className="min-h-screen bg-background">
@@ -279,27 +204,24 @@ export default function WorkflowShowcase() {
       <main className="container mx-auto px-6 pt-24 pb-12">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold mb-1">HR Workflow Showcase</h1>
-            <p className="text-muted-foreground">Complete hiring process demonstration</p>
+            <h1 className="text-3xl font-bold mb-1">HR Workflow</h1>
+            <p className="text-muted-foreground">Complete hiring process from job to hired</p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Switch checked={useDemoMode} onCheckedChange={setUseDemoMode} data-testid="toggle-demo-mode" />
-              <Label className="text-sm">Demo Mode</Label>
-            </div>
-            {useDemoMode && demoTimeline.length > 0 && (
-              <Button variant="outline" size="sm" onClick={resetDemo} data-testid="button-reset-demo">
-                Reset
-              </Button>
+          <div className="flex items-center gap-3">
+            {selectedJob && (
+              <Badge variant="secondary" className="text-sm py-1 px-3">
+                <Briefcase className="h-3 w-3 mr-1" />
+                {selectedJob.title}
+              </Badge>
             )}
             <Button 
-              onClick={runDemoWorkflow}
-              disabled={isRunningDemo || !useDemoMode}
+              onClick={handleStart}
+              disabled={loadingJobs || activeJobs.length === 0}
               className="bg-gradient-to-r from-purple-500 to-pink-500"
-              data-testid="button-run-demo"
+              data-testid="button-start"
             >
-              {isRunningDemo ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Play className="h-4 w-4 mr-2" />}
-              {isRunningDemo ? "Running..." : "Run Full Demo"}
+              <Play className="h-4 w-4 mr-2" />
+              Start
             </Button>
           </div>
         </div>
@@ -308,7 +230,13 @@ export default function WorkflowShowcase() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-4">
-                <Button variant="outline" size="icon" onClick={() => activeStep > 1 && setActiveStep(activeStep - 1)} disabled={activeStep === 1}>
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={() => activeStep > 1 && setActiveStep(activeStep - 1)} 
+                  disabled={activeStep === 1}
+                  data-testid="button-prev-step"
+                >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <div className="flex items-center gap-3">
@@ -324,7 +252,13 @@ export default function WorkflowShowcase() {
                   </div>
                 </div>
               </div>
-              <Button variant="outline" size="icon" onClick={() => activeStep < WORKFLOW_STEPS.length && setActiveStep(activeStep + 1)} disabled={activeStep === WORKFLOW_STEPS.length}>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => activeStep < WORKFLOW_STEPS.length && setActiveStep(activeStep + 1)} 
+                disabled={activeStep === WORKFLOW_STEPS.length}
+                data-testid="button-next-step"
+              >
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -366,67 +300,114 @@ export default function WorkflowShowcase() {
                 <CardDescription>{stepAction.description}</CardDescription>
               </CardHeader>
               <CardContent>
-                {currentStep.key === "create_job" ? (
+                {loadingJobs || loadingCandidates ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : currentStep.key === "create_job" ? (
                   <div className="space-y-4">
-                    {!useDemoMode && activeJobs.length > 0 && (
+                    {activeJobs.length > 0 && (
                       <div>
                         <Label className="text-sm mb-2 block">Select existing job:</Label>
                         <Select value={selectedJobId || ""} onValueChange={(v) => { setSelectedJobId(v); setActiveStep(2); }}>
-                          <SelectTrigger><SelectValue placeholder="Choose..." /></SelectTrigger>
+                          <SelectTrigger data-testid="select-existing-job">
+                            <SelectValue placeholder="Choose a job..." />
+                          </SelectTrigger>
                           <SelectContent>
-                            {activeJobs.map((job: Job) => <SelectItem key={job.id} value={job.id}>{job.title}</SelectItem>)}
+                            {activeJobs.map((job: Job) => (
+                              <SelectItem key={job.id} value={job.id}>
+                                {job.title} - {job.department}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
                     )}
                     
-                    <div className={!useDemoMode && activeJobs.length > 0 ? "border-t border-white/10 pt-4" : ""}>
-                      <h4 className="font-medium mb-4 flex items-center gap-2"><Plus className="h-4 w-4" /> {useDemoMode ? "Demo Job" : "New Job"}</h4>
+                    <div className={activeJobs.length > 0 ? "border-t border-white/10 pt-4" : ""}>
+                      <h4 className="font-medium mb-4 flex items-center gap-2">
+                        <Plus className="h-4 w-4" /> Create New Job
+                      </h4>
                       <div className="grid gap-3">
-                        <div><Label>Job Title</Label><Input value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="e.g., Senior Developer" data-testid="input-job-title" /></div>
-                        <div><Label>Department</Label><Input value={department} onChange={e => setDepartment(e.target.value)} placeholder="e.g., Engineering" data-testid="input-department" /></div>
-                        <Button onClick={handleCreateJob} disabled={createJobMutation.isPending || !jobTitle} className="bg-gradient-to-r from-blue-500 to-blue-600" data-testid="button-create-job">
-                          {createJobMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Briefcase className="h-4 w-4 mr-2" />}
-                          {useDemoMode ? "Start Demo" : "Create Job"}
+                        <div>
+                          <Label>Job Title *</Label>
+                          <Input 
+                            value={jobTitle} 
+                            onChange={e => setJobTitle(e.target.value)} 
+                            placeholder="e.g., Senior Developer" 
+                            data-testid="input-job-title" 
+                          />
+                        </div>
+                        <div>
+                          <Label>Department</Label>
+                          <Input 
+                            value={department} 
+                            onChange={e => setDepartment(e.target.value)} 
+                            placeholder="e.g., Engineering" 
+                            data-testid="input-department" 
+                          />
+                        </div>
+                        <div>
+                          <Label>Description</Label>
+                          <Textarea 
+                            value={jobDescription} 
+                            onChange={e => setJobDescription(e.target.value)} 
+                            placeholder="Job requirements..." 
+                            rows={3}
+                            data-testid="input-description" 
+                          />
+                        </div>
+                        <Button 
+                          onClick={handleCreateJob} 
+                          disabled={createJobMutation.isPending || !jobTitle}
+                          className="bg-gradient-to-r from-blue-500 to-blue-600"
+                          data-testid="button-create-job"
+                        >
+                          {createJobMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          ) : (
+                            <Briefcase className="h-4 w-4 mr-2" />
+                          )}
+                          Create Job & Continue
                         </Button>
                       </div>
                     </div>
+                  </div>
+                ) : !selectedJobId ? (
+                  <div className="text-center py-12">
+                    <Briefcase className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="font-medium mb-2">No Job Selected</h3>
+                    <p className="text-muted-foreground mb-4">Create or select a job to continue</p>
+                    <Button onClick={() => setActiveStep(1)} variant="outline">Go to Step 1</Button>
                   </div>
                 ) : (
                   <div>
                     {(() => {
                       const stepCandidates = getCandidatesForStep(currentStep.key);
                       const nextStep = WORKFLOW_STEPS[activeStep];
-                      const nextStages = nextStep ? getStageForStep(nextStep.key) : [];
+                      const nextStages = nextStep ? PIPELINE_STAGES_MAP[nextStep.key] : [];
                       const nextStage = nextStages[0];
 
-                      if (stepCandidates.length === 0 && !useDemoMode) {
+                      if (stepCandidates.length === 0) {
                         return (
                           <div className="text-center py-8">
                             <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                            <h3 className="font-medium mb-2">No Candidates</h3>
+                            <h3 className="font-medium mb-2">No Candidates at This Stage</h3>
                             <p className="text-sm text-muted-foreground">
-                              {currentStep.key === "sourcing" ? "Upload CVs or use AI sourcing" : "Advance candidates from previous stage"}
+                              {currentStep.key === "sourcing" 
+                                ? "Upload CVs or use AI sourcing to add candidates"
+                                : "Advance candidates from the previous stage"}
                             </p>
                           </div>
                         );
                       }
 
-                      if (stepCandidates.length === 0 && useDemoMode) {
-                        return (
-                          <div className="text-center py-8">
-                            <Play className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                            <h3 className="font-medium mb-2">Ready to Demo</h3>
-                            <p className="text-sm text-muted-foreground mb-4">Click "Run Full Demo" or create a demo job to start</p>
-                          </div>
-                        );
-                      }
-
                       return (
-                        <ScrollArea className="h-[300px]">
+                        <ScrollArea className="h-[350px]">
                           <div className="space-y-3">
-                            {stepCandidates.map((candidate) => {
-                              const demo = candidate as DemoCandidate;
+                            {stepCandidates.map((candidate: Candidate) => {
+                              const integrity = getIntegrityForCandidate(candidate.id);
+                              
                               return (
                                 <Card key={candidate.id} className="bg-background/50 border-white/10" data-testid={`workflow-card-${candidate.id}`}>
                                   <CardContent className="p-4">
@@ -448,32 +429,46 @@ export default function WorkflowShowcase() {
                                             <Star className="h-3 w-3 mr-1 text-yellow-400" />{candidate.match}%
                                           </Badge>
                                         )}
-                                        {demo.interviewScore && (
-                                          <Badge variant="outline" className="bg-indigo-500/10 border-indigo-500/30">
-                                            <Video className="h-3 w-3 mr-1" />{demo.interviewScore}/100
+                                        
+                                        {currentStep.key === "integrity" && integrity && (
+                                          <Badge variant="outline" className={
+                                            integrity.status === 'completed' || integrity.status === 'passed'
+                                              ? 'bg-green-500/10 border-green-500/30 text-green-400'
+                                              : integrity.status === 'failed'
+                                                ? 'bg-red-500/10 border-red-500/30 text-red-400'
+                                                : 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'
+                                          }>
+                                            <ShieldCheck className="h-3 w-3 mr-1" />{integrity.status}
                                           </Badge>
                                         )}
-                                        {demo.integrityStatus && (
-                                          <Badge variant="outline" className="bg-green-500/10 border-green-500/30 text-green-400">
-                                            <ShieldCheck className="h-3 w-3 mr-1" />Passed
-                                          </Badge>
-                                        )}
-                                        {demo.onboardingProgress !== undefined && (
-                                          <Badge variant="outline" className="bg-teal-500/10 border-teal-500/30">
-                                            <GraduationCap className="h-3 w-3 mr-1" />{demo.onboardingProgress}%
-                                          </Badge>
-                                        )}
+
+                                        <Badge variant="outline" className={`${currentStep.bgColor} ${currentStep.borderColor}`}>
+                                          {candidate.stage}
+                                        </Badge>
+                                        
                                         {nextStage && currentStep.key !== "hired" && (
-                                          <Button size="sm" className={`bg-gradient-to-r ${nextStep?.color}`}
-                                            onClick={() => handleAdvanceCandidate(candidate as any, nextStage)}
+                                          <Button
+                                            size="sm"
+                                            className={`bg-gradient-to-r ${nextStep?.color || 'from-primary to-primary'}`}
+                                            onClick={() => handleAdvanceCandidate(candidate, nextStage)}
                                             disabled={advancingCandidate === candidate.id}
                                             data-testid={`button-advance-${candidate.id}`}
                                           >
-                                            {advancingCandidate === candidate.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <><ChevronRight className="h-4 w-4 mr-1" />{nextStep?.shortName}</>}
+                                            {advancingCandidate === candidate.id ? (
+                                              <Loader2 className="h-4 w-4 animate-spin" />
+                                            ) : (
+                                              <>
+                                                <ChevronRight className="h-4 w-4 mr-1" />
+                                                {nextStep?.shortName}
+                                              </>
+                                            )}
                                           </Button>
                                         )}
+                                        
                                         {currentStep.key === "hired" && (
-                                          <Badge className="bg-green-500/20 text-green-400"><CheckCircle2 className="h-3 w-3 mr-1" />Hired</Badge>
+                                          <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                                            <CheckCircle2 className="h-3 w-3 mr-1" />Hired
+                                          </Badge>
                                         )}
                                       </div>
                                     </div>
@@ -493,7 +488,7 @@ export default function WorkflowShowcase() {
             <Card className="bg-card/50 border-white/10">
               <CardHeader>
                 <CardTitle className="text-sm flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-yellow-400" />Automations
+                  <Zap className="h-4 w-4 text-yellow-400" />Automations at This Stage
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -509,60 +504,20 @@ export default function WorkflowShowcase() {
           </div>
 
           <div className="space-y-6">
-            {useDemoMode && demoTimeline.length > 0 && (
-              <Card className="bg-card/50 border-white/10">
-                <CardHeader>
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <FileText className="h-4 w-4" />Activity Timeline
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ScrollArea className="h-[300px]">
-                    <div className="space-y-4">
-                      {demoTimeline.map((entry, idx) => {
-                        const step = WORKFLOW_STEPS.find(s => s.key === entry.stageName);
-                        const StepIcon = step?.icon || Briefcase;
-                        return (
-                          <div key={idx} className="relative pl-6">
-                            <div className={`absolute left-0 top-0 w-4 h-4 rounded-full bg-gradient-to-r ${step?.color || 'from-gray-400 to-gray-500'} flex items-center justify-center`}>
-                              <StepIcon className="h-2 w-2 text-white" />
-                            </div>
-                            {idx < demoTimeline.length - 1 && (
-                              <div className="absolute left-[7px] top-4 w-0.5 h-full bg-muted" />
-                            )}
-                            <div className="pb-4">
-                              <p className="text-sm font-medium">{step?.name}</p>
-                              <ul className="mt-1 space-y-0.5">
-                                {entry.actions.map((action, aIdx) => (
-                                  <li key={aIdx} className="text-xs text-muted-foreground flex items-center gap-1">
-                                    <CheckCircle2 className="h-2 w-2 text-green-400" />{action}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-            )}
-
             <Card className="bg-card/50 border-white/10">
               <CardHeader>
                 <CardTitle className="text-sm">Pipeline Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                {(useDemoMode && demoCandidates.length > 0) || (!useDemoMode && selectedJob) ? (
+                {selectedJob ? (
                   <>
                     <div className="flex justify-between p-2 rounded bg-muted/30 text-sm">
                       <span className="text-muted-foreground">Job</span>
-                      <span className="font-medium">{useDemoMode ? "Senior Developer" : selectedJob?.title}</span>
+                      <span className="font-medium truncate max-w-[120px]">{selectedJob.title}</span>
                     </div>
                     <div className="flex justify-between p-2 rounded bg-muted/30 text-sm">
                       <span className="text-muted-foreground">Candidates</span>
-                      <span className="font-medium">{useDemoMode ? demoCandidates.length : jobCandidates.length}</span>
+                      <span className="font-medium">{jobCandidates.length}</span>
                     </div>
                     <div className="border-t border-white/10 pt-2 mt-2">
                       {WORKFLOW_STEPS.filter(s => s.key !== "create_job").map(step => {
@@ -580,7 +535,7 @@ export default function WorkflowShowcase() {
                 ) : (
                   <div className="text-center py-4">
                     <Clock className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                    <p className="text-xs text-muted-foreground">Run demo to see summary</p>
+                    <p className="text-xs text-muted-foreground">Select a job to see summary</p>
                   </div>
                 )}
               </CardContent>
