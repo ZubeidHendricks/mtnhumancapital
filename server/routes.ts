@@ -616,6 +616,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============= CV TEMPLATES MANAGEMENT =============
+  
+  app.get("/api/cv-templates", async (req, res) => {
+    try {
+      const templates = await storage.getCvTemplates(req.tenant.id);
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching CV templates:", error);
+      res.status(500).json({ message: "Failed to fetch CV templates" });
+    }
+  });
+
+  app.post("/api/cv-templates/upload", upload.single("template"), async (req, res) => {
+    try {
+      const file = req.file;
+      const { name } = req.body;
+
+      if (!file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const allowedMimeTypes = [
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/msword"
+      ];
+
+      if (!allowedMimeTypes.includes(file.mimetype)) {
+        return res.status(400).json({ message: "Only PDF and DOCX files are supported" });
+      }
+
+      const fileName = `cv-template-${Date.now()}-${file.originalname}`;
+      const filePath = path.join("uploads/cv-templates", fileName);
+      
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+      fs.writeFileSync(filePath, file.buffer);
+
+      let rawText = "";
+      try {
+        if (file.mimetype === "application/pdf") {
+          const pdfParse = require("pdf-parse");
+          const pdfData = await pdfParse(file.buffer);
+          rawText = pdfData.text;
+        } else if (file.mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+          const result = await mammoth.extractRawText({ buffer: file.buffer });
+          rawText = result.value;
+        }
+      } catch (textError) {
+        console.error("Error extracting text from template:", textError);
+      }
+
+      const template = await storage.createCvTemplate(req.tenant.id, {
+        tenantId: req.tenant.id,
+        name: name || file.originalname,
+        originalFilename: file.originalname,
+        mimeType: file.mimetype,
+        fileSize: file.size,
+        filePath: `/uploads/cv-templates/${fileName}`,
+        isActive: 0,
+        rawText: rawText || null,
+      });
+
+      res.status(201).json(template);
+    } catch (error) {
+      console.error("Error uploading CV template:", error);
+      res.status(500).json({ message: "Failed to upload CV template" });
+    }
+  });
+
+  app.patch("/api/cv-templates/:id/activate", async (req, res) => {
+    try {
+      const template = await storage.activateCvTemplate(req.tenant.id, req.params.id);
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+      res.json(template);
+    } catch (error) {
+      console.error("Error activating CV template:", error);
+      res.status(500).json({ message: "Failed to activate CV template" });
+    }
+  });
+
+  app.delete("/api/cv-templates/:id", async (req, res) => {
+    try {
+      const template = await storage.getCvTemplateById(req.tenant.id, req.params.id);
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+
+      if (template.filePath) {
+        const fullPath = path.join(process.cwd(), template.filePath.replace(/^\//, ''));
+        if (fs.existsSync(fullPath)) {
+          fs.unlinkSync(fullPath);
+        }
+      }
+
+      const success = await storage.deleteCvTemplate(req.tenant.id, req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting CV template:", error);
+      res.status(500).json({ message: "Failed to delete CV template" });
+    }
+  });
+
+  app.get("/api/cv-templates/active", async (req, res) => {
+    try {
+      const template = await storage.getActiveCvTemplate(req.tenant.id);
+      res.json(template || null);
+    } catch (error) {
+      console.error("Error fetching active CV template:", error);
+      res.status(500).json({ message: "Failed to fetch active CV template" });
+    }
+  });
+
   app.get("/api/candidates/:id/cv-template", async (req, res) => {
     try {
       const candidateId = req.params.id;

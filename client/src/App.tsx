@@ -52,6 +52,7 @@ import DocumentLibrary from "@/pages/document-library";
 import SocialScreening from "@/pages/social-screening";
 import SocialScreeningAgent from "@/pages/social-screening-agent";
 import CVTemplatePage from "@/pages/cv-template";
+import CVTemplatesPage from "@/pages/cv-templates";
 import DataSourcesPage from "@/pages/data-sources";
 import DataSourceDetailPage from "@/pages/data-source-detail";
 import SelfAssessment from "@/pages/self-assessment";
@@ -108,6 +109,7 @@ function Router() {
       <Route path="/social-screening" component={SocialScreening} />
       <Route path="/social-screening-agent" component={SocialScreeningAgent} />
       <Route path="/cv-template" component={CVTemplatePage} />
+      <Route path="/cv-templates" component={CVTemplatesPage} />
       <Route path="/data-sources" component={DataSourcesPage} />
       <Route path="/data-sources/:id" component={DataSourceDetailPage} />
       <Route path="/self-assessment/:token" component={SelfAssessment} />

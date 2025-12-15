@@ -189,6 +189,9 @@ import {
   selfAssessmentTokens,
   type SelfAssessmentToken,
   type InsertSelfAssessmentToken,
+  cvTemplates,
+  type CvTemplate,
+  type InsertCvTemplate,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, lte, sql, isNull, isNotNull } from "drizzle-orm";
@@ -572,6 +575,14 @@ export interface IStorage {
   getSelfAssessmentTokensByEmployee(tenantId: string, employeeId: string): Promise<SelfAssessmentToken[]>;
   getSelfAssessmentTokensByReviewCycle(tenantId: string, reviewCycleId: string): Promise<SelfAssessmentToken[]>;
   updateSelfAssessmentToken(id: string, updates: Partial<InsertSelfAssessmentToken>): Promise<SelfAssessmentToken | undefined>;
+  
+  // CV Templates
+  getCvTemplates(tenantId: string): Promise<CvTemplate[]>;
+  getCvTemplateById(tenantId: string, id: string): Promise<CvTemplate | undefined>;
+  getActiveCvTemplate(tenantId: string): Promise<CvTemplate | undefined>;
+  createCvTemplate(tenantId: string, template: InsertCvTemplate): Promise<CvTemplate>;
+  activateCvTemplate(tenantId: string, id: string): Promise<CvTemplate | undefined>;
+  deleteCvTemplate(tenantId: string, id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3373,6 +3384,54 @@ export class DatabaseStorage implements IStorage {
       .where(eq(selfAssessmentTokens.id, id))
       .returning();
     return updated || undefined;
+  }
+
+  // ================================
+  // CV Templates
+  // ================================
+
+  async getCvTemplates(tenantId: string): Promise<CvTemplate[]> {
+    return await db.select().from(cvTemplates)
+      .where(eq(cvTemplates.tenantId, tenantId))
+      .orderBy(desc(cvTemplates.createdAt));
+  }
+
+  async getCvTemplateById(tenantId: string, id: string): Promise<CvTemplate | undefined> {
+    const [template] = await db.select().from(cvTemplates)
+      .where(and(eq(cvTemplates.id, id), eq(cvTemplates.tenantId, tenantId)));
+    return template || undefined;
+  }
+
+  async getActiveCvTemplate(tenantId: string): Promise<CvTemplate | undefined> {
+    const [template] = await db.select().from(cvTemplates)
+      .where(and(eq(cvTemplates.tenantId, tenantId), eq(cvTemplates.isActive, 1)));
+    return template || undefined;
+  }
+
+  async createCvTemplate(tenantId: string, template: InsertCvTemplate): Promise<CvTemplate> {
+    const [newTemplate] = await db.insert(cvTemplates).values({
+      ...template,
+      tenantId,
+    }).returning();
+    return newTemplate;
+  }
+
+  async activateCvTemplate(tenantId: string, id: string): Promise<CvTemplate | undefined> {
+    await db.update(cvTemplates)
+      .set({ isActive: 0, updatedAt: new Date() })
+      .where(eq(cvTemplates.tenantId, tenantId));
+    
+    const [template] = await db.update(cvTemplates)
+      .set({ isActive: 1, updatedAt: new Date() })
+      .where(and(eq(cvTemplates.id, id), eq(cvTemplates.tenantId, tenantId)))
+      .returning();
+    return template || undefined;
+  }
+
+  async deleteCvTemplate(tenantId: string, id: string): Promise<boolean> {
+    const result = await db.delete(cvTemplates)
+      .where(and(eq(cvTemplates.id, id), eq(cvTemplates.tenantId, tenantId)));
+    return result.rowCount ? result.rowCount > 0 : false;
   }
 }
 

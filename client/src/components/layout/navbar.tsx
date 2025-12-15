@@ -131,6 +131,12 @@ export function Navbar() {
                   <span>Document Library</span>
                 </DropdownMenuItem>
               </Link>
+              <Link href="/cv-templates">
+                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                  <FileText className="w-4 h-4 mr-2 text-orange-400" />
+                  <span>CV Templates</span>
+                </DropdownMenuItem>
+              </Link>
               <DropdownMenuSeparator className="bg-white/10" />
               <DropdownMenuLabel className="text-xs text-muted-foreground">Communications</DropdownMenuLabel>
               <Link href="/whatsapp-monitor">

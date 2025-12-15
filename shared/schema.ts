@@ -2465,3 +2465,32 @@ export const insertPipelineBlockerSchema = createInsertSchema(pipelineBlockers).
 });
 export type InsertPipelineBlocker = z.infer<typeof insertPipelineBlockerSchema>;
 export type PipelineBlocker = typeof pipelineBlockers.$inferSelect;
+
+// ============================================
+// CV TEMPLATES
+// ============================================
+
+export const cvTemplates = pgTable("cv_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull(),
+  name: text("name").notNull(),
+  originalFilename: text("original_filename").notNull(),
+  mimeType: text("mime_type").notNull(),
+  fileSize: integer("file_size").notNull(),
+  filePath: text("file_path").notNull(),
+  isActive: integer("is_active").notNull().default(0),
+  rawText: text("raw_text"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  tenantIdIdx: index("cv_templates_tenant_id_idx").on(table.tenantId),
+  isActiveIdx: index("cv_templates_is_active_idx").on(table.isActive),
+}));
+
+export const insertCvTemplateSchema = createInsertSchema(cvTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertCvTemplate = z.infer<typeof insertCvTemplateSchema>;
+export type CvTemplate = typeof cvTemplates.$inferSelect;
