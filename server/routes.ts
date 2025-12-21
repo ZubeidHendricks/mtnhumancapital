@@ -289,6 +289,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Applications endpoint for dashboard (uses candidates data)
+  app.get("/api/applications", async (req, res) => {
+    try {
+      const candidates = await storage.getAllCandidates(req.tenant.id);
+      // Return candidates as applications with relevant fields
+      const applications = candidates.map(candidate => ({
+        id: candidate.id,
+        candidateId: candidate.id,
+        candidateName: candidate.name,
+        email: candidate.email,
+        phone: candidate.phone,
+        stage: candidate.stage || 'New',
+        status: candidate.status || 'Active',
+        createdAt: candidate.createdAt,
+        updatedAt: candidate.updatedAt
+      }));
+      res.json(applications);
+    } catch (error) {
+      console.error("Error fetching applications:", error);
+      res.status(500).json({ message: "Failed to fetch applications" });
+    }
+  });
+
   app.post("/api/candidates", async (req, res) => {
     try {
       const result = insertCandidateSchema.safeParse(req.body);
