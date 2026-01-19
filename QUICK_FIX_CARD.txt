@@ -1,0 +1,90 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║                  TENANT MODULE CONTROL - QUICK FIX                   ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+🔴 PROBLEM FOUND:
+   Valid modules list only had 4 items, blocking module updates
+
+✅ SOLUTION:
+   Expanded validModules array to include all 12 modules
+
+📁 FILE CHANGED:
+   server/routes.ts (lines 2541 & 2573)
+
+═════════════════════════════════════════════════════════════════════
+
+🚀 DEPLOYMENT TO DIGITALOCEAN:
+
+1. PUSH CODE
+   git push origin main
+
+2. SSH TO SERVER
+   ssh root@your-droplet-ip
+
+3. PULL & RESTART
+   cd /path/to/AvatarHumanCapital
+   git pull origin main
+   pm2 restart all
+
+4. ENABLE MODULES (PostgreSQL)
+   psql $DATABASE_URL
+   
+   UPDATE tenant_config 
+   SET modules_enabled = '{
+     "recruitment": true,
+     "integrity": true,
+     "onboarding": true,
+     "hr_management": true,
+     "fleetlogix": true,
+     "workforce_intelligence": true,
+     "lms": true,
+     "kpi_performance": true,
+     "social_screening": true,
+     "document_automation": true,
+     "whatsapp": true,
+     "pnet": true
+   }'::jsonb
+   WHERE subdomain = 'company';
+
+5. TEST
+   curl https://your-domain.com/api/tenant-config | jq '.modulesEnabled'
+
+═════════════════════════════════════════════════════════════════════
+
+📋 AVAILABLE MODULES:
+
+  • recruitment              • fleetlogix
+  • integrity                • workforce_intelligence
+  • onboarding               • lms
+  • hr_management            • kpi_performance
+  • social_screening         • document_automation
+  • whatsapp                 • pnet
+
+═════════════════════════════════════════════════════════════════════
+
+🔍 VERIFY IT'S WORKING:
+
+✓ API returns JSON (not HTML)
+✓ modulesEnabled is an object with modules
+✓ Can update without "Invalid module key" error
+✓ Navigation shows enabled modules
+✓ FleetLogix page accessible
+
+═════════════════════════════════════════════════════════════════════
+
+📚 DOCUMENTATION:
+
+  MODULE_CONTROL_FIX_SUMMARY.md         ← Start here
+  TENANT_MODULE_CONTROL_GUIDE.md        ← Full guide  
+  PRODUCTION_MODULE_DEPLOYMENT.md       ← Deployment steps
+  enable-all-modules-production.sql     ← SQL script
+
+═════════════════════════════════════════════════════════════════════
+
+🆘 TROUBLESHOOTING:
+
+  Logs:     pm2 logs avatarhc
+  Database: psql $DATABASE_URL -c "SELECT * FROM tenant_config;"
+  API Test: curl https://your-domain.com/api/tenant-config
+
+═════════════════════════════════════════════════════════════════════
