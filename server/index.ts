@@ -73,6 +73,16 @@ app.post("/api/auth/login", async (req, res) => {
   }
 });
 
+// Health check endpoint for Docker
+app.get("/api/health", (req, res) => {
+  res.json({ 
+    status: "ok", 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV
+  });
+});
+
 // PUBLIC route for interview session by token (for candidates accessing their interview link)
 app.get("/api/public/interview-session/:token", async (req, res) => {
   try {

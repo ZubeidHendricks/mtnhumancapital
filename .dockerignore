@@ -1,0 +1,77 @@
+# Node modules
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Build outputs
+dist/
+client/dist/
+.vite/
+
+# Environment files
+.env.local
+.env.development
+.env.test
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+coverage/
+.nyc_output/
+
+# Logs
+*.log
+logs/
+server.log
+dev-server*.log
+
+# Temporary files
+*.tmp
+.cache/
+
+# Database files (if any local)
+*.db
+*.sqlite
+
+# Git
+.git/
+.gitignore
+
+# Documentation (optional - remove if you want docs in image)
+*.md
+docs/
+
+# Test files
+test-*.js
+test-*.ts
+test-*.mjs
+*.spec.ts
+*.spec.js
+*.test.ts
+*.test.js
+
+# Screenshots
+screenshot-*.png
+fleetlogix-*.png
+
+# Scripts that are only for development
+scripts/
+analyze-*.ts
+check-*.ts
+create-*.ts
+debug-*.ts
+import-*.ts
+run-*.ts
+seed-*.ts
+verify-*.ts
+test-*.sh
+test-*.html
+test-*.spec.ts

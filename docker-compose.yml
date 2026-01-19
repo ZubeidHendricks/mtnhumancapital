@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - HUME_API_KEY=${HUME_API_KEY}
+      - HUME_SECRET_KEY=${HUME_SECRET_KEY}
+      - PNET_ORG_ID=${PNET_ORG_ID}
+      - PNET_SENDER_ID=${PNET_SENDER_ID}
+      - PNET_API_URL=${PNET_API_URL}
+      - PNET_USERNAME=${PNET_USERNAME}
+      - PNET_PASSWORD=${PNET_PASSWORD}
+      - DEEPGRAM_API_KEY=${DEEPGRAM_API_KEY}
+      - GOOGLE_CREDENTIALS=${GOOGLE_CREDENTIALS}
+    volumes:
+      - ./uploads:/app/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
