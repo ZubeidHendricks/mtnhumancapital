@@ -201,7 +201,7 @@ export function Navbar() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-zinc-950 border-white/10 text-zinc-200">
               {/* FLEET LOGIX Only - Weighbridge Dashboard */}
-              {tenant?.subdomain === 'fleetlogix' && (
+              {isModuleEnabled('fleetlogix') && (
                 <>
                   <Link href="/weighbridge">
                     <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
@@ -429,7 +429,7 @@ export function Navbar() {
               <div className="h-px bg-white/10 my-2" />
               
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-2">Dashboards</p>
-              {tenant?.subdomain === 'fleetlogix' && (
+              {isModuleEnabled('fleetlogix') && (
                 <>
                   <Link href="/weighbridge">
                     <Button variant="ghost" className="w-full justify-start mb-2 gap-2">
