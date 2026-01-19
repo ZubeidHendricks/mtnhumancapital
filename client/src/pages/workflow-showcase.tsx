@@ -65,27 +65,153 @@ import { toast } from "sonner";
 import type { Candidate, Job } from "@shared/schema";
 
 const WORKFLOW_STEPS = [
-  { id: 1, key: "create_job", name: "Create Job", shortName: "Job", icon: Briefcase, color: "from-blue-500 to-blue-600", bgColor: "bg-blue-500/10", borderColor: "border-blue-500/30", textColor: "text-blue-400" },
-  { id: 2, key: "sourcing", name: "Sourcing", shortName: "Source", icon: Search, color: "from-slate-500 to-slate-600", bgColor: "bg-slate-500/10", borderColor: "border-slate-500/30", textColor: "text-slate-400" },
-  { id: 3, key: "screening", name: "Screening", shortName: "Screen", icon: FileCheck, color: "from-purple-500 to-purple-600", bgColor: "bg-purple-500/10", borderColor: "border-purple-500/30", textColor: "text-purple-400" },
-  { id: 4, key: "shortlisted", name: "Shortlisted", shortName: "Short", icon: Star, color: "from-yellow-500 to-amber-500", bgColor: "bg-yellow-500/10", borderColor: "border-yellow-500/30", textColor: "text-yellow-400" },
-  { id: 5, key: "interviewing", name: "Interviewing", shortName: "Interview", icon: Video, color: "from-indigo-500 to-indigo-600", bgColor: "bg-indigo-500/10", borderColor: "border-indigo-500/30", textColor: "text-indigo-400" },
-  { id: 6, key: "offer", name: "Offer Stage", shortName: "Offer", icon: Send, color: "from-orange-500 to-orange-600", bgColor: "bg-orange-500/10", borderColor: "border-orange-500/30", textColor: "text-orange-400" },
-  { id: 7, key: "integrity", name: "Integrity", shortName: "Checks", icon: ShieldCheck, color: "from-cyan-500 to-cyan-600", bgColor: "bg-cyan-500/10", borderColor: "border-cyan-500/30", textColor: "text-cyan-400" },
-  { id: 8, key: "onboarding", name: "Onboarding", shortName: "Onboard", icon: GraduationCap, color: "from-teal-500 to-teal-600", bgColor: "bg-teal-500/10", borderColor: "border-teal-500/30", textColor: "text-teal-400" },
-  { id: 9, key: "hired", name: "Hired", shortName: "Hired", icon: Award, color: "from-green-500 to-green-600", bgColor: "bg-green-500/10", borderColor: "border-green-500/30", textColor: "text-green-400" },
+  { 
+    id: 1, 
+    key: "create_job", 
+    name: "Create Job", 
+    shortName: "Job", 
+    icon: Briefcase, 
+    color: "from-blue-500 to-blue-600", 
+    bgColor: "bg-blue-500/10", 
+    borderColor: "border-blue-500/30", 
+    textColor: "text-blue-400" 
+  },
+  { 
+    id: 2, 
+    key: "sourcing", 
+    name: "Candidate Sourcing", 
+    shortName: "Source", 
+    icon: Users, 
+    color: "from-purple-500 to-purple-600", 
+    bgColor: "bg-purple-500/10", 
+    borderColor: "border-purple-500/30", 
+    textColor: "text-purple-400" 
+  },
+  { 
+    id: 3, 
+    key: "screening", 
+    name: "AI Screening", 
+    shortName: "Screen", 
+    icon: Sparkles, 
+    color: "from-violet-500 to-violet-600", 
+    bgColor: "bg-violet-500/10", 
+    borderColor: "border-violet-500/30", 
+    textColor: "text-violet-400" 
+  },
+  { 
+    id: 4, 
+    key: "shortlisted", 
+    name: "Shortlisted", 
+    shortName: "Short", 
+    icon: Star, 
+    color: "from-yellow-500 to-amber-500", 
+    bgColor: "bg-yellow-500/10", 
+    borderColor: "border-yellow-500/30", 
+    textColor: "text-yellow-400" 
+  },
+  { 
+    id: 5, 
+    key: "interviewing", 
+    name: "Interview Stage", 
+    shortName: "Interview", 
+    icon: Video, 
+    color: "from-indigo-500 to-indigo-600", 
+    bgColor: "bg-indigo-500/10", 
+    borderColor: "border-indigo-500/30", 
+    textColor: "text-indigo-400" 
+  },
+  { 
+    id: 6, 
+    key: "integrity", 
+    name: "Background Checks", 
+    shortName: "Verify", 
+    icon: Shield, 
+    color: "from-cyan-500 to-cyan-600", 
+    bgColor: "bg-cyan-500/10", 
+    borderColor: "border-cyan-500/30", 
+    textColor: "text-cyan-400" 
+  },
+  { 
+    id: 7, 
+    key: "offer", 
+    name: "Job Offer", 
+    shortName: "Offer", 
+    icon: FileSignature, 
+    color: "from-orange-500 to-orange-600", 
+    bgColor: "bg-orange-500/10", 
+    borderColor: "border-orange-500/30", 
+    textColor: "text-orange-400" 
+  },
+  { 
+    id: 8, 
+    key: "onboarding", 
+    name: "Employee Onboarding", 
+    shortName: "Onboard", 
+    icon: Laptop, 
+    color: "from-teal-500 to-teal-600", 
+    bgColor: "bg-teal-500/10", 
+    borderColor: "border-teal-500/30", 
+    textColor: "text-teal-400" 
+  },
+  { 
+    id: 9, 
+    key: "hired", 
+    name: "Successfully Hired", 
+    shortName: "Hired", 
+    icon: Award, 
+    color: "from-green-500 to-green-600", 
+    bgColor: "bg-green-500/10", 
+    borderColor: "border-green-500/30", 
+    textColor: "text-green-400" 
+  },
 ];
 
 const STAGE_ACTIONS: Record<string, { title: string; description: string; automations: string[] }> = {
-  "create_job": { title: "Define the Position", description: "Create a new job requisition with requirements and description.", automations: ["Auto-generate JD", "Parse job specs", "Set interview questions"] },
-  "sourcing": { title: "Find Candidates", description: "AI finds and imports qualified candidates from various sources.", automations: ["LinkedIn import", "CV parsing", "Auto-matching", "Bulk import"] },
-  "screening": { title: "AI CV Analysis", description: "Automatically analyze and rank candidates based on requirements.", automations: ["Skills extraction", "Experience matching", "Red flag detection"] },
-  "shortlisted": { title: "Top Candidates", description: "Review AI recommendations and select for interviews.", automations: ["Match ranking", "Comparison view", "Notes sharing"] },
-  "interviewing": { title: "Conduct Interviews", description: "AI-powered voice and video interviews with analysis.", automations: ["Schedule interviews", "AI voice screening", "Video interviews", "Transcription"] },
-  "offer": { title: "Extend Offers", description: "Generate and send offer letters, track negotiations.", automations: ["Generate offer letter", "E-signature", "Auto-trigger integrity"] },
-  "integrity": { title: "Background Checks", description: "Comprehensive verification and social screening.", automations: ["Criminal check", "Credit check", "References", "Social screening"] },
-  "onboarding": { title: "Welcome New Hire", description: "Complete onboarding tasks and prepare for day one.", automations: ["Welcome email", "Document collection", "IT provisioning", "Training"] },
-  "hired": { title: "Successfully Hired!", description: "Employee is fully onboarded and ready.", automations: ["Add to workforce", "Assign manager", "Set KPIs"] }
+  "create_job": { 
+    title: "Define the Position", 
+    description: "Create a comprehensive job requisition with detailed requirements, qualifications, and role specifications. AI assists in crafting compelling job descriptions.", 
+    automations: ["Auto-generate JD from template", "Parse job specifications", "Set interview questions", "Define evaluation criteria"] 
+  },
+  "sourcing": { 
+    title: "Find Top Talent", 
+    description: "AI-powered candidate discovery across multiple platforms. Automatically import, parse, and match qualified candidates from LinkedIn, job boards, and databases.", 
+    automations: ["Multi-platform sourcing", "Intelligent CV parsing", "Skills matching algorithm", "Bulk candidate import", "Duplicate detection"] 
+  },
+  "screening": { 
+    title: "Intelligent Analysis", 
+    description: "Advanced AI analyzes CVs, extracts key information, matches candidates against job requirements, and identifies potential concerns. Get ranked recommendations instantly.", 
+    automations: ["Deep skills extraction", "Experience validation", "Education verification", "Red flag detection", "Automated ranking"] 
+  },
+  "shortlisted": { 
+    title: "Best Candidates", 
+    description: "Review AI-curated top candidates with detailed match scores and insights. Compare qualifications side-by-side and select the best fits for interviews.", 
+    automations: ["Smart ranking system", "Side-by-side comparison", "Collaborative notes", "Schedule interviews", "Automated notifications"] 
+  },
+  "interviewing": { 
+    title: "AI-Powered Interviews", 
+    description: "Conduct professional voice and video interviews with AI assistance. Get real-time transcription, sentiment analysis, and automated evaluation reports.", 
+    automations: ["One-click scheduling", "AI voice screening", "Video interview platform", "Live transcription", "Sentiment analysis", "Interview scorecards"] 
+  },
+  "integrity": { 
+    title: "Comprehensive Verification", 
+    description: "Thorough background screening including criminal records, credit checks, employment history, education verification, and professional references. Ensure candidate integrity before extending offers.", 
+    automations: ["Criminal background check", "Credit verification", "Employment history validation", "Education confirmation", "Reference checking", "Social media screening", "Compliance reports"] 
+  },
+  "offer": { 
+    title: "Extend Job Offers", 
+    description: "Generate professional offer letters with customizable templates, manage salary negotiations, and track offer status. Digital signatures make acceptance seamless.", 
+    automations: ["Generate offer letter from template", "E-signature integration", "Compensation calculator", "Negotiation tracking", "Automated reminders"] 
+  },
+  "onboarding": { 
+    title: "Seamless Onboarding", 
+    description: "Welcome new hires with a structured onboarding experience. Automate document collection, IT setup, training schedules, and first-day preparation.", 
+    automations: ["Welcome email sequence", "Document collection portal", "IT account provisioning", "Training enrollment", "Equipment requests", "First day checklist"] 
+  },
+  "hired": { 
+    title: "Successfully Hired!", 
+    description: "Employee is fully onboarded, verified, and ready to contribute. Seamlessly transition to HR management with automated workforce integration and performance tracking.", 
+    automations: ["Add to HRIS", "Assign reporting structure", "Set initial KPIs", "Schedule check-ins", "Performance tracking"] 
+  }
 };
 
 const PIPELINE_STAGES_MAP: Record<string, string[]> = {
@@ -1452,7 +1578,9 @@ BENEFITS:
             <div className="flex justify-between gap-1">
               {WORKFLOW_STEPS.map((step) => {
                 const isActive = step.id === activeStep;
-                const isCompleted = step.id < activeStep;
+                // Only mark as completed if we're past this step AND there's actual data
+                const hasData = step.key !== "create_job" ? getStepStats(step.key).count > 0 : selectedJobId !== null;
+                const isCompleted = step.id < activeStep && hasData;
                 const StepIcon = step.icon;
                 const stats = step.key !== "create_job" ? getStepStats(step.key) : null;
                 

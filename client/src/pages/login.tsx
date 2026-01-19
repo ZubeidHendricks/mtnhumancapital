@@ -7,23 +7,45 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Cpu, Lock, Loader2, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import axios from "axios";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Login() {
   const [, setLocation] = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
-      localStorage.setItem("ahc_auth_token", "demo_token");
+    setError("");
+    
+    try {
+      // Login via API - user lookup by email only (cross-tenant)
+      const response = await axios.post("/api/auth/login", {
+        username: email,
+        password: password
+      });
+      
+      const { token, user } = response.data;
+      
+      // Store auth token
+      localStorage.setItem("ahc_auth_token", token);
+      localStorage.setItem("ahc_user", JSON.stringify(user));
+      
+      // Redirect to dashboard
       setLocation("/hr-dashboard");
-    }, 500);
+    } catch (err: any) {
+      console.error("Login error:", err);
+      setError(err.response?.data?.message || "Invalid email or password");
+      setIsLoading(false);
+    }
   };
 
   const handleDemoLogin = () => {
+    // Keep demo bypass for development
     localStorage.setItem("ahc_auth_token", "demo_token");
     setLocation("/hr-dashboard");
   };
@@ -53,6 +75,12 @@ export default function Login() {
             <CardDescription>Enter your credentials to access the platform</CardDescription>
           </CardHeader>
           <CardContent>
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>

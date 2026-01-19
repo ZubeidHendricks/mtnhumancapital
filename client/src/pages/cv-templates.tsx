@@ -302,40 +302,40 @@ export default function CvTemplatesPage() {
                 {templates.map((template) => (
                   <Card 
                     key={template.id} 
-                    className={`relative ${template.isActive ? 'ring-2 ring-green-500/50' : ''}`}
+                    className={`relative ${template.isActive ? 'ring-2 ring-green-500/50 bg-green-500/5' : ''}`}
                     data-testid={`card-template-${template.id}`}
                   >
                     <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-3">
-                          {getFileIcon(template.mimeType)}
-                          <div className="min-w-0">
+                      <div className="flex items-start gap-3">
+                        {getFileIcon(template.mimeType)}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2 mb-1">
                             <CardTitle className="text-base truncate" data-testid={`text-template-name-${template.id}`}>
                               {template.name}
                             </CardTitle>
-                            <CardDescription className="text-xs truncate">
-                              {template.originalFilename}
-                            </CardDescription>
+                            {template.isActive ? (
+                              <Badge className="bg-green-500/20 text-green-400 border-green-500/30 shrink-0" data-testid={`badge-active-${template.id}`}>
+                                <CheckCircle2 className="w-3 h-3 mr-1" />
+                                Active
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-muted-foreground shrink-0" data-testid={`badge-inactive-${template.id}`}>
+                                <Clock className="w-3 h-3 mr-1" />
+                                Inactive
+                              </Badge>
+                            )}
                           </div>
+                          <CardDescription className="text-xs truncate">
+                            {template.originalFilename}
+                          </CardDescription>
                         </div>
-                        {template.isActive ? (
-                          <Badge className="bg-green-500/20 text-green-400 border-green-500/30" data-testid={`badge-active-${template.id}`}>
-                            <CheckCircle2 className="w-3 h-3 mr-1" />
-                            Active
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-muted-foreground" data-testid={`badge-inactive-${template.id}`}>
-                            <Clock className="w-3 h-3 mr-1" />
-                            Inactive
-                          </Badge>
-                        )}
                       </div>
                     </CardHeader>
                     <CardContent className="pt-0">
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between text-sm text-muted-foreground">
-                          <span>Size: {formatFileSize(template.fileSize)}</span>
-                          <span data-testid={`text-upload-date-${template.id}`}>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Size: {formatFileSize(template.fileSize)}</span>
+                          <span className="text-muted-foreground" data-testid={`text-upload-date-${template.id}`}>
                             {format(new Date(template.createdAt), "MMM d, yyyy")}
                           </span>
                         </div>

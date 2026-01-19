@@ -50,42 +50,80 @@
 }
 
 :root {
-  /* Dark Theme Default - Avatar Human Capital Brand */
-  --background: 0 0% 0%; /* Pure Black */
+  /* Dark Theme Default - Orange & Blue Brand */
+  --background: 222 47% 8%; /* Dark Blue-Gray */
   --foreground: 210 40% 98%;
 
-  --card: 209 78% 21%; /* Incremental Blue */
+  --card: 222 47% 11%; /* Slightly lighter dark */
   --card-foreground: 210 40% 98%;
 
-  --popover: 209 78% 21%; /* Incremental Blue */
+  --popover: 222 47% 11%;
   --popover-foreground: 210 40% 98%;
 
-  --primary: 196 100% 47%; /* Cyan C - Brand Color #00AEEF */
+  --primary: 25 95% 53%; /* Orange - Brand Color */
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 30 100% 50%; /* Orange Juice - Brand Accent #FF7F00 */
-  --secondary-foreground: 0 0% 100%;
+  --secondary: 210 100% 30%; /* Dark Blue */
+  --secondary-foreground: 210 40% 98%;
 
-  --muted: 209 78% 21%; /* Incremental Blue */
+  --muted: 222 47% 15%;
   --muted-foreground: 215 20% 65%;
 
-  --accent: 196 100% 47%; /* Cyan C */
+  --accent: 25 95% 53%; /* Orange */
   --accent-foreground: 0 0% 100%;
 
-  --destructive: 0 62% 30%;
+  --destructive: 0 62% 50%;
   --destructive-foreground: 210 40% 98%;
 
-  --border: 0 0% 15%;
-  --input: 0 0% 15%;
-  --ring: 196 100% 47%; /* Cyan C */
+  --border: 222 47% 18%;
+  --input: 222 47% 18%;
+  --ring: 25 95% 53%; /* Orange Ring */
 
   --radius: 0.5rem;
   
-  /* Chart Colors using Brand Palette */
-  --chart-1: 196 100% 47%; /* Cyan C */
-  --chart-2: 30 100% 50%; /* Orange Juice */
-  --chart-3: 209 78% 21%; /* Incremental Blue */
-  --chart-4: 0 0% 92%; /* Plaster */
+  /* Chart Colors using Orange/Blue Palette */
+  --chart-1: 25 95% 53%; /* Orange */
+  --chart-2: 210 100% 50%; /* Blue */
+  --chart-3: 45 100% 51%; /* Yellow */
+  --chart-4: 0 0% 92%;
+  --chart-5: 160 84% 39%;
+}
+
+.light {
+  /* Light Theme - Consistent Orange Brand */
+  --background: 0 0% 98%; /* Nearly white */
+  --foreground: 0 0% 10%; /* Dark text for readability */
+
+  --card: 0 0% 100%; /* Pure white cards */
+  --card-foreground: 0 0% 10%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 10%;
+
+  --primary: 25 95% 53%; /* Orange - Main Brand Color */
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 25 100% 97%; /* Very light orange */
+  --secondary-foreground: 0 0% 10%;
+
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 45%;
+
+  --accent: 25 95% 95%; /* Light orange accent */
+  --accent-foreground: 25 95% 35%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 25 30% 85%; /* Subtle orange border */
+  --input: 0 0% 96%;
+  --ring: 25 95% 53%; /* Orange ring */
+
+  /* Chart Colors for Light Mode */
+  --chart-1: 25 95% 53%; /* Orange */
+  --chart-2: 210 100% 50%; /* Blue */
+  --chart-3: 45 100% 51%; /* Yellow */
+  --chart-4: 0 0% 60%;
   --chart-5: 160 84% 39%;
 }
 
@@ -95,9 +133,21 @@
   }
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    font-weight: 500; /* Medium weight for better readability */
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-display tracking-tight;
+    font-weight: 700; /* Bold headings */
+  }
+  strong, b {
+    font-weight: 700;
+  }
+  /* Ensure table text is readable */
+  table {
+    @apply text-foreground;
+  }
+  th {
+    font-weight: 600;
   }
 }
 

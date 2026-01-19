@@ -1,0 +1,6 @@
+
+Running 13 tests using 1 worker
+
+  ✘   1 test-tenant-module-control.spec.ts:20:3 › Tenant Module Control System › should fetch tenant config with modulesEnabled (30.0s)
+  ✘   2 test-tenant-module-control.spec.ts:42:3 › Tenant Module Control System › should enable a module via API (30.0s)
+  ✘   3 test-tenant-module-control.spec.ts:85:3 › Tenant Module Control System › should disable a module via API (30.0s)

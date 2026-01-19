@@ -1,0 +1,10 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development npx tsx server/index.ts
+
+[PNetAPIService] Configured with Org ID: 120911, Sender ID: 21965
+Default tenant already exists: Avatar Human Capital
+11:21:12 PM [express] serving on port 5000
+11:21:12 PM [express] Background reminder checker started (runs every hour)
+[DataCollectionService] Starting background data collection service
+11:21:12 PM [express] Background data collection service started (checks every minute)

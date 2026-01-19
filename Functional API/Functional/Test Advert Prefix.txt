@@ -1,0 +1,5 @@
+Use suffix "test_" in the advert reference for the advert to not go live, but be posted to PNet as a test advert.
+This is accessible via a specialized link described in the "Return Codes Info" document.
+
+example:
+reference_id="test_123"

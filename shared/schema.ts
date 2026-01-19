@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, jsonb, vector, index, real } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, jsonb, vector, index, real, date, decimal, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -2494,3 +2494,92 @@ export const insertCvTemplateSchema = createInsertSchema(cvTemplates).omit({
 });
 export type InsertCvTemplate = z.infer<typeof insertCvTemplateSchema>;
 export type CvTemplate = typeof cvTemplates.$inferSelect;
+
+// ============================================
+// FLEETLOGIX (matches actual database structure)
+// ============================================
+
+export const fleetlogixDrivers = pgTable("fleetlogix_drivers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull(),
+  name: text("name").notNull(),
+  idNumber: text("id_number"),
+  licenseNumber: text("license_number"),
+  licenseType: text("license_type"),
+  phone: text("phone"),
+  email: text("email"),
+  address: text("address"),
+  emergencyContact: text("emergency_contact"),
+  emergencyPhone: text("emergency_phone"),
+  hireDate: date("hire_date"),
+  status: text("status").default("active"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertFleetlogixDriverSchema = createInsertSchema(fleetlogixDrivers);
+export type FleetlogixDriver = typeof fleetlogixDrivers.$inferSelect;
+export type InsertFleetlogixDriver = typeof fleetlogixDrivers.$inferInsert;
+
+export const fleetlogixVehicles = pgTable("fleetlogix_vehicles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull(),
+  registration: text("registration").notNull(),
+  make: text("make"),
+  model: text("model"),
+  year: integer("year"),
+  vin: text("vin"),
+  fleetNumber: text("fleet_number"),
+  type: text("type"),
+  capacity: decimal("capacity", { precision: 10, scale: 2 }),
+  fuelType: text("fuel_type"),
+  status: text("status").default("active"),
+  purchaseDate: date("purchase_date"),
+  lastServiceDate: date("last_service_date"),
+  nextServiceDate: date("next_service_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertFleetlogixVehicleSchema = createInsertSchema(fleetlogixVehicles);
+export type FleetlogixVehicle = typeof fleetlogixVehicles.$inferSelect;
+export type InsertFleetlogixVehicle = typeof fleetlogixVehicles.$inferInsert;
+
+export const fleetlogixRoutes = pgTable("fleetlogix_routes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull(),
+  name: text("name").notNull(),
+  origin: text("origin").notNull(),
+  destination: text("destination").notNull(),
+  distance: decimal("distance", { precision: 10, scale: 2 }).notNull(),
+  estimatedDuration: integer("estimated_duration"),
+  status: text("status").default("active"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertFleetlogixRouteSchema = createInsertSchema(fleetlogixRoutes);
+export type FleetlogixRoute = typeof fleetlogixRoutes.$inferSelect;
+export type InsertFleetlogixRoute = typeof fleetlogixRoutes.$inferInsert;
+
+export const fleetlogixLoads = pgTable("fleetlogix_loads", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull(),
+  loadNumber: text("load_number").notNull(),
+  driverId: varchar("driver_id").references(() => fleetlogixDrivers.id),
+  vehicleId: varchar("vehicle_id").references(() => fleetlogixVehicles.id),
+  routeId: varchar("route_id").references(() => fleetlogixRoutes.id),
+  loadDate: date("load_date").notNull(),
+  deliveryDate: date("delivery_date"),
+  cargoDescription: text("cargo_description"),
+  weight: decimal("weight", { precision: 10, scale: 2 }),
+  revenue: decimal("revenue", { precision: 10, scale: 2 }),
+  expenses: decimal("expenses", { precision: 10, scale: 2 }),
+  status: text("status").default("pending"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertFleetlogixLoadSchema = createInsertSchema(fleetlogixLoads);
+export type FleetlogixLoad = typeof fleetlogixLoads.$inferSelect;
+export type InsertFleetlogixLoad = typeof fleetlogixLoads.$inferInsert;

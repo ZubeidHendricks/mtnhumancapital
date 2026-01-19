@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Cpu, LayoutDashboard, Building2, Mic, Video, ChevronDown, UserSearch, Shield, Settings, Users, Briefcase, TrendingUp, FileText, MessageCircle, ClipboardList, Sparkles, Target, Star, UserCheck, BarChart3, BookOpen, LayoutGrid } from "lucide-react";
+import { Menu, X, Cpu, LayoutDashboard, Building2, Mic, Video, ChevronDown, UserSearch, Shield, Settings, Users, Briefcase, TrendingUp, FileText, MessageCircle, ClipboardList, Sparkles, Target, Star, UserCheck, BarChart3, BookOpen, LayoutGrid, Grid3X3, Scale, Truck } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTenant } from "@/hooks/useTenant";
 import { TenantSelector } from "@/components/admin/TenantSelector";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -36,10 +37,15 @@ export function Navbar() {
         <Link href="/">
           <div className="flex items-center group cursor-pointer">
             <img 
-              src="/logos/light-logo.png" 
-              alt="Avatar Human Capital" 
+              src={tenant?.logoUrl || "/logos/light-logo.png"} 
+              alt={tenant?.companyName || "Avatar Human Capital"} 
               className="h-10 md:h-16 w-auto object-contain"
             />
+            {tenant?.companyName && tenant.companyName !== "Avatar Human Capital" && (
+              <span className="ml-3 text-lg font-bold text-foreground">
+                {tenant.companyName}
+              </span>
+            )}
           </div>
         </Link>
 
@@ -65,22 +71,6 @@ export function Navbar() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-zinc-950 border-white/10 text-zinc-200">
-              {isModuleEnabled("recruitment") && (
-                <Link href="/recruitment-agent">
-                  <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
-                    <UserSearch className="w-4 h-4 mr-2 text-purple-400" />
-                    <span>AI Recruitment</span>
-                  </DropdownMenuItem>
-                </Link>
-              )}
-              {isModuleEnabled("integrity") && (
-                <Link href="/integrity-agent">
-                  <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
-                    <Shield className="w-4 h-4 mr-2 text-blue-400" />
-                    <span>Integrity Checks</span>
-                  </DropdownMenuItem>
-                </Link>
-              )}
               {isModuleEnabled("onboarding") && (
                 <Link href="/onboarding">
                   <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
@@ -97,11 +87,29 @@ export function Navbar() {
                   </DropdownMenuItem>
                 </Link>
               )}
+              <Link href="/dashboard-builder">
+                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                  <Grid3X3 className="w-4 h-4 mr-2 text-purple-400" />
+                  <span>Dashboard Builder</span>
+                </DropdownMenuItem>
+              </Link>
               <DropdownMenuSeparator className="bg-white/10" />
               <DropdownMenuLabel className="text-xs text-muted-foreground">HR Management</DropdownMenuLabel>
               <Link href="/kpi-hr-dashboard">
                 <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
                   <Target className="w-4 h-4 mr-2 text-blue-400" />
+                  <span>KPI Management</span>
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/kpi-hr-dashboard">
+                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                  <Star className="w-4 h-4 mr-2 text-yellow-400" />
+                  <span>KPI Review</span>
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/kpi-hr-dashboard">
+                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                  <BarChart3 className="w-4 h-4 mr-2 text-purple-400" />
                   <span>Performance</span>
                 </DropdownMenuItem>
               </Link>
@@ -192,6 +200,24 @@ export function Navbar() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-zinc-950 border-white/10 text-zinc-200">
+              {/* FLEET LOGIX Only - Weighbridge Dashboard */}
+              {tenant?.subdomain === 'fleetlogix' && (
+                <>
+                  <Link href="/weighbridge">
+                    <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                      <Scale className="w-4 h-4 mr-2 text-green-400" />
+                      <span>Weighbridge</span>
+                    </DropdownMenuItem>
+                  </Link>
+                  <Link href="/fleetlogix">
+                    <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                      <Truck className="w-4 h-4 mr-2 text-blue-400" />
+                      <span>Fleet Logix</span>
+                    </DropdownMenuItem>
+                  </Link>
+                  <DropdownMenuSeparator className="bg-white/10" />
+                </>
+              )}
               <Link href="/recruitment-dashboard">
                 <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
                   <TrendingUp className="w-4 h-4 mr-2 text-purple-400" />
@@ -289,6 +315,12 @@ export function Navbar() {
                   <span>Persona Management</span>
                 </DropdownMenuItem>
               </Link>
+              <Link href="/cv-templates">
+                <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                  <FileText className="w-4 h-4 mr-2 text-amber-400" />
+                  <span>CV Template Creation</span>
+                </DropdownMenuItem>
+              </Link>
               <DropdownMenuSeparator className="bg-white/10" />
               <Link href="/platform-docs">
                 <DropdownMenuItem className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
@@ -303,6 +335,9 @@ export function Navbar() {
           {isAdminPage && (
             <TenantSelector currentTenant={tenant} />
           )}
+
+          {/* Theme Toggle */}
+          <ThemeToggle />
 
           <Link href="/login">
             <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_20px_-5px_hsl(var(--primary)/0.5)]">
@@ -394,6 +429,20 @@ export function Navbar() {
               <div className="h-px bg-white/10 my-2" />
               
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-2">Dashboards</p>
+              {tenant?.subdomain === 'fleetlogix' && (
+                <>
+                  <Link href="/weighbridge">
+                    <Button variant="ghost" className="w-full justify-start mb-2 gap-2">
+                      <Scale className="w-4 h-4" /> Weighbridge
+                    </Button>
+                  </Link>
+                  <Link href="/fleetlogix">
+                    <Button variant="ghost" className="w-full justify-start mb-2 gap-2">
+                      <Truck className="w-4 h-4" /> Fleet Logix
+                    </Button>
+                  </Link>
+                </>
+              )}
               <Link href="/candidate-pipeline">
                 <Button variant="ghost" className="w-full justify-start mb-2 gap-2">
                   <Briefcase className="w-4 h-4" /> Candidate Pipeline
