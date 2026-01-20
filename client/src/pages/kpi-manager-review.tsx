@@ -99,7 +99,7 @@ function StarRating({
               "transition-colors",
               (hovered !== null ? star <= hovered : star <= value)
                 ? "fill-yellow-400 text-yellow-400"
-                : "fill-gray-700 text-gray-600"
+                : "fill-muted text-muted-foreground"
             )}
           />
         </button>
@@ -229,9 +229,9 @@ function EmployeeReviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gray-900 border-border dark:border-white/10">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card border-border">
         <DialogHeader>
-          <DialogTitle className="text-xl text-white flex items-center gap-2">
+          <DialogTitle className="text-xl text-foreground flex items-center gap-2">
             <User className="w-5 h-5 text-blue-400" />
             Review: {submission.employee?.name || `Employee #${submission.employeeId}`}
           </DialogTitle>
@@ -247,18 +247,18 @@ function EmployeeReviewDialog({
         ) : (
           <div className="space-y-6">
             {submission.employeeComments && (
-              <div className="bg-blue-900/20 border border-blue-500/30 p-4 rounded-lg">
+              <div className="bg-blue-500/10 dark:bg-blue-900/20 border border-blue-500/30 p-4 rounded-lg">
                 <p className="text-sm text-blue-400 mb-1">Employee's Overall Comments</p>
-                <p className="text-white">{submission.employeeComments}</p>
+                <p className="text-foreground">{submission.employeeComments}</p>
               </div>
             )}
 
             {assignments.map(assignment => (
-              <Card key={assignment.id} className="bg-gray-800/50 border-border dark:border-white/10">
+              <Card key={assignment.id} className="bg-muted border-border">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div>
-                      <CardTitle className="text-lg text-white">
+                      <CardTitle className="text-lg text-foreground">
                         {assignment.template?.name}
                       </CardTitle>
                       <CardDescription>{assignment.template?.description}</CardDescription>
@@ -271,22 +271,22 @@ function EmployeeReviewDialog({
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                     <div>
-                      <p className="text-gray-400">Target</p>
-                      <p className="text-white font-medium">
+                      <p className="text-muted-foreground">Target</p>
+                      <p className="text-foreground font-medium">
                         {assignment.customTarget || assignment.template?.targetValue}
                       </p>
                     </div>
                     <div>
-                      <p className="text-gray-400">Employee Self-Score</p>
+                      <p className="text-muted-foreground">Employee Self-Score</p>
                       <div className="flex items-center gap-2">
                         <StarRating value={assignment.score?.selfScore || 0} disabled size="sm" />
-                        <span className="text-xl font-bold text-white">
+                        <span className="text-xl font-bold text-foreground">
                           {assignment.score?.selfScore || "-"}
                         </span>
                       </div>
                     </div>
                     <div>
-                      <p className="text-gray-400 mb-1">Your Score</p>
+                      <p className="text-muted-foreground mb-1">Your Score</p>
                       <div className="flex items-center gap-2">
                         <StarRating
                           value={managerScores[assignment.id] || 0}
@@ -301,19 +301,19 @@ function EmployeeReviewDialog({
                   </div>
 
                   {assignment.score?.selfComments && (
-                    <div className="bg-gray-700/50 p-3 rounded-lg">
-                      <p className="text-sm text-gray-400 mb-1">Employee Comments</p>
-                      <p className="text-white text-sm">{assignment.score.selfComments}</p>
+                    <div className="bg-muted/50 p-3 rounded-lg">
+                      <p className="text-sm text-muted-foreground mb-1">Employee Comments</p>
+                      <p className="text-foreground text-sm">{assignment.score.selfComments}</p>
                     </div>
                   )}
 
                   <div>
-                    <Label className="text-sm text-gray-400 mb-2 block">Your Feedback</Label>
+                    <Label className="text-sm text-muted-foreground mb-2 block">Your Feedback</Label>
                     <Textarea
                       value={managerComments[assignment.id] || ""}
                       onChange={(e) => setManagerComments(prev => ({ ...prev, [assignment.id]: e.target.value }))}
                       placeholder="Provide feedback on this KPI..."
-                      className="bg-gray-700 border-gray-600 min-h-[60px]"
+                      className="bg-muted border-border min-h-[60px]"
                       data-testid={`manager-comments-${assignment.id}`}
                     />
                   </div>
@@ -322,12 +322,12 @@ function EmployeeReviewDialog({
             ))}
 
             <div>
-              <Label className="text-sm text-gray-400 mb-2 block">Overall Manager Comments</Label>
+              <Label className="text-sm text-muted-foreground mb-2 block">Overall Manager Comments</Label>
               <Textarea
                 value={overallComments}
                 onChange={(e) => setOverallComments(e.target.value)}
                 placeholder="Provide overall feedback and development recommendations..."
-                className="bg-gray-800 border-gray-700 min-h-[100px]"
+                className="bg-muted border-border min-h-[100px]"
                 data-testid="overall-manager-comments"
               />
             </div>
@@ -399,25 +399,25 @@ export default function KPIManagerReviewPage() {
   const selectedCycle = reviewCycles.find(c => c.id === selectedCycleId);
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-background">
       
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white flex items-center gap-3" data-testid="page-title">
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3" data-testid="page-title">
             <Users className="w-8 h-8 text-purple-400" />
             Manager Review Dashboard
           </h1>
-          <p className="text-gray-400 mt-2">
+          <p className="text-muted-foreground mt-2">
             Review and approve employee KPI self-assessments
           </p>
         </div>
 
         {activeCycles.length === 0 ? (
-          <Card className="bg-gray-900/50 border-border dark:border-white/10">
+          <Card className="bg-card border-border">
             <CardContent className="py-12 text-center">
-              <Clock className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-white mb-2">No Review Cycles</h3>
-              <p className="text-gray-400">
+              <Clock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-foreground mb-2">No Review Cycles</h3>
+              <p className="text-muted-foreground">
                 There are no review cycles available for manager review.
               </p>
             </CardContent>
@@ -433,7 +433,7 @@ export default function KPIManagerReviewPage() {
                   className={cn(
                     selectedCycleId === cycle.id 
                       ? "bg-purple-600 hover:bg-purple-700" 
-                      : "border-gray-700 text-gray-300"
+                      : "border-border text-muted-foreground"
                   )}
                   data-testid={`cycle-button-${cycle.id}`}
                 >
@@ -444,22 +444,22 @@ export default function KPIManagerReviewPage() {
             </div>
 
             {selectedCycle && (
-              <Card className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 border-border dark:border-white/10 mb-6">
+              <Card className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 dark:from-purple-900/20 dark:to-blue-900/20 border-border mb-6">
                 <CardContent className="py-4">
                   <div className="flex items-center justify-between flex-wrap gap-4">
                     <div className="flex items-center gap-6">
                       <div>
-                        <p className="text-sm text-gray-400">Review Period</p>
-                        <p className="text-white font-medium">
+                        <p className="text-sm text-muted-foreground">Review Period</p>
+                        <p className="text-foreground font-medium">
                           {format(new Date(selectedCycle.startDate), "MMM d, yyyy")} - {format(new Date(selectedCycle.endDate), "MMM d, yyyy")}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-400">Pending Reviews</p>
+                        <p className="text-sm text-muted-foreground">Pending Reviews</p>
                         <p className="text-2xl font-bold text-amber-400">{pendingReviews.length}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-400">Completed</p>
+                        <p className="text-sm text-muted-foreground">Completed</p>
                         <p className="text-2xl font-bold text-green-400">{completedReviews.length}</p>
                       </div>
                     </div>
@@ -476,7 +476,7 @@ export default function KPIManagerReviewPage() {
               <div className="space-y-6">
                 {pendingReviews.length > 0 && (
                   <div>
-                    <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                    <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
                       <Clock className="w-5 h-5 text-amber-400" />
                       Pending Reviews ({pendingReviews.length})
                     </h2>
@@ -484,7 +484,7 @@ export default function KPIManagerReviewPage() {
                       {pendingReviews.map(submission => (
                         <Card 
                           key={submission.id} 
-                          className="bg-amber-900/10 border-amber-500/30 cursor-pointer hover:bg-amber-900/20 transition-colors"
+                          className="bg-amber-500/10 dark:bg-amber-900/10 border-amber-500/30 cursor-pointer hover:bg-amber-500/20 dark:hover:bg-amber-900/20 transition-colors"
                           onClick={() => setSelectedSubmission(submission)}
                           data-testid={`pending-review-${submission.id}`}
                         >
@@ -495,10 +495,10 @@ export default function KPIManagerReviewPage() {
                                   <User className="w-5 h-5 text-amber-400" />
                                 </div>
                                 <div>
-                                  <p className="font-medium text-white">
+                                  <p className="font-medium text-foreground">
                                     {submission.employee?.name || `Employee #${submission.employeeId}`}
                                   </p>
-                                  <p className="text-sm text-gray-400">
+                                  <p className="text-sm text-muted-foreground">
                                     {submission.employee?.department || "Department"} • Submitted {submission.selfSubmittedAt ? format(new Date(submission.selfSubmittedAt), "MMM d, yyyy") : "recently"}
                                   </p>
                                 </div>
@@ -507,7 +507,7 @@ export default function KPIManagerReviewPage() {
                                 <Badge variant="outline" className="border-amber-500 text-amber-400">
                                   Awaiting Review
                                 </Badge>
-                                <ChevronRight className="w-5 h-5 text-gray-500" />
+                                <ChevronRight className="w-5 h-5 text-muted-foreground" />
                               </div>
                             </div>
                           </CardContent>
@@ -519,7 +519,7 @@ export default function KPIManagerReviewPage() {
 
                 {completedReviews.length > 0 && (
                   <div>
-                    <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                    <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
                       <CheckCircle className="w-5 h-5 text-green-400" />
                       Completed Reviews ({completedReviews.length})
                     </h2>
@@ -527,7 +527,7 @@ export default function KPIManagerReviewPage() {
                       {completedReviews.map(submission => (
                         <Card 
                           key={submission.id} 
-                          className="bg-green-900/10 border-green-500/30"
+                          className="bg-green-500/10 dark:bg-green-900/10 border-green-500/30"
                           data-testid={`completed-review-${submission.id}`}
                         >
                           <CardContent className="py-4">
@@ -537,10 +537,10 @@ export default function KPIManagerReviewPage() {
                                   <User className="w-5 h-5 text-green-400" />
                                 </div>
                                 <div>
-                                  <p className="font-medium text-white">
+                                  <p className="font-medium text-foreground">
                                     {submission.employee?.name || `Employee #${submission.employeeId}`}
                                   </p>
-                                  <p className="text-sm text-gray-400">
+                                  <p className="text-sm text-muted-foreground">
                                     {submission.employee?.department || "Department"} • Reviewed {submission.managerSubmittedAt ? format(new Date(submission.managerSubmittedAt), "MMM d, yyyy") : "recently"}
                                   </p>
                                 </div>
@@ -548,7 +548,7 @@ export default function KPIManagerReviewPage() {
                               <div className="flex items-center gap-3">
                                 {submission.finalScore && (
                                   <div className="text-right">
-                                    <p className="text-sm text-gray-400">Final Score</p>
+                                    <p className="text-sm text-muted-foreground">Final Score</p>
                                     <p className="text-2xl font-bold text-green-400">{submission.finalScore}%</p>
                                   </div>
                                 )}
@@ -565,11 +565,11 @@ export default function KPIManagerReviewPage() {
                 )}
 
                 {pendingReviews.length === 0 && completedReviews.length === 0 && (
-                  <Card className="bg-gray-900/50 border-border dark:border-white/10">
+                  <Card className="bg-card border-border">
                     <CardContent className="py-12 text-center">
-                      <Users className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold text-white mb-2">No Reviews Yet</h3>
-                      <p className="text-gray-400">
+                      <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-xl font-semibold text-foreground mb-2">No Reviews Yet</h3>
+                      <p className="text-muted-foreground">
                         No employees have submitted their self-assessments for this cycle yet.
                       </p>
                     </CardContent>

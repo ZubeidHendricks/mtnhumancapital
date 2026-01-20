@@ -227,102 +227,102 @@ export default function DocumentLibrary() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800">
+    <div className="min-h-screen bg-background">
       <div className="p-6 max-w-[1600px] mx-auto">
         <div className="flex items-center gap-4 mb-6">
           <Link href="/hr-dashboard">
-            <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-white" data-testid="button-back">
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" data-testid="button-back">
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-white flex items-center gap-3" data-testid="text-page-title">
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-3" data-testid="text-page-title">
               <FileCheck className="h-7 w-7 text-purple-400" />
               Document Library
             </h1>
-            <p className="text-zinc-400 text-sm mt-1">
+            <p className="text-muted-foreground text-sm mt-1">
               Access and manage all uploaded candidate documents
             </p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card className="bg-zinc-800/50 border-zinc-700/50">
+          <Card className="bg-card border-border">
             <CardContent className="p-4 flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
                 <FileText className="h-6 w-6 text-purple-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white" data-testid="stat-total">{stats.total}</p>
-                <p className="text-zinc-400 text-sm">Total Documents</p>
+                <p className="text-2xl font-bold text-foreground" data-testid="stat-total">{stats.total}</p>
+                <p className="text-muted-foreground text-sm">Total Documents</p>
               </div>
             </CardContent>
           </Card>
           
-          <Card className="bg-zinc-800/50 border-zinc-700/50">
+          <Card className="bg-card border-border">
             <CardContent className="p-4 flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center">
                 <CheckCircle className="h-6 w-6 text-green-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white" data-testid="stat-verified">{stats.verified}</p>
-                <p className="text-zinc-400 text-sm">Verified</p>
+                <p className="text-2xl font-bold text-foreground" data-testid="stat-verified">{stats.verified}</p>
+                <p className="text-muted-foreground text-sm">Verified</p>
               </div>
             </CardContent>
           </Card>
           
-          <Card className="bg-zinc-800/50 border-zinc-700/50">
+          <Card className="bg-card border-border">
             <CardContent className="p-4 flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
                 <Clock className="h-6 w-6 text-blue-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white" data-testid="stat-pending">{stats.pending}</p>
-                <p className="text-zinc-400 text-sm">Pending Review</p>
+                <p className="text-2xl font-bold text-foreground" data-testid="stat-pending">{stats.pending}</p>
+                <p className="text-muted-foreground text-sm">Pending Review</p>
               </div>
             </CardContent>
           </Card>
           
-          <Card className="bg-zinc-800/50 border-zinc-700/50">
+          <Card className="bg-card border-border">
             <CardContent className="p-4 flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
                 <XCircle className="h-6 w-6 text-red-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white" data-testid="stat-rejected">{stats.rejected}</p>
-                <p className="text-zinc-400 text-sm">Rejected</p>
+                <p className="text-2xl font-bold text-foreground" data-testid="stat-rejected">{stats.rejected}</p>
+                <p className="text-muted-foreground text-sm">Rejected</p>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        <Card className="bg-zinc-800/50 border-zinc-700/50">
-          <CardHeader className="border-b border-zinc-700/50">
+        <Card className="bg-card border-border">
+          <CardHeader className="border-b border-border">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-foreground flex items-center gap-2">
                 <Shield className="h-5 w-5 text-purple-400" />
                 All Documents
               </CardTitle>
               
               <div className="flex flex-wrap items-center gap-3">
                 <div className="relative flex-1 min-w-[200px]">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search documents..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 bg-zinc-900/50 border-zinc-700 text-white"
+                    className="pl-9 bg-background border-border"
                     data-testid="input-search"
                   />
                 </div>
                 
                 <Select value={documentTypeFilter} onValueChange={setDocumentTypeFilter}>
-                  <SelectTrigger className="w-[160px] bg-zinc-900/50 border-zinc-700 text-white" data-testid="select-document-type">
+                  <SelectTrigger className="w-[160px] bg-background border-border" data-testid="select-document-type">
                     <SelectValue placeholder="Document Type" />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-800 border-zinc-700">
+                  <SelectContent className="bg-muted border-border">
                     {documentTypes.map((type) => (
-                      <SelectItem key={type.value} value={type.value} className="text-white hover:bg-zinc-700">
+                      <SelectItem key={type.value} value={type.value} className="hover:bg-muted">
                         {type.label}
                       </SelectItem>
                     ))}
@@ -330,12 +330,12 @@ export default function DocumentLibrary() {
                 </Select>
                 
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[140px] bg-zinc-900/50 border-zinc-700 text-white" data-testid="select-status">
+                  <SelectTrigger className="w-[140px] bg-background border-border" data-testid="select-status">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-800 border-zinc-700">
+                  <SelectContent className="bg-muted border-border">
                     {statusOptions.map((status) => (
-                      <SelectItem key={status.value} value={status.value} className="text-white hover:bg-zinc-700">
+                      <SelectItem key={status.value} value={status.value} className="hover:bg-muted">
                         {status.label}
                       </SelectItem>
                     ))}
@@ -346,7 +346,7 @@ export default function DocumentLibrary() {
                   variant="outline"
                   size="icon"
                   onClick={() => refetch()}
-                  className="border-zinc-700 text-zinc-400 hover:text-white"
+                  className="border-border text-muted-foreground hover:text-foreground"
                   data-testid="button-refresh"
                 >
                   <RefreshCw className="h-4 w-4" />
@@ -361,7 +361,7 @@ export default function DocumentLibrary() {
                 <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
               </div>
             ) : documents.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-zinc-500">
+              <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
                 <FileWarning className="h-16 w-16 mb-4 opacity-50" />
                 <p className="text-lg font-medium">No documents found</p>
                 <p className="text-sm">Try adjusting your filters or search query</p>
@@ -370,15 +370,15 @@ export default function DocumentLibrary() {
               <ScrollArea className="h-[600px]">
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-b border-zinc-700/50 hover:bg-transparent">
-                      <TableHead className="text-zinc-400">Document</TableHead>
-                      <TableHead className="text-zinc-400">Type</TableHead>
-                      <TableHead className="text-zinc-400">Candidate</TableHead>
-                      <TableHead className="text-zinc-400">Reference</TableHead>
-                      <TableHead className="text-zinc-400">Status</TableHead>
-                      <TableHead className="text-zinc-400">Source</TableHead>
-                      <TableHead className="text-zinc-400">Uploaded</TableHead>
-                      <TableHead className="text-zinc-400 text-right">Actions</TableHead>
+                    <TableRow className="border-b border-border/50 hover:bg-transparent">
+                      <TableHead className="text-muted-foreground">Document</TableHead>
+                      <TableHead className="text-muted-foreground">Type</TableHead>
+                      <TableHead className="text-muted-foreground">Candidate</TableHead>
+                      <TableHead className="text-muted-foreground">Reference</TableHead>
+                      <TableHead className="text-muted-foreground">Status</TableHead>
+                      <TableHead className="text-muted-foreground">Source</TableHead>
+                      <TableHead className="text-muted-foreground">Uploaded</TableHead>
+                      <TableHead className="text-muted-foreground text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -387,7 +387,7 @@ export default function DocumentLibrary() {
                       return (
                         <TableRow 
                           key={doc.id} 
-                          className="border-b border-zinc-800/50 hover:bg-zinc-800/30"
+                          className="border-b border-border/50 hover:bg-muted/30"
                           data-testid={`row-document-${doc.id}`}
                         >
                           <TableCell>
@@ -396,10 +396,10 @@ export default function DocumentLibrary() {
                                 {getFileIcon(doc.mimeType)}
                               </div>
                               <div>
-                                <p className="font-medium text-white truncate max-w-[200px]" title={doc.fileName}>
+                                <p className="font-medium text-foreground truncate max-w-[200px]" title={doc.fileName}>
                                   {doc.fileName}
                                 </p>
-                                <p className="text-xs text-zinc-500">{formatFileSize(doc.fileSize)}</p>
+                                <p className="text-xs text-muted-foreground">{formatFileSize(doc.fileSize)}</p>
                               </div>
                             </div>
                           </TableCell>
@@ -410,17 +410,17 @@ export default function DocumentLibrary() {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <User className="h-3.5 w-3.5 text-zinc-500" />
-                              <span className="text-zinc-300">{doc.candidateName || "Unknown"}</span>
+                              <User className="h-3.5 w-3.5 text-muted-foreground" />
+                              <span className="text-foreground">{doc.candidateName || "Unknown"}</span>
                             </div>
                           </TableCell>
                           <TableCell>
                             {doc.referenceCode ? (
-                              <code className="text-xs bg-zinc-900 px-2 py-1 rounded text-cyan-400">
+                              <code className="text-xs bg-background px-2 py-1 rounded text-cyan-400">
                                 {doc.referenceCode}
                               </code>
                             ) : (
-                              <span className="text-zinc-600">-</span>
+                              <span className="text-muted-foreground">-</span>
                             )}
                           </TableCell>
                           <TableCell>
@@ -432,12 +432,12 @@ export default function DocumentLibrary() {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <span className="text-zinc-400 text-sm">
+                            <span className="text-muted-foreground text-sm">
                               {collectedViaLabels[doc.collectedVia] || doc.collectedVia}
                             </span>
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-1.5 text-zinc-400 text-sm">
+                            <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
                               <Calendar className="h-3.5 w-3.5" />
                               {new Date(doc.createdAt).toLocaleDateString()}
                             </div>
@@ -447,7 +447,7 @@ export default function DocumentLibrary() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-zinc-400 hover:text-white"
+                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
                                 onClick={() => {
                                   setSelectedDocument(doc);
                                   setShowPreview(true);
@@ -459,7 +459,7 @@ export default function DocumentLibrary() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-zinc-400 hover:text-purple-400"
+                                className="h-8 w-8 text-muted-foreground hover:text-purple-400"
                                 onClick={() => handleDownload(doc)}
                                 data-testid={`button-download-${doc.id}`}
                               >
@@ -470,21 +470,21 @@ export default function DocumentLibrary() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8 text-zinc-400 hover:text-white"
+                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
                                   >
                                     <MoreVertical className="h-4 w-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="bg-zinc-800 border-zinc-700">
+                                <DropdownMenuContent align="end" className="bg-muted border-border">
                                   <DropdownMenuItem
-                                    className="text-green-400 hover:bg-zinc-700"
+                                    className="text-green-400 hover:bg-muted"
                                     onClick={() => verifyMutation.mutate({ id: doc.id, status: "verified" })}
                                   >
                                     <CheckCircle className="h-4 w-4 mr-2" />
                                     Mark as Verified
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
-                                    className="text-red-400 hover:bg-zinc-700"
+                                    className="text-red-400 hover:bg-muted"
                                     onClick={() => verifyMutation.mutate({ id: doc.id, status: "rejected" })}
                                   >
                                     <XCircle className="h-4 w-4 mr-2" />
@@ -505,9 +505,9 @@ export default function DocumentLibrary() {
         </Card>
 
         <Dialog open={showPreview} onOpenChange={setShowPreview}>
-          <DialogContent className="bg-zinc-900 border-zinc-700 max-w-2xl">
+          <DialogContent className="bg-background border-border max-w-2xl">
             <DialogHeader>
-              <DialogTitle className="text-white flex items-center gap-2">
+              <DialogTitle className="text-foreground flex items-center gap-2">
                 <FileText className="h-5 w-5 text-purple-400" />
                 Document Details
               </DialogTitle>
@@ -517,44 +517,44 @@ export default function DocumentLibrary() {
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <p className="text-sm text-zinc-500">File Name</p>
-                    <p className="text-white font-medium">{selectedDocument.fileName}</p>
+                    <p className="text-sm text-muted-foreground">File Name</p>
+                    <p className="text-foreground font-medium">{selectedDocument.fileName}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-zinc-500">Document Type</p>
-                    <p className="text-white">
+                    <p className="text-sm text-muted-foreground">Document Type</p>
+                    <p className="text-foreground">
                       {documentTypeLabels[selectedDocument.documentType] || selectedDocument.documentType}
                     </p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-zinc-500">Candidate</p>
-                    <p className="text-white">{selectedDocument.candidateName || "Unknown"}</p>
+                    <p className="text-sm text-muted-foreground">Candidate</p>
+                    <p className="text-foreground">{selectedDocument.candidateName || "Unknown"}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-zinc-500">Status</p>
+                    <p className="text-sm text-muted-foreground">Status</p>
                     <Badge variant="outline" className={statusConfig[selectedDocument.status]?.color}>
                       {statusConfig[selectedDocument.status]?.label || selectedDocument.status}
                     </Badge>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-zinc-500">Reference Code</p>
+                    <p className="text-sm text-muted-foreground">Reference Code</p>
                     <p className="text-cyan-400 font-mono">
                       {selectedDocument.referenceCode || "-"}
                     </p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-zinc-500">File Size</p>
-                    <p className="text-white">{formatFileSize(selectedDocument.fileSize)}</p>
+                    <p className="text-sm text-muted-foreground">File Size</p>
+                    <p className="text-foreground">{formatFileSize(selectedDocument.fileSize)}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-zinc-500">Collected Via</p>
-                    <p className="text-white">
+                    <p className="text-sm text-muted-foreground">Collected Via</p>
+                    <p className="text-foreground">
                       {collectedViaLabels[selectedDocument.collectedVia] || selectedDocument.collectedVia}
                     </p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-zinc-500">Uploaded On</p>
-                    <p className="text-white">
+                    <p className="text-sm text-muted-foreground">Uploaded On</p>
+                    <p className="text-foreground">
                       {new Date(selectedDocument.createdAt).toLocaleString()}
                     </p>
                   </div>
@@ -562,8 +562,8 @@ export default function DocumentLibrary() {
                 
                 {selectedDocument.candidateNote && (
                   <div className="space-y-1">
-                    <p className="text-sm text-zinc-500">Candidate Note</p>
-                    <p className="text-zinc-300 bg-zinc-800/50 p-3 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Candidate Note</p>
+                    <p className="text-foreground bg-muted/50 p-3 rounded-lg">
                       {selectedDocument.candidateNote}
                     </p>
                   </div>
@@ -571,8 +571,8 @@ export default function DocumentLibrary() {
                 
                 {selectedDocument.aiVerification && (
                   <div className="space-y-2">
-                    <p className="text-sm text-zinc-500">AI Verification</p>
-                    <div className="bg-zinc-800/50 p-3 rounded-lg">
+                    <p className="text-sm text-muted-foreground">AI Verification</p>
+                    <div className="bg-muted/50 p-3 rounded-lg">
                       <div className="flex items-center gap-2 mb-2">
                         {selectedDocument.aiVerification.verified ? (
                           <Badge className="bg-green-500/20 text-green-400">AI Verified</Badge>
@@ -580,13 +580,13 @@ export default function DocumentLibrary() {
                           <Badge className="bg-orange-500/20 text-orange-400">Needs Review</Badge>
                         )}
                         {selectedDocument.aiVerification.confidence && (
-                          <span className="text-sm text-zinc-400">
+                          <span className="text-sm text-muted-foreground">
                             Confidence: {Math.round(selectedDocument.aiVerification.confidence * 100)}%
                           </span>
                         )}
                       </div>
                       {selectedDocument.aiVerification.issues?.length > 0 && (
-                        <ul className="text-sm text-zinc-400 list-disc list-inside">
+                        <ul className="text-sm text-muted-foreground list-disc list-inside">
                           {selectedDocument.aiVerification.issues.map((issue: string, i: number) => (
                             <li key={i}>{issue}</li>
                           ))}
@@ -596,10 +596,10 @@ export default function DocumentLibrary() {
                   </div>
                 )}
                 
-                <div className="flex justify-end gap-3 pt-4 border-t border-zinc-700">
+                <div className="flex justify-end gap-3 pt-4 border-t border-border">
                   <Button
                     variant="outline"
-                    className="border-zinc-600 text-zinc-300"
+                    className="border-border text-foreground"
                     onClick={() => setShowPreview(false)}
                   >
                     Close

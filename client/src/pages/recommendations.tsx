@@ -240,7 +240,7 @@ export default function Recommendations() {
                             </p>
                             <div className="flex flex-wrap gap-1">
                               {rec.strengthAreas.map((s, i) => (
-                                <Badge key={i} variant="outline" className="text-xs bg-green-50">
+                                <Badge key={i} variant="outline" className="text-xs bg-green-50 dark:bg-green-900/30">
                                   {s}
                                 </Badge>
                               ))}
@@ -255,7 +255,7 @@ export default function Recommendations() {
                             </p>
                             <div className="flex flex-wrap gap-1">
                               {rec.developmentAreas.map((d, i) => (
-                                <Badge key={i} variant="outline" className="text-xs bg-amber-50">
+                                <Badge key={i} variant="outline" className="text-xs bg-amber-50 dark:bg-amber-900/30">
                                   {d}
                                 </Badge>
                               ))}
@@ -272,7 +272,7 @@ export default function Recommendations() {
                           </p>
                           <div className="flex flex-wrap gap-1">
                             {rec.alternativeRoles.map((role, i) => (
-                              <Badge key={i} variant="outline" className="text-xs bg-purple-50">
+                              <Badge key={i} variant="outline" className="text-xs bg-purple-50 dark:bg-purple-900/30">
                                 {role}
                               </Badge>
                             ))}
@@ -325,29 +325,29 @@ export default function Recommendations() {
         <CardContent>
           <div className="grid md:grid-cols-4 gap-4">
             <div className="text-center p-4">
-              <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-2">
-                <span className="text-blue-600 font-bold">1</span>
+              <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mx-auto mb-2">
+                <span className="text-blue-600 dark:text-blue-400 font-bold">1</span>
               </div>
               <p className="font-medium">Interview Analysis</p>
               <p className="text-sm text-muted-foreground">AI analyzes interview transcripts and emotional patterns</p>
             </div>
             <div className="text-center p-4">
-              <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-2">
-                <span className="text-purple-600 font-bold">2</span>
+              <div className="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mx-auto mb-2">
+                <span className="text-purple-600 dark:text-purple-400 font-bold">2</span>
               </div>
               <p className="font-medium">Competency Mapping</p>
               <p className="text-sm text-muted-foreground">Skills and competencies are scored across dimensions</p>
             </div>
             <div className="text-center p-4">
-              <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-2">
-                <span className="text-amber-600 font-bold">3</span>
+              <div className="h-12 w-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto mb-2">
+                <span className="text-amber-600 dark:text-amber-400 font-bold">3</span>
               </div>
               <p className="font-medium">Pattern Recognition</p>
               <p className="text-sm text-muted-foreground">ML models identify patterns from past hiring outcomes</p>
             </div>
             <div className="text-center p-4">
-              <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-2">
-                <span className="text-green-600 font-bold">4</span>
+              <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-2">
+                <span className="text-green-600 dark:text-green-400 font-bold">4</span>
               </div>
               <p className="font-medium">Smart Suggestions</p>
               <p className="text-sm text-muted-foreground">Personalized recommendations for optimal role placement</p>

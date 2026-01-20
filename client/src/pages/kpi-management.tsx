@@ -216,26 +216,26 @@ export default function KpiManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+    <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white flex items-center gap-2" data-testid="page-title">
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2" data-testid="page-title">
               <Target className="h-7 w-7 text-blue-500" />
               KPI Management
             </h1>
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Create KPIs, manage review cycles, and track employee performance
             </p>
           </div>
           <div className="flex items-center gap-3">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search KPIs..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-64 bg-gray-800/50 border-gray-700 text-white"
+                className="pl-10 w-64 bg-muted border-border"
                 data-testid="input-search"
               />
             </div>
@@ -243,7 +243,7 @@ export default function KpiManagement() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="bg-gray-800/50 border border-gray-700">
+          <TabsList className="bg-muted border border-border">
             <TabsTrigger value="templates" className="data-[state=active]:bg-blue-600" data-testid="tab-templates">
               <FileText className="h-4 w-4 mr-2" />
               KPI Templates
@@ -264,7 +264,7 @@ export default function KpiManagement() {
 
           <TabsContent value="templates" className="space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="text-lg font-semibold text-white">KPI Templates</h2>
+              <h2 className="text-lg font-semibold text-foreground">KPI Templates</h2>
               <Button 
                 onClick={() => { setEditingTemplate(null); setShowTemplateDialog(true); }}
                 className="gap-2"
@@ -280,11 +280,11 @@ export default function KpiManagement() {
                 <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
               </div>
             ) : filteredTemplates.length === 0 ? (
-              <Card className="bg-gray-800/50 border-gray-700">
+              <Card className="bg-card border-border">
                 <CardContent className="flex flex-col items-center justify-center py-12">
-                  <Target className="h-12 w-12 text-gray-500 mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">No KPI Templates</h3>
-                  <p className="text-gray-400 text-center mb-4">
+                  <Target className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">No KPI Templates</h3>
+                  <p className="text-muted-foreground text-center mb-4">
                     Create KPI templates to define performance metrics for employees.
                   </p>
                   <Button onClick={() => setShowTemplateDialog(true)} data-testid="button-create-first-template">
@@ -300,12 +300,12 @@ export default function KpiManagement() {
                     ? template.ownerDepartment || "Not assigned"
                       : template.ownerDivision || "Not assigned";
                   return (
-                  <Card key={template.id} className="bg-gray-800/50 border-gray-700 hover:border-blue-500/50 transition-colors" data-testid={`card-template-${template.id}`}>
+                  <Card key={template.id} className="bg-card border-border hover:border-blue-500/50 transition-colors" data-testid={`card-template-${template.id}`}>
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <CardTitle className="text-white text-base">{template.name}</CardTitle>
-                          <CardDescription className="text-gray-400 mt-1 line-clamp-2">
+                          <CardTitle className="text-foreground text-base">{template.name}</CardTitle>
+                          <CardDescription className="text-muted-foreground mt-1 line-clamp-2">
                             {template.description || "No description"}
                           </CardDescription>
                         </div>
@@ -315,31 +315,31 @@ export default function KpiManagement() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-2 gap-2 text-sm text-gray-400 mb-3">
+                      <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground mb-3">
                         <div className="flex items-center gap-1">
-                          <span className="text-gray-500">Weight:</span>
-                          <span className="text-white">{template.weight}%</span>
+                          <span className="text-muted-foreground">Weight:</span>
+                          <span className="text-foreground">{template.weight}%</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <span className="text-gray-500">Target:</span>
-                          <span className="text-white">{template.targetValue}</span>
+                          <span className="text-muted-foreground">Target:</span>
+                          <span className="text-foreground">{template.targetValue}</span>
                           {template.targetTimePeriod && (
-                            <span className="text-gray-500">/ {template.targetTimePeriod}</span>
+                            <span className="text-muted-foreground">/ {template.targetTimePeriod}</span>
                           )}
                         </div>
                         <div className="flex items-center gap-1">
-                          <span className="text-gray-500">Frequency:</span>
-                          <span className="text-white capitalize">{template.frequency || "Quarterly"}</span>
+                          <span className="text-muted-foreground">Frequency:</span>
+                          <span className="text-foreground capitalize">{template.frequency || "Quarterly"}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <span className="text-gray-500">Data:</span>
-                          <span className="text-white truncate">{template.dataSource || "Not set"}</span>
+                          <span className="text-muted-foreground">Data:</span>
+                          <span className="text-foreground truncate">{template.dataSource || "Not set"}</span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 text-sm text-gray-400 mb-3">
-                        <User className="h-3 w-3 text-gray-500" />
-                        <span className="text-gray-500">Owner:</span>
-                        <span className="text-white">{ownerDisplay}</span>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
+                        <User className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-muted-foreground">Owner:</span>
+                        <span className="text-foreground">{ownerDisplay}</span>
                         {template.ownerType && (
                           <Badge variant="secondary" className="text-xs ml-1 capitalize">{template.ownerType}</Badge>
                         )}
@@ -373,7 +373,7 @@ export default function KpiManagement() {
 
           <TabsContent value="cycles" className="space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="text-lg font-semibold text-white">Review Cycles</h2>
+              <h2 className="text-lg font-semibold text-foreground">Review Cycles</h2>
               <Button 
                 onClick={() => { setEditingCycle(null); setShowCycleDialog(true); }}
                 className="gap-2"
@@ -389,11 +389,11 @@ export default function KpiManagement() {
                 <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
               </div>
             ) : cycles.length === 0 ? (
-              <Card className="bg-gray-800/50 border-gray-700">
+              <Card className="bg-card border-border">
                 <CardContent className="flex flex-col items-center justify-center py-12">
-                  <Calendar className="h-12 w-12 text-gray-500 mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">No Review Cycles</h3>
-                  <p className="text-gray-400 text-center mb-4">
+                  <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">No Review Cycles</h3>
+                  <p className="text-muted-foreground text-center mb-4">
                     Create review cycles to schedule KPI assessments for employees.
                   </p>
                   <Button onClick={() => setShowCycleDialog(true)} data-testid="button-create-first-cycle">
@@ -405,7 +405,7 @@ export default function KpiManagement() {
             ) : (
               <div className="space-y-4">
                 {cycles.map((cycle) => (
-                  <Card key={cycle.id} className="bg-gray-800/50 border-gray-700" data-testid={`card-cycle-${cycle.id}`}>
+                  <Card key={cycle.id} className="bg-card border-border" data-testid={`card-cycle-${cycle.id}`}>
                     <CardContent className="py-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
@@ -413,8 +413,8 @@ export default function KpiManagement() {
                             <Calendar className="h-6 w-6 text-blue-400" />
                           </div>
                           <div>
-                            <h3 className="font-medium text-white">{cycle.name}</h3>
-                            <p className="text-sm text-gray-400">
+                            <h3 className="font-medium text-foreground">{cycle.name}</h3>
+                            <p className="text-sm text-muted-foreground">
                               {format(new Date(cycle.startDate), "MMM d, yyyy")} - {format(new Date(cycle.endDate), "MMM d, yyyy")}
                             </p>
                           </div>
@@ -443,7 +443,7 @@ export default function KpiManagement() {
                         </div>
                       </div>
                       {cycle.description && (
-                        <p className="text-sm text-gray-400 mt-3 ml-16">{cycle.description}</p>
+                        <p className="text-sm text-muted-foreground mt-3 ml-16">{cycle.description}</p>
                       )}
                     </CardContent>
                   </Card>
@@ -455,12 +455,12 @@ export default function KpiManagement() {
           <TabsContent value="assignments" className="space-y-4">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-4">
-                <h2 className="text-lg font-semibold text-white">KPI Assignments</h2>
+                <h2 className="text-lg font-semibold text-foreground">KPI Assignments</h2>
                 <Select value={selectedCycle} onValueChange={setSelectedCycle}>
-                  <SelectTrigger className="w-64 bg-gray-800 border-gray-700 text-white" data-testid="select-cycle-filter">
+                  <SelectTrigger className="w-64 bg-muted border-border" data-testid="select-cycle-filter">
                     <SelectValue placeholder="Filter by cycle" />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700">
+                  <SelectContent className="bg-card border-border">
                     <SelectItem value="all">All Cycles</SelectItem>
                     {cycles.map((cycle) => (
                       <SelectItem key={cycle.id} value={cycle.id}>{cycle.name}</SelectItem>
@@ -480,11 +480,11 @@ export default function KpiManagement() {
             </div>
 
             {assignments.length === 0 ? (
-              <Card className="bg-gray-800/50 border-gray-700">
+              <Card className="bg-card border-border">
                 <CardContent className="flex flex-col items-center justify-center py-12">
-                  <Users className="h-12 w-12 text-gray-500 mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">No Assignments</h3>
-                  <p className="text-gray-400 text-center mb-4">
+                  <Users className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">No Assignments</h3>
+                  <p className="text-muted-foreground text-center mb-4">
                     Assign KPI templates to employees for the selected review cycle.
                   </p>
                 </CardContent>
@@ -495,7 +495,7 @@ export default function KpiManagement() {
                   const employee = employees.find(e => e.id === assignment.employeeId);
                   const template = templates.find(t => t.id === assignment.kpiTemplateId);
                   return (
-                    <Card key={assignment.id} className="bg-gray-800/50 border-gray-700" data-testid={`card-assignment-${assignment.id}`}>
+                    <Card key={assignment.id} className="bg-card border-border" data-testid={`card-assignment-${assignment.id}`}>
                       <CardContent className="py-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
@@ -503,14 +503,14 @@ export default function KpiManagement() {
                               <User className="h-5 w-5 text-blue-400" />
                             </div>
                             <div>
-                              <p className="font-medium text-white">{employee?.fullName || "Unknown"}</p>
-                              <p className="text-sm text-gray-400">{template?.name || "Unknown KPI"}</p>
+                              <p className="font-medium text-foreground">{employee?.fullName || "Unknown"}</p>
+                              <p className="text-sm text-muted-foreground">{template?.name || "Unknown KPI"}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-4">
                             <div className="text-right">
-                              <p className="text-sm text-gray-400">Target</p>
-                              <p className="font-medium text-white">{assignment.customTarget || template?.targetValue}</p>
+                              <p className="text-sm text-muted-foreground">Target</p>
+                              <p className="font-medium text-foreground">{assignment.customTarget || template?.targetValue}</p>
                             </div>
                             <Badge variant="outline">{template?.category}</Badge>
                           </div>
@@ -526,12 +526,12 @@ export default function KpiManagement() {
           <TabsContent value="reviews" className="space-y-4">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-4">
-                <h2 className="text-lg font-semibold text-white">Review Submissions</h2>
+                <h2 className="text-lg font-semibold text-foreground">Review Submissions</h2>
                 <Select value={selectedCycle} onValueChange={setSelectedCycle}>
-                  <SelectTrigger className="w-64 bg-gray-800 border-gray-700 text-white" data-testid="select-cycle-reviews">
+                  <SelectTrigger className="w-64 bg-muted border-border" data-testid="select-cycle-reviews">
                     <SelectValue placeholder="Filter by cycle" />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700">
+                  <SelectContent className="bg-card border-border">
                     <SelectItem value="all">All Cycles</SelectItem>
                     {cycles.map((cycle) => (
                       <SelectItem key={cycle.id} value={cycle.id}>{cycle.name}</SelectItem>
@@ -546,11 +546,11 @@ export default function KpiManagement() {
             </div>
 
             {submissions.length === 0 ? (
-              <Card className="bg-gray-800/50 border-gray-700">
+              <Card className="bg-card border-border">
                 <CardContent className="flex flex-col items-center justify-center py-12">
-                  <BarChart3 className="h-12 w-12 text-gray-500 mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">No Reviews Yet</h3>
-                  <p className="text-gray-400 text-center">
+                  <BarChart3 className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">No Reviews Yet</h3>
+                  <p className="text-muted-foreground text-center">
                     Reviews will appear here once employees submit their self-assessments.
                   </p>
                 </CardContent>
@@ -561,7 +561,7 @@ export default function KpiManagement() {
                   const employee = employees.find(e => e.id === submission.employeeId);
                   const manager = employees.find(e => e.id === submission.managerId);
                   return (
-                    <Card key={submission.id} className="bg-gray-800/50 border-gray-700" data-testid={`card-submission-${submission.id}`}>
+                    <Card key={submission.id} className="bg-card border-border" data-testid={`card-submission-${submission.id}`}>
                       <CardContent className="py-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
@@ -569,28 +569,28 @@ export default function KpiManagement() {
                               <User className="h-6 w-6 text-blue-400" />
                             </div>
                             <div>
-                              <h3 className="font-medium text-white">{employee?.fullName || "Unknown"}</h3>
-                              <p className="text-sm text-gray-400">Manager: {manager?.fullName || "Not assigned"}</p>
+                              <h3 className="font-medium text-foreground">{employee?.fullName || "Unknown"}</h3>
+                              <p className="text-sm text-muted-foreground">Manager: {manager?.fullName || "Not assigned"}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-6">
                             <div className="text-center">
-                              <p className="text-xs text-gray-500 uppercase">Self Assessment</p>
+                              <p className="text-xs text-muted-foreground uppercase">Self Assessment</p>
                               {getStatusBadge(submission.selfAssessmentStatus)}
                             </div>
                             <div className="text-center">
-                              <p className="text-xs text-gray-500 uppercase">Manager Review</p>
+                              <p className="text-xs text-muted-foreground uppercase">Manager Review</p>
                               {getStatusBadge(submission.managerReviewStatus)}
                             </div>
                             {submission.finalScore && (
                               <div className="text-center">
-                                <p className="text-xs text-gray-500 uppercase">Final Score</p>
+                                <p className="text-xs text-muted-foreground uppercase">Final Score</p>
                                 <div className="flex items-center gap-1">
                                   {[1, 2, 3, 4, 5].map((star) => (
                                     <Star
                                       key={star}
                                       className={`h-4 w-4 ${
-                                        star <= submission.finalScore! ? "text-yellow-400 fill-yellow-400" : "text-gray-600"
+                                        star <= submission.finalScore! ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground"
                                       }`}
                                     />
                                   ))}
@@ -621,7 +621,7 @@ export default function KpiManagement() {
                           </div>
                         </div>
                         {submission.selfSubmittedAt && (
-                          <p className="text-xs text-gray-500 mt-2 ml-16">
+                          <p className="text-xs text-muted-foreground mt-2 ml-16">
                             Self-assessment submitted: {format(new Date(submission.selfSubmittedAt), "MMM d, yyyy 'at' h:mm a")}
                           </p>
                         )}
@@ -818,10 +818,10 @@ function TemplateDialog({
       if (!isOpen) setStep(1);
       onOpenChange(isOpen);
     }}>
-      <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-card border-border max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{template ? "Edit" : "Create"} KPI Template</DialogTitle>
-          <DialogDescription className="text-gray-400">
+          <DialogDescription className="text-muted-foreground">
             {step === 1 && "Step 1 of 4: Define KPI details"}
             {step === 2 && "Step 2 of 4: Configure data source"}
             {step === 3 && "Step 3 of 4: Assign to review cycle"}
@@ -830,13 +830,13 @@ function TemplateDialog({
         </DialogHeader>
         
         <div className="flex items-center gap-2 mb-4">
-          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${step >= 1 ? 'bg-blue-600' : 'bg-gray-700'}`}>1</div>
-          <div className={`flex-1 h-1 ${step >= 2 ? 'bg-blue-600' : 'bg-gray-700'}`} />
-          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${step >= 2 ? 'bg-blue-600' : 'bg-gray-700'}`}>2</div>
-          <div className={`flex-1 h-1 ${step >= 3 ? 'bg-blue-600' : 'bg-gray-700'}`} />
-          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${step >= 3 ? 'bg-blue-600' : 'bg-gray-700'}`}>3</div>
-          <div className={`flex-1 h-1 ${step >= 4 ? 'bg-blue-600' : 'bg-gray-700'}`} />
-          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${step >= 4 ? 'bg-blue-600' : 'bg-gray-700'}`}>4</div>
+          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${step >= 1 ? 'bg-blue-600 text-white' : 'bg-muted text-muted-foreground'}`}>1</div>
+          <div className={`flex-1 h-1 ${step >= 2 ? 'bg-blue-600' : 'bg-muted'}`} />
+          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${step >= 2 ? 'bg-blue-600 text-white' : 'bg-muted text-muted-foreground'}`}>2</div>
+          <div className={`flex-1 h-1 ${step >= 3 ? 'bg-blue-600' : 'bg-muted'}`} />
+          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${step >= 3 ? 'bg-blue-600 text-white' : 'bg-muted text-muted-foreground'}`}>3</div>
+          <div className={`flex-1 h-1 ${step >= 4 ? 'bg-blue-600' : 'bg-muted'}`} />
+          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${step >= 4 ? 'bg-blue-600 text-white' : 'bg-muted text-muted-foreground'}`}>4</div>
         </div>
 
         {step === 1 && (
@@ -847,7 +847,7 @@ function TemplateDialog({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g., Customer Satisfaction Score"
-                className="bg-gray-800 border-gray-700"
+                className="bg-muted border-border"
                 data-testid="input-template-name"
               />
             </div>
@@ -857,7 +857,7 @@ function TemplateDialog({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe what this KPI measures..."
-                className="bg-gray-800 border-gray-700"
+                className="bg-muted border-border"
                 data-testid="input-template-description"
               />
             </div>
@@ -865,10 +865,10 @@ function TemplateDialog({
               <div>
                 <Label>Category</Label>
                 <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger className="bg-gray-800 border-gray-700" data-testid="select-template-category">
+                  <SelectTrigger className="bg-muted border-border" data-testid="select-template-category">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700">
+                  <SelectContent className="bg-muted border-border">
                     {CATEGORIES.map((cat) => (
                       <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                     ))}
@@ -878,10 +878,10 @@ function TemplateDialog({
               <div>
                 <Label>Measurement Type</Label>
                 <Select value={measurementType} onValueChange={setMeasurementType}>
-                  <SelectTrigger className="bg-gray-800 border-gray-700" data-testid="select-template-measurement">
+                  <SelectTrigger className="bg-muted border-border" data-testid="select-template-measurement">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700">
+                  <SelectContent className="bg-muted border-border">
                     <SelectItem value="scale">Scale (1-5)</SelectItem>
                     <SelectItem value="percentage">Percentage</SelectItem>
                     <SelectItem value="number">Number</SelectItem>
@@ -910,17 +910,17 @@ function TemplateDialog({
                   value={targetValue}
                   onChange={(e) => setTargetValue(e.target.value)}
                   placeholder="e.g., 90"
-                  className="bg-gray-800 border-gray-700"
+                  className="bg-muted border-border"
                   data-testid="input-template-target"
                 />
               </div>
               <div>
                 <Label>Target Period</Label>
                 <Select value={targetTimePeriod} onValueChange={setTargetTimePeriod}>
-                  <SelectTrigger className="bg-gray-800 border-gray-700" data-testid="select-template-target-period">
+                  <SelectTrigger className="bg-muted border-border" data-testid="select-template-target-period">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700">
+                  <SelectContent className="bg-muted border-border">
                     {FREQUENCIES.map((f) => (
                       <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
                     ))}
@@ -930,10 +930,10 @@ function TemplateDialog({
               <div>
                 <Label>Frequency</Label>
                 <Select value={frequency} onValueChange={setFrequency}>
-                  <SelectTrigger className="bg-gray-800 border-gray-700" data-testid="select-template-frequency">
+                  <SelectTrigger className="bg-muted border-border" data-testid="select-template-frequency">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700">
+                  <SelectContent className="bg-muted border-border">
                     {FREQUENCIES.map((f) => (
                       <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
                     ))}
@@ -941,17 +941,17 @@ function TemplateDialog({
                 </Select>
               </div>
             </div>
-            <div className="border-t border-gray-700 pt-4">
+            <div className="border-t border-border pt-4">
               <Label className="text-base font-medium">Owner</Label>
-              <p className="text-sm text-gray-400 mb-3">Who is responsible for this KPI?</p>
+              <p className="text-sm text-muted-foreground mb-3">Who is responsible for this KPI?</p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Owner Type</Label>
                   <Select value={ownerType} onValueChange={setOwnerType}>
-                    <SelectTrigger className="bg-gray-800 border-gray-700" data-testid="select-template-owner-type">
+                    <SelectTrigger className="bg-muted border-border" data-testid="select-template-owner-type">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectContent className="bg-muted border-border">
                       {OWNER_TYPES.map((t) => (
                         <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                       ))}
@@ -963,10 +963,10 @@ function TemplateDialog({
                     <>
                       <Label>Department</Label>
                       <Select value={ownerDepartment} onValueChange={setOwnerDepartment}>
-                        <SelectTrigger className="bg-gray-800 border-gray-700" data-testid="select-template-owner-department">
+                        <SelectTrigger className="bg-muted border-border" data-testid="select-template-owner-department">
                           <SelectValue placeholder="Select department" />
                         </SelectTrigger>
-                        <SelectContent className="bg-gray-800 border-gray-700">
+                        <SelectContent className="bg-muted border-border">
                           {DEPARTMENTS.map((dept) => (
                             <SelectItem key={dept} value={dept}>{dept}</SelectItem>
                           ))}
@@ -978,10 +978,10 @@ function TemplateDialog({
                     <>
                       <Label>Division</Label>
                       <Select value={ownerDivision} onValueChange={setOwnerDivision}>
-                        <SelectTrigger className="bg-gray-800 border-gray-700" data-testid="select-template-owner-division">
+                        <SelectTrigger className="bg-muted border-border" data-testid="select-template-owner-division">
                           <SelectValue placeholder="Select division" />
                         </SelectTrigger>
-                        <SelectContent className="bg-gray-800 border-gray-700">
+                        <SelectContent className="bg-muted border-border">
                           {DIVISIONS.map((div) => (
                             <SelectItem key={div} value={div}>{div}</SelectItem>
                           ))}
@@ -1011,7 +1011,7 @@ function TemplateDialog({
         {step === 3 && (
           <div className="space-y-4">
             <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-              <p className="text-sm text-gray-300">
+              <p className="text-sm text-muted-foreground">
                 Assign this KPI to a review cycle and select employees. You can skip this step and assign later.
               </p>
             </div>
@@ -1019,10 +1019,10 @@ function TemplateDialog({
             <div>
               <Label>Review Cycle</Label>
               <Select value={assignReviewCycleId} onValueChange={setAssignReviewCycleId}>
-                <SelectTrigger className="bg-gray-800 border-gray-700" data-testid="select-assign-cycle">
+                <SelectTrigger className="bg-muted border-border" data-testid="select-assign-cycle">
                   <SelectValue placeholder="Select a review cycle (optional)" />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-700">
+                <SelectContent className="bg-muted border-border">
                   {activeCycles.map((cycle) => (
                     <SelectItem key={cycle.id} value={cycle.id}>{cycle.name}</SelectItem>
                   ))}
@@ -1033,9 +1033,9 @@ function TemplateDialog({
             {assignReviewCycleId && (
               <div>
                 <Label>Select Employees to Assign</Label>
-                <div className="mt-2 max-h-48 overflow-y-auto space-y-2 border border-gray-700 rounded-lg p-3">
+                <div className="mt-2 max-h-48 overflow-y-auto space-y-2 border border-border rounded-lg p-3">
                   {employees.map((employee) => (
-                    <label key={employee.id} className="flex items-center gap-3 cursor-pointer hover:bg-gray-800/50 p-2 rounded">
+                    <label key={employee.id} className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded">
                       <input
                         type="checkbox"
                         checked={assignEmployeeIds.includes(employee.id)}
@@ -1046,17 +1046,17 @@ function TemplateDialog({
                             setAssignEmployeeIds(assignEmployeeIds.filter(id => id !== employee.id));
                           }
                         }}
-                        className="rounded border-gray-600"
+                        className="rounded border-border"
                         data-testid={`checkbox-assign-employee-${employee.id}`}
                       />
                       <div className="h-8 w-8 bg-blue-600/20 rounded-full flex items-center justify-center">
                         <User className="h-4 w-4 text-blue-400" />
                       </div>
-                      <span className="text-white">{employee.fullName}</span>
+                      <span className="text-foreground">{employee.fullName}</span>
                     </label>
                   ))}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">{assignEmployeeIds.length} employee(s) selected</p>
+                <p className="text-xs text-muted-foreground mt-1">{assignEmployeeIds.length} employee(s) selected</p>
               </div>
             )}
           </div>
@@ -1065,60 +1065,60 @@ function TemplateDialog({
         {step === 4 && (
           <div className="space-y-4">
             <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
-              <p className="text-sm text-gray-300">
+              <p className="text-sm text-muted-foreground">
                 Review your KPI configuration before creating.
               </p>
             </div>
             
             <div className="space-y-3">
-              <div className="flex justify-between py-2 border-b border-gray-800">
-                <span className="text-gray-400">Name</span>
-                <span className="text-white font-medium">{name}</span>
+              <div className="flex justify-between py-2 border-b border-border">
+                <span className="text-muted-foreground">Name</span>
+                <span className="text-foreground font-medium">{name}</span>
               </div>
-              <div className="flex justify-between py-2 border-b border-gray-800">
-                <span className="text-gray-400">Category</span>
-                <span className="text-white">{category}</span>
+              <div className="flex justify-between py-2 border-b border-border">
+                <span className="text-muted-foreground">Category</span>
+                <span className="text-foreground">{category}</span>
               </div>
-              <div className="flex justify-between py-2 border-b border-gray-800">
-                <span className="text-gray-400">Measurement Type</span>
-                <span className="text-white capitalize">{measurementType}</span>
+              <div className="flex justify-between py-2 border-b border-border">
+                <span className="text-muted-foreground">Measurement Type</span>
+                <span className="text-foreground capitalize">{measurementType}</span>
               </div>
-              <div className="flex justify-between py-2 border-b border-gray-800">
-                <span className="text-gray-400">Weight</span>
-                <span className="text-white">{weight}%</span>
+              <div className="flex justify-between py-2 border-b border-border">
+                <span className="text-muted-foreground">Weight</span>
+                <span className="text-foreground">{weight}%</span>
               </div>
-              <div className="flex justify-between py-2 border-b border-gray-800">
-                <span className="text-gray-400">Target Value</span>
-                <span className="text-white">{targetValue || "Not set"}</span>
+              <div className="flex justify-between py-2 border-b border-border">
+                <span className="text-muted-foreground">Target Value</span>
+                <span className="text-foreground">{targetValue || "Not set"}</span>
               </div>
-              <div className="flex justify-between py-2 border-b border-gray-800">
-                <span className="text-gray-400">Frequency</span>
-                <span className="text-white capitalize">{frequency}</span>
+              <div className="flex justify-between py-2 border-b border-border">
+                <span className="text-muted-foreground">Frequency</span>
+                <span className="text-foreground capitalize">{frequency}</span>
               </div>
-              <div className="flex justify-between py-2 border-b border-gray-800">
-                <span className="text-gray-400">Data Source</span>
-                <span className="text-white">
+              <div className="flex justify-between py-2 border-b border-border">
+                <span className="text-muted-foreground">Data Source</span>
+                <span className="text-foreground">
                   {selectedSource?.name || "Not configured"}
                 </span>
               </div>
               {assignReviewCycleId && (
-                <div className="flex justify-between py-2 border-b border-gray-800">
-                  <span className="text-gray-400">Review Cycle</span>
-                  <span className="text-white">
+                <div className="flex justify-between py-2 border-b border-border">
+                  <span className="text-muted-foreground">Review Cycle</span>
+                  <span className="text-foreground">
                     {activeCycles.find(c => c.id === assignReviewCycleId)?.name}
                   </span>
                 </div>
               )}
               {assignEmployeeIds.length > 0 && (
-                <div className="flex justify-between py-2 border-b border-gray-800">
-                  <span className="text-gray-400">Assigned Employees</span>
-                  <span className="text-white">{assignEmployeeIds.length} employee(s)</span>
+                <div className="flex justify-between py-2 border-b border-border">
+                  <span className="text-muted-foreground">Assigned Employees</span>
+                  <span className="text-foreground">{assignEmployeeIds.length} employee(s)</span>
                 </div>
               )}
               {description && (
                 <div className="py-2">
-                  <span className="text-gray-400 block mb-1">Description</span>
-                  <span className="text-gray-300 text-sm">{description}</span>
+                  <span className="text-muted-foreground block mb-1">Description</span>
+                  <span className="text-muted-foreground text-sm">{description}</span>
                 </div>
               )}
             </div>
@@ -1214,10 +1214,10 @@ function CycleDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-md">
+      <DialogContent className="bg-card border-border max-w-md">
         <DialogHeader>
           <DialogTitle>{cycle ? "Edit" : "Create"} Review Cycle</DialogTitle>
-          <DialogDescription className="text-gray-400">
+          <DialogDescription className="text-muted-foreground">
             Schedule a performance review period
           </DialogDescription>
         </DialogHeader>
@@ -1228,7 +1228,7 @@ function CycleDialog({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g., Q4 2024 Performance Review"
-              className="bg-gray-800 border-gray-700"
+              className="bg-muted border-border"
               data-testid="input-cycle-name"
             />
           </div>
@@ -1238,17 +1238,17 @@ function CycleDialog({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe this review cycle..."
-              className="bg-gray-800 border-gray-700"
+              className="bg-muted border-border"
               data-testid="input-cycle-description"
             />
           </div>
           <div>
             <Label>Type</Label>
             <Select value={cycleType} onValueChange={setCycleType}>
-              <SelectTrigger className="bg-gray-800 border-gray-700" data-testid="select-cycle-type">
+              <SelectTrigger className="bg-muted border-border" data-testid="select-cycle-type">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-700">
+              <SelectContent className="bg-card border-border">
                 <SelectItem value="monthly">Monthly</SelectItem>
                 <SelectItem value="quarterly">Quarterly</SelectItem>
                 <SelectItem value="semi_annual">Semi-Annual</SelectItem>
@@ -1263,7 +1263,7 @@ function CycleDialog({
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="bg-gray-800 border-gray-700"
+                className="bg-muted border-border"
                 data-testid="input-cycle-start"
               />
             </div>
@@ -1273,7 +1273,7 @@ function CycleDialog({
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="bg-gray-800 border-gray-700"
+                className="bg-muted border-border"
                 data-testid="input-cycle-end"
               />
             </div>
@@ -1281,10 +1281,10 @@ function CycleDialog({
           <div>
             <Label>Status</Label>
             <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="bg-gray-800 border-gray-700" data-testid="select-cycle-status">
+              <SelectTrigger className="bg-muted border-border" data-testid="select-cycle-status">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-700">
+              <SelectContent className="bg-card border-border">
                 <SelectItem value="draft">Draft</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="self_assessment">Self Assessment</SelectItem>
@@ -1347,10 +1347,10 @@ function AssignDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-lg">
+      <DialogContent className="bg-card border-border max-w-lg">
         <DialogHeader>
           <DialogTitle>Assign KPIs to Employees</DialogTitle>
-          <DialogDescription className="text-gray-400">
+          <DialogDescription className="text-muted-foreground">
             Select a review cycle, KPI template, and employees
           </DialogDescription>
         </DialogHeader>
@@ -1358,10 +1358,10 @@ function AssignDialog({
           <div>
             <Label>Review Cycle</Label>
             <Select value={selectedCycle} onValueChange={setSelectedCycle}>
-              <SelectTrigger className="bg-gray-800 border-gray-700" data-testid="select-assign-cycle">
+              <SelectTrigger className="bg-muted border-border" data-testid="select-assign-cycle">
                 <SelectValue placeholder="Select cycle" />
               </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-700">
+              <SelectContent className="bg-card border-border">
                 {cycles.filter(c => c.status !== 'completed').map((cycle) => (
                   <SelectItem key={cycle.id} value={cycle.id}>{cycle.name}</SelectItem>
                 ))}
@@ -1371,10 +1371,10 @@ function AssignDialog({
           <div>
             <Label>KPI Template</Label>
             <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
-              <SelectTrigger className="bg-gray-800 border-gray-700" data-testid="select-assign-template">
+              <SelectTrigger className="bg-muted border-border" data-testid="select-assign-template">
                 <SelectValue placeholder="Select KPI" />
               </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-700">
+              <SelectContent className="bg-card border-border">
                 {templates.map((template) => (
                   <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
                 ))}
@@ -1388,15 +1388,15 @@ function AssignDialog({
               value={targetValue}
               onChange={(e) => setTargetValue(e.target.value)}
               placeholder="Leave empty to use template default"
-              className="bg-gray-800 border-gray-700"
+              className="bg-muted border-border"
               data-testid="input-assign-target"
             />
           </div>
           <div>
             <Label>Select Employees</Label>
-            <div className="mt-2 max-h-48 overflow-y-auto space-y-2 border border-gray-700 rounded-lg p-3">
+            <div className="mt-2 max-h-48 overflow-y-auto space-y-2 border border-border rounded-lg p-3">
               {employees.map((employee) => (
-                <label key={employee.id} className="flex items-center gap-3 cursor-pointer hover:bg-gray-800/50 p-2 rounded">
+                <label key={employee.id} className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded">
                   <input
                     type="checkbox"
                     checked={selectedEmployees.includes(employee.id)}
@@ -1407,17 +1407,17 @@ function AssignDialog({
                         setSelectedEmployees(selectedEmployees.filter(id => id !== employee.id));
                       }
                     }}
-                    className="rounded border-gray-600"
+                    className="rounded border-border"
                     data-testid={`checkbox-employee-${employee.id}`}
                   />
                   <div className="h-8 w-8 bg-blue-600/20 rounded-full flex items-center justify-center">
                     <User className="h-4 w-4 text-blue-400" />
                   </div>
-                  <span className="text-white">{employee.fullName}</span>
+                  <span className="text-foreground">{employee.fullName}</span>
                 </label>
               ))}
             </div>
-            <p className="text-xs text-gray-500 mt-1">{selectedEmployees.length} employee(s) selected</p>
+            <p className="text-xs text-muted-foreground mt-1">{selectedEmployees.length} employee(s) selected</p>
           </div>
         </div>
         <DialogFooter>
@@ -1454,44 +1454,44 @@ function SubmissionDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-2xl">
+      <DialogContent className="bg-card border-border max-w-2xl">
         <DialogHeader>
           <DialogTitle>Review Details</DialogTitle>
-          <DialogDescription className="text-gray-400">
+          <DialogDescription className="text-muted-foreground">
             {employee?.fullName}'s performance review
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 bg-gray-800/50 rounded-lg">
-              <p className="text-sm text-gray-400 mb-1">Employee</p>
-              <p className="font-medium text-white">{employee?.fullName}</p>
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground mb-1">Employee</p>
+              <p className="font-medium text-foreground">{employee?.fullName}</p>
             </div>
-            <div className="p-4 bg-gray-800/50 rounded-lg">
-              <p className="text-sm text-gray-400 mb-1">Manager</p>
-              <p className="font-medium text-white">{manager?.fullName || "Not assigned"}</p>
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground mb-1">Manager</p>
+              <p className="font-medium text-foreground">{manager?.fullName || "Not assigned"}</p>
             </div>
           </div>
           
           <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 bg-gray-800/50 rounded-lg">
-              <p className="text-sm text-gray-400 mb-2">Self Assessment Status</p>
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground mb-2">Self Assessment Status</p>
               <Badge variant={submission.selfAssessmentStatus === 'completed' ? "default" : "secondary"}>
                 {submission.selfAssessmentStatus}
               </Badge>
               {submission.selfSubmittedAt && (
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-muted-foreground mt-2">
                   Submitted: {format(new Date(submission.selfSubmittedAt), "MMM d, yyyy")}
                 </p>
               )}
             </div>
-            <div className="p-4 bg-gray-800/50 rounded-lg">
-              <p className="text-sm text-gray-400 mb-2">Manager Review Status</p>
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground mb-2">Manager Review Status</p>
               <Badge variant={submission.managerReviewStatus === 'completed' ? "default" : "secondary"}>
                 {submission.managerReviewStatus}
               </Badge>
               {submission.managerSubmittedAt && (
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-muted-foreground mt-2">
                   Submitted: {format(new Date(submission.managerSubmittedAt), "MMM d, yyyy")}
                 </p>
               )}
@@ -1500,39 +1500,39 @@ function SubmissionDetailDialog({
 
           {submission.finalScore && (
             <div className="p-4 bg-blue-900/20 border border-blue-700/30 rounded-lg">
-              <p className="text-sm text-gray-400 mb-2">Final Score</p>
+              <p className="text-sm text-muted-foreground mb-2">Final Score</p>
               <div className="flex items-center gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Star
                     key={star}
                     className={`h-6 w-6 ${
-                      star <= submission.finalScore! ? "text-yellow-400 fill-yellow-400" : "text-gray-600"
+                      star <= submission.finalScore! ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground"
                     }`}
                   />
                 ))}
-                <span className="text-2xl font-bold text-white ml-2">{submission.finalScore}/5</span>
+                <span className="text-2xl font-bold text-foreground ml-2">{submission.finalScore}/5</span>
               </div>
             </div>
           )}
 
           {submission.employeeComments && (
-            <div className="p-4 bg-gray-800/50 rounded-lg">
-              <p className="text-sm text-gray-400 mb-2">Employee Comments</p>
-              <p className="text-white">{submission.employeeComments}</p>
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground mb-2">Employee Comments</p>
+              <p className="text-foreground">{submission.employeeComments}</p>
             </div>
           )}
 
           {submission.managerComments && (
-            <div className="p-4 bg-gray-800/50 rounded-lg">
-              <p className="text-sm text-gray-400 mb-2">Manager Comments</p>
-              <p className="text-white">{submission.managerComments}</p>
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground mb-2">Manager Comments</p>
+              <p className="text-foreground">{submission.managerComments}</p>
             </div>
           )}
 
           {submission.developmentPlan && (
-            <div className="p-4 bg-gray-800/50 rounded-lg">
-              <p className="text-sm text-gray-400 mb-2">Development Plan</p>
-              <p className="text-white">{submission.developmentPlan}</p>
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground mb-2">Development Plan</p>
+              <p className="text-foreground">{submission.developmentPlan}</p>
             </div>
           )}
         </div>
