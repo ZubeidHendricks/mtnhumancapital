@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import path from "path";
 import { registerRoutes } from "./routes";
@@ -8,6 +9,9 @@ import { storage } from "./storage";
 import { insertTenantRequestSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { dataCollectionService } from "./data-collection-service";
+import whatsappWebhookRouter from "./routes/whatsapp-webhook";
+import { authService } from "./auth-service";
+import { registerFleetLogixRoutes } from "./fleetlogix-routes";
 
 const app = express();
 
@@ -41,6 +45,31 @@ app.post("/api/tenant-requests", async (req, res) => {
   } catch (error) {
     console.error("Error submitting tenant request:", error);
     res.status(500).json({ message: "Failed to submit tenant request" });
+  }
+});
+
+// PUBLIC route for WhatsApp webhook (Meta/Facebook will call this)
+app.use("/api/whatsapp", whatsappWebhookRouter);
+
+// PUBLIC route for authentication (no tenant middleware needed)
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ message: "Username and password are required" });
+    }
+
+    const result = await authService.loginByUsername(username, password);
+    
+    if (!result) {
+      return res.status(401).json({ message: "Invalid username or password" });
+    }
+
+    res.json(result);
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ message: "Login failed" });
   }
 });
 
@@ -166,6 +195,14 @@ app.post("/api/public/interview-session/:token/complete", async (req, res) => {
 // Apply tenant resolution middleware ONLY to API routes to avoid blocking static assets
 app.use('/api', resolveTenant);
 
+// API endpoint to get current tenant configuration
+app.get('/api/tenant/current', (req, res) => {
+  if (!req.tenant) {
+    return res.status(404).json({ message: 'No tenant found' });
+  }
+  res.json(req.tenant);
+});
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -201,6 +238,9 @@ app.use((req, res, next) => {
   await seedDefaultTenant();
   
   const server = await registerRoutes(app);
+  
+  // Register FleetLogix routes
+  registerFleetLogixRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

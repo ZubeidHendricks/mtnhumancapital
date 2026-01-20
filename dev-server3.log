@@ -1,0 +1,57 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development npx tsx server/index.ts
+
+[PNetAPIService] Configured with Org ID: 120911, Sender ID: 21965
+Default tenant already exists: Avatar Human Capital
+11:39:56 PM [express] serving on port 5000
+11:39:56 PM [express] Background reminder checker started (runs every hour)
+[DataCollectionService] Starting background data collection service
+11:39:56 PM [express] Background data collection service started (checks every minute)
+[AUTH] Request to: /api/fleetlogix/drivers
+[AUTH] Auth header present: true
+[AUTH] Token: eyJhbGciOiJIUzI1NiIs...
+[AUTH] User from token: admin@fleetlogix.co.za (aca1489d-48db-4644-821d-30eb53b16f94)
+[AUTH] ✅ Authentication successful for: admin@fleetlogix.co.za
+[FLEETLOGIX] Error fetching drivers: error: column "contact_number" does not exist
+    at file:///home/zubeid/AvatarHumanCapital/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/zubeid/AvatarHumanCapital/node_modules/src/neon-serverless/session.ts:102:18)
+    at async <anonymous> (/home/zubeid/AvatarHumanCapital/server/fleetlogix-routes.ts:34:23) {
+  length: 114,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '40',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3722',
+  routine: 'errorMissingColumn'
+}
+11:39:58 PM [express] GET /api/fleetlogix/drivers 500 in 529ms :: {"error":"Failed to fetch drivers"}
+[AUTH] Request to: /api/fleetlogix/vehicles
+[AUTH] Auth header present: true
+[AUTH] Token: eyJhbGciOiJIUzI1NiIs...
+[AUTH] User from token: admin@fleetlogix.co.za (aca1489d-48db-4644-821d-30eb53b16f94)
+[AUTH] ✅ Authentication successful for: admin@fleetlogix.co.za
+11:39:59 PM [express] GET /api/fleetlogix/vehicles 500 in 502ms :: {"error":"Failed to fetch vehicles…
+[AUTH] Request to: /api/fleetlogix/routes
+[AUTH] Auth header present: true
+[AUTH] Token: eyJhbGciOiJIUzI1NiIs...
+[AUTH] User from token: admin@fleetlogix.co.za (aca1489d-48db-4644-821d-30eb53b16f94)
+[AUTH] ✅ Authentication successful for: admin@fleetlogix.co.za
+11:40:01 PM [express] GET /api/fleetlogix/routes 500 in 479ms :: {"error":"Failed to fetch routes"}
+[AUTH] Request to: /api/fleetlogix/loads
+[AUTH] Auth header present: true
+[AUTH] Token: eyJhbGciOiJIUzI1NiIs...
+[AUTH] User from token: admin@fleetlogix.co.za (aca1489d-48db-4644-821d-30eb53b16f94)
+[AUTH] ✅ Authentication successful for: admin@fleetlogix.co.za
+11:40:02 PM [express] GET /api/fleetlogix/loads 500 in 486ms :: {"error":"Failed to fetch loads"}

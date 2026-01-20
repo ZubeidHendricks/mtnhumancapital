@@ -1,0 +1,18 @@
+This relates to the XML node <listingtype>
+
+1. listingtype = standard
+which is standard liquid design listing. this will use normal JF Credit.
+IF
+2. listingype = personalised
+which is LD 2 and LD3 ('better' , 'best') then this will use personalised JF Credit.
+
+PNet uses this to establish whether the client will be using standard view of their jobs or if the client will
+have branded listings on PNet.
+This is activated at the client's request on a per client basis.
+
+The ATS system will preferably accomodate the client in such instances to ensure that if requested, the static
+value for listing type will change to 'personalised'. this works to identify such clients in parallel with the 
+SenderID.
+
+With most new integration setups and Liquid design migrations, this value would be standard. unless mutual client
+requests otherwise.

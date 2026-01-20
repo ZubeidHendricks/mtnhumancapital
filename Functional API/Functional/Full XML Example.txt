@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<jobfeed>
+    <joblisting reference_id="123456ABCD" sender_id="12345" organisation_id="321" action="INSERT">
+    <workfield id="1005001"/>
+    <workfield id="1005002"/>
+    <geography id="22006005"/>
+    <geography id="22006006"/>
+    <sector id="4000"/>
+    <contracttype id="903"/>
+    <worktype id="80001"/>
+    <experience id="90001"/>
+    <situation id="91000"/>
+    <channel><![CDATA[ZA]]></channel>
+    <listingtype><![CDATA[Standard or Personalised]]></listingtype>
+    <jobdetails>
+            <language><![CDATA[EN]]></language>
+            <jobtitle><![CDATA[offer jobtitle]]></jobtitle>
+            <introduction title=""><![CDATA[company's introduction text]]></introduction title>
+            <tasks title=""><![CDATA]]></tasks>
+            <profile title=""><![CDATA[candidate's profile text]]></profile>
+            <offer title=""><![CDATA[company's benefits text]]></offer>
+            <contactinfo title=""><![CDATA[contact information text]]></contactinfo>
+            <joblocations>
+                <location>
+                    <countrycode><![CDATA[DE]]></countrycode>
+                    <city><![CDATA[Berlin]]></city>
+                    <postalcode><![CDATA[10969]]></postalcode>
+                    <streetname><![CDATA[Lindenstraße]]></streetname>
+                    <buildingnumber><![CDATA[123]]></buildingnumber>
+                </location>
+                <location>
+                    <countrycode><![CDATA[DE]]></countrycode>
+                    <city><![CDATA[Munich]]></city>
+                    <postalcode><![CDATA[81545]]></postalcode>
+                    <streetname><![CDATA[Lindenstraße]]></streetname>
+                    <buildingnumber><![CDATA[123]]></buildingnumber>
+                </location>
+            </joblocations>
+            <keywords><![CDATA[keyword1, keyword2]]></keywords>
+            <apply>
+                <email><![CDATA[apply@customer.com]]></email>
+                <url><![CDATA[https://www.applyhere.com]]></url>
+                <questionnaire><![CDATA[https://www.applyhere.com]]></questionnaire>
+            </apply>
+        </jobdetails>
+        <companydetails>
+            <companyname><![CDATA[Max Mustermann GmbH]]></companyname>
+            <contract>
+                <name><![CDATA[Professional Rahmenvertrag]]></name>
+                <internship><![CDATA[false]]></internship> 
+                <duration><![CDATA[90]]></duration> 
+            </contract>
+            <recruiter>
+                <position><![CDATA[Recruiting Manager]]></position>
+                <gender><![CDATA[M]]></gender>
+                <firstname><![CDATA[Max]]></firstname>
+                <lastname><![CDATA[Mustermann]]></lastname>
+                <email><![CDATA[mustermann@company-group.de]]></email>
+                <phone><![CDATA[+4912356789]]></phone>
+            </recruiter>
+        </companydetails>     
+    </joblisting>
+</jobfeed>
+	
+

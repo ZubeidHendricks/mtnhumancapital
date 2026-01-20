@@ -37,6 +37,20 @@ export const api = axios.create({
   withCredentials: true, // Important for cross-origin requests with cookies
 });
 
+// Add request interceptor to attach auth token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("ahc_auth_token");
+    if (token && token !== "demo_token") {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 export const jobsService = {
   getAll: async (): Promise<Job[]> => {
     const response = await api.get("/jobs");

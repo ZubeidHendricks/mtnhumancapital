@@ -1,0 +1,11 @@
+There are 2 fields called:
+joblisting/publish_duration
+joblisting/publish_start
+
+Example:
+<publish_start>14/03/2016</publish_start>
+<publish_duration>30</publish_duration>
+
+publish_duration is the number of days while offer will be online - visible for candidates, starting from 14th March.
+For INSERT action it's possible to set current date or the future date However future dates does not serve any function.
+Also, while sending UPDATE action, it's allowed to change the publish_duration value (for example, if we want to extend the duration before offline date/end date).

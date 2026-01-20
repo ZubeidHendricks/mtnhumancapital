@@ -680,15 +680,15 @@ BENEFITS:
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">HR Command Center</h1>
-            <p className="text-muted-foreground">AI-Driven Human Capital Management</p>
+            <p className="text-gray-900 dark:text-gray-100 font-semibold">AI-Driven Human Capital Management</p>
           </div>
           <div className="flex items-center gap-3">
             <Link href="/workflow-showcase">
-              <Button className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg shadow-green-500/20" data-testid="button-start-workflow">
+              <Button className="bg-orange-500 hover:bg-orange-600 text-white font-semibold" data-testid="button-start-workflow">
                 <ArrowRight className="w-4 h-4 mr-2" /> Start Workflow
               </Button>
             </Link>
-            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 px-3 py-1">
+            <Badge variant="outline" className="bg-orange-50 dark:bg-orange-950 text-primary border-orange-200 dark:border-orange-700 px-3 py-1">
               <BrainCircuit className="w-3 h-3 mr-2" /> AI Agents Active
             </Badge>
           </div>
@@ -708,11 +708,11 @@ BENEFITS:
         <Tabs defaultValue="jobs" className="space-y-6" onValueChange={setActiveTab}>
           <div className="flex items-center gap-3 flex-wrap">
             {/* Main 4 Tabs */}
-            <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:w-[500px] bg-card/50 border border-white/5">
-              <TabsTrigger value="jobs">Jobs</TabsTrigger>
-              <TabsTrigger value="recruitment">Recruitment</TabsTrigger>
-              <TabsTrigger value="integrity">Integrity</TabsTrigger>
-              <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
+            <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:w-[500px] bg-white dark:bg-gray-800 border-2 border-orange-200 dark:border-orange-700">
+              <TabsTrigger value="jobs" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white font-semibold">Jobs</TabsTrigger>
+              <TabsTrigger value="recruitment" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white font-semibold">Recruitment</TabsTrigger>
+              <TabsTrigger value="integrity" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white font-semibold">Integrity</TabsTrigger>
+              <TabsTrigger value="onboarding" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white font-semibold">Onboarding</TabsTrigger>
             </TabsList>
           </div>
 
@@ -721,30 +721,30 @@ BENEFITS:
             
             {/* Quick Action Banners */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="rounded-lg bg-gradient-to-r from-primary/20 to-purple-500/20 border border-primary/20 p-6 flex items-center justify-between">
+              <div className="rounded-lg bg-orange-50 dark:bg-orange-900 border-2 border-orange-200 dark:border-orange-700 p-6 flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-bold flex items-center gap-2 text-white">
                     <Sparkles className="w-5 h-5 text-primary" />
                     Need to find candidates fast?
                   </h3>
-                  <p className="text-muted-foreground text-sm mt-1">
+                  <p className="text-gray-900 dark:text-gray-100 font-semibold text-sm mt-1">
                     Launch the AI Recruitment Agent to source, screen, and rank candidates.
                   </p>
                 </div>
                 <Link href="/recruitment-agent">
-                  <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20">
+                  <Button className="bg-orange-500 hover:bg-orange-600 text-white font-semibold">
                     Launch AI Recruiter
                   </Button>
                 </Link>
               </div>
 
-              <div className="rounded-lg bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/20 p-6 flex items-center justify-between">
+              <div className="rounded-lg bg-blue-50 dark:bg-blue-900 border-2 border-blue-200 dark:border-blue-700 p-6 flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-bold flex items-center gap-2 text-white">
                     <LayoutList className="w-5 h-5 text-blue-400" />
                     Track candidate progress
                   </h3>
-                  <p className="text-muted-foreground text-sm mt-1">
+                  <p className="text-gray-900 dark:text-gray-100 font-semibold text-sm mt-1">
                     Monitor document status and pipeline stages for shortlisted candidates.
                   </p>
                 </div>
@@ -757,44 +757,44 @@ BENEFITS:
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="bg-card/30 border-white/10 backdrop-blur-sm">
+              <Card className="bg-card border-border">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Open Roles</CardTitle>
+                  <CardTitle className="text-gray-900 dark:text-white font-bold text-sm font-medium text-gray-900 dark:text-gray-100 font-semibold">Open Roles</CardTitle>
                   <div className="text-2xl font-bold">
                     {loadingJobs ? <Loader2 className="w-6 h-6 animate-spin" /> : jobCount}
                   </div>
                 </CardHeader>
               </Card>
-              <Card className="bg-card/30 border-white/10 backdrop-blur-sm">
+              <Card className="bg-card border-border">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Candidates in Pipeline</CardTitle>
+                  <CardTitle className="text-gray-900 dark:text-white font-bold text-sm font-medium text-gray-900 dark:text-gray-100 font-semibold">Candidates in Pipeline</CardTitle>
                   <div className="text-2xl font-bold">
                     {loadingCandidates ? <Loader2 className="w-6 h-6 animate-spin" /> : displayCandidates.length}
                   </div>
                 </CardHeader>
               </Card>
-              <Card className="bg-card/30 border-white/10 backdrop-blur-sm">
+              <Card className="bg-card border-border">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Time to Hire (Avg)</CardTitle>
+                  <CardTitle className="text-gray-900 dark:text-white font-bold text-sm font-medium text-gray-900 dark:text-gray-100 font-semibold">Time to Hire (Avg)</CardTitle>
                   <div className="text-2xl font-bold">18 Days</div>
                 </CardHeader>
               </Card>
             </div>
 
             {/* JOBS/ROLES LIST */}
-            <Card className="border-white/10 bg-card/20">
+            <Card className="border-border bg-card">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Open Roles</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="text-gray-900 dark:text-white font-bold text-gray-900 dark:text-white font-bold">Open Roles</CardTitle>
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">
                       {loadingJobs ? "Loading positions..." : "Active job requisitions and hiring pipelines"}
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
                     <Button 
                       variant="outline" 
-                      className="gap-2 border-white/10 hover:bg-white/5"
+                      className="gap-2 border-border hover:bg-white/5"
                       onClick={() => setShowArchivedJobs(!showArchivedJobs)}
                       data-testid="toggle-archived-jobs"
                     >
@@ -803,7 +803,7 @@ BENEFITS:
                     </Button>
                     <Dialog open={isCreateJobOpen} onOpenChange={setIsCreateJobOpen}>
                       <DialogTrigger asChild>
-                        <Button variant="outline" className="gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10">
+                        <Button variant="outline" className="gap-2 border-orange-200 dark:border-orange-700 bg-orange-50 dark:bg-orange-950 hover:bg-orange-50 dark:bg-orange-950">
                           <Plus className="h-4 w-4" />
                           New Role
                         </Button>
@@ -813,8 +813,8 @@ BENEFITS:
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="rounded-md border border-white/10 overflow-hidden">
-                  <div className="bg-white/5 px-4 py-3 grid grid-cols-12 text-sm font-medium text-muted-foreground">
+                <div className="rounded-md border border-border overflow-hidden">
+                  <div className="bg-white/5 px-4 py-3 grid grid-cols-12 text-sm font-medium text-gray-900 dark:text-gray-100 font-semibold">
                     <div className="col-span-4">Job Title</div>
                     <div className="col-span-2">Department</div>
                     <div className="col-span-2">Candidates</div>
@@ -823,7 +823,7 @@ BENEFITS:
                   </div>
                   <ScrollArea className="h-[300px]">
                     {loadingJobs ? (
-                      <div className="flex flex-col items-center justify-center h-32 gap-2 text-muted-foreground">
+                      <div className="flex flex-col items-center justify-center h-32 gap-2 text-gray-900 dark:text-gray-100 font-semibold">
                         <Loader2 className="w-6 h-6 animate-spin" />
                         <p>Loading job requisitions...</p>
                       </div>
@@ -831,14 +831,14 @@ BENEFITS:
                       displayJobs.map((job: any) => {
                         const candidateCount = displayCandidates.filter((c: any) => c.jobId === job.id).length;
                         return (
-                          <div key={job.id} className="px-4 py-3 grid grid-cols-12 items-center border-t border-white/5 hover:bg-white/5 transition-colors">
+                          <div key={job.id} className="px-4 py-3 grid grid-cols-12 items-center border-t border-border hover:bg-white/5 transition-colors">
                             <div className="col-span-4">
                               <div className="font-medium">{job.title}</div>
-                              <div className="text-xs text-muted-foreground mt-0.5">
+                              <div className="text-xs text-gray-900 dark:text-gray-100 font-semibold mt-0.5">
                                 {job.location || "Johannesburg, Gauteng"}
                               </div>
                             </div>
-                            <div className="col-span-2 text-sm text-muted-foreground">{job.department}</div>
+                            <div className="col-span-2 text-sm text-gray-900 dark:text-gray-100 font-semibold">{job.department}</div>
                             <div className="col-span-2">
                               <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/20">
                                 {candidateCount} {candidateCount === 1 ? 'Candidate' : 'Candidates'}
@@ -857,7 +857,7 @@ BENEFITS:
                                 </Button>
                               </Link>
                               <Link href={`/candidates-list?jobId=${job.id}`}>
-                                <Button variant="outline" size="sm" className="gap-2 border-white/10 hover:bg-white/5" data-testid={`button-view-candidates-${job.id}`}>
+                                <Button variant="outline" size="sm" className="gap-2 border-border hover:bg-white/5" data-testid={`button-view-candidates-${job.id}`}>
                                   <Eye className="h-4 w-4" />
                                   View
                                 </Button>
@@ -913,7 +913,7 @@ BENEFITS:
                         );
                       })
                     ) : (
-                      <div className="flex flex-col items-center justify-center h-32 gap-2 text-muted-foreground">
+                      <div className="flex flex-col items-center justify-center h-32 gap-2 text-gray-900 dark:text-gray-100 font-semibold">
                         <Briefcase className="h-8 w-8 opacity-50" />
                         <p>No open roles yet</p>
                         <Button 
@@ -932,23 +932,23 @@ BENEFITS:
 
             {/* ARCHIVED JOBS */}
             {showArchivedJobs && (
-              <Card className="border-white/10 bg-card/20">
+              <Card className="border-border bg-card">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="flex items-center gap-2">
+                      <CardTitle className="text-gray-900 dark:text-white font-bold flex items-center gap-2">
                         <FileArchive className="h-5 w-5 text-gray-400" />
                         Archived Roles
                       </CardTitle>
-                      <CardDescription>
+                      <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">
                         {loadingArchivedJobs ? "Loading archived positions..." : `${archivedJobs.length} archived job${archivedJobs.length !== 1 ? 's' : ''}`}
                       </CardDescription>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="rounded-md border border-white/10 overflow-hidden">
-                    <div className="bg-white/5 px-4 py-3 grid grid-cols-12 text-sm font-medium text-muted-foreground">
+                  <div className="rounded-md border border-border overflow-hidden">
+                    <div className="bg-white/5 px-4 py-3 grid grid-cols-12 text-sm font-medium text-gray-900 dark:text-gray-100 font-semibold">
                       <div className="col-span-4">Job Title</div>
                       <div className="col-span-3">Department</div>
                       <div className="col-span-3">Archived On</div>
@@ -956,21 +956,21 @@ BENEFITS:
                     </div>
                     <ScrollArea className="h-[200px]">
                       {loadingArchivedJobs ? (
-                        <div className="flex flex-col items-center justify-center h-32 gap-2 text-muted-foreground">
+                        <div className="flex flex-col items-center justify-center h-32 gap-2 text-gray-900 dark:text-gray-100 font-semibold">
                           <Loader2 className="w-6 h-6 animate-spin" />
                           <p>Loading archived jobs...</p>
                         </div>
                       ) : archivedJobs.length > 0 ? (
                         archivedJobs.map((job: any) => (
-                          <div key={job.id} className="px-4 py-3 grid grid-cols-12 items-center border-t border-white/5 hover:bg-white/5 transition-colors">
+                          <div key={job.id} className="px-4 py-3 grid grid-cols-12 items-center border-t border-border hover:bg-white/5 transition-colors">
                             <div className="col-span-4">
                               <div className="font-medium text-gray-400">{job.title}</div>
-                              <div className="text-xs text-muted-foreground mt-0.5">
+                              <div className="text-xs text-gray-900 dark:text-gray-100 font-semibold mt-0.5">
                                 {job.location || "No location"}
                               </div>
                             </div>
-                            <div className="col-span-3 text-sm text-muted-foreground">{job.department || 'General'}</div>
-                            <div className="col-span-3 text-sm text-muted-foreground">
+                            <div className="col-span-3 text-sm text-gray-900 dark:text-gray-100 font-semibold">{job.department || 'General'}</div>
+                            <div className="col-span-3 text-sm text-gray-900 dark:text-gray-100 font-semibold">
                               {job.archivedAt ? new Date(job.archivedAt).toLocaleDateString() : 'Unknown'}
                             </div>
                             <div className="col-span-2 text-right flex justify-end gap-2">
@@ -997,7 +997,7 @@ BENEFITS:
                           </div>
                         ))
                       ) : (
-                        <div className="flex flex-col items-center justify-center h-32 gap-2 text-muted-foreground">
+                        <div className="flex flex-col items-center justify-center h-32 gap-2 text-gray-900 dark:text-gray-100 font-semibold">
                           <FileArchive className="h-8 w-8 opacity-50" />
                           <p>No archived jobs</p>
                         </div>
@@ -1009,21 +1009,21 @@ BENEFITS:
             )}
 
             {/* SHORTLISTED CANDIDATES */}
-            <Card className="border-white/10 bg-card/20">
+            <Card className="border-border bg-card">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="text-gray-900 dark:text-white font-bold flex items-center gap-2">
                       <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
                       Shortlisted Candidates
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">
                       {loadingCandidates ? "Loading..." : "Top talent ready for interviews and offers"}
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
                     <Link href="/shortlisted-candidates">
-                      <Button variant="outline" className="gap-2 border-white/10 hover:bg-white/5">
+                      <Button variant="outline" className="gap-2 border-border hover:bg-white/5">
                         <Star className="h-4 w-4" />
                         View All Shortlisted
                       </Button>
@@ -1032,10 +1032,10 @@ BENEFITS:
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="rounded-md border border-white/10 overflow-hidden">
+                <div className="rounded-md border border-border overflow-hidden">
                   <ScrollArea className="h-[200px]">
                     {loadingCandidates ? (
-                      <div className="flex flex-col items-center justify-center h-32 gap-2 text-muted-foreground">
+                      <div className="flex flex-col items-center justify-center h-32 gap-2 text-gray-900 dark:text-gray-100 font-semibold">
                         <Loader2 className="w-6 h-6 animate-spin" />
                         <p>Loading shortlisted candidates...</p>
                       </div>
@@ -1052,13 +1052,13 @@ BENEFITS:
                                     {candidate.photoUrl && (
                                       <AvatarImage src={candidate.photoUrl} alt={candidate.fullName} />
                                     )}
-                                    <AvatarFallback className="bg-gradient-to-br from-yellow-500 to-orange-600 text-white text-xs font-semibold">
+                                    <AvatarFallback className="bg-orange-500 text-white text-xs font-semibold">
                                       {candidate.fullName?.split(' ')?.map((n: string) => n[0])?.join('')?.toUpperCase() || '?'}
                                     </AvatarFallback>
                                   </Avatar>
                                   <div>
                                     <p className="font-medium text-sm">{candidate.fullName}</p>
-                                    <p className="text-xs text-muted-foreground">{candidate.role || 'No role specified'}</p>
+                                    <p className="text-xs text-gray-900 dark:text-gray-100 font-semibold">{candidate.role || 'No role specified'}</p>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -1073,7 +1073,7 @@ BENEFITS:
                             ))}
                         </div>
                       ) : (
-                        <div className="flex flex-col items-center justify-center h-32 gap-2 text-muted-foreground">
+                        <div className="flex flex-col items-center justify-center h-32 gap-2 text-gray-900 dark:text-gray-100 font-semibold">
                           <Star className="h-8 w-8 opacity-50" />
                           <p className="text-sm">No shortlisted candidates yet</p>
                           <Link href="/candidates-list">
@@ -1089,23 +1089,23 @@ BENEFITS:
               </CardContent>
             </Card>
 
-            <Card className="border-white/10 bg-card/20">
+            <Card className="border-border bg-card">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Candidate Pipeline</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="text-gray-900 dark:text-white font-bold text-gray-900 dark:text-white font-bold">Candidate Pipeline</CardTitle>
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">
                       {loadingCandidates ? "Fetching data from backend..." : "AI-ranked candidates matched to hiring needs"}
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
                     <div className="relative">
-                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input placeholder="Search candidates..." className="pl-9 w-[200px] bg-background/50 border-white/10" />
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-900 dark:text-gray-100 font-semibold" />
+                      <Input placeholder="Search candidates..." className="pl-9 w-[200px] bg-background/50 border-border" />
                     </div>
                     
                     <Link href="/candidates-list">
-                      <Button variant="outline" className="gap-2 border-white/10 hover:bg-white/5">
+                      <Button variant="outline" className="gap-2 border-border hover:bg-white/5">
                         <LayoutList className="h-4 w-4" />
                         View Details
                       </Button>
@@ -1113,12 +1113,12 @@ BENEFITS:
 
                     <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
                       <DialogTrigger asChild>
-                        <Button variant="outline" className="gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10">
+                        <Button variant="outline" className="gap-2 border-orange-200 dark:border-orange-700 bg-orange-50 dark:bg-orange-950 hover:bg-orange-50 dark:bg-orange-950">
                           <UploadCloud className="h-4 w-4" />
                           Upload CVs
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="bg-card border-white/10 sm:max-w-[500px]">
+                      <DialogContent className="bg-card border-border sm:max-w-[500px]">
                         <DialogHeader>
                           <DialogTitle>Upload Candidate Profiles</DialogTitle>
                           <DialogDescription>
@@ -1127,7 +1127,7 @@ BENEFITS:
                         </DialogHeader>
                         
                         <div 
-                            className="border-2 border-dashed border-white/10 rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer bg-white/5 relative"
+                            className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer bg-white/5 relative"
                             onClick={handleFileUploadClick}
                         >
                           <input 
@@ -1143,15 +1143,15 @@ BENEFITS:
                                 <div className="flex flex-col items-center animate-pulse">
                                     <Loader2 className="h-8 w-8 text-primary animate-spin mb-2" />
                                     <p className="text-primary font-medium">AI Analyzing Resumes...</p>
-                                    <p className="text-xs text-muted-foreground">Extracting skills & calculating match scores</p>
+                                    <p className="text-xs text-gray-900 dark:text-gray-100 font-semibold">Extracting skills & calculating match scores</p>
                                 </div>
                             ) : (
                                 <>
-                                    <div className="p-3 rounded-full bg-primary/10">
+                                    <div className="p-3 rounded-full bg-orange-50 dark:bg-orange-950">
                                       <UploadCloud className="h-8 w-8 text-primary" />
                                     </div>
                                     <h3 className="font-medium mt-2">Drop files here or click to upload</h3>
-                                    <p className="text-sm text-muted-foreground">Supports PDF, DOCX, TXT (Max 10MB)</p>
+                                    <p className="text-sm text-gray-900 dark:text-gray-100 font-semibold">Supports PDF, DOCX, TXT (Max 10MB)</p>
                                 </>
                             )}
                           </div>
@@ -1160,7 +1160,7 @@ BENEFITS:
                         <div className="space-y-2 mt-2">
                            <Label>Or manually add a candidate link</Label>
                            <div className="flex gap-2">
-                             <Input placeholder="https://linkedin.com/in/..." className="bg-background/50 border-white/10" />
+                             <Input placeholder="https://linkedin.com/in/..." className="bg-background/50 border-border" />
                              <Button size="sm" variant="secondary"><Plus className="w-4 h-4" /></Button>
                            </div>
                         </div>
@@ -1187,7 +1187,7 @@ BENEFITS:
                               id="email-to" 
                               value={selectedCandidate?.email || 'No email on file'} 
                               disabled 
-                              className="bg-background/50 border-white/10"
+                              className="bg-background/50 border-border"
                             />
                           </div>
                           <div className="space-y-2">
@@ -1197,7 +1197,7 @@ BENEFITS:
                               value={emailSubject}
                               onChange={(e) => setEmailSubject(e.target.value)}
                               placeholder="Email subject..."
-                              className="bg-background/50 border-white/10"
+                              className="bg-background/50 border-border"
                             />
                           </div>
                           <div className="space-y-2">
@@ -1208,7 +1208,7 @@ BENEFITS:
                               onChange={(e) => setEmailMessage(e.target.value)}
                               placeholder="Write your message here..."
                               rows={8}
-                              className="bg-background/50 border-white/10"
+                              className="bg-background/50 border-border"
                             />
                           </div>
                         </div>
@@ -1227,8 +1227,8 @@ BENEFITS:
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="rounded-md border border-white/10 overflow-hidden">
-                  <div className="bg-white/5 px-4 py-3 grid grid-cols-12 text-sm font-medium text-muted-foreground">
+                <div className="rounded-md border border-border overflow-hidden">
+                  <div className="bg-white/5 px-4 py-3 grid grid-cols-12 text-sm font-medium text-gray-900 dark:text-gray-100 font-semibold">
                     <div className="col-span-3">Candidate</div>
                     <div className="col-span-3">Role Applied</div>
                     <div className="col-span-2">AI Match Score</div>
@@ -1237,16 +1237,16 @@ BENEFITS:
                   </div>
                   <ScrollArea className="h-[300px]">
                     {loadingCandidates ? (
-                       <div className="flex flex-col items-center justify-center h-32 gap-2 text-muted-foreground">
+                       <div className="flex flex-col items-center justify-center h-32 gap-2 text-gray-900 dark:text-gray-100 font-semibold">
                          <Loader2 className="w-6 h-6 animate-spin" />
                          <p>Syncing with DigitalOcean Backend...</p>
                        </div>
                     ) : (
                       // Use explicit array mapping
                       displayCandidates.map((candidate: any) => (
-                        <div key={candidate.id || Math.random()} className="px-4 py-3 grid grid-cols-12 items-center border-t border-white/5 hover:bg-white/5 transition-colors">
+                        <div key={candidate.id || Math.random()} className="px-4 py-3 grid grid-cols-12 items-center border-t border-border hover:bg-white/5 transition-colors">
                           <div className="col-span-3 font-medium">{candidate.fullName || candidate.name || "Unknown Candidate"}</div>
-                          <div className="col-span-3 text-sm text-muted-foreground">{candidate.role || "General Application"}</div>
+                          <div className="col-span-3 text-sm text-gray-900 dark:text-gray-100 font-semibold">{candidate.role || "General Application"}</div>
                           <div className="col-span-2">
                             <Badge className={`${(candidate.match || candidate.overall_score || 0) > 90 ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'} border-0`}>
                               {candidate.match || candidate.overall_score || 0}% Match
@@ -1339,11 +1339,11 @@ BENEFITS:
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-lg text-white flex items-center gap-2">
+                    <CardTitle className="text-gray-900 dark:text-white font-bold text-lg text-gray-900 dark:text-white font-bold flex items-center gap-2">
                       <Briefcase className="h-5 w-5 text-purple-400" />
                       Job Specifications Library
                     </CardTitle>
-                    <CardDescription>Extracted job requirements from uploaded specifications</CardDescription>
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">Extracted job requirements from uploaded specifications</CardDescription>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="flex items-center bg-zinc-800 rounded-lg p-1">
@@ -1378,12 +1378,12 @@ BENEFITS:
                     </Link>
                     <Dialog open={isCreateJobOpen} onOpenChange={setIsCreateJobOpen}>
                       <DialogTrigger asChild>
-                        <Button data-testid="button-create-job-dialog" className="bg-primary hover:bg-primary/90">
+                        <Button data-testid="button-create-job-dialog" className="bg-orange-500 hover:bg-orange-600 text-white font-semibold">
                           <Plus className="h-4 w-4 mr-2" />
                           Create New Job
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-[700px] max-h-[90vh] bg-card border-white/10 p-0">
+                      <DialogContent className="sm:max-w-[700px] max-h-[90vh] bg-card border-border p-0">
                         <JobCreationChat 
                           onJobCreated={() => {
                             setIsCreateJobOpen(false);
@@ -1410,7 +1410,7 @@ BENEFITS:
                     <div className="flex gap-3 justify-center">
                       <Button 
                         onClick={() => setIsCreateJobOpen(true)}
-                        className="bg-primary hover:bg-primary/90"
+                        className="bg-orange-500 hover:bg-orange-600 text-white font-semibold"
                       >
                         <Sparkles className="h-4 w-4 mr-2" />
                         Create with AI
@@ -1433,11 +1433,11 @@ BENEFITS:
                       {displayJobs.map((job: any) => (
                         <div 
                           key={job.id}
-                          className="p-4 rounded-xl bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 hover:from-zinc-800 hover:to-zinc-900 transition-all border border-zinc-700/50 hover:border-purple-500/30 group"
+                          className="p-4 rounded-xl bg-card hover:bg-accent transition-all border-2 border-border hover:border-primary group"
                           data-testid={`card-job-${job.id}`}
                         >
                           <div className="flex items-start gap-3 mb-3">
-                            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-lg bg-purple-500 flex items-center justify-center">
                               <Briefcase className="h-6 w-6 text-white" />
                             </div>
                             <div className="flex-1 min-w-0">
@@ -1500,11 +1500,11 @@ BENEFITS:
                         return (
                           <div 
                             key={doc.id}
-                            className="p-4 rounded-xl bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 hover:from-zinc-800 hover:to-zinc-900 transition-all border border-zinc-700/50 hover:border-blue-500/30 group"
+                            className="p-4 rounded-xl bg-card hover:bg-accent transition-all border-2 border-border hover:border-blue-500 group"
                             data-testid={`card-job-spec-${doc.id}`}
                           >
                             <div className="flex items-start gap-3 mb-3">
-                              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center">
+                              <div className="w-12 h-12 rounded-lg bg-blue-500 flex items-center justify-center">
                                 <FileText className="h-6 w-6 text-white" />
                               </div>
                               <div className="flex-1 min-w-0">
@@ -1575,7 +1575,7 @@ BENEFITS:
                             <tr key={job.id} className="hover:bg-zinc-800/30 transition-colors" data-testid={`row-job-${job.id}`}>
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
+                                  <div className="w-8 h-8 rounded-lg bg-purple-500 flex items-center justify-center flex-shrink-0">
                                     <Briefcase className="h-4 w-4 text-white" />
                                   </div>
                                   <span className="font-medium text-white truncate max-w-[200px]">{job.title}</span>
@@ -1620,7 +1620,7 @@ BENEFITS:
                               <tr key={doc.id} className="hover:bg-zinc-800/30 transition-colors" data-testid={`row-job-spec-${doc.id}`}>
                                 <td className="px-4 py-3">
                                   <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center flex-shrink-0">
+                                    <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
                                       <FileText className="h-4 w-4 text-white" />
                                     </div>
                                     <span className="font-medium text-white truncate max-w-[200px]">
@@ -1668,13 +1668,13 @@ BENEFITS:
           <TabsContent value="integrity" className="space-y-6">
             
             {/* AI Integrity Banner */}
-            <div className="rounded-lg bg-gradient-to-r from-blue-900/20 to-cyan-500/20 border border-cyan-500/20 p-6 flex items-center justify-between">
+            <div className="rounded-lg bg-blue-50 dark:bg-blue-900 border-2 border-blue-200 dark:border-blue-700 p-6 flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-bold flex items-center gap-2 text-white">
                   <ShieldCheck className="w-5 h-5 text-cyan-400" />
                   Perform automated background checks?
                 </h3>
-                <p className="text-muted-foreground text-sm mt-1">
+                <p className="text-gray-900 dark:text-gray-100 font-semibold text-sm mt-1">
                   Activate the Integrity Agent to verify fingerprints, criminal records, and credit history instantly.
                 </p>
               </div>
@@ -1686,9 +1686,9 @@ BENEFITS:
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="border-white/10 bg-card/20">
+              <Card className="border-border bg-card">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="text-gray-900 dark:text-white font-bold flex items-center gap-2">
                     <FileCheck className="w-5 h-5 text-primary" /> 
                     Pending Verifications
                   </CardTitle>
@@ -1696,10 +1696,10 @@ BENEFITS:
                 <CardContent>
                   <div className="space-y-4">
                     {integrityChecks.map((check) => (
-                      <div key={check.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5">
+                      <div key={check.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-border">
                         <div>
                           <p className="font-medium">{check.type}</p>
-                          <p className="text-sm text-muted-foreground">Candidate: {check.candidate}</p>
+                          <p className="text-sm text-gray-900 dark:text-gray-100 font-semibold">Candidate: {check.candidate}</p>
                         </div>
                         <Badge variant={check.status === "Clear" ? "default" : "secondary"} className={check.status === "Clear" ? "bg-green-500/20 text-green-400" : "bg-yellow-500/20 text-yellow-400"}>
                           {check.status}
@@ -1710,18 +1710,18 @@ BENEFITS:
                 </CardContent>
               </Card>
               
-              <Card className="border-white/10 bg-card/20">
+              <Card className="border-border bg-card">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="text-gray-900 dark:text-white font-bold flex items-center gap-2">
                     <ShieldCheck className="w-5 h-5 text-orange-400" />
                     Risk Assessment Overview
                   </CardTitle>
-                  <CardDescription>AI-generated risk profiles based on background data</CardDescription>
+                  <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">AI-generated risk profiles based on background data</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {!selectedRiskCandidate ? (
                     <div className="space-y-3">
-                      <p className="text-sm text-muted-foreground mb-3">Select a candidate to view risk analysis:</p>
+                      <p className="text-sm text-gray-900 dark:text-gray-100 font-semibold mb-3">Select a candidate to view risk analysis:</p>
                       <ScrollArea className="h-[180px]">
                         <div className="space-y-2">
                           {candidates && candidates.length > 0 ? candidates.slice(0, 8).map((candidate: any) => {
@@ -1730,18 +1730,18 @@ BENEFITS:
                               <div 
                                 key={candidate.id}
                                 onClick={() => setSelectedRiskCandidate(candidate)}
-                                className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5 cursor-pointer hover:bg-white/10 transition-colors"
+                                className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-border cursor-pointer hover:bg-white/10 transition-colors"
                                 data-testid={`risk-candidate-${candidate.id}`}
                               >
                                 <div className="flex items-center gap-3">
                                   <Avatar className="h-8 w-8">
-                                    <AvatarFallback className="bg-primary/20 text-primary text-xs">
+                                    <AvatarFallback className="bg-orange-100 dark:bg-orange-900 text-primary text-xs">
                                       {(candidate.fullName || candidate.name || 'U').substring(0, 2).toUpperCase()}
                                     </AvatarFallback>
                                   </Avatar>
                                   <div>
                                     <p className="font-medium text-sm">{candidate.fullName || candidate.name}</p>
-                                    <p className="text-xs text-muted-foreground">{candidate.role || 'Candidate'}</p>
+                                    <p className="text-xs text-gray-900 dark:text-gray-100 font-semibold">{candidate.role || 'Candidate'}</p>
                                   </div>
                                 </div>
                                 {riskData.hasData ? (
@@ -1757,12 +1757,12 @@ BENEFITS:
                                     {riskData.riskLevel.charAt(0).toUpperCase() + riskData.riskLevel.slice(1)}
                                   </Badge>
                                 ) : (
-                                  <Badge variant="outline" className="text-muted-foreground" data-testid={`badge-no-data-${candidate.id}`}>No Data</Badge>
+                                  <Badge variant="outline" className="text-gray-900 dark:text-gray-100 font-semibold" data-testid={`badge-no-data-${candidate.id}`}>No Data</Badge>
                                 )}
                               </div>
                             );
                           }) : (
-                            <div className="text-center text-muted-foreground py-8">
+                            <div className="text-center text-gray-900 dark:text-gray-100 font-semibold py-8">
                               <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
                               <p className="text-sm">No candidates available</p>
                             </div>
@@ -1775,13 +1775,13 @@ BENEFITS:
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
-                            <AvatarFallback className="bg-primary/20 text-primary">
+                            <AvatarFallback className="bg-orange-100 dark:bg-orange-900 text-primary">
                               {(selectedRiskCandidate.fullName || selectedRiskCandidate.name || 'U').substring(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div>
                             <p className="font-bold">{selectedRiskCandidate.fullName || selectedRiskCandidate.name}</p>
-                            <p className="text-sm text-muted-foreground">{selectedRiskCandidate.role || 'Candidate'}</p>
+                            <p className="text-sm text-gray-900 dark:text-gray-100 font-semibold">{selectedRiskCandidate.role || 'Candidate'}</p>
                           </div>
                         </div>
                         <Button 
@@ -1798,7 +1798,7 @@ BENEFITS:
                         const riskData = getCandidateRiskData(selectedRiskCandidate.id);
                         if (!riskData.hasData) {
                           return (
-                            <div className="text-center text-muted-foreground py-6">
+                            <div className="text-center text-gray-900 dark:text-gray-100 font-semibold py-6">
                               <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
                               <p className="text-sm">No risk assessment data available</p>
                               <p className="text-xs mt-1">Run an integrity check or social screening first</p>
@@ -1820,7 +1820,7 @@ BENEFITS:
                         
                         return (
                           <div className="space-y-3" data-testid="risk-detail-view">
-                            <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-cyan-900/20 to-purple-900/20 border border-cyan-500/20">
+                            <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50 dark:bg-blue-900 border-2 border-blue-200 dark:border-blue-700">
                               <span className="text-sm font-medium">Overall Risk Score</span>
                               <div className="flex items-center gap-2">
                                 <span className="text-2xl font-bold" data-testid="text-risk-score">{riskData.overallRiskScore}%</span>
@@ -1839,7 +1839,7 @@ BENEFITS:
                             </div>
                             
                             {riskData.integrityCheck && (
-                              <div className="p-3 rounded-lg bg-white/5 border border-white/5" data-testid="section-integrity-check">
+                              <div className="p-3 rounded-lg bg-white/5 border border-border" data-testid="section-integrity-check">
                                 <div className="flex items-center justify-between mb-2">
                                   <span className="text-sm font-medium flex items-center gap-2">
                                     <FileCheck className="w-4 h-4 text-cyan-400" /> Integrity Check
@@ -1848,25 +1848,25 @@ BENEFITS:
                                 </div>
                                 <div className="grid grid-cols-2 gap-2 text-xs">
                                   <div>
-                                    <span className="text-muted-foreground">Criminal: </span>
+                                    <span className="text-gray-900 dark:text-gray-100 font-semibold">Criminal: </span>
                                     <span className={riskData.integrityCheck.checks?.criminal?.passed ? 'text-green-400' : 'text-red-400'} data-testid="text-criminal-status">
                                       {riskData.integrityCheck.checks?.criminal?.passed ? 'Clear' : 'Review'}
                                     </span>
                                   </div>
                                   <div>
-                                    <span className="text-muted-foreground">Credit: </span>
+                                    <span className="text-gray-900 dark:text-gray-100 font-semibold">Credit: </span>
                                     <span className={riskData.integrityCheck.checks?.credit?.passed ? 'text-green-400' : 'text-red-400'} data-testid="text-credit-status">
                                       {riskData.integrityCheck.checks?.credit?.passed ? 'Clear' : 'Review'}
                                     </span>
                                   </div>
                                   <div>
-                                    <span className="text-muted-foreground">Identity: </span>
+                                    <span className="text-gray-900 dark:text-gray-100 font-semibold">Identity: </span>
                                     <span className={riskData.integrityCheck.checks?.identity?.passed ? 'text-green-400' : 'text-red-400'} data-testid="text-identity-status">
                                       {riskData.integrityCheck.checks?.identity?.passed ? 'Verified' : 'Pending'}
                                     </span>
                                   </div>
                                   <div>
-                                    <span className="text-muted-foreground">References: </span>
+                                    <span className="text-gray-900 dark:text-gray-100 font-semibold">References: </span>
                                     <span className={riskData.integrityCheck.checks?.reference?.passed ? 'text-green-400' : 'text-yellow-400'} data-testid="text-reference-status">
                                       {riskData.integrityCheck.checks?.reference?.passed ? 'Verified' : 'Pending'}
                                     </span>
@@ -1876,7 +1876,7 @@ BENEFITS:
                             )}
                             
                             {riskData.socialScreening?.results?.aggregatedResults && (
-                              <div className="p-3 rounded-lg bg-white/5 border border-white/5" data-testid="section-social-screening">
+                              <div className="p-3 rounded-lg bg-white/5 border border-border" data-testid="section-social-screening">
                                 <div className="flex items-center justify-between mb-2">
                                   <span className="text-sm font-medium flex items-center gap-2">
                                     <Users className="w-4 h-4 text-purple-400" /> Social Screening
@@ -1885,11 +1885,11 @@ BENEFITS:
                                 </div>
                                 <div className="grid grid-cols-2 gap-2 text-xs">
                                   <div>
-                                    <span className="text-muted-foreground">Culture Fit: </span>
+                                    <span className="text-gray-900 dark:text-gray-100 font-semibold">Culture Fit: </span>
                                     <span className="text-primary" data-testid="text-culture-fit">{riskData.socialScreening.results.aggregatedResults.overallScore || 'N/A'}%</span>
                                   </div>
                                   <div>
-                                    <span className="text-muted-foreground">Sentiment: </span>
+                                    <span className="text-gray-900 dark:text-gray-100 font-semibold">Sentiment: </span>
                                     <span 
                                       data-testid="text-sentiment-score"
                                       className={
@@ -1912,13 +1912,13 @@ BENEFITS:
             </div>
 
             {/* Social Screening Section */}
-            <div className="rounded-lg bg-gradient-to-r from-purple-900/20 to-pink-500/20 border border-purple-500/20 p-6 flex items-center justify-between">
+            <div className="rounded-lg bg-purple-50 dark:bg-purple-900 border-2 border-purple-200 dark:border-purple-700 p-6 flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-bold flex items-center gap-2 text-white">
                   <Users className="w-5 h-5 text-purple-400" />
                   Social Intelligence Screening
                 </h3>
-                <p className="text-muted-foreground text-sm mt-1">
+                <p className="text-gray-900 dark:text-gray-100 font-semibold text-sm mt-1">
                   AI-powered culture fit assessment via social media analysis (Facebook, X, Reddit) with POPIA compliance.
                 </p>
               </div>
@@ -1932,9 +1932,9 @@ BENEFITS:
 
             {/* Social Screening Dashboard Stats */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card className="border-white/10 bg-card/20">
+              <Card className="border-border bg-card">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Consent Status</CardTitle>
+                  <CardTitle className="text-gray-900 dark:text-white font-bold text-sm font-medium text-gray-900 dark:text-gray-100 font-semibold">Consent Status</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
@@ -1954,9 +1954,9 @@ BENEFITS:
                 </CardContent>
               </Card>
 
-              <Card className="border-white/10 bg-card/20">
+              <Card className="border-border bg-card">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Screening Progress</CardTitle>
+                  <CardTitle className="text-gray-900 dark:text-white font-bold text-sm font-medium text-gray-900 dark:text-gray-100 font-semibold">Screening Progress</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
@@ -1976,9 +1976,9 @@ BENEFITS:
                 </CardContent>
               </Card>
 
-              <Card className="border-white/10 bg-card/20">
+              <Card className="border-border bg-card">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Risk Distribution</CardTitle>
+                  <CardTitle className="text-gray-900 dark:text-white font-bold text-sm font-medium text-gray-900 dark:text-gray-100 font-semibold">Risk Distribution</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
@@ -2011,24 +2011,24 @@ BENEFITS:
               </Card>
 
               {/* Pending Human Reviews */}
-              <Card className="border-white/10 bg-card/20 lg:col-span-3">
+              <Card className="border-border bg-card lg:col-span-3">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="text-gray-900 dark:text-white font-bold flex items-center gap-2">
                     <Eye className="w-5 h-5 text-purple-400" />
                     Pending Human Reviews
                   </CardTitle>
-                  <CardDescription>Social screening findings requiring HR review</CardDescription>
+                  <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">Social screening findings requiring HR review</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {socialPendingReviews.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
+                    <div className="text-center py-8 text-gray-900 dark:text-gray-100 font-semibold">
                       <CheckCircle2 className="w-10 h-10 mx-auto mb-2 opacity-50" />
                       <p>No pending reviews. All social screenings are up to date.</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
                       {socialPendingReviews.slice(0, 5).map((finding: any) => (
-                        <div key={finding.id} className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/5">
+                        <div key={finding.id} className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-border">
                           <div className="flex items-center gap-4">
                             <div className={`w-3 h-3 rounded-full ${
                               finding.riskLevel === 'low' ? 'bg-green-500' :
@@ -2037,7 +2037,7 @@ BENEFITS:
                             }`}></div>
                             <div>
                               <p className="font-medium">Candidate #{finding.candidateId?.slice(-6)}</p>
-                              <p className="text-sm text-muted-foreground">
+                              <p className="text-sm text-gray-900 dark:text-gray-100 font-semibold">
                                 Culture Fit: {finding.cultureFitScore || 'N/A'}% | 
                                 Risk: {finding.riskLevel || 'Unknown'}
                               </p>
@@ -2071,13 +2071,13 @@ BENEFITS:
           <TabsContent value="onboarding" className="space-y-6">
             
              {/* AI Onboarding Banner */}
-            <div className="rounded-lg bg-gradient-to-r from-amber-500/20 to-orange-600/20 border border-amber-500/20 p-6 flex items-center justify-between">
+            <div className="rounded-lg bg-orange-50 dark:bg-orange-900 border-2 border-orange-200 dark:border-orange-700 p-6 flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-bold flex items-center gap-2 text-white">
                   <Laptop className="w-5 h-5 text-amber-400" />
                   Automate new hire provisioning?
                 </h3>
-                <p className="text-muted-foreground text-sm mt-1">
+                <p className="text-gray-900 dark:text-gray-100 font-semibold text-sm mt-1">
                   Use the Onboarding Agent to manage welcome packs, equipment orders, and digital paperwork.
                 </p>
               </div>
@@ -2088,9 +2088,9 @@ BENEFITS:
               </Link>
             </div>
 
-             <Card className="border-white/10 bg-card/20">
+             <Card className="border-border bg-card">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="text-gray-900 dark:text-white font-bold flex items-center gap-2">
                   <UserPlus className="w-5 h-5 text-primary" />
                   Active Onboarding Workflows
                 </CardTitle>
@@ -2100,7 +2100,7 @@ BENEFITS:
                   <div>
                     <div className="flex justify-between mb-2">
                       <span className="font-medium">Marcus Johnson - Operations Lead</span>
-                      <span className="text-sm text-muted-foreground">75% Complete</span>
+                      <span className="text-sm text-gray-900 dark:text-gray-100 font-semibold">75% Complete</span>
                     </div>
                     <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
                       <div className="h-full bg-primary w-[75%]" />
@@ -2109,7 +2109,7 @@ BENEFITS:
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     {onboardingTasks.map((task) => (
-                      <div key={task.id} className="flex items-center gap-3 p-3 rounded-lg border border-white/5 bg-white/5">
+                      <div key={task.id} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-white/5">
                         {task.status === "Completed" ? (
                           <CheckCircle2 className="w-5 h-5 text-green-500" />
                         ) : (
@@ -2117,7 +2117,7 @@ BENEFITS:
                         )}
                         <div className="flex-1">
                           <p className="text-sm font-medium">{task.task}</p>
-                          <p className="text-xs text-muted-foreground">Assigned to: {task.assignee}</p>
+                          <p className="text-xs text-gray-900 dark:text-gray-100 font-semibold">Assigned to: {task.assignee}</p>
                         </div>
                       </div>
                     ))}
@@ -2142,13 +2142,13 @@ BENEFITS:
               </div>
               <div className="flex gap-2">
                 <Link href="/kpi-management">
-                  <Button variant="outline" className="border-white/10" data-testid="link-kpi-management">
+                  <Button variant="outline" className="border-border" data-testid="link-kpi-management">
                     <Target className="w-4 h-4 mr-2" />
                     Manage KPIs
                   </Button>
                 </Link>
                 <Link href="/kpi-hr-dashboard">
-                  <Button className="bg-primary hover:bg-primary/90" data-testid="link-kpi-dashboard">
+                  <Button className="bg-orange-500 hover:bg-orange-600 text-white font-semibold" data-testid="link-kpi-dashboard">
                     <BarChart3 className="w-4 h-4 mr-2" />
                     Full KPI Dashboard
                   </Button>
@@ -2158,11 +2158,11 @@ BENEFITS:
 
             {/* Performance Overview KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="border-white/10 bg-card/20">
+              <Card className="border-border bg-card">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Active KPI Cycles</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 font-semibold">Active KPI Cycles</p>
                       <h3 className="text-2xl font-bold mt-2" data-testid="metric-active-cycles">
                         {activeReviewCycles.length}
                       </h3>
@@ -2177,13 +2177,13 @@ BENEFITS:
                 </CardContent>
               </Card>
 
-              <Card className="border-white/10 bg-card/20">
+              <Card className="border-border bg-card">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Avg Performance</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 font-semibold">Avg Performance</p>
                       <h3 className="text-2xl font-bold mt-2" data-testid="metric-avg-performance">
-                        {avgScore}<span className="text-lg text-muted-foreground">/5.0</span>
+                        {avgScore}<span className="text-lg text-gray-900 dark:text-gray-100 font-semibold">/5.0</span>
                       </h3>
                       <p className="text-xs text-green-500 mt-1">
                         From {completedSubmissions.length} review{completedSubmissions.length !== 1 ? 's' : ''}
@@ -2196,11 +2196,11 @@ BENEFITS:
                 </CardContent>
               </Card>
 
-              <Card className="border-white/10 bg-card/20">
+              <Card className="border-border bg-card">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Pending Reviews</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 font-semibold">Pending Reviews</p>
                       <h3 className="text-2xl font-bold mt-2" data-testid="metric-pending-reviews">
                         {pendingSubmissions.length}
                       </h3>
@@ -2215,11 +2215,11 @@ BENEFITS:
                 </CardContent>
               </Card>
 
-              <Card className="border-white/10 bg-card/20">
+              <Card className="border-border bg-card">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">KPI Completion</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 font-semibold">KPI Completion</p>
                       <h3 className="text-2xl font-bold mt-2" data-testid="metric-kpi-achievement">
                         {completionRate}%
                       </h3>
@@ -2236,18 +2236,18 @@ BENEFITS:
             </div>
 
             {/* Active Review Cycles Section */}
-            <Card className="border-white/10 bg-card/20">
+            <Card className="border-border bg-card">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="text-gray-900 dark:text-white font-bold flex items-center gap-2">
                       <Calendar className="w-5 h-5 text-primary" />
                       Active Review Cycles
                     </CardTitle>
-                    <CardDescription>Current KPI review periods</CardDescription>
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">Current KPI review periods</CardDescription>
                   </div>
                   <Link href="/kpi-management?tab=cycles&action=new-cycle">
-                    <Button className="bg-primary hover:bg-primary/90" data-testid="button-new-cycle">
+                    <Button className="bg-orange-500 hover:bg-orange-600 text-white font-semibold" data-testid="button-new-cycle">
                       <Plus className="w-4 h-4 mr-2" />
                       New Cycle
                     </Button>
@@ -2258,17 +2258,17 @@ BENEFITS:
                 <div className="space-y-3">
                   {activeReviewCycles.length > 0 ? (
                     activeReviewCycles.map((cycle: any) => (
-                      <div key={cycle.id} className="flex items-center justify-between p-4 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors" data-testid={`cycle-item-${cycle.id}`}>
+                      <div key={cycle.id} className="flex items-center justify-between p-4 rounded-lg border border-border bg-white/5 hover:bg-white/10 transition-colors" data-testid={`cycle-item-${cycle.id}`}>
                         <div className="flex items-center gap-4 flex-1">
-                          <div className="p-2 rounded-lg bg-primary/10">
+                          <div className="p-2 rounded-lg bg-orange-50 dark:bg-orange-950">
                             <Target className="w-5 h-5 text-primary" />
                           </div>
                           <div className="flex-1">
                             <p className="font-medium">{cycle.name}</p>
-                            <p className="text-sm text-muted-foreground">{cycle.cycleType?.replace('_', ' ').toUpperCase() || 'Review Cycle'}</p>
+                            <p className="text-sm text-gray-900 dark:text-gray-100 font-semibold">{cycle.cycleType?.replace('_', ' ').toUpperCase() || 'Review Cycle'}</p>
                           </div>
                           <div className="text-sm">
-                            <p className="text-muted-foreground">Period</p>
+                            <p className="text-gray-900 dark:text-gray-100 font-semibold">Period</p>
                             <p className="font-medium">
                               {cycle.startDate ? new Date(cycle.startDate).toLocaleDateString() : 'N/A'} - {cycle.endDate ? new Date(cycle.endDate).toLocaleDateString() : 'N/A'}
                             </p>
@@ -2285,7 +2285,7 @@ BENEFITS:
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-8 text-muted-foreground">
+                    <div className="text-center py-8 text-gray-900 dark:text-gray-100 font-semibold">
                       <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
                       <p>No active review cycles</p>
                       <Link href="/kpi-management?tab=cycles&action=new-cycle">
@@ -2298,18 +2298,18 @@ BENEFITS:
             </Card>
 
             {/* Review Submissions Section */}
-            <Card className="border-white/10 bg-card/20">
+            <Card className="border-border bg-card">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="text-gray-900 dark:text-white font-bold flex items-center gap-2">
                       <FileCheck className="w-5 h-5 text-primary" />
                       Recent Submissions
                     </CardTitle>
-                    <CardDescription>Employee KPI review submissions</CardDescription>
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">Employee KPI review submissions</CardDescription>
                   </div>
                   <Link href="/kpi-hr-dashboard">
-                    <Button variant="outline" className="border-white/10" data-testid="button-view-all-submissions">
+                    <Button variant="outline" className="border-border" data-testid="button-view-all-submissions">
                       View All
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
@@ -2320,21 +2320,21 @@ BENEFITS:
                 <div className="space-y-3">
                   {reviewSubmissions.length > 0 ? (
                     reviewSubmissions.slice(0, 5).map((submission: any) => (
-                      <div key={submission.id} className="flex items-center justify-between p-4 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors" data-testid={`submission-item-${submission.id}`}>
+                      <div key={submission.id} className="flex items-center justify-between p-4 rounded-lg border border-border bg-white/5 hover:bg-white/10 transition-colors" data-testid={`submission-item-${submission.id}`}>
                         <div className="flex items-center gap-4 flex-1">
                           <Avatar className="h-10 w-10">
-                            <AvatarFallback className="bg-primary/20 text-primary">
+                            <AvatarFallback className="bg-orange-100 dark:bg-orange-900 text-primary">
                               {getEmployeeName(submission.employeeId).slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1">
                             <p className="font-medium">{getEmployeeName(submission.employeeId)}</p>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-sm text-gray-900 dark:text-gray-100 font-semibold">
                               Self: {submission.selfAssessmentStatus || 'pending'} | Manager: {submission.managerReviewStatus || 'pending'}
                             </p>
                           </div>
                           <div className="text-sm">
-                            <p className="text-muted-foreground">Score</p>
+                            <p className="text-gray-900 dark:text-gray-100 font-semibold">Score</p>
                             <p className="font-medium">
                               {submission.finalScore ? `${submission.finalScore}/5` : 'Pending'}
                             </p>
@@ -2357,7 +2357,7 @@ BENEFITS:
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-8 text-muted-foreground">
+                    <div className="text-center py-8 text-gray-900 dark:text-gray-100 font-semibold">
                       <FileCheck className="w-12 h-12 mx-auto mb-3 opacity-50" />
                       <p>No review submissions yet</p>
                       <p className="text-sm mt-1">Submissions will appear here when employees complete their KPI reviews</p>
@@ -2368,18 +2368,18 @@ BENEFITS:
             </Card>
 
             {/* KPI Assignments Section */}
-            <Card className="border-white/10 bg-card/20">
+            <Card className="border-border bg-card">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="text-gray-900 dark:text-white font-bold flex items-center gap-2">
                       <Target className="w-5 h-5 text-amber-400" />
                       KPI Assignments
                     </CardTitle>
-                    <CardDescription>Current quarter performance objectives</CardDescription>
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">Current quarter performance objectives</CardDescription>
                   </div>
                   <Link href="/kpi-management">
-                    <Button variant="outline" className="border-white/10" data-testid="button-manage-assignments">
+                    <Button variant="outline" className="border-border" data-testid="button-manage-assignments">
                       Manage
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
@@ -2390,17 +2390,17 @@ BENEFITS:
                 <div className="space-y-4">
                   {kpiAssignments.length > 0 ? (
                     kpiAssignments.slice(0, 4).map((assignment: any) => (
-                      <div key={assignment.id} className="p-4 rounded-lg border border-white/10 bg-white/5" data-testid={`kpi-item-${assignment.id}`}>
+                      <div key={assignment.id} className="p-4 rounded-lg border border-border bg-white/5" data-testid={`kpi-item-${assignment.id}`}>
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
                             <Avatar className="h-8 w-8">
-                              <AvatarFallback className="bg-primary/20 text-primary text-xs">
+                              <AvatarFallback className="bg-orange-100 dark:bg-orange-900 text-primary text-xs">
                                 {getEmployeeName(assignment.employeeId).slice(0, 2).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
                             <div>
                               <p className="font-medium text-sm">{getEmployeeName(assignment.employeeId)}</p>
-                              <p className="text-xs text-muted-foreground">{getTemplateInfo(assignment.kpiTemplateId)?.name || 'KPI Assignment'}</p>
+                              <p className="text-xs text-gray-900 dark:text-gray-100 font-semibold">{getTemplateInfo(assignment.kpiTemplateId)?.name || 'KPI Assignment'}</p>
                             </div>
                           </div>
                           <Badge 
@@ -2415,7 +2415,7 @@ BENEFITS:
                         </div>
                         <div className="space-y-2">
                           <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Target</span>
+                            <span className="text-gray-900 dark:text-gray-100 font-semibold">Target</span>
                             <span className="font-medium">{assignment.customTarget || getTemplateInfo(assignment.kpiTemplateId)?.targetValue || 'N/A'}</span>
                           </div>
                           <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
@@ -2432,7 +2432,7 @@ BENEFITS:
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-8 text-muted-foreground">
+                    <div className="text-center py-8 text-gray-900 dark:text-gray-100 font-semibold">
                       <Target className="w-12 h-12 mx-auto mb-3 opacity-50" />
                       <p>No KPI assignments</p>
                       <Link href="/kpi-management">
@@ -2449,11 +2449,11 @@ BENEFITS:
           <TabsContent value="lms" className="space-y-6">
             {/* LMS Overview Stats */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="border-white/10 bg-card/20">
+              <Card className="border-border bg-card">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Active Courses</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 font-semibold">Active Courses</p>
                       <h3 className="text-2xl font-bold mt-2">{lmsCourses.filter((c: any) => c.status === "published").length}</h3>
                       <p className="text-xs text-blue-400 mt-1">Published courses</p>
                     </div>
@@ -2464,11 +2464,11 @@ BENEFITS:
                 </CardContent>
               </Card>
 
-              <Card className="border-white/10 bg-card/20">
+              <Card className="border-border bg-card">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Total Courses</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 font-semibold">Total Courses</p>
                       <h3 className="text-2xl font-bold mt-2">{lmsCourses.length}</h3>
                       <p className="text-xs text-green-400 mt-1">All courses</p>
                     </div>
@@ -2479,11 +2479,11 @@ BENEFITS:
                 </CardContent>
               </Card>
 
-              <Card className="border-white/10 bg-card/20">
+              <Card className="border-border bg-card">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Categories</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 font-semibold">Categories</p>
                       <h3 className="text-2xl font-bold mt-2">{new Set(lmsCourses.map((c: any) => c.category)).size}</h3>
                       <p className="text-xs text-amber-400 mt-1">Course categories</p>
                     </div>
@@ -2494,11 +2494,11 @@ BENEFITS:
                 </CardContent>
               </Card>
 
-              <Card className="border-white/10 bg-card/20">
+              <Card className="border-border bg-card">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Total Duration</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 font-semibold">Total Duration</p>
                       <h3 className="text-2xl font-bold mt-2">{Math.round(lmsCourses.reduce((sum: number, c: any) => sum + (c.duration || 0), 0) / 60)}h</h3>
                       <p className="text-xs text-purple-400 mt-1">Learning content</p>
                     </div>
@@ -2511,18 +2511,18 @@ BENEFITS:
             </div>
 
             {/* Active Courses */}
-            <Card className="border-white/10 bg-card/20">
+            <Card className="border-border bg-card">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="text-gray-900 dark:text-white font-bold flex items-center gap-2">
                       <BookOpen className="w-5 h-5 text-primary" />
                       Active Training Courses
                     </CardTitle>
-                    <CardDescription>Current learning programs and progress</CardDescription>
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">Current learning programs and progress</CardDescription>
                   </div>
                   <Link href="/learning-management">
-                    <Button className="bg-primary hover:bg-primary/90" data-testid="button-create-course-lms">
+                    <Button className="bg-orange-500 hover:bg-orange-600 text-white font-semibold" data-testid="button-create-course-lms">
                       <Plus className="w-4 h-4 mr-2" />
                       Create Course
                     </Button>
@@ -2532,7 +2532,7 @@ BENEFITS:
               <CardContent>
                 <div className="space-y-4">
                   {lmsCourses.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
+                    <div className="text-center py-8 text-gray-900 dark:text-gray-100 font-semibold">
                       <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-50" />
                       <p>No courses yet</p>
                       <Link href="/learning-management">
@@ -2540,25 +2540,25 @@ BENEFITS:
                       </Link>
                     </div>
                   ) : lmsCourses.map((course: any, idx: number) => (
-                    <div key={idx} className="flex items-center justify-between p-4 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors">
+                    <div key={idx} className="flex items-center justify-between p-4 rounded-lg border border-border bg-white/5 hover:bg-white/10 transition-colors">
                       <div className="flex items-center gap-4 flex-1">
-                        <div className="p-2 rounded-lg bg-primary/20">
+                        <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900">
                           <BookOpen className="w-5 h-5 text-primary" />
                         </div>
                         <div className="flex-1">
                           <p className="font-medium">{course.title}</p>
-                          <p className="text-sm text-muted-foreground">{course.category || "General"}</p>
+                          <p className="text-sm text-gray-900 dark:text-gray-100 font-semibold">{course.category || "General"}</p>
                         </div>
                         <div className="text-sm text-center">
-                          <p className="text-muted-foreground">Difficulty</p>
+                          <p className="text-gray-900 dark:text-gray-100 font-semibold">Difficulty</p>
                           <p className="font-medium capitalize">{course.difficulty || "beginner"}</p>
                         </div>
                         <div className="text-sm text-center">
-                          <p className="text-muted-foreground">Duration</p>
+                          <p className="text-gray-900 dark:text-gray-100 font-semibold">Duration</p>
                           <p className="font-medium">{course.duration || 0} min</p>
                         </div>
                         <div className="text-sm text-center">
-                          <p className="text-muted-foreground">Status</p>
+                          <p className="text-gray-900 dark:text-gray-100 font-semibold">Status</p>
                           <Badge variant="outline" className="capitalize">{course.status || "draft"}</Badge>
                         </div>
                         <Link href="/learning-management">
@@ -2574,13 +2574,13 @@ BENEFITS:
             </Card>
 
             {/* Employee Learning Progress */}
-            <Card className="border-white/10 bg-card/20">
+            <Card className="border-border bg-card">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="text-gray-900 dark:text-white font-bold flex items-center gap-2">
                   <GraduationCap className="w-5 h-5 text-amber-400" />
                   Employee Learning Progress
                 </CardTitle>
-                <CardDescription>Individual training completion status</CardDescription>
+                <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">Individual training completion status</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -2590,30 +2590,30 @@ BENEFITS:
                     { employee: "David Chen", courses: 6, completed: 4, inProgress: 2, certificates: 4 },
                     { employee: "Emily Davis", courses: 3, completed: 2, inProgress: 1, certificates: 1 },
                   ].map((emp, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-4 rounded-lg border border-white/10 bg-white/5">
+                    <div key={idx} className="flex items-center justify-between p-4 rounded-lg border border-border bg-white/5">
                       <div className="flex items-center gap-4">
                         <Avatar className="h-10 w-10">
-                          <AvatarFallback className="bg-primary/20 text-primary">
+                          <AvatarFallback className="bg-orange-100 dark:bg-orange-900 text-primary">
                             {emp.employee.split(' ').map(n => n[0]).join('')}
                           </AvatarFallback>
                         </Avatar>
                         <div>
                           <p className="font-medium">{emp.employee}</p>
-                          <p className="text-sm text-muted-foreground">{emp.courses} courses assigned</p>
+                          <p className="text-sm text-gray-900 dark:text-gray-100 font-semibold">{emp.courses} courses assigned</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-6">
                         <div className="text-center">
                           <p className="text-2xl font-bold text-green-400">{emp.completed}</p>
-                          <p className="text-xs text-muted-foreground">Completed</p>
+                          <p className="text-xs text-gray-900 dark:text-gray-100 font-semibold">Completed</p>
                         </div>
                         <div className="text-center">
                           <p className="text-2xl font-bold text-amber-400">{emp.inProgress}</p>
-                          <p className="text-xs text-muted-foreground">In Progress</p>
+                          <p className="text-xs text-gray-900 dark:text-gray-100 font-semibold">In Progress</p>
                         </div>
                         <div className="text-center">
                           <p className="text-2xl font-bold text-purple-400">{emp.certificates}</p>
-                          <p className="text-xs text-muted-foreground">Certificates</p>
+                          <p className="text-xs text-gray-900 dark:text-gray-100 font-semibold">Certificates</p>
                         </div>
                       </div>
                     </div>
@@ -2627,11 +2627,11 @@ BENEFITS:
           <TabsContent value="time-attendance" className="space-y-6">
             {/* Time & Attendance Stats */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="border-white/10 bg-card/20">
+              <Card className="border-border bg-card">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Present Today</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 font-semibold">Present Today</p>
                       <h3 className="text-2xl font-bold mt-2">142</h3>
                       <p className="text-xs text-green-400 mt-1">92% attendance rate</p>
                     </div>
@@ -2642,11 +2642,11 @@ BENEFITS:
                 </CardContent>
               </Card>
 
-              <Card className="border-white/10 bg-card/20">
+              <Card className="border-border bg-card">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">On Leave</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 font-semibold">On Leave</p>
                       <h3 className="text-2xl font-bold mt-2">8</h3>
                       <p className="text-xs text-blue-400 mt-1">Approved leave</p>
                     </div>
@@ -2657,11 +2657,11 @@ BENEFITS:
                 </CardContent>
               </Card>
 
-              <Card className="border-white/10 bg-card/20">
+              <Card className="border-border bg-card">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Late Arrivals</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 font-semibold">Late Arrivals</p>
                       <h3 className="text-2xl font-bold mt-2">5</h3>
                       <p className="text-xs text-amber-400 mt-1">Today</p>
                     </div>
@@ -2672,11 +2672,11 @@ BENEFITS:
                 </CardContent>
               </Card>
 
-              <Card className="border-white/10 bg-card/20">
+              <Card className="border-border bg-card">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Overtime Hours</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 font-semibold">Overtime Hours</p>
                       <h3 className="text-2xl font-bold mt-2">48</h3>
                       <p className="text-xs text-purple-400 mt-1">This week</p>
                     </div>
@@ -2689,18 +2689,18 @@ BENEFITS:
             </div>
 
             {/* Today's Attendance */}
-            <Card className="border-white/10 bg-card/20">
+            <Card className="border-border bg-card">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="text-gray-900 dark:text-white font-bold flex items-center gap-2">
                       <Timer className="w-5 h-5 text-primary" />
                       Today's Attendance
                     </CardTitle>
-                    <CardDescription>Real-time employee attendance tracking</CardDescription>
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">Real-time employee attendance tracking</CardDescription>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" className="border-white/10">
+                    <Button variant="outline" className="border-border">
                       <Download className="w-4 h-4 mr-2" />
                       Export Report
                     </Button>
@@ -2716,27 +2716,27 @@ BENEFITS:
                     { employee: "Emily Davis", clockIn: "-", clockOut: "-", status: "On Leave", hours: "-", department: "Design" },
                     { employee: "Robert Brown", clockIn: "08:00 AM", clockOut: "12:30 PM", status: "Left Early", hours: "4h 30m", department: "Engineering" },
                   ].map((record, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-4 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors">
+                    <div key={idx} className="flex items-center justify-between p-4 rounded-lg border border-border bg-white/5 hover:bg-white/10 transition-colors">
                       <div className="flex items-center gap-4 flex-1">
                         <Avatar className="h-10 w-10">
-                          <AvatarFallback className="bg-primary/20 text-primary">
+                          <AvatarFallback className="bg-orange-100 dark:bg-orange-900 text-primary">
                             {record.employee.split(' ').map(n => n[0]).join('')}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
                           <p className="font-medium">{record.employee}</p>
-                          <p className="text-sm text-muted-foreground">{record.department}</p>
+                          <p className="text-sm text-gray-900 dark:text-gray-100 font-semibold">{record.department}</p>
                         </div>
                         <div className="text-sm text-center">
-                          <p className="text-muted-foreground">Clock In</p>
+                          <p className="text-gray-900 dark:text-gray-100 font-semibold">Clock In</p>
                           <p className="font-medium">{record.clockIn}</p>
                         </div>
                         <div className="text-sm text-center">
-                          <p className="text-muted-foreground">Clock Out</p>
+                          <p className="text-gray-900 dark:text-gray-100 font-semibold">Clock Out</p>
                           <p className="font-medium">{record.clockOut}</p>
                         </div>
                         <div className="text-sm text-center">
-                          <p className="text-muted-foreground">Hours</p>
+                          <p className="text-gray-900 dark:text-gray-100 font-semibold">Hours</p>
                           <p className="font-medium">{record.hours}</p>
                         </div>
                         <Badge 
@@ -2757,15 +2757,15 @@ BENEFITS:
             </Card>
 
             {/* Leave Requests */}
-            <Card className="border-white/10 bg-card/20">
+            <Card className="border-border bg-card">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="text-gray-900 dark:text-white font-bold flex items-center gap-2">
                       <Calendar className="w-5 h-5 text-blue-400" />
                       Pending Leave Requests
                     </CardTitle>
-                    <CardDescription>Approve or reject employee leave requests</CardDescription>
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">Approve or reject employee leave requests</CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -2776,27 +2776,27 @@ BENEFITS:
                     { employee: "Lisa Wong", type: "Sick Leave", from: "Dec 16, 2024", to: "Dec 17, 2024", days: 2, reason: "Medical appointment" },
                     { employee: "Michael Brown", type: "Personal Leave", from: "Dec 18, 2024", to: "Dec 18, 2024", days: 1, reason: "Personal matters" },
                   ].map((leave, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-4 rounded-lg border border-white/10 bg-white/5">
+                    <div key={idx} className="flex items-center justify-between p-4 rounded-lg border border-border bg-white/5">
                       <div className="flex items-center gap-4 flex-1">
                         <Avatar className="h-10 w-10">
-                          <AvatarFallback className="bg-primary/20 text-primary">
+                          <AvatarFallback className="bg-orange-100 dark:bg-orange-900 text-primary">
                             {leave.employee.split(' ').map(n => n[0]).join('')}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
                           <p className="font-medium">{leave.employee}</p>
-                          <p className="text-sm text-muted-foreground">{leave.type}</p>
+                          <p className="text-sm text-gray-900 dark:text-gray-100 font-semibold">{leave.type}</p>
                         </div>
                         <div className="text-sm">
-                          <p className="text-muted-foreground">Duration</p>
+                          <p className="text-gray-900 dark:text-gray-100 font-semibold">Duration</p>
                           <p className="font-medium">{leave.from} - {leave.to}</p>
                         </div>
                         <div className="text-sm text-center">
-                          <p className="text-muted-foreground">Days</p>
+                          <p className="text-gray-900 dark:text-gray-100 font-semibold">Days</p>
                           <p className="font-medium">{leave.days}</p>
                         </div>
                         <div className="text-sm max-w-[150px]">
-                          <p className="text-muted-foreground">Reason</p>
+                          <p className="text-gray-900 dark:text-gray-100 font-semibold">Reason</p>
                           <p className="font-medium truncate">{leave.reason}</p>
                         </div>
                         <div className="flex gap-2">

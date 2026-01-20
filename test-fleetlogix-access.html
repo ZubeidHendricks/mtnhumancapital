@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fleet Logix Test</title>
+</head>
+<body>
+    <h1>Fleet Logix Connection Test</h1>
+    <button onclick="testAPI()">Test API</button>
+    <pre id="result"></pre>
+    
+    <script>
+        async function testAPI() {
+            const result = document.getElementById('result');
+            result.textContent = 'Testing...\n';
+            
+            try {
+                // Test drivers endpoint
+                result.textContent += '\n1. Testing /api/fleetlogix/drivers...\n';
+                const driversRes = await fetch('http://localhost:5000/api/fleetlogix/drivers', {
+                    credentials: 'include'
+                });
+                result.textContent += `   Status: ${driversRes.status}\n`;
+                const driversData = await driversRes.text();
+                result.textContent += `   Response: ${driversData.substring(0, 200)}\n`;
+                
+                // Test vehicles endpoint
+                result.textContent += '\n2. Testing /api/fleetlogix/vehicles...\n';
+                const vehiclesRes = await fetch('http://localhost:5000/api/fleetlogix/vehicles', {
+                    credentials: 'include'
+                });
+                result.textContent += `   Status: ${vehiclesRes.status}\n`;
+                const vehiclesData = await vehiclesRes.text();
+                result.textContent += `   Response: ${vehiclesData.substring(0, 200)}\n`;
+                
+                // Test routes endpoint
+                result.textContent += '\n3. Testing /api/fleetlogix/routes...\n';
+                const routesRes = await fetch('http://localhost:5000/api/fleetlogix/routes', {
+                    credentials: 'include'
+                });
+                result.textContent += `   Status: ${routesRes.status}\n`;
+                const routesData = await routesRes.text();
+                result.textContent += `   Response: ${routesData.substring(0, 200)}\n`;
+                
+            } catch (error) {
+                result.textContent += `\nError: ${error.message}\n`;
+            }
+        }
+    </script>
+</body>
+</html>

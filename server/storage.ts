@@ -194,7 +194,7 @@ import {
   type InsertCvTemplate,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, lte, sql, isNull, isNotNull } from "drizzle-orm";
+import { eq, desc, and, lte, sql, isNull, isNotNull, or } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -592,6 +592,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async getUserByUsernameOnly(username: string): Promise<User | undefined> {
+    // Find user by username across all tenants
     const [user] = await db.select().from(users).where(eq(users.username, username));
     return user || undefined;
   }
@@ -3432,6 +3438,59 @@ export class DatabaseStorage implements IStorage {
     const result = await db.delete(cvTemplates)
       .where(and(eq(cvTemplates.id, id), eq(cvTemplates.tenantId, tenantId)));
     return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // Weighbridge Slips
+  async createWeighbridgeSlip(slip: InsertWeighbridgeSlip): Promise<WeighbridgeSlip> {
+    const [created] = await db.insert(weighbridgeSlips).values(slip).returning();
+    return created;
+  }
+
+  async getWeighbridgeSlips(tenantId: string): Promise<WeighbridgeSlip[]> {
+    return db.select()
+      .from(weighbridgeSlips)
+      .where(eq(weighbridgeSlips.tenantId, tenantId))
+      .orderBy(desc(weighbridgeSlips.weighDateTime));
+  }
+
+  async getWeighbridgeSlipById(tenantId: string, id: string): Promise<WeighbridgeSlip | undefined> {
+    const [slip] = await db.select()
+      .from(weighbridgeSlips)
+      .where(
+        and(
+          eq(weighbridgeSlips.id, id),
+          eq(weighbridgeSlips.tenantId, tenantId)
+        )
+      );
+    return slip;
+  }
+
+  async updateWeighbridgeSlip(
+    tenantId: string,
+    id: string,
+    data: Partial<InsertWeighbridgeSlip>
+  ): Promise<WeighbridgeSlip | undefined> {
+    const [updated] = await db.update(weighbridgeSlips)
+      .set({ ...data, updatedAt: new Date() })
+      .where(
+        and(
+          eq(weighbridgeSlips.id, id),
+          eq(weighbridgeSlips.tenantId, tenantId)
+        )
+      )
+      .returning();
+    return updated;
+  }
+
+  async deleteWeighbridgeSlip(tenantId: string, id: string): Promise<boolean> {
+    await db.delete(weighbridgeSlips)
+      .where(
+        and(
+          eq(weighbridgeSlips.id, id),
+          eq(weighbridgeSlips.tenantId, tenantId)
+        )
+      );
+    return true;
   }
 }
 

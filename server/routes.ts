@@ -24,6 +24,8 @@ import mammoth from "mammoth";
 import { pnetAPIService } from "./pnet-api-service";
 import { pnetApplicationAgent } from "./pnet-application-agent";
 import { pnetJobPostingAgent } from "./pnet-job-posting-agent";
+import { registerWeighbridgeRoutes } from "./routes/weighbridge";
+import { registerFleetLogixRoutes } from "./fleetlogix-routes";
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -2536,10 +2538,23 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
       }
       
       if (req.body.modulesEnabled) {
-        const validModules = ['recruitment', 'integrity', 'onboarding', 'hr_management'];
+        const validModules = [
+          'recruitment', 
+          'integrity', 
+          'onboarding', 
+          'hr_management',
+          'fleetlogix',
+          'workforce_intelligence',
+          'lms',
+          'kpi_performance',
+          'social_screening',
+          'document_automation',
+          'whatsapp',
+          'pnet'
+        ];
         for (const [key, value] of Object.entries(req.body.modulesEnabled)) {
           if (!validModules.includes(key)) {
-            return res.status(400).json({ message: `Invalid module key: ${key}` });
+            return res.status(400).json({ message: `Invalid module key: ${key}. Valid modules are: ${validModules.join(', ')}` });
           }
           if (typeof value !== 'boolean') {
             return res.status(400).json({ message: `Module ${key} must be a boolean` });
@@ -2568,10 +2583,23 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
       }
       
       if (req.body.modulesEnabled) {
-        const validModules = ['recruitment', 'integrity', 'onboarding', 'hr_management'];
+        const validModules = [
+          'recruitment', 
+          'integrity', 
+          'onboarding', 
+          'hr_management',
+          'fleetlogix',
+          'workforce_intelligence',
+          'lms',
+          'kpi_performance',
+          'social_screening',
+          'document_automation',
+          'whatsapp',
+          'pnet'
+        ];
         for (const [key, value] of Object.entries(req.body.modulesEnabled)) {
           if (!validModules.includes(key)) {
-            return res.status(400).json({ message: `Invalid module key: ${key}` });
+            return res.status(400).json({ message: `Invalid module key: ${key}. Valid modules are: ${validModules.join(', ')}` });
           }
           if (typeof value !== 'boolean') {
             return res.status(400).json({ message: `Module ${key} must be a boolean` });
@@ -8489,6 +8517,12 @@ Format your response as JSON:
       res.status(500).json({ message: error.message });
     }
   });
+
+  // Register weighbridge routes
+  registerWeighbridgeRoutes(app);
+
+  // Register Fleet Logix routes
+  registerFleetLogixRoutes(app);
 
   const httpServer = createServer(app);
 

@@ -1,0 +1,9 @@
+1.	Your listings feed only needs the one set of credentials to post listings for ALL mutual clients. This must never change. It should be hardcoded for the PNet listings’ XML. This is the authentication to the posting interface that
+	will be provided to you. the interface details are contained within the HTTP Post docuemnt.
+	
+	
+2.	The only details that PNet requires to identify a client and validate credits with listing are the below. ONLY this should change on a per client basis:
+	Sender ID
+	Org ID
+
+	There should be no other requirement from the ATS system to make a client listing live on PNet other than the client needing listing credits.

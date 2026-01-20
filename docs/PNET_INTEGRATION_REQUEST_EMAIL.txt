@@ -1,0 +1,337 @@
+Subject: Technical Integration Request - Job Posting API & ATSi Apply API V4 Credentials
+
+Dear PNet Technical Integration Team,
+
+I am writing to request the necessary credentials and technical specifications to complete our integration with PNet's APIs. We are Avatar Human Capital, and we are implementing a comprehensive ATS (Applicant Tracking System) platform that integrates with PNet for both job posting and candidate application submission.
+
+---
+
+## COMPANY DETAILS
+
+**Company Name**: Avatar Human Capital  
+**Sender ID**: 74597  
+**Organisation ID**: 120881  
+**Technical Contact**: [Your Name]  
+**Email**: [Your Email]  
+**Phone**: [Your Phone Number]  
+**Website**: [Your Website]  
+
+---
+
+## INTEGRATION #1: JOB POSTING API (XML FEED)
+
+### Current Status
+We have received comprehensive documentation for the Job Posting API, including:
+- Authentication.txt
+- Full XML Example.txt
+- HTTP Posting Interface.docx
+- Categorization.xlsx (47KB)
+- Return Codes.docx
+- ListingType.txt
+- Start and End Date.txt
+- Test Advert Prefix.txt
+
+We have successfully parsed the documentation and understand the XML structure, category mappings, and API workflow for posting job listings to PNet.
+
+### What We Have
+✅ Complete technical documentation  
+✅ Sender ID: 74597  
+✅ Organisation ID: 120881  
+✅ Understanding of XML schema and required fields  
+✅ Category ID mappings from Categorization.xlsx  
+✅ Knowledge of INSERT/UPDATE/DELETE actions  
+
+### What We Need from You
+According to the Authentication.txt document, the following is stated:
+
+> "Your listings feed only needs the one set of credentials to post listings for ALL mutual clients. This must never change. It should be hardcoded for the PNet listings XML. This is the authentication to the posting interface that will be provided to you."
+
+**Please provide:**
+1. **Username** for Job Posting API authentication (HTTP Basic Auth)
+2. **Password** for Job Posting API authentication
+3. **Confirmation of Production Endpoint**: `https://feed.pnet.co.za/jobfeed.aspx`
+4. **Test/Sandbox Endpoint** (if available)
+5. **Test credentials** (if different from production)
+
+### Technical Implementation Plan
+Once credentials are provided, we will:
+1. Implement XML generation service for job postings
+2. Map our internal job fields to PNet category IDs
+3. Implement INSERT, UPDATE, and DELETE operations
+4. Test using the `test_` prefix as documented
+5. Monitor response codes and handle errors appropriately
+6. Deploy to production after successful testing
+
+---
+
+## INTEGRATION #2: ATSi APPLY API V4 (JSON REST)
+
+### Current Status
+We have **fully implemented** the ATSi Apply API V4 integration on our platform. Our implementation includes:
+- Complete API service layer (`pnet-api-service.ts`)
+- AI-powered application agent (`pnet-application-agent.ts`)
+- Intelligent screening question answering using AI (Groq)
+- CV handling and base64 conversion
+- Automatic consent acceptance logic
+- Bulk application support with rate limiting
+- Comprehensive error handling and logging
+
+### Technical Implementation Details
+Our implementation handles:
+- **Inquiry Endpoint**: Checking job status and retrieving screening questions
+- **Application Endpoint**: Submitting complete candidate applications
+- **Question Types**: All supported field types (INPUT_TEXT, INPUT_INT, TEXTAREA, DATE, DATE_RANGE, SINGLE_SELECT, MULTI_SELECT, RADIO, CHECKBOX, FILE, HYPERLINK, INFORMATION)
+- **Basic Data Fields**: FirstName, Surname, Email, Mobile, CV
+- **Consent Management**: Mandatory and optional consents
+- **CV Submission**: Base64-encoded documents (PDF, DOCX, DOC, RTF, ODT, TXT)
+- **AI Processing**: Automatic generation of intelligent, context-aware answers to screening questions
+
+### Code Architecture
+```typescript
+// Service Layer
+class PNetAPIService {
+  private baseUrl: string;
+  private apiKey: string;
+  
+  async inquireJob(jobUrl: string): Promise<PNetInquiryResponse>
+  async submitApplication(data: PNetApplyRequest): Promise<PNetApplyResponse>
+}
+
+// AI Agent Layer
+class PNetApplicationAgent {
+  async applyToJob(context: ApplicationContext): Promise<ApplicationResult>
+  async bulkApply(candidates: Candidate[], jobUrl: string): Promise<BulkResult>
+}
+```
+
+### What We Have
+✅ Complete implementation of ATSi Apply API V4  
+✅ Full type definitions matching API specification  
+✅ AI-powered screening question answering  
+✅ Comprehensive error handling  
+✅ Production-ready code  
+
+### What We Need from You
+Our implementation is **100% complete** but requires the following credentials to function:
+
+**Please provide:**
+1. **API Key** (for `apiKey` header authentication)
+   - Environment variable: `PNET_API_KEY`
+   - Expected format: String API key for header `apiKey: YOUR_KEY`
+
+2. **API Base URL**
+   - Environment variable: `PNET_API_BASE_URL`
+   - Expected format: `https://api.atsi-apply.com` or `https://api.pnet.co.za/atsi/v4`
+   - We need both production and test/sandbox URLs if available
+
+3. **Test Job URL**
+   - A sample PNet job URL we can use for testing applications
+   - Preferably an ACTIVE job with screening questions
+   - Format: `https://www.pnet.co.za/job/[job_id]`
+
+4. **API Documentation** (if not already provided)
+   - Endpoint specifications
+   - Request/Response schemas
+   - Rate limits and quotas
+   - Error code reference
+
+### Technical Implementation Plan
+Once credentials are provided, we will:
+1. Configure `PNET_API_KEY` and `PNET_API_BASE_URL` in environment variables
+2. Perform initial connection and authentication tests
+3. Test inquiry endpoint with provided test job URL
+4. Test application submission with test candidate data
+5. Verify AI-generated screening answers are accepted
+6. Test bulk application functionality
+7. Monitor API responses and error handling
+8. Deploy to production after successful testing
+
+---
+
+## INTEGRATION #3: PARTNER.NET DATA API (FUTURE)
+
+### Future Requirements
+We understand that access to the Partner.Net Data API for candidate search and sourcing requires a formal partnership agreement with PNet.
+
+**For future consideration, we would like to discuss:**
+1. Partnership requirements and qualifications
+2. API access pricing and credit model
+3. Technical specifications and documentation
+4. Candidate data access scope and permissions
+5. Compliance and data protection requirements
+
+We are prepared to initiate the partnership process when appropriate. Please advise on the next steps for this integration.
+
+---
+
+## TECHNICAL ENVIRONMENT
+
+**Platform Stack:**
+- Backend: Node.js with TypeScript
+- Database: PostgreSQL with Drizzle ORM
+- AI Services: Groq (for intelligent screening answers)
+- Hosting: Cloud-based infrastructure
+- Security: HTTPS, encrypted credentials, secure API key storage
+
+**API Integration Approach:**
+- RESTful API calls using Axios
+- Comprehensive type safety with TypeScript interfaces
+- Environment-based configuration
+- Centralized error handling and logging
+- Rate limiting and retry logic
+- Webhook support for async notifications (if applicable)
+
+**Testing Strategy:**
+- Unit tests for API service layer
+- Integration tests with test/sandbox endpoints
+- End-to-end testing with real job applications
+- Load testing for bulk operations
+- Error scenario testing
+
+---
+
+## TIMELINE & DELIVERABLES
+
+**Upon Receipt of Credentials:**
+
+**Week 1:**
+- Configure and test Job Posting API (INSERT operations)
+- Configure and test ATSi Apply API (inquiry + submit)
+- Validate all API endpoints and authentication
+
+**Week 2:**
+- Complete Job Posting API implementation (UPDATE, DELETE)
+- Test bulk application scenarios
+- Implement error monitoring and alerting
+
+**Week 3:**
+- Production deployment
+- Client onboarding and training
+- Documentation and support materials
+
+**Ongoing:**
+- Monitor API usage and performance
+- Optimize AI screening answer generation
+- Gather feedback and iterate
+
+---
+
+## SPECIFIC TECHNICAL QUESTIONS
+
+1. **Job Posting API:**
+   - Are there rate limits on job posting operations?
+   - What is the expected response time for job activation on PNet?
+   - How do we receive notifications when jobs expire or are manually removed?
+   - Is there a webhook for application receipts when candidates apply to our posted jobs?
+
+2. **ATSi Apply API:**
+   - What are the rate limits for application submissions?
+   - What is the expected success rate and common failure scenarios?
+   - How do we track application status after submission?
+   - Are there webhooks or callbacks for application status updates?
+
+3. **General:**
+   - Do both APIs share the same Sender ID (74597) and Org ID (120881)?
+   - Are there separate credentials for test/sandbox environments?
+   - What is the SLA for API availability and support response times?
+   - Are there any IP whitelisting requirements?
+
+---
+
+## SECURITY & COMPLIANCE
+
+We are committed to maintaining the highest standards of security and compliance:
+
+✅ All API credentials will be stored encrypted in environment variables  
+✅ HTTPS/TLS for all API communications  
+✅ Secure handling of candidate personal data (POPIA compliance)  
+✅ Audit logging for all API operations  
+✅ Regular security reviews and updates  
+✅ Compliance with PNet's terms of service and data usage policies  
+
+---
+
+## EXPECTED DELIVERABLES FROM PNET
+
+### Job Posting API:
+- [ ] Username for authentication
+- [ ] Password for authentication
+- [ ] Production endpoint confirmation
+- [ ] Test/sandbox endpoint (if available)
+- [ ] Test credentials (if different)
+
+### ATSi Apply API V4:
+- [ ] API Key
+- [ ] Production base URL
+- [ ] Test/sandbox base URL (if available)
+- [ ] Test job URL for application testing
+- [ ] API documentation (if not provided)
+
+### General:
+- [ ] Technical contact for API support
+- [ ] Escalation process for technical issues
+- [ ] Expected response times for support queries
+- [ ] Any additional integration requirements
+
+---
+
+## NEXT STEPS
+
+Once we receive the requested credentials and information, we will:
+
+1. **Immediate (Day 1):**
+   - Configure credentials in our development environment
+   - Perform initial authentication and connectivity tests
+   - Validate API endpoints and response formats
+
+2. **Short-term (Week 1):**
+   - Complete integration testing
+   - Conduct thorough error scenario testing
+   - Optimize AI-powered features
+
+3. **Medium-term (Week 2-3):**
+   - Deploy to production
+   - Begin client rollout
+   - Monitor performance and gather metrics
+
+4. **Ongoing:**
+   - Provide feedback on API performance
+   - Share usage metrics and insights
+   - Collaborate on future enhancements
+
+---
+
+## CONTACT INFORMATION
+
+**For this integration:**
+- **Primary Contact**: [Your Name]
+- **Email**: [Your Email]
+- **Phone**: [Your Phone]
+- **Preferred Communication**: Email for technical specifications, phone for urgent issues
+
+**Business Hours**: [Your business hours and timezone]  
+**Emergency Contact**: [If applicable]
+
+---
+
+We are excited to integrate with PNet's platform and provide our clients with seamless job posting and candidate application capabilities. Our technical team is ready to proceed as soon as the credentials are provided.
+
+Please let us know if you require any additional information, technical specifications, or documentation from our side.
+
+Thank you for your assistance. We look forward to a successful integration.
+
+Best regards,
+
+[Your Name]  
+[Your Title]  
+Avatar Human Capital  
+
+---
+
+**Attachments:**
+- None (all documentation already received)
+
+**CC:**
+- [Your development team lead]
+- [Your project manager]
+- [Other relevant stakeholders]

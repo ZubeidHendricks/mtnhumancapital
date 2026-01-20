@@ -91,7 +91,35 @@ export class AuthService {
   }
 
   /**
-   * Login a user
+   * Login a user - looks up by username across all tenants
+   */
+  async loginByUsername(
+    username: string,
+    password: string
+  ): Promise<{ user: User; token: string } | null> {
+    // Find user by username only (across all tenants)
+    const user = await storage.getUserByUsernameOnly(username);
+    if (!user) {
+      return null;
+    }
+
+    // Verify password
+    const isValidPassword = await this.verifyPassword(password, user.password);
+    if (!isValidPassword) {
+      return null;
+    }
+
+    // Generate token
+    const token = this.generateToken(user);
+
+    // Remove password from response
+    const { password: _, ...userWithoutPassword } = user;
+
+    return { user: userWithoutPassword as User, token };
+  }
+
+  /**
+   * Login a user (original method - kept for compatibility)
    */
   async login(
     tenantId: string,
@@ -128,7 +156,7 @@ export class AuthService {
       return null;
     }
 
-    const user = await storage.getUser(payload.tenantId || "", payload.userId);
+    const user = await storage.getUser(payload.userId);
     return user || null;
   }
 
