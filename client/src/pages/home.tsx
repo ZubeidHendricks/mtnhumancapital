@@ -20,13 +20,13 @@ export default function Home() {
         <AHCFeatures />
 
         {/* NEW: Interview Suite Section */}
-        <section className="py-24 bg-black/20 border-y border-white/5 relative overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(124,58,237,0.1)_0%,rgba(0,0,0,0)_60%)]" />
+        <section className="py-24 bg-muted/50 dark:bg-zinc-900/50 border-y border-border relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.05)_0%,rgba(0,0,0,0)_60%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(124,58,237,0.1)_0%,rgba(0,0,0,0)_60%)]" />
           
           <div className="container mx-auto px-6 relative z-10">
             <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-3xl md:text-5xl font-bold mb-6">
-                The <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">AI Interview Suite</span>
+              <h2 className="text-3xl md:text-5xl font-bold mb-6 text-foreground">
+                The <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500">AI Interview Suite</span>
               </h2>
               <p className="text-muted-foreground text-lg">
                 Revolutionize your hiring process with our dual-stage AI assessment platform.
@@ -36,12 +36,12 @@ export default function Home() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               {/* Voice Interview Card */}
-              <Card className="bg-card/30 border-white/10 hover:border-purple-500/30 transition-all group">
+              <Card className="bg-card border-border hover:border-purple-500/30 transition-all group">
                 <CardHeader>
                   <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mb-4 border border-purple-500/20 group-hover:scale-110 transition-transform">
-                    <Mic className="w-6 h-6 text-purple-400" />
+                    <Mic className="w-6 h-6 text-purple-500 dark:text-purple-400" />
                   </div>
-                  <CardTitle className="text-2xl">AI Voice Interview</CardTitle>
+                  <CardTitle className="text-2xl text-foreground">AI Voice Interview</CardTitle>
                   <CardDescription>Stage 1: Interactive Roleplay Practice</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -57,12 +57,12 @@ export default function Home() {
               </Card>
 
               {/* Video Interview Card */}
-              <Card className="bg-card/30 border-white/10 hover:border-indigo-500/30 transition-all group">
+              <Card className="bg-card border-border hover:border-indigo-500/30 transition-all group">
                 <CardHeader>
                   <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center mb-4 border border-indigo-500/20 group-hover:scale-110 transition-transform">
-                    <Video className="w-6 h-6 text-indigo-400" />
+                    <Video className="w-6 h-6 text-indigo-500 dark:text-indigo-400" />
                   </div>
-                  <CardTitle className="text-2xl">Cloned Video Interview</CardTitle>
+                  <CardTitle className="text-2xl text-foreground">Cloned Video Interview</CardTitle>
                   <CardDescription>Stage 2: Deep Dive</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -84,9 +84,9 @@ export default function Home() {
         <DashboardPreview />
 
         {/* CTA Section */}
-        <section className="py-24 border-t border-white/10 bg-gradient-to-b from-background to-black">
+        <section className="py-24 border-t border-border bg-gradient-to-b from-background to-muted/50 dark:to-zinc-900">
           <div className="container mx-auto px-6 text-center">
-            <h2 className="text-4xl font-bold mb-6">Ready to Transform Your Operations?</h2>
+            <h2 className="text-4xl font-bold mb-6 text-foreground">Ready to Transform Your Operations?</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto mb-10 text-lg">
               Join the future of human capital and operational management with Avatar Human Capital's intelligent advisory solutions.
             </p>
@@ -94,7 +94,7 @@ export default function Home() {
               <input 
                 type="email" 
                 placeholder="Enter your email address" 
-                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="flex-1 bg-muted border border-border rounded-lg px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
               <button className="bg-primary text-primary-foreground font-medium px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors">
                 Get Started
@@ -104,19 +104,19 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="bg-black border-t border-white/10 py-12">
+      <footer className="bg-zinc-900 border-t border-zinc-800 py-12">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
             
             <div className="md:col-span-2">
-              <div className="flex items-center mb-6 py-10 px-10">
+              <div className="flex items-center mb-6 py-6 px-6">
                 <img 
                   src="/logos/light-logo.png" 
                   alt="Avatar Human Capital" 
-                  className="h-20 w-auto object-contain"
+                  className="h-16 w-auto object-contain"
                 />
               </div>
-              <p className="text-muted-foreground max-w-xs">
+              <p className="text-gray-400 max-w-xs">
                 Avatar Human Capital. <br/>
                 Pioneering the intersection of human potential and artificial intelligence.
               </p>
@@ -124,7 +124,7 @@ export default function Home() {
 
             <div>
               <h3 className="font-bold mb-4 text-white">Solutions</h3>
-              <ul className="space-y-2 text-muted-foreground text-sm">
+              <ul className="space-y-2 text-gray-400 text-sm">
                 <li><a href="#" className="hover:text-primary transition-colors">Executive Dashboard</a></li>
                 <li><a href="#" className="hover:text-primary transition-colors">Finance Automation</a></li>
                 <li><a href="#" className="hover:text-primary transition-colors">AI Recruitment</a></li>
@@ -134,7 +134,7 @@ export default function Home() {
 
             <div>
               <h3 className="font-bold mb-4 text-white">Contact</h3>
-              <ul className="space-y-3 text-muted-foreground text-sm">
+              <ul className="space-y-3 text-gray-400 text-sm">
                 <li className="flex items-center gap-2"><Mail className="w-4 h-4" /> contact@ahc.ai</li>
                 <li className="flex items-center gap-2"><Phone className="w-4 h-4" /> +1 (555) 000-0000</li>
                 <li className="flex items-center gap-2"><MapPin className="w-4 h-4" /> Tech District, Innovation City</li>
@@ -142,7 +142,7 @@ export default function Home() {
             </div>
           </div>
           
-          <div className="border-t border-white/10 mt-12 pt-8 text-center text-sm text-muted-foreground">
+          <div className="border-t border-zinc-800 mt-12 pt-8 text-center text-sm text-gray-500">
             © {new Date().getFullYear()} Avatar Human Capital. All rights reserved.
           </div>
         </div>

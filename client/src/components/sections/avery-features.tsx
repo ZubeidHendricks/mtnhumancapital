@@ -5,7 +5,7 @@ import { Zap, Sparkles, Users, MessageSquare, Mail } from "lucide-react";
 
 export function AHCFeatures() {
   return (
-    <div className="w-full bg-black text-white py-20">
+    <div className="w-full bg-zinc-900 text-white py-20">
       <div className="container mx-auto px-6">
         
         {/* Hero Section */}
@@ -33,9 +33,7 @@ export function AHCFeatures() {
              transition={{ duration: 0.8 }}
              className="order-2 md:order-1"
           >
-            <div className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900 to-black border border-white/10 p-8 flex items-center justify-center">
-               {/* Abstract Visualization of Speed */}
-               <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+            <div className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-zinc-800 to-zinc-900 border border-white/10 p-8 flex items-center justify-center">
                <div className="relative z-10 flex flex-col gap-4 w-full max-w-xs">
                   {[1, 2, 3].map((i) => (
                     <motion.div 
@@ -94,8 +92,7 @@ export function AHCFeatures() {
              whileInView={{ opacity: 1, x: 0 }}
              transition={{ duration: 0.8 }}
           >
-             <div className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900 to-black border border-white/10 p-8 flex items-center justify-center">
-               <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+             <div className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-zinc-800 to-zinc-900 border border-white/10 p-8 flex items-center justify-center">
                <div className="relative z-10 grid grid-cols-2 gap-4">
                   <div className="bg-white/5 p-4 rounded-xl border border-white/5 blur-sm opacity-50"></div>
                   <motion.div 
@@ -121,11 +118,10 @@ export function AHCFeatures() {
              transition={{ duration: 0.8 }}
              className="order-2 md:order-1"
           >
-            <div className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900 to-black border border-white/10 p-8 flex items-center justify-center">
-               <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+            <div className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-zinc-800 to-zinc-900 border border-white/10 p-8 flex items-center justify-center">
                <div className="flex gap-4 items-end">
                   <motion.div initial={{ height: 20 }} whileInView={{ height: 120 }} className="w-12 bg-white/10 rounded-t-lg"></motion.div>
-                  <motion.div initial={{ height: 20 }} whileInView={{ height: 180 }} className="w-12 bg-primary rounded-t-lg shadow-[0_0_20px_rgba(34,197,94,0.5)]"></motion.div>
+                  <motion.div initial={{ height: 20 }} whileInView={{ height: 180 }} className="w-12 bg-primary rounded-t-lg shadow-[0_0_20px_rgba(249,115,22,0.5)]"></motion.div>
                   <motion.div initial={{ height: 20 }} whileInView={{ height: 90 }} className="w-12 bg-white/10 rounded-t-lg"></motion.div>
                </div>
             </div>
@@ -140,7 +136,7 @@ export function AHCFeatures() {
             <Badge className="mb-4 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border-blue-500/20">FAIRNESS</Badge>
             <h3 className="text-4xl font-bold mb-4">Built to reduce, not amplify biases.</h3>
             <p className="text-gray-400 text-lg mb-6">
-              AHC’s matching algorithm aims for the best competence match, regardless of look or personality.
+              AHC's matching algorithm aims for the best competence match, regardless of look or personality.
             </p>
             <Button variant="outline" className="border-white/20 hover:bg-white hover:text-black transition-colors rounded-full px-8">
               De-bias your hiring
@@ -149,7 +145,7 @@ export function AHCFeatures() {
         </div>
 
         {/* Augment Outreach Section */}
-        <div className="bg-zinc-900/50 border border-white/5 rounded-3xl p-12 mb-32 text-center relative overflow-hidden">
+        <div className="bg-zinc-800/50 border border-white/5 rounded-3xl p-12 mb-32 text-center relative overflow-hidden">
            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50"></div>
            <motion.div
              initial={{ opacity: 0, y: 20 }}
@@ -182,7 +178,7 @@ export function AHCFeatures() {
 
         {/* Coming Soon: Agentic Mode */}
         <div className="relative border border-white/10 rounded-3xl p-12 overflow-hidden">
-           <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 to-black -z-10"></div>
+           <div className="absolute inset-0 bg-gradient-to-br from-zinc-800 to-zinc-900 -z-10"></div>
            <div className="absolute top-0 right-0 p-4">
               <Badge variant="outline" className="border-primary text-primary bg-primary/5">COMING SOON</Badge>
            </div>
