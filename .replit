@@ -52,3 +52,4 @@ integrations = ["javascript_database:1.0.0"]
 
 [userenv.shared]
 CALENDLY_URL = "https://calendly.com/zubeidhendricks/new-meeting"
+NPM_CONFIG_PRODUCTION = "false"
