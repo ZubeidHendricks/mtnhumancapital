@@ -721,7 +721,7 @@ BENEFITS:
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className="rounded-lg bg-orange-50 dark:bg-orange-900 border-2 border-orange-200 dark:border-orange-700 p-6 flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-bold flex items-center gap-2 text-white">
+                  <h3 className="text-lg font-bold flex items-center gap-2 text-gray-900 dark:text-white">
                     <Sparkles className="w-5 h-5 text-primary" />
                     Need to find candidates fast?
                   </h3>
@@ -738,7 +738,7 @@ BENEFITS:
 
               <div className="rounded-lg bg-blue-50 dark:bg-blue-900 border-2 border-blue-200 dark:border-blue-700 p-6 flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-bold flex items-center gap-2 text-white">
+                  <h3 className="text-lg font-bold flex items-center gap-2 text-gray-900 dark:text-white">
                     <LayoutList className="w-5 h-5 text-blue-400" />
                     Track candidate progress
                   </h3>
@@ -1668,7 +1668,7 @@ BENEFITS:
             {/* AI Integrity Banner */}
             <div className="rounded-lg bg-blue-50 dark:bg-blue-900 border-2 border-blue-200 dark:border-blue-700 p-6 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-bold flex items-center gap-2 text-white">
+                <h3 className="text-lg font-bold flex items-center gap-2 text-gray-900 dark:text-white">
                   <ShieldCheck className="w-5 h-5 text-cyan-400" />
                   Perform automated background checks?
                 </h3>
@@ -1912,7 +1912,7 @@ BENEFITS:
             {/* Social Screening Section */}
             <div className="rounded-lg bg-purple-50 dark:bg-purple-900 border-2 border-purple-200 dark:border-purple-700 p-6 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-bold flex items-center gap-2 text-white">
+                <h3 className="text-lg font-bold flex items-center gap-2 text-gray-900 dark:text-white">
                   <Users className="w-5 h-5 text-purple-400" />
                   Social Intelligence Screening
                 </h3>
@@ -2071,7 +2071,7 @@ BENEFITS:
              {/* AI Onboarding Banner */}
             <div className="rounded-lg bg-orange-50 dark:bg-orange-900 border-2 border-orange-200 dark:border-orange-700 p-6 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-bold flex items-center gap-2 text-white">
+                <h3 className="text-lg font-bold flex items-center gap-2 text-gray-900 dark:text-white">
                   <Laptop className="w-5 h-5 text-amber-400" />
                   Automate new hire provisioning?
                 </h3>
