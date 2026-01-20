@@ -293,7 +293,7 @@ export default function CandidatePipeline() {
 
         {/* Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card className="bg-card/50 border-white/10">
+          <Card className="bg-card/50 border-border dark:border-white/10">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -307,7 +307,7 @@ export default function CandidatePipeline() {
             </CardContent>
           </Card>
 
-          <Card className="bg-card/50 border-white/10">
+          <Card className="bg-card/50 border-border dark:border-white/10">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -323,7 +323,7 @@ export default function CandidatePipeline() {
             </CardContent>
           </Card>
 
-          <Card className="bg-card/50 border-white/10">
+          <Card className="bg-card/50 border-border dark:border-white/10">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -339,7 +339,7 @@ export default function CandidatePipeline() {
             </CardContent>
           </Card>
 
-          <Card className="bg-card/50 border-white/10">
+          <Card className="bg-card/50 border-border dark:border-white/10">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -375,11 +375,11 @@ export default function CandidatePipeline() {
               const stageIndex = getStageIndex(candidate.stage);
 
               return (
-                <Card key={candidate.id} className="bg-card/50 border-white/10 hover:border-white/20 transition-all">
+                <Card key={candidate.id} className="bg-card/50 border-border dark:border-white/10 hover:border-border hover:dark:border-white/20 transition-all">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-12 w-12 border border-white/10">
+                        <Avatar className="h-12 w-12 border border-border dark:border-white/10">
                           <AvatarFallback className="bg-primary/20 text-primary text-sm font-semibold">
                             {candidate.fullName?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'NA'}
                           </AvatarFallback>
@@ -714,7 +714,7 @@ export default function CandidatePipeline() {
                 </div>
 
                 {/* Dialog Actions */}
-                <div className="flex gap-3 mt-6 pt-4 border-t border-white/10">
+                <div className="flex gap-3 mt-6 pt-4 border-t border-border dark:border-white/10">
                   <Button 
                     variant="outline" 
                     className="flex-1"

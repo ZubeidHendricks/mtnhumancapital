@@ -1046,7 +1046,7 @@ BENEFITS:
                             .map((candidate: any) => (
                               <div key={candidate.id} className="px-4 py-3 flex items-center justify-between hover:bg-white/5 transition-colors">
                                 <div className="flex items-center gap-3">
-                                  <Avatar className="h-8 w-8 border border-white/20">
+                                  <Avatar className="h-8 w-8 border border-border dark:border-white/20">
                                     {candidate.photoUrl && (
                                       <AvatarImage src={candidate.photoUrl} alt={candidate.fullName} />
                                     )}

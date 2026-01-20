@@ -132,7 +132,7 @@ export default function PipelineBoard() {
           <p className="text-muted-foreground">Visual workflow from Jobs to Hired</p>
         </div>
 
-        <Card className="mb-6 bg-card/50 border-white/10">
+        <Card className="mb-6 bg-card/50 border-border dark:border-white/10">
           <CardContent className="p-4">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
@@ -204,12 +204,12 @@ export default function PipelineBoard() {
                               stageCandidates.map((candidate: Candidate) => (
                                 <Card 
                                   key={candidate.id} 
-                                  className="bg-card/80 border-white/10 hover:border-white/20 transition-all cursor-pointer"
+                                  className="bg-card/80 border-border dark:border-white/10 hover:border-border hover:dark:border-white/20 transition-all cursor-pointer"
                                   data-testid={`card-candidate-${candidate.id}`}
                                 >
                                   <CardContent className="p-3">
                                     <div className="flex items-start gap-2 mb-2">
-                                      <Avatar className="h-8 w-8 border border-white/10">
+                                      <Avatar className="h-8 w-8 border border-border dark:border-white/10">
                                         <AvatarFallback className="bg-primary/20 text-primary text-xs">
                                           {candidate.fullName?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'NA'}
                                         </AvatarFallback>
@@ -273,7 +273,7 @@ export default function PipelineBoard() {
           </div>
         )}
 
-        <Card className="mt-6 bg-card/30 border-white/10">
+        <Card className="mt-6 bg-card/30 border-border dark:border-white/10">
           <CardContent className="p-4">
             <div className="flex items-center gap-6 text-sm">
               <span className="text-muted-foreground">Pipeline Summary:</span>

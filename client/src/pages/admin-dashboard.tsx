@@ -185,7 +185,7 @@ export default function AdminDashboard() {
     };
 
     return (
-      <div className="p-4 rounded-lg bg-black/20 border border-white/5">
+      <div className="p-4 rounded-lg bg-black/20 border border-border dark:border-white/5">
         <Label className="text-sm font-semibold text-white mb-2 block">
           {label}
         </Label>
@@ -214,7 +214,7 @@ export default function AdminDashboard() {
               placeholder="email@company.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="bg-black/40 border-white/10 text-white"
+              className="bg-black/40 border-border dark:border-white/10 text-white"
               data-testid={`input-${testId}`}
             />
             <Button 
@@ -293,7 +293,7 @@ export default function AdminDashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Feature Toggles */}
-        <Card className="bg-black/40 border-white/10" data-testid="card-feature-toggles">
+        <Card className="bg-black/40 border-border dark:border-white/10" data-testid="card-feature-toggles">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <Settings className="w-5 h-5 text-primary" />
@@ -318,7 +318,7 @@ export default function AdminDashboard() {
                   return (
                     <div 
                       key={feature.key} 
-                      className="flex items-center justify-between p-4 rounded-lg bg-black/20 border border-white/5"
+                      className="flex items-center justify-between p-4 rounded-lg bg-black/20 border border-border dark:border-white/5"
                       data-testid={`toggle-${feature.key}`}
                     >
                       <div className="flex items-center gap-3">
@@ -352,7 +352,7 @@ export default function AdminDashboard() {
                 <Separator className="bg-white/5" />
 
                 {/* Reminder Interval Configuration */}
-                <div className="p-4 rounded-lg bg-black/20 border border-white/5">
+                <div className="p-4 rounded-lg bg-black/20 border border-border dark:border-white/5">
                   <Label className="text-sm font-semibold text-white mb-2 block">
                     Default Reminder Interval
                   </Label>
@@ -365,7 +365,7 @@ export default function AdminDashboard() {
                       placeholder="24"
                       value={reminderInterval}
                       onChange={(e) => setReminderInterval(e.target.value)}
-                      className="bg-black/40 border-white/10 text-white max-w-xs"
+                      className="bg-black/40 border-border dark:border-white/10 text-white max-w-xs"
                       data-testid="input-reminder-interval"
                     />
                     <Button 
@@ -392,7 +392,7 @@ export default function AdminDashboard() {
         </Card>
 
         {/* Email Configuration */}
-        <Card className="bg-black/40 border-white/10" data-testid="card-email-config">
+        <Card className="bg-black/40 border-border dark:border-white/10" data-testid="card-email-config">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <Mail className="w-5 h-5 text-primary" />
@@ -445,7 +445,7 @@ export default function AdminDashboard() {
         </Card>
 
         {/* Module Configuration */}
-        <Card className="bg-black/40 border-white/10" data-testid="card-module-config">
+        <Card className="bg-black/40 border-border dark:border-white/10" data-testid="card-module-config">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <Settings className="w-5 h-5 text-primary" />
@@ -468,7 +468,7 @@ export default function AdminDashboard() {
                   { key: "onboarding", label: "Company Onboarding", desc: "Welcome, docs, IT provisioning, orientation" },
                   { key: "hr_management", label: "HR Management", desc: "Performance, training, payroll, relations" },
                 ].map((module) => (
-                  <div key={module.key} className="flex items-center justify-between p-4 rounded-lg bg-black/20 border border-white/5">
+                  <div key={module.key} className="flex items-center justify-between p-4 rounded-lg bg-black/20 border border-border dark:border-white/5">
                     <div>
                       <div className="flex items-center gap-2">
                         <h3 className="text-sm font-semibold text-white">{module.label}</h3>
@@ -535,7 +535,7 @@ export default function AdminDashboard() {
         </Card>
 
         {/* API Keys & Secrets Status */}
-        <Card className="bg-black/40 border-white/10" data-testid="card-secrets-status">
+        <Card className="bg-black/40 border-border dark:border-white/10" data-testid="card-secrets-status">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <Key className="w-5 h-5 text-primary" />
@@ -569,7 +569,7 @@ export default function AdminDashboard() {
                   {envStatus?.secrets.map((secret) => (
                     <div 
                       key={secret.key}
-                      className="flex items-center justify-between p-3 rounded-lg bg-black/20 border border-white/5"
+                      className="flex items-center justify-between p-3 rounded-lg bg-black/20 border border-border dark:border-white/5"
                       data-testid={`secret-${secret.key}`}
                     >
                       <div>
@@ -597,7 +597,7 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs defaultValue="features" className="w-full mt-6">
-          <TabsList className="bg-black/40 border-white/10">
+          <TabsList className="bg-black/40 border-border dark:border-white/10">
             <TabsTrigger value="features">System Features</TabsTrigger>
             <TabsTrigger value="tenants">Tenant Management</TabsTrigger>
           </TabsList>

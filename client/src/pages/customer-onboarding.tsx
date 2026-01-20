@@ -103,7 +103,7 @@ export default function CustomerOnboarding() {
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors ${
                   step > i + 1 ? "bg-primary border-primary text-black" : 
                   step === i + 1 ? "border-primary text-primary" : 
-                  "border-white/10 bg-white/5"
+                  "border-border dark:border-white/10 bg-white/5"
                 }`}>
                   {step > i + 1 ? <CheckCircle2 className="w-5 h-5" /> : i + 1}
                 </div>
@@ -122,7 +122,7 @@ export default function CustomerOnboarding() {
         </div>
 
         {/* Wizard Content */}
-        <Card className="w-full max-w-3xl bg-card/30 border-white/10 backdrop-blur-md overflow-hidden">
+        <Card className="w-full max-w-3xl bg-card/30 border-border dark:border-white/10 backdrop-blur-md overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-primary opacity-50" />
           
           <AnimatePresence mode="wait">
@@ -147,7 +147,7 @@ export default function CustomerOnboarding() {
                         <Building2 className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                         <Input 
                           placeholder="Acme Corp" 
-                          className="pl-10 bg-white/5 border-white/10"
+                          className="pl-10 bg-white/5 border-border dark:border-white/10"
                           value={formData.companyName}
                           onChange={(e) => setFormData({...formData, companyName: e.target.value})}
                         />
@@ -157,7 +157,7 @@ export default function CustomerOnboarding() {
                     <div className="space-y-2">
                       <Label>Industry Sector</Label>
                       <select 
-                        className="flex h-10 w-full items-center justify-between rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex h-10 w-full items-center justify-between rounded-md border border-border dark:border-white/10 bg-white/5 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         value={formData.industry}
                         onChange={(e) => setFormData({...formData, industry: e.target.value})}
                       >
@@ -171,7 +171,7 @@ export default function CustomerOnboarding() {
 
                     <div className="space-y-2">
                       <Label>Company Logo</Label>
-                      <div className="border-2 border-dashed border-white/10 rounded-lg p-8 flex flex-col items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer">
+                      <div className="border-2 border-dashed border-border dark:border-white/10 rounded-lg p-8 flex flex-col items-center justify-center text-center hover:bg-white/5 transition-colors cursor-pointer">
                         <UploadCloud className="w-8 h-8 text-muted-foreground mb-2" />
                         <p className="text-sm font-medium">Click to upload</p>
                         <p className="text-xs text-muted-foreground">SVG, PNG, JPG (max 2MB)</p>
@@ -196,12 +196,12 @@ export default function CustomerOnboarding() {
                           <Globe className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                           <Input 
                             placeholder="company" 
-                            className="pl-10 bg-white/5 border-white/10 rounded-r-none border-r-0"
+                            className="pl-10 bg-white/5 border-border dark:border-white/10 rounded-r-none border-r-0"
                             value={formData.subdomain}
                             onChange={(e) => setFormData({...formData, subdomain: e.target.value})}
                           />
                         </div>
-                        <div className="h-10 px-4 bg-white/10 border border-white/10 rounded-r-md flex items-center text-sm text-muted-foreground">
+                        <div className="h-10 px-4 bg-white/10 border border-border dark:border-white/10 rounded-r-md flex items-center text-sm text-muted-foreground">
                           .ahc.ai
                         </div>
                       </div>
@@ -225,7 +225,7 @@ export default function CustomerOnboarding() {
                     </div>
 
                     {/* Preview Card */}
-                    <div className="mt-4 p-4 rounded-lg border border-white/10 bg-black/40">
+                    <div className="mt-4 p-4 rounded-lg border border-border dark:border-white/10 bg-black/40">
                       <p className="text-xs text-muted-foreground mb-2">Preview</p>
                       <div className="flex gap-2 mb-4">
                         <div className="w-8 h-8 rounded-md flex items-center justify-center bg-opacity-20" style={{ backgroundColor: formData.primaryColor + '33' }}>
@@ -258,7 +258,7 @@ export default function CustomerOnboarding() {
                       { id: "onboarding", title: "Company Onboarding", desc: "Welcome, Docs, IT Provisioning, Orientation", icon: CheckCircle2 },
                       { id: "hr_management", title: "HR Management", desc: "Performance, Training, Payroll (Zoho), Relations", icon: LayoutDashboard },
                     ].map((module) => (
-                      <div key={module.id} className="flex items-center justify-between p-4 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors">
+                      <div key={module.id} className="flex items-center justify-between p-4 rounded-lg border border-border dark:border-white/10 bg-white/5 hover:bg-white/10 transition-colors">
                         <div className="flex items-center gap-4">
                           <div className="p-2 rounded-lg bg-primary/10 text-primary">
                             <module.icon className="w-5 h-5" />
@@ -290,7 +290,7 @@ export default function CustomerOnboarding() {
 
                   <div className="grid gap-4 max-w-lg mx-auto">
                     
-                    <div className="p-4 rounded-lg border border-white/10 bg-white/5 space-y-4">
+                    <div className="p-4 rounded-lg border border-border dark:border-white/10 bg-white/5 space-y-4">
                        <div className="flex items-center gap-3">
                          <div className="w-8 h-8 bg-[#0080FF] rounded flex items-center justify-center font-bold text-white">DO</div>
                          <div className="flex-1">
@@ -304,7 +304,7 @@ export default function CustomerOnboarding() {
                        </div>
                     </div>
 
-                    <div className="p-4 rounded-lg border border-white/10 bg-white/5 space-y-4">
+                    <div className="p-4 rounded-lg border border-border dark:border-white/10 bg-white/5 space-y-4">
                        <div className="flex items-center gap-3">
                          <div className="w-8 h-8 bg-[#0077b5] rounded flex items-center justify-center font-bold text-white">in</div>
                          <div className="flex-1">
@@ -314,11 +314,11 @@ export default function CustomerOnboarding() {
                        </div>
                        <div className="relative">
                          <Lock className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
-                         <Input type="password" placeholder="Paste Client Secret" className="pl-9 bg-black/20 border-white/10" />
+                         <Input type="password" placeholder="Paste Client Secret" className="pl-9 bg-black/20 border-border dark:border-white/10" />
                        </div>
                     </div>
 
-                    <div className="p-4 rounded-lg border border-white/10 bg-white/5 space-y-4">
+                    <div className="p-4 rounded-lg border border-border dark:border-white/10 bg-white/5 space-y-4">
                        <div className="flex items-center gap-3">
                          <div className="w-8 h-8 bg-[#25D366] rounded flex items-center justify-center font-bold text-white">WA</div>
                          <div className="flex-1">
@@ -328,11 +328,11 @@ export default function CustomerOnboarding() {
                        </div>
                        <div className="relative">
                          <Lock className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
-                         <Input type="password" placeholder="Paste API Key" className="pl-9 bg-black/20 border-white/10" />
+                         <Input type="password" placeholder="Paste API Key" className="pl-9 bg-black/20 border-border dark:border-white/10" />
                        </div>
                     </div>
 
-                    <div className="p-4 rounded-lg border border-white/10 bg-white/5 space-y-4">
+                    <div className="p-4 rounded-lg border border-border dark:border-white/10 bg-white/5 space-y-4">
                        <div className="flex items-center gap-3">
                          <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center font-bold text-white">Z</div>
                          <div className="flex-1">
@@ -340,7 +340,7 @@ export default function CustomerOnboarding() {
                            <p className="text-xs text-muted-foreground">For payroll & expense sync</p>
                          </div>
                        </div>
-                       <Button variant="outline" size="sm" className="w-full border-white/10 hover:bg-white/5">
+                       <Button variant="outline" size="sm" className="w-full border-border dark:border-white/10 hover:bg-white/5">
                          Authenticate via OAuth
                        </Button>
                     </div>
@@ -352,7 +352,7 @@ export default function CustomerOnboarding() {
           </AnimatePresence>
 
           {/* Footer Navigation */}
-          <div className="p-6 border-t border-white/10 bg-black/20 flex justify-between items-center">
+          <div className="p-6 border-t border-border dark:border-white/10 bg-black/20 flex justify-between items-center">
             <Button 
               variant="ghost" 
               onClick={prevStep} 

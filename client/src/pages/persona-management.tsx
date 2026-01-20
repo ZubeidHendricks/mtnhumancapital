@@ -142,7 +142,7 @@ This is an initial screening interview to assess the candidate's potential fit f
         )}
 
         <div className="grid gap-6">
-          <Card className="bg-black/40 border-white/10">
+          <Card className="bg-black/40 border-border dark:border-white/10">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-white">
                 <List className="h-5 w-5" />
@@ -165,10 +165,10 @@ This is an initial screening interview to assess the candidate's potential fit f
                 <div className="space-y-2">
                   <Label className="text-white">Select a Persona</Label>
                   <Select value={selectedPersonaId} onValueChange={handleSelectPersona}>
-                    <SelectTrigger className="bg-black/40 border-white/10 text-white">
+                    <SelectTrigger className="bg-black/40 border-border dark:border-white/10 text-white">
                       <SelectValue placeholder="Choose a persona to edit..." />
                     </SelectTrigger>
-                    <SelectContent className="bg-zinc-950 border-white/10">
+                    <SelectContent className="bg-zinc-950 border-border dark:border-white/10">
                       {personasData.personas.map((persona: any) => (
                         <SelectItem 
                           key={persona.persona_id} 
@@ -190,7 +190,7 @@ This is an initial screening interview to assess the candidate's potential fit f
             </CardContent>
           </Card>
 
-          <Card className="bg-black/40 border-white/10">
+          <Card className="bg-black/40 border-border dark:border-white/10">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-white">
                 <User className="h-5 w-5" />
@@ -223,7 +223,7 @@ This is an initial screening interview to assess the candidate's potential fit f
                     value={personaName}
                     onChange={(e) => setPersonaName(e.target.value)}
                     placeholder="e.g., Jane Smith - HR Interviewer"
-                    className="bg-black/40 border-white/10 text-white placeholder:text-gray-500"
+                    className="bg-black/40 border-border dark:border-white/10 text-white placeholder:text-gray-500"
                     data-testid="input-persona-name"
                   />
                   <p className="text-xs text-gray-500">A friendly name to identify this persona</p>
@@ -238,7 +238,7 @@ This is an initial screening interview to assess the candidate's potential fit f
                     value={replicaId}
                     onChange={(e) => setReplicaId(e.target.value)}
                     placeholder="e.g., r9d30b0e55ac"
-                    className="bg-black/40 border-white/10 text-white placeholder:text-gray-500"
+                    className="bg-black/40 border-border dark:border-white/10 text-white placeholder:text-gray-500"
                     data-testid="input-replica-id"
                   />
                   <p className="text-xs text-gray-500">The default replica to use with this persona</p>
@@ -253,7 +253,7 @@ This is an initial screening interview to assess the candidate's potential fit f
                     value={systemPrompt}
                     onChange={(e) => setSystemPrompt(e.target.value)}
                     placeholder="You are an experienced HR interviewer who..."
-                    className="min-h-[300px] font-mono text-sm bg-black/40 border-white/10 text-white placeholder:text-gray-500"
+                    className="min-h-[300px] font-mono text-sm bg-black/40 border-border dark:border-white/10 text-white placeholder:text-gray-500"
                     required
                     data-testid="input-system-prompt"
                   />
@@ -271,7 +271,7 @@ This is an initial screening interview to assess the candidate's potential fit f
                     value={context}
                     onChange={(e) => setContext(e.target.value)}
                     placeholder="Additional background information, case study details, or specific scenarios..."
-                    className="min-h-[200px] font-mono text-sm bg-black/40 border-white/10 text-white placeholder:text-gray-500"
+                    className="min-h-[200px] font-mono text-sm bg-black/40 border-border dark:border-white/10 text-white placeholder:text-gray-500"
                     data-testid="input-context"
                   />
                   <p className="text-xs text-gray-500">

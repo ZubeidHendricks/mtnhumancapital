@@ -413,7 +413,7 @@ export default function SocialScreeningAgent() {
         </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-card/30 border-white/10" data-testid="result-sentiment">
+          <Card className="bg-card/30 border-border dark:border-white/10" data-testid="result-sentiment">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Heart className="w-4 h-4 text-pink-400" />
@@ -428,7 +428,7 @@ export default function SocialScreeningAgent() {
             </CardContent>
           </Card>
 
-          <Card className="bg-card/30 border-white/10" data-testid="result-culture">
+          <Card className="bg-card/30 border-border dark:border-white/10" data-testid="result-culture">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Target className="w-4 h-4 text-green-400" />
@@ -443,7 +443,7 @@ export default function SocialScreeningAgent() {
             </CardContent>
           </Card>
 
-          <Card className="bg-card/30 border-white/10" data-testid="result-posts">
+          <Card className="bg-card/30 border-border dark:border-white/10" data-testid="result-posts">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <MessageSquare className="w-4 h-4 text-blue-400" />
@@ -481,7 +481,7 @@ export default function SocialScreeningAgent() {
         )}
 
         {screeningResult.topics && screeningResult.topics.length > 0 && (
-          <Card className="bg-card/30 border-white/10" data-testid="result-topics">
+          <Card className="bg-card/30 border-border dark:border-white/10" data-testid="result-topics">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-yellow-400" />
@@ -504,7 +504,7 @@ export default function SocialScreeningAgent() {
           {selectedPlatforms.map((platform) => {
             const platformResult = screeningResult.platforms?.[platform] || {};
             return (
-              <Card key={platform} className="bg-card/30 border-white/10" data-testid={`result-platform-${platform}`}>
+              <Card key={platform} className="bg-card/30 border-border dark:border-white/10" data-testid={`result-platform-${platform}`}>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm flex items-center gap-2">
                     {platform === 'facebook' ? <Facebook className="w-4 h-4 text-blue-400" /> : <Twitter className="w-4 h-4 text-sky-400" />}
@@ -595,7 +595,7 @@ export default function SocialScreeningAgent() {
           {screeningResult ? (
             <>
               <div className="lg:col-span-3 space-y-4 overflow-y-auto">
-                <Card className="bg-card/30 border-white/10 backdrop-blur-sm">
+                <Card className="bg-card/30 border-border dark:border-white/10 backdrop-blur-sm">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm font-bold flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-green-400" />
@@ -631,7 +631,7 @@ export default function SocialScreeningAgent() {
           ) : (
             <>
               <div className="lg:col-span-3 space-y-4 overflow-y-auto">
-            <Card className="bg-card/30 border-white/10 backdrop-blur-sm" data-testid="card-candidate-selection">
+            <Card className="bg-card/30 border-border dark:border-white/10 backdrop-blur-sm" data-testid="card-candidate-selection">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-bold flex items-center gap-2">
                   <Users className="w-4 h-4 text-purple-400" /> 
@@ -645,7 +645,7 @@ export default function SocialScreeningAgent() {
                 <div>
                   <Label className="text-xs text-muted-foreground mb-2 block">Candidate</Label>
                   <Select value={selectedCandidateId} onValueChange={setSelectedCandidateId} disabled={isRunningScreening}>
-                    <SelectTrigger className="bg-white/5 border-white/10" data-testid="select-candidate">
+                    <SelectTrigger className="bg-white/5 border-border dark:border-white/10" data-testid="select-candidate">
                       <SelectValue placeholder="Choose a candidate..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -668,7 +668,7 @@ export default function SocialScreeningAgent() {
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-3 rounded-lg bg-white/5 border border-white/10"
+                    className="p-3 rounded-lg bg-white/5 border border-border dark:border-white/10"
                     data-testid="card-selected-candidate"
                   >
                     <div className="flex items-center gap-2 mb-2">
@@ -682,7 +682,7 @@ export default function SocialScreeningAgent() {
                     </div>
                     
                     {selectedConsent && (
-                      <div className="mt-3 pt-3 border-t border-white/10">
+                      <div className="mt-3 pt-3 border-t border-border dark:border-white/10">
                         <div className="flex items-center gap-2 text-xs">
                           <CheckCircle2 className="w-3 h-3 text-green-400" />
                           <span className="text-green-400">Consent Granted</span>
@@ -750,7 +750,7 @@ export default function SocialScreeningAgent() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
               >
-                <Card className="bg-card/30 border-white/10 backdrop-blur-sm" data-testid="card-screening-result">
+                <Card className="bg-card/30 border-border dark:border-white/10 backdrop-blur-sm" data-testid="card-screening-result">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm font-bold flex items-center gap-2">
                       <TrendingUp className="w-4 h-4 text-green-400" />
@@ -789,7 +789,7 @@ export default function SocialScreeningAgent() {
           </div>
 
           <div className="lg:col-span-5 flex flex-col">
-            <Card className="bg-card/30 border-white/10 backdrop-blur-sm flex-1 flex flex-col overflow-hidden" data-testid="card-workflow">
+            <Card className="bg-card/30 border-border dark:border-white/10 backdrop-blur-sm flex-1 flex flex-col overflow-hidden" data-testid="card-workflow">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-bold flex items-center gap-2">
@@ -837,7 +837,7 @@ export default function SocialScreeningAgent() {
                               ? 'bg-green-500/10 border-green-500/30'
                               : step.status === 'failed'
                               ? 'bg-red-500/10 border-red-500/30'
-                              : 'bg-white/5 border-white/10'
+                              : 'bg-white/5 border-border dark:border-white/10'
                           }`}
                           data-testid={`workflow-step-${step.id}`}
                         >
@@ -898,7 +898,7 @@ export default function SocialScreeningAgent() {
           </div>
 
           <div className="lg:col-span-4 flex flex-col">
-            <Card className="bg-card/30 border-white/10 backdrop-blur-sm flex-1 flex flex-col overflow-hidden" data-testid="card-logs">
+            <Card className="bg-card/30 border-border dark:border-white/10 backdrop-blur-sm flex-1 flex flex-col overflow-hidden" data-testid="card-logs">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-bold flex items-center gap-2">
                   <Activity className="w-4 h-4 text-cyan-400" />
@@ -924,7 +924,7 @@ export default function SocialScreeningAgent() {
                           key={index}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="p-2 rounded bg-white/5 border border-white/5"
+                          className="p-2 rounded bg-white/5 border border-border dark:border-white/5"
                         >
                           <div className="flex items-start gap-2">
                             {getLogIcon(log.level)}

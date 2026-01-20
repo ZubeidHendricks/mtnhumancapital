@@ -72,7 +72,7 @@ export default function InterviewVideo() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <header className="h-16 border-b border-white/10 flex items-center justify-between px-6 bg-card/50 backdrop-blur-md sticky top-0 z-50">
+      <header className="h-16 border-b border-border dark:border-white/10 flex items-center justify-between px-6 bg-card/50 backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
             <Video className="w-4 h-4 text-indigo-400" />
@@ -81,7 +81,7 @@ export default function InterviewVideo() {
         </div>
         <div className="flex items-center gap-4">
           {isSessionActive && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full border border-white/10">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full border border-border dark:border-white/10">
               <div className="w-2 h-2 rounded-full bg-green-500" />
               <span className="text-xs text-muted-foreground">Connected to Tavus</span>
             </div>
@@ -96,7 +96,7 @@ export default function InterviewVideo() {
         <div className="flex-1 flex flex-col gap-4">
           <div className="flex-1 relative">
             {!isSessionActive ? (
-              <div className="w-full h-full rounded-2xl border border-white/10 bg-card/30 flex flex-col items-center justify-center gap-6 p-8">
+              <div className="w-full h-full rounded-2xl border border-border dark:border-white/10 bg-card/30 flex flex-col items-center justify-center gap-6 p-8">
                 <div className="w-20 h-20 rounded-full bg-indigo-500/20 flex items-center justify-center animate-pulse">
                   <Video className="w-8 h-8 text-indigo-400" />
                 </div>
@@ -115,12 +115,12 @@ export default function InterviewVideo() {
                     <Select value={selectedRole} onValueChange={setSelectedRole}>
                       <SelectTrigger 
                         id="role-select" 
-                        className="bg-black/50 border-white/10"
+                        className="bg-black/50 border-border dark:border-white/10"
                         data-testid="select-job-role"
                       >
                         <SelectValue placeholder="Select a role" />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#1a1a1a] border-white/10">
+                      <SelectContent className="bg-[#1a1a1a] border-border dark:border-white/10">
                         {COMMON_ROLES.map((role) => (
                           <SelectItem key={role} value={role}>
                             {role}
@@ -140,7 +140,7 @@ export default function InterviewVideo() {
                         value={customRole}
                         onChange={(e) => setCustomRole(e.target.value)}
                         placeholder="e.g., Senior DevOps Engineer"
-                        className="bg-black/50 border-white/10"
+                        className="bg-black/50 border-border dark:border-white/10"
                         data-testid="input-custom-role"
                       />
                     </div>
@@ -172,19 +172,19 @@ export default function InterviewVideo() {
             ) : sessionUrl ? (
               <iframe
                 src={sessionUrl}
-                className="w-full h-full rounded-2xl border border-white/10 shadow-2xl"
+                className="w-full h-full rounded-2xl border border-border dark:border-white/10 shadow-2xl"
                 allow="camera; microphone; fullscreen"
                 data-testid="tavus-video-frame"
               />
             ) : (
-              <div className="w-full h-full rounded-2xl border border-white/10 bg-card/30 flex items-center justify-center">
+              <div className="w-full h-full rounded-2xl border border-border dark:border-white/10 bg-card/30 flex items-center justify-center">
                 <Loader2 className="w-12 h-12 animate-spin text-indigo-400" />
               </div>
             )}
           </div>
 
           {isSessionActive && (
-            <div className="h-20 rounded-2xl bg-card/50 border border-white/10 flex items-center justify-center gap-6 backdrop-blur-md">
+            <div className="h-20 rounded-2xl bg-card/50 border border-border dark:border-white/10 flex items-center justify-center gap-6 backdrop-blur-md">
               <Button 
                 variant="destructive" 
                 size="lg"
@@ -200,7 +200,7 @@ export default function InterviewVideo() {
         </div>
 
         <div className="w-80 space-y-4">
-          <div className="bg-card/30 border border-white/10 rounded-xl p-4">
+          <div className="bg-card/30 border border-border dark:border-white/10 rounded-xl p-4">
             <h3 className="font-semibold mb-3 flex items-center gap-2">
               <Video className="w-4 h-4 text-indigo-400" />
               Interview Details
@@ -225,7 +225,7 @@ export default function InterviewVideo() {
             </div>
           </div>
 
-          <div className="bg-card/30 border border-white/10 rounded-xl p-4">
+          <div className="bg-card/30 border border-border dark:border-white/10 rounded-xl p-4">
             <h3 className="font-semibold mb-3">Interview Topics</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-start gap-2">

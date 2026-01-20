@@ -118,7 +118,7 @@ function KpiScoreCard({
   const hasManagerScore = assignment.score?.managerScore !== null;
   
   return (
-    <Card className="bg-gray-900/50 border-white/10" data-testid={`kpi-card-${assignment.id}`}>
+    <Card className="bg-gray-900/50 border-border dark:border-white/10" data-testid={`kpi-card-${assignment.id}`}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div>
@@ -163,7 +163,7 @@ function KpiScoreCard({
           </div>
         </div>
 
-        <div className="border-t border-white/10 pt-4">
+        <div className="border-t border-border dark:border-white/10 pt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <Label className="text-sm text-gray-400 mb-2 block">Your Self-Assessment (1-5)</Label>
@@ -384,7 +384,7 @@ export default function KPIReviewPage() {
         </div>
 
         {activeCycles.length === 0 ? (
-          <Card className="bg-gray-900/50 border-white/10">
+          <Card className="bg-gray-900/50 border-border dark:border-white/10">
             <CardContent className="py-12 text-center">
               <Clock className="w-12 h-12 text-gray-500 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-white mb-2">No Active Review Cycles</h3>
@@ -415,7 +415,7 @@ export default function KPIReviewPage() {
             </div>
 
             {selectedCycle && (
-              <Card className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 border-white/10 mb-6">
+              <Card className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 border-border dark:border-white/10 mb-6">
                 <CardContent className="py-4">
                   <div className="flex items-center justify-between flex-wrap gap-4">
                     <div className="flex items-center gap-6">
@@ -449,7 +449,7 @@ export default function KPIReviewPage() {
                 <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
               </div>
             ) : assignments.length === 0 ? (
-              <Card className="bg-gray-900/50 border-white/10">
+              <Card className="bg-gray-900/50 border-border dark:border-white/10">
                 <CardContent className="py-12 text-center">
                   <User className="w-12 h-12 text-gray-500 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-white mb-2">No KPIs Assigned</h3>
@@ -474,7 +474,7 @@ export default function KPIReviewPage() {
                 </div>
 
                 {!isSubmitted && (
-                  <Card className="bg-gray-900/50 border-white/10">
+                  <Card className="bg-gray-900/50 border-border dark:border-white/10">
                     <CardHeader>
                       <CardTitle className="text-lg text-white">Overall Comments</CardTitle>
                       <CardDescription>

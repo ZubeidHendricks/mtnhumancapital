@@ -129,10 +129,10 @@ export default function ExecutiveDashboard() {
             <p className="text-muted-foreground">Real-time enterprise intelligence & strategic insights</p>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="outline" className="border-white/10">
+            <Button variant="outline" className="border-border dark:border-white/10">
               <Calendar className="w-4 h-4 mr-2" /> Q3 2025
             </Button>
-            <Button variant="outline" className="border-white/10">
+            <Button variant="outline" className="border-border dark:border-white/10">
               <Download className="w-4 h-4 mr-2" /> Export Report
             </Button>
             <Button className="bg-green-600 hover:bg-green-500 text-white">
@@ -185,7 +185,7 @@ export default function ExecutiveDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           
           {/* Financial Chart - Large */}
-          <Card className="lg:col-span-2 bg-card/20 border-white/10 backdrop-blur-sm">
+          <Card className="lg:col-span-2 bg-card/20 border-border dark:border-white/10 backdrop-blur-sm">
             <CardHeader>
               <CardTitle>Financial Performance</CardTitle>
               <CardDescription>Revenue vs Expenses (YTD)</CardDescription>
@@ -220,7 +220,7 @@ export default function ExecutiveDashboard() {
           </Card>
 
           {/* Project Status - Donut */}
-          <Card className="bg-card/20 border-white/10 backdrop-blur-sm">
+          <Card className="bg-card/20 border-border dark:border-white/10 backdrop-blur-sm">
             <CardHeader>
               <CardTitle>Project Health</CardTitle>
               <CardDescription>Current portfolio status</CardDescription>
@@ -275,7 +275,7 @@ export default function ExecutiveDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           
           {/* Recruitment Funnel */}
-          <Card className="bg-card/20 border-white/10 backdrop-blur-sm">
+          <Card className="bg-card/20 border-border dark:border-white/10 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 Talent Pipeline
@@ -302,7 +302,7 @@ export default function ExecutiveDashboard() {
           </Card>
 
           {/* Operational Risks */}
-          <Card className="bg-card/20 border-white/10 backdrop-blur-sm">
+          <Card className="bg-card/20 border-border dark:border-white/10 backdrop-blur-sm">
              <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-amber-500" />
@@ -313,7 +313,7 @@ export default function ExecutiveDashboard() {
             <CardContent>
               <div className="space-y-4">
                 {riskAlerts.map((alert) => (
-                  <div key={alert.id} className="p-3 rounded-lg bg-white/5 border border-white/5 flex items-start gap-3">
+                  <div key={alert.id} className="p-3 rounded-lg bg-white/5 border border-border dark:border-white/5 flex items-start gap-3">
                     <div className={`w-2 h-2 mt-2 rounded-full shrink-0 ${
                       alert.severity === "high" ? "bg-red-500" : 
                       alert.severity === "medium" ? "bg-amber-500" : 
@@ -352,7 +352,7 @@ export default function ExecutiveDashboard() {
                     <div className="w-8 h-8 rounded-full bg-green-800/50 flex items-center justify-center shrink-0 border border-green-500/30">
                       <span className="text-xs font-bold text-green-400">{msg.user[0]}</span>
                     </div>
-                    <div className="bg-card/50 p-2 rounded-lg rounded-tl-none border border-white/5 flex-1">
+                    <div className="bg-card/50 p-2 rounded-lg rounded-tl-none border border-border dark:border-white/5 flex-1">
                       <div className="flex justify-between items-center mb-1">
                         <span className="font-bold text-xs text-green-300">{msg.user}</span>
                         <span className="text-[10px] text-muted-foreground">{msg.time}</span>
@@ -387,7 +387,7 @@ export default function ExecutiveDashboard() {
 // Small Component for the Top Stats
 function StatsCard({ title, value, trend, trendUp, icon: Icon, color, chartData }: any) {
   return (
-    <Card className="bg-card/20 border-white/10 backdrop-blur-sm overflow-hidden relative">
+    <Card className="bg-card/20 border-border dark:border-white/10 backdrop-blur-sm overflow-hidden relative">
       <CardContent className="p-6">
         <div className="flex justify-between items-start mb-4">
           <div>

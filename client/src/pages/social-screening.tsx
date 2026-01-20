@@ -687,7 +687,7 @@ export default function SocialScreening() {
 
         {/* Stats Overview */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <Card className="border-white/10 bg-card/20" data-testid="stat-total-consents">
+          <Card className="border-border dark:border-white/10 bg-card/20" data-testid="stat-total-consents">
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-3xl font-bold">{stats?.totalConsentsRequested || 0}</p>
@@ -695,7 +695,7 @@ export default function SocialScreening() {
               </div>
             </CardContent>
           </Card>
-          <Card className="border-white/10 bg-card/20" data-testid="stat-granted">
+          <Card className="border-border dark:border-white/10 bg-card/20" data-testid="stat-granted">
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-3xl font-bold text-green-400">{stats?.consentGranted || 0}</p>
@@ -703,7 +703,7 @@ export default function SocialScreening() {
               </div>
             </CardContent>
           </Card>
-          <Card className="border-white/10 bg-card/20" data-testid="stat-screenings">
+          <Card className="border-border dark:border-white/10 bg-card/20" data-testid="stat-screenings">
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-3xl font-bold text-purple-400">{stats?.totalScreenings || 0}</p>
@@ -711,7 +711,7 @@ export default function SocialScreening() {
               </div>
             </CardContent>
           </Card>
-          <Card className="border-white/10 bg-card/20" data-testid="stat-pending">
+          <Card className="border-border dark:border-white/10 bg-card/20" data-testid="stat-pending">
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-3xl font-bold text-yellow-400">{stats?.pendingHumanReview || 0}</p>
@@ -722,7 +722,7 @@ export default function SocialScreening() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-card/50 border border-white/5">
+          <TabsList className="bg-card/50 border border-border dark:border-white/5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="consents">Consents</TabsTrigger>
             <TabsTrigger value="screenings">Screenings</TabsTrigger>
@@ -732,7 +732,7 @@ export default function SocialScreening() {
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Risk Distribution */}
-              <Card className="border-white/10 bg-card/20">
+              <Card className="border-border dark:border-white/10 bg-card/20">
                 <CardHeader>
                   <CardTitle>Risk Distribution</CardTitle>
                   <CardDescription>Culture fit risk levels across all screenings</CardDescription>
@@ -768,7 +768,7 @@ export default function SocialScreening() {
               </Card>
 
               {/* Average Culture Fit Score */}
-              <Card className="border-white/10 bg-card/20">
+              <Card className="border-border dark:border-white/10 bg-card/20">
                 <CardHeader>
                   <CardTitle>Average Culture Fit Score</CardTitle>
                   <CardDescription>AI-generated culture alignment assessment</CardDescription>
@@ -817,7 +817,7 @@ export default function SocialScreening() {
             </div>
 
             {/* Recent Activity */}
-            <Card className="border-white/10 bg-card/20">
+            <Card className="border-border dark:border-white/10 bg-card/20">
               <CardHeader>
                 <CardTitle>Recent Screening Activity</CardTitle>
               </CardHeader>
@@ -825,7 +825,7 @@ export default function SocialScreening() {
                 <ScrollArea className="h-[300px]">
                   <div className="space-y-3">
                     {findings.slice(0, 10).map((finding: any) => (
-                      <div key={finding.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5">
+                      <div key={finding.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-border dark:border-white/5">
                         <div className="flex items-center gap-3">
                           <div className={`w-2 h-2 rounded-full ${
                             finding.riskLevel === 'low' ? 'bg-green-500' :
@@ -852,7 +852,7 @@ export default function SocialScreening() {
           </TabsContent>
 
           <TabsContent value="consents" className="space-y-6">
-            <Card className="border-white/10 bg-card/20">
+            <Card className="border-border dark:border-white/10 bg-card/20">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <ShieldCheck className="w-5 h-5 text-green-400" />
@@ -874,7 +874,7 @@ export default function SocialScreening() {
                   <ScrollArea className="h-[400px]">
                     <div className="space-y-3">
                       {consents.map((consent: any) => (
-                        <div key={consent.id} className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/5">
+                        <div key={consent.id} className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-border dark:border-white/5">
                           <div>
                             <p className="font-medium">Candidate #{consent.candidateId?.slice(-6)}</p>
                             <p className="text-sm text-muted-foreground">
@@ -921,7 +921,7 @@ export default function SocialScreening() {
           </TabsContent>
 
           <TabsContent value="screenings" className="space-y-6">
-            <Card className="border-white/10 bg-card/20">
+            <Card className="border-border dark:border-white/10 bg-card/20">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Search className="w-5 h-5 text-purple-400" />
@@ -947,7 +947,7 @@ export default function SocialScreening() {
                           key={finding.id}
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="p-5 rounded-lg bg-white/5 border border-white/5"
+                          className="p-5 rounded-lg bg-white/5 border border-border dark:border-white/5"
                         >
                           <div className="flex items-start justify-between">
                             <div className="space-y-2">
@@ -1009,7 +1009,7 @@ export default function SocialScreening() {
           </TabsContent>
 
           <TabsContent value="reviews" className="space-y-6">
-            <Card className="border-white/10 bg-card/20">
+            <Card className="border-border dark:border-white/10 bg-card/20">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Eye className="w-5 h-5 text-yellow-400" />
@@ -1092,7 +1092,7 @@ export default function SocialScreening() {
                 <div className="flex-1">
                   <Label className="text-xs text-muted-foreground mb-2 block">Select Candidate (with consent)</Label>
                   <Select value={modalSelectedCandidateId} onValueChange={setModalSelectedCandidateId} disabled={isRunningScreening}>
-                    <SelectTrigger className="bg-white/5 border-white/10" data-testid="modal-select-candidate">
+                    <SelectTrigger className="bg-white/5 border-border dark:border-white/10" data-testid="modal-select-candidate">
                       <SelectValue placeholder="Choose a candidate..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -1140,7 +1140,7 @@ export default function SocialScreening() {
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card className="border-white/10 bg-card/30">
+                  <Card className="border-border dark:border-white/10 bg-card/30">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center gap-2">
                         <Zap className="w-4 h-4 text-yellow-400" />
@@ -1157,7 +1157,7 @@ export default function SocialScreening() {
                                 step.status === 'running' ? 'bg-blue-500/10 border-blue-500/30' :
                                 step.status === 'completed' ? 'bg-green-500/10 border-green-500/30' :
                                 step.status === 'error' ? 'bg-red-500/10 border-red-500/30' :
-                                'bg-white/5 border-white/10'
+                                'bg-white/5 border-border dark:border-white/10'
                               }`}
                             >
                               <div className="flex items-center justify-between">
@@ -1180,7 +1180,7 @@ export default function SocialScreening() {
                     </CardContent>
                   </Card>
                   
-                  <Card className="border-white/10 bg-card/30">
+                  <Card className="border-border dark:border-white/10 bg-card/30">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center gap-2">
                         <Activity className="w-4 h-4 text-cyan-400" />
@@ -1191,7 +1191,7 @@ export default function SocialScreening() {
                       <ScrollArea className="h-[250px]">
                         <div className="space-y-2">
                           {modalLogs.map((log, index) => (
-                            <div key={index} className="p-2 rounded bg-white/5 border border-white/5">
+                            <div key={index} className="p-2 rounded bg-white/5 border border-border dark:border-white/5">
                               <div className="flex items-start gap-2">
                                 {getLogIcon(log.level)}
                                 <div className="flex-1 min-w-0">
@@ -1228,19 +1228,19 @@ export default function SocialScreening() {
                 </div>
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Card className="border-white/10 bg-card/30">
+                  <Card className="border-border dark:border-white/10 bg-card/30">
                     <CardContent className="pt-4 text-center">
                       <p className="text-3xl font-bold text-green-400">{screeningResult.overallScore}%</p>
                       <p className="text-xs text-muted-foreground">Overall Score</p>
                     </CardContent>
                   </Card>
-                  <Card className="border-white/10 bg-card/30">
+                  <Card className="border-border dark:border-white/10 bg-card/30">
                     <CardContent className="pt-4 text-center">
                       <p className="text-3xl font-bold text-blue-400">{screeningResult.sentiment.positive}%</p>
                       <p className="text-xs text-muted-foreground">Positive Sentiment</p>
                     </CardContent>
                   </Card>
-                  <Card className="border-white/10 bg-card/30">
+                  <Card className="border-border dark:border-white/10 bg-card/30">
                     <CardContent className="pt-4 text-center">
                       <p className="text-3xl font-bold text-purple-400">
                         {screeningResult.platformsSummary.reduce((sum, p) => sum + p.postsAnalyzed, 0)}
@@ -1248,7 +1248,7 @@ export default function SocialScreening() {
                       <p className="text-xs text-muted-foreground">Posts Analyzed</p>
                     </CardContent>
                   </Card>
-                  <Card className="border-white/10 bg-card/30">
+                  <Card className="border-border dark:border-white/10 bg-card/30">
                     <CardContent className="pt-4 text-center">
                       <p className="text-3xl font-bold text-yellow-400">{screeningResult.redFlags.length}</p>
                       <p className="text-xs text-muted-foreground">Red Flags</p>
@@ -1256,7 +1256,7 @@ export default function SocialScreening() {
                   </Card>
                 </div>
                 
-                <Card className="border-white/10 bg-card/30">
+                <Card className="border-border dark:border-white/10 bg-card/30">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm">Culture Fit Assessment</CardTitle>
                   </CardHeader>
@@ -1292,7 +1292,7 @@ export default function SocialScreening() {
             )}
           </div>
           
-          <DialogFooter className="border-t border-white/10 pt-4">
+          <DialogFooter className="border-t border-border dark:border-white/10 pt-4">
             {screeningResult ? (
               <>
                 <Button variant="outline" onClick={() => {
@@ -1360,7 +1360,7 @@ function PendingReviewCard({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-6 rounded-lg bg-white/5 border border-white/10"
+      className="p-6 rounded-lg bg-white/5 border border-border dark:border-white/10"
     >
       <div className="flex items-start justify-between mb-6">
         <div>
@@ -1431,7 +1431,7 @@ function PendingReviewCard({
         </div>
       )}
 
-      <div className="border-t border-white/10 pt-6 mt-6">
+      <div className="border-t border-border dark:border-white/10 pt-6 mt-6">
         <h4 className="font-medium mb-4">HR Review</h4>
         
         <div className="grid grid-cols-2 gap-4 mb-4">

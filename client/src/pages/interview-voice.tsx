@@ -245,7 +245,7 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
       
       <header className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center z-20">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-white/5 border border-border dark:border-white/10 flex items-center justify-center">
             <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`} />
           </div>
           <div>
@@ -253,7 +253,7 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
             <p className="text-xs text-white/50">Powered by Hume AI</p>
           </div>
         </div>
-        <Badge variant="outline" className="bg-white/5 border-white/10 text-white/70 px-3 py-1">
+        <Badge variant="outline" className="bg-white/5 border-border dark:border-white/10 text-white/70 px-3 py-1">
           {currentEmotion}
         </Badge>
       </header>
@@ -334,7 +334,7 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
                 <Button
                   size="lg"
                   variant="outline"
-                  className="rounded-full h-14 px-6 border-white/10 hover:bg-white/5"
+                  className="rounded-full h-14 px-6 border-border dark:border-white/10 hover:bg-white/5"
                 >
                   Return to Dashboard
                 </Button>
@@ -345,7 +345,7 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
       </main>
 
       {isStarted && transcripts.length > 0 && (
-        <div className="absolute bottom-4 right-4 w-80 max-h-64 bg-black/80 backdrop-blur-md border border-white/10 rounded-lg p-4 overflow-y-auto">
+        <div className="absolute bottom-4 right-4 w-80 max-h-64 bg-black/80 backdrop-blur-md border border-border dark:border-white/10 rounded-lg p-4 overflow-y-auto">
           <h3 className="text-xs font-bold text-white/50 mb-2 flex items-center gap-2">
             <MessageSquare className="w-3 h-3" />
             TRANSCRIPT

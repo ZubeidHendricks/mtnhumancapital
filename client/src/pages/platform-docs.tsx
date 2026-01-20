@@ -157,7 +157,7 @@ export default function PlatformDocumentation() {
         </div>
 
         {/* Quick Navigation */}
-        <Card className="bg-black/40 border-white/10">
+        <Card className="bg-black/40 border-border dark:border-white/10">
           <CardHeader>
             <CardTitle className="text-white">Quick Navigation</CardTitle>
           </CardHeader>
@@ -175,7 +175,7 @@ export default function PlatformDocumentation() {
                     const element = document.querySelector(item.href);
                     element?.scrollIntoView({ behavior: "smooth" });
                   }}
-                  className="flex items-center gap-2 p-3 rounded-lg bg-black/20 border border-white/5 hover:bg-white/5 transition-colors text-white"
+                  className="flex items-center gap-2 p-3 rounded-lg bg-black/20 border border-border dark:border-white/5 hover:bg-white/5 transition-colors text-white"
                 >
                   <item.icon className="w-4 h-4 text-primary" />
                   <span className="text-sm">{item.label}</span>
@@ -187,7 +187,7 @@ export default function PlatformDocumentation() {
 
         {/* Main Content */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-black/40 border border-white/10">
+          <TabsList className="grid w-full grid-cols-5 bg-black/40 border border-border dark:border-white/10">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="features">Features</TabsTrigger>
             <TabsTrigger value="workflows">Workflows</TabsTrigger>
@@ -197,7 +197,7 @@ export default function PlatformDocumentation() {
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            <Card className="bg-black/40 border-white/10" id="overview">
+            <Card className="bg-black/40 border-border dark:border-white/10" id="overview">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Building2 className="w-6 h-6 text-primary" />
@@ -222,7 +222,7 @@ export default function PlatformDocumentation() {
                   {features.map((feature) => (
                     <div
                       key={feature.title}
-                      className="p-4 rounded-lg bg-black/20 border border-white/5"
+                      className="p-4 rounded-lg bg-black/20 border border-border dark:border-white/5"
                     >
                       <feature.icon className={`w-8 h-8 ${feature.color} mb-3`} />
                       <h3 className="text-white font-semibold mb-2">{feature.title}</h3>
@@ -257,13 +257,13 @@ export default function PlatformDocumentation() {
             </Card>
 
             {/* Architecture Diagram */}
-            <Card className="bg-black/40 border-white/10">
+            <Card className="bg-black/40 border-border dark:border-white/10">
               <CardHeader>
                 <CardTitle className="text-white">System Architecture</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="p-6 rounded-lg bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-white/5">
+                  <div className="p-6 rounded-lg bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-border dark:border-white/5">
                     <div className="text-center space-y-6">
                       <div className="inline-block p-4 rounded-lg bg-black/40">
                         <Users className="w-8 h-8 text-blue-400" />
@@ -297,7 +297,7 @@ export default function PlatformDocumentation() {
             </Card>
 
             {/* Subscription Tiers */}
-            <Card className="bg-black/40 border-white/10">
+            <Card className="bg-black/40 border-border dark:border-white/10">
               <CardHeader>
                 <CardTitle className="text-white">Subscription Tiers</CardTitle>
                 <CardDescription>Four flexible pricing plans to suit any business size</CardDescription>
@@ -346,7 +346,7 @@ export default function PlatformDocumentation() {
 
           {/* Features Tab */}
           <TabsContent value="features" className="space-y-6">
-            <Card className="bg-black/40 border-white/10">
+            <Card className="bg-black/40 border-border dark:border-white/10">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Zap className="w-6 h-6 text-primary" />
@@ -358,7 +358,7 @@ export default function PlatformDocumentation() {
               </CardHeader>
               <CardContent>
                 <Accordion type="single" collapsible className="space-y-2">
-                  <AccordionItem value="payment" className="border border-white/10 rounded-lg px-4 bg-black/20">
+                  <AccordionItem value="payment" className="border border-border dark:border-white/10 rounded-lg px-4 bg-black/20">
                     <AccordionTrigger className="text-white hover:no-underline">
                       <div className="flex items-center gap-2">
                         <DollarSign className="w-5 h-5 text-green-500" />
@@ -400,7 +400,7 @@ export default function PlatformDocumentation() {
                     </AccordionContent>
                   </AccordionItem>
 
-                  <AccordionItem value="subscription" className="border border-white/10 rounded-lg px-4 bg-black/20">
+                  <AccordionItem value="subscription" className="border border-border dark:border-white/10 rounded-lg px-4 bg-black/20">
                     <AccordionTrigger className="text-white hover:no-underline">
                       <div className="flex items-center gap-2">
                         <CreditCard className="w-5 h-5 text-purple-500" />
@@ -442,7 +442,7 @@ export default function PlatformDocumentation() {
                     </AccordionContent>
                   </AccordionItem>
 
-                  <AccordionItem value="modules" className="border border-white/10 rounded-lg px-4 bg-black/20">
+                  <AccordionItem value="modules" className="border border-border dark:border-white/10 rounded-lg px-4 bg-black/20">
                     <AccordionTrigger className="text-white hover:no-underline">
                       <div className="flex items-center gap-2">
                         <ToggleLeft className="w-5 h-5 text-orange-500" />
@@ -484,7 +484,7 @@ export default function PlatformDocumentation() {
                     </AccordionContent>
                   </AccordionItem>
 
-                  <AccordionItem value="tenant-switching" className="border border-white/10 rounded-lg px-4 bg-black/20">
+                  <AccordionItem value="tenant-switching" className="border border-border dark:border-white/10 rounded-lg px-4 bg-black/20">
                     <AccordionTrigger className="text-white hover:no-underline">
                       <div className="flex items-center gap-2">
                         <Eye className="w-5 h-5 text-blue-500" />
@@ -532,7 +532,7 @@ export default function PlatformDocumentation() {
 
           {/* Workflows Tab */}
           <TabsContent value="workflows" className="space-y-6">
-            <Card className="bg-black/40 border-white/10">
+            <Card className="bg-black/40 border-border dark:border-white/10">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <ArrowRight className="w-6 h-6 text-primary" />
@@ -544,7 +544,7 @@ export default function PlatformDocumentation() {
               </CardHeader>
               <CardContent className="space-y-6">
                 {workflows.map((workflow, idx) => (
-                  <div key={workflow.title} className="p-4 rounded-lg bg-black/20 border border-white/5">
+                  <div key={workflow.title} className="p-4 rounded-lg bg-black/20 border border-border dark:border-white/5">
                     <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                       <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/20 text-primary text-sm">
                         {idx + 1}
@@ -633,7 +633,7 @@ export default function PlatformDocumentation() {
 
           {/* API Tab */}
           <TabsContent value="api" className="space-y-6">
-            <Card className="bg-black/40 border-white/10">
+            <Card className="bg-black/40 border-border dark:border-white/10">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Code className="w-6 h-6 text-primary" />
@@ -691,7 +691,7 @@ export default function PlatformDocumentation() {
                   ].map((api) => (
                     <div
                       key={api.endpoint}
-                      className="p-4 rounded-lg bg-black/20 border border-white/5 space-y-2"
+                      className="p-4 rounded-lg bg-black/20 border border-border dark:border-white/5 space-y-2"
                     >
                       <div className="flex items-center gap-2 flex-wrap">
                         <Badge
@@ -733,7 +733,7 @@ export default function PlatformDocumentation() {
 
           {/* Setup Tab */}
           <TabsContent value="migration" className="space-y-6">
-            <Card className="bg-black/40 border-white/10">
+            <Card className="bg-black/40 border-border dark:border-white/10">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Database className="w-6 h-6 text-primary" />
@@ -759,7 +759,7 @@ export default function PlatformDocumentation() {
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-white font-semibold mb-2">Step 1: Run Migration Script</h3>
-                    <div className="p-4 rounded-lg bg-black/40 border border-white/10">
+                    <div className="p-4 rounded-lg bg-black/40 border border-border dark:border-white/10">
                       <code className="text-green-400 text-sm">
                         psql -U postgres -d your_database -f migrations/add-subscription-tracking.sql
                       </code>
@@ -768,7 +768,7 @@ export default function PlatformDocumentation() {
 
                   <div>
                     <h3 className="text-white font-semibold mb-2">Step 2: Verify Tables Created</h3>
-                    <div className="p-4 rounded-lg bg-black/40 border border-white/10 space-y-2">
+                    <div className="p-4 rounded-lg bg-black/40 border border-border dark:border-white/10 space-y-2">
                       <p className="text-muted-foreground text-sm">Check these tables exist:</p>
                       <ul className="list-disc list-inside text-green-400 text-sm space-y-1">
                         <li>tenant_payments</li>
@@ -780,7 +780,7 @@ export default function PlatformDocumentation() {
 
                   <div>
                     <h3 className="text-white font-semibold mb-2">Step 3: Test the System</h3>
-                    <div className="p-4 rounded-lg bg-black/40 border border-white/10">
+                    <div className="p-4 rounded-lg bg-black/40 border border-border dark:border-white/10">
                       <ol className="list-decimal list-inside text-muted-foreground text-sm space-y-2">
                         <li>Navigate to /tenant-management</li>
                         <li>Verify tenant list loads</li>
@@ -797,14 +797,14 @@ export default function PlatformDocumentation() {
                 <div>
                   <h3 className="text-white font-semibold mb-3">What the Migration Adds</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="p-3 rounded-lg bg-black/20 border border-white/5">
+                    <div className="p-3 rounded-lg bg-black/20 border border-border dark:border-white/5">
                       <h4 className="text-white text-sm font-semibold mb-2">New Tables</h4>
                       <ul className="text-xs text-muted-foreground space-y-1">
                         <li>• tenant_payments (payment history)</li>
                         <li>• subscription_plans (pricing tiers)</li>
                       </ul>
                     </div>
-                    <div className="p-3 rounded-lg bg-black/20 border border-white/5">
+                    <div className="p-3 rounded-lg bg-black/20 border border-border dark:border-white/5">
                       <h4 className="text-white text-sm font-semibold mb-2">Extended Fields</h4>
                       <ul className="text-xs text-muted-foreground space-y-1">
                         <li>• subscription_tier</li>
@@ -820,20 +820,20 @@ export default function PlatformDocumentation() {
             </Card>
 
             {/* Environment Variables */}
-            <Card className="bg-black/40 border-white/10">
+            <Card className="bg-black/40 border-border dark:border-white/10">
               <CardHeader>
                 <CardTitle className="text-white">Environment Variables</CardTitle>
                 <CardDescription>Required configuration for production</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="p-3 rounded-lg bg-black/20 border border-white/5">
+                  <div className="p-3 rounded-lg bg-black/20 border border-border dark:border-white/5">
                     <code className="text-green-400">ADMIN_API_KEY</code>
                     <p className="text-sm text-muted-foreground mt-1">
                       Required for admin endpoint authentication. Set to a strong random key.
                     </p>
                   </div>
-                  <div className="p-3 rounded-lg bg-black/20 border border-white/5">
+                  <div className="p-3 rounded-lg bg-black/20 border border-border dark:border-white/5">
                     <code className="text-green-400">DATABASE_URL</code>
                     <p className="text-sm text-muted-foreground mt-1">
                       PostgreSQL database connection string.

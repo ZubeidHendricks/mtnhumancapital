@@ -517,7 +517,7 @@ export default function WhatsAppMonitor() {
         return <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/20">Appointment</Badge>;
       case "general":
       default:
-        return <Badge className="bg-white/10 text-muted-foreground border-white/10">General</Badge>;
+        return <Badge className="bg-white/10 text-muted-foreground border-border dark:border-white/10">General</Badge>;
     }
   };
 
@@ -562,8 +562,8 @@ export default function WhatsAppMonitor() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr_320px] gap-6 h-[calc(100vh-200px)]">
-          <Card className="bg-card/50 border-white/10 flex flex-col" data-testid="conversation-list-panel">
-            <CardHeader className="border-b border-white/10 pb-4">
+          <Card className="bg-card/50 border-border dark:border-white/10 flex flex-col" data-testid="conversation-list-panel">
+            <CardHeader className="border-b border-border dark:border-white/10 pb-4">
               <div className="flex items-center gap-2 mb-4">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -571,13 +571,13 @@ export default function WhatsAppMonitor() {
                     placeholder="Search conversations..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 bg-background/50 border-white/10"
+                    className="pl-10 bg-background/50 border-border dark:border-white/10"
                     data-testid="search-conversations"
                   />
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon" className="border-white/10" data-testid="filter-button">
+                    <Button variant="outline" size="icon" className="border-border dark:border-white/10" data-testid="filter-button">
                       <Filter className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -654,10 +654,10 @@ export default function WhatsAppMonitor() {
             </CardContent>
           </Card>
 
-          <Card className="bg-card/50 border-white/10 flex flex-col" data-testid="message-thread-panel">
+          <Card className="bg-card/50 border-border dark:border-white/10 flex flex-col" data-testid="message-thread-panel">
             {selectedConversationId && conversationDetail ? (
               <>
-                <CardHeader className="border-b border-white/10 pb-4">
+                <CardHeader className="border-b border-border dark:border-white/10 pb-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Button
@@ -684,7 +684,7 @@ export default function WhatsAppMonitor() {
                       <Button
                         variant="outline"
                         size="icon"
-                        className="border-white/10"
+                        className="border-border dark:border-white/10"
                         onClick={openWhatsAppCall}
                         title="Start WhatsApp call"
                         data-testid="btn-whatsapp-call"
@@ -693,7 +693,7 @@ export default function WhatsAppMonitor() {
                       </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="icon" className="border-white/10" data-testid="conversation-menu">
+                          <Button variant="outline" size="icon" className="border-border dark:border-white/10" data-testid="conversation-menu">
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -826,10 +826,10 @@ export default function WhatsAppMonitor() {
             )}
           </Card>
 
-          <Card className="bg-card/50 border-white/10" data-testid="details-panel">
+          <Card className="bg-card/50 border-border dark:border-white/10" data-testid="details-panel">
             {selectedConversationId && conversationDetail ? (
               <Tabs defaultValue="info" className="h-full flex flex-col">
-                <TabsList className="w-full justify-start border-b border-white/10 rounded-none bg-transparent">
+                <TabsList className="w-full justify-start border-b border-border dark:border-white/10 rounded-none bg-transparent">
                   <TabsTrigger value="info">Info</TabsTrigger>
                   <TabsTrigger value="docs">Documents</TabsTrigger>
                   <TabsTrigger value="appointments">Appointments</TabsTrigger>
@@ -892,7 +892,7 @@ export default function WhatsAppMonitor() {
                           )}
                         </div>
                         {conversationDetail.candidate ? (
-                          <Card className="p-3 bg-white/5 border-white/10">
+                          <Card className="p-3 bg-white/5 border-border dark:border-white/10">
                             <div className="flex items-center gap-3">
                               <Avatar className="h-10 w-10">
                                 <AvatarFallback className="bg-blue-500/20 text-blue-400">
@@ -917,7 +917,7 @@ export default function WhatsAppMonitor() {
                         <div className="space-y-2">
                           <Button
                             variant="outline"
-                            className="w-full justify-start border-white/10"
+                            className="w-full justify-start border-border dark:border-white/10"
                             onClick={() => setIsDocRequestOpen(true)}
                             data-testid="btn-request-document"
                           >
@@ -926,7 +926,7 @@ export default function WhatsAppMonitor() {
                           </Button>
                           <Button
                             variant="outline"
-                            className="w-full justify-start border-white/10"
+                            className="w-full justify-start border-border dark:border-white/10"
                             onClick={() => setIsAppointmentOpen(true)}
                             data-testid="btn-schedule-appointment"
                           >
@@ -936,7 +936,7 @@ export default function WhatsAppMonitor() {
                           {calendlyConfig?.configured && (
                             <Button
                               variant="outline"
-                              className="w-full justify-start border-white/10 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400"
+                              className="w-full justify-start border-border dark:border-white/10 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400"
                               onClick={openCalendlyInNewWindow}
                               data-testid="btn-calendly"
                             >

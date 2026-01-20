@@ -297,7 +297,7 @@ export default function ExternalCandidates() {
             {isLoading ? (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {[...Array(6)].map((_, i) => (
-                  <Card key={i} className="bg-zinc-900/50 border-white/10">
+                  <Card key={i} className="bg-zinc-900/50 border-border dark:border-white/10">
                     <CardHeader>
                       <Skeleton className="h-6 w-48" />
                       <Skeleton className="h-4 w-32 mt-2" />
@@ -310,7 +310,7 @@ export default function ExternalCandidates() {
                 ))}
               </div>
             ) : isError ? (
-              <Card className="bg-zinc-900/50 border-red-500/30">
+              <Card className="bg-zinc-900/50 border-border dark:border-red-500/30">
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
                   <h3 className="text-lg font-semibold text-red-400 mb-2">
@@ -351,7 +351,7 @@ export default function ExternalCandidates() {
                       return (
                         <Card 
                           key={profile.id} 
-                          className="bg-zinc-900/50 border-white/10 hover:border-white/20 transition-colors"
+                          className="bg-zinc-900/50 border-border dark:border-white/10 hover:border-border hover:dark:border-white/20 transition-colors"
                           data-testid={`card-profile-${profile.id}`}
                         >
                           <CardHeader className="pb-3">
@@ -450,7 +450,7 @@ export default function ExternalCandidates() {
                 </ScrollArea>
               </>
             ) : (
-              <Card className="bg-zinc-900/50 border-white/10">
+              <Card className="bg-zinc-900/50 border-border dark:border-white/10">
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <Users className="w-12 h-12 text-muted-foreground mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No Profiles Found</h3>

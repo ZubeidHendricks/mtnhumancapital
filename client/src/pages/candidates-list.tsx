@@ -342,7 +342,7 @@ AHC Recruiting Team`;
       
       <div className="flex-1 flex overflow-hidden pt-16">
         {/* LEFT PANEL: JOB CONFIGURATION */}
-        <div className="w-[400px] border-r border-white/10 bg-[#0a0a0a] flex flex-col h-full overflow-hidden">
+        <div className="w-[400px] border-r border-border dark:border-white/10 bg-[#0a0a0a] flex flex-col h-full overflow-hidden">
           <div className="p-6 space-y-6 overflow-y-auto flex-1">
             
             {/* Header */}
@@ -435,7 +435,7 @@ AHC Recruiting Team`;
                     
                     {/* Location Selector */}
                     <div className="relative group">
-                        <div className="flex items-center justify-between text-sm text-muted-foreground hover:text-white cursor-pointer border border-dashed border-white/10 rounded px-2 py-1 hover:border-white/30">
+                        <div className="flex items-center justify-between text-sm text-muted-foreground hover:text-white cursor-pointer border border-dashed border-border dark:border-white/10 rounded px-2 py-1 hover:border-border hover:dark:border-white/30">
                             <div className="flex items-center gap-2">
                                 <Search className="h-3 w-3" />
                                 {locationFilter ? 'Change location...' : 'Filter by location...'}
@@ -444,7 +444,7 @@ AHC Recruiting Team`;
                         </div>
                         
                         {/* Dropdown */}
-                        <div className="hidden group-hover:block absolute top-full left-0 w-full mt-1 bg-[#1a1a1a] border border-white/10 rounded shadow-xl z-10 max-h-40 overflow-y-auto">
+                        <div className="hidden group-hover:block absolute top-full left-0 w-full mt-1 bg-[#1a1a1a] border border-border dark:border-white/10 rounded shadow-xl z-10 max-h-40 overflow-y-auto">
                             {allLocations.length === 0 ? (
                               <div className="px-3 py-2 text-xs text-gray-500">No locations found</div>
                             ) : (
@@ -513,7 +513,7 @@ AHC Recruiting Team`;
                             <Badge 
                               key={i}
                               variant="secondary" 
-                              className="bg-white/5 hover:bg-white/10 text-gray-400 text-xs font-normal cursor-pointer border-white/10"
+                              className="bg-white/5 hover:bg-white/10 text-gray-400 text-xs font-normal cursor-pointer border-border dark:border-white/10"
                               onClick={() => setActiveCriteria(prev => [...prev, skill])}
                               data-testid={`button-add-skill-${i}`}
                             >
@@ -533,11 +533,11 @@ AHC Recruiting Team`;
             
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-              <div className="border-b border-white/10 px-6 bg-[#0a0a0a]">
+              <div className="border-b border-border dark:border-white/10 px-6 bg-[#0a0a0a]">
                 <TabsList className="h-14 bg-transparent border-0 p-0 gap-8">
                   <TabsTrigger 
                     value="candidates" 
-                    className="h-14 rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:bg-transparent px-2 text-sm font-medium text-muted-foreground data-[state=active]:text-white data-[state=active]:shadow-none"
+                    className="h-14 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 text-sm font-medium text-muted-foreground data-[state=active]:text-white data-[state=active]:shadow-none"
                   >
                     Candidates
                     <span className="ml-2 text-xs bg-white/10 px-1.5 py-0.5 rounded-full">
@@ -601,11 +601,11 @@ AHC Recruiting Team`;
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, x: -20 }}
-                            className="group flex items-center justify-between py-3 px-4 hover:bg-white/5 rounded-lg transition-colors border border-transparent hover:border-white/5"
+                            className="group flex items-center justify-between py-3 px-4 hover:bg-white/5 rounded-lg transition-colors border border-transparent hover:border-border hover:dark:border-white/5"
                         >
                             {/* Candidate Info */}
                             <Link href={`/candidates/${candidate.id}`} className="flex items-center gap-4 w-[30%] cursor-pointer">
-                                <Avatar className="h-10 w-10 border border-white/10">
+                                <Avatar className="h-10 w-10 border border-border dark:border-white/10">
                                     <AvatarFallback className="bg-indigo-500 text-white text-xs">
                                         {candidate.fullName?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || 'NA'}
                                     </AvatarFallback>
@@ -724,11 +724,11 @@ AHC Recruiting Team`;
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, x: -20 }}
-                              className="group flex items-center justify-between py-3 px-4 hover:bg-white/5 rounded-lg transition-colors border border-transparent hover:border-white/5"
+                              className="group flex items-center justify-between py-3 px-4 hover:bg-white/5 rounded-lg transition-colors border border-transparent hover:border-border hover:dark:border-white/5"
                           >
                               {/* Candidate Info */}
                               <Link href={`/candidates/${candidate.id}`} className="flex items-center gap-4 w-[30%] cursor-pointer">
-                                  <Avatar className="h-10 w-10 border border-white/10">
+                                  <Avatar className="h-10 w-10 border border-border dark:border-white/10">
                                       <AvatarFallback className="bg-indigo-500 text-white text-xs">
                                           {candidate.fullName?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || 'NA'}
                                       </AvatarFallback>
@@ -802,7 +802,7 @@ AHC Recruiting Team`;
 
       {/* Interview Invitation Dialog */}
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-        <DialogContent className="bg-[#1a1a1a] border-white/10 text-white sm:max-w-[500px]">
+        <DialogContent className="bg-[#1a1a1a] border-border dark:border-white/10 text-white sm:max-w-[500px]">
             <DialogHeader>
                 <DialogTitle>Invite to Voice Interview</DialogTitle>
                 <DialogDescription className="text-gray-400">
@@ -846,7 +846,7 @@ AHC Recruiting Team`;
                         <Input 
                           value={selectedCandidate?.email || ""} 
                           disabled 
-                          className="bg-black/50 border-white/10" 
+                          className="bg-black/50 border-border dark:border-white/10" 
                           placeholder={!selectedCandidate?.email ? "No email on file" : undefined}
                         />
                         {!selectedCandidate?.email && (
@@ -856,7 +856,7 @@ AHC Recruiting Team`;
                     
                     <div className="grid gap-2">
                         <Label>Subject</Label>
-                        <Input defaultValue={`Interview Invitation: ${currentJob?.title || 'Position'}`} className="bg-black/50 border-white/10" />
+                        <Input defaultValue={`Interview Invitation: ${currentJob?.title || 'Position'}`} className="bg-black/50 border-border dark:border-white/10" />
                     </div>
                   </>
                 ) : (
@@ -865,7 +865,7 @@ AHC Recruiting Team`;
                       <Input 
                         value={selectedCandidate?.phone || (selectedCandidate?.metadata as any)?.phone || ""} 
                         disabled 
-                        className="bg-black/50 border-white/10" 
+                        className="bg-black/50 border-border dark:border-white/10" 
                         placeholder={!(selectedCandidate?.phone || (selectedCandidate?.metadata as any)?.phone) ? "No phone on file" : undefined}
                       />
                       {!(selectedCandidate?.phone || (selectedCandidate?.metadata as any)?.phone) && (
@@ -877,7 +877,7 @@ AHC Recruiting Team`;
                 <div className="grid gap-2">
                     <Label>Message</Label>
                     <Textarea 
-                        className="min-h-[150px] bg-black/50 border-white/10 font-sans" 
+                        className="min-h-[150px] bg-black/50 border-border dark:border-white/10 font-sans" 
                         defaultValue={`Dear ${selectedCandidate?.fullName || 'Candidate'},
 
 We are impressed with your profile and would like to invite you to an initial voice interview with our AI interview system.
@@ -893,7 +893,7 @@ AHC Recruiting Team`}
             </div>
 
             <DialogFooter>
-                <Button variant="outline" onClick={() => setInviteOpen(false)} className="border-white/10 hover:bg-white/5">Cancel</Button>
+                <Button variant="outline" onClick={() => setInviteOpen(false)} className="border-border dark:border-white/10 hover:bg-white/5">Cancel</Button>
                 <Button 
                   onClick={handleSendInvite} 
                   disabled={sendingInvite || (inviteChannel === "email" && !selectedCandidate?.email) || (inviteChannel === "whatsapp" && !(selectedCandidate?.phone || (selectedCandidate?.metadata as any)?.phone))}

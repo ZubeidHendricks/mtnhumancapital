@@ -315,7 +315,7 @@ export default function OnboardingDashboard() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card className="bg-card/30 border-white/10 backdrop-blur-sm" data-testid="stat-total-workflows">
+          <Card className="bg-card/30 border-border dark:border-white/10 backdrop-blur-sm" data-testid="stat-total-workflows">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <Users className="w-4 h-4" />
@@ -331,7 +331,7 @@ export default function OnboardingDashboard() {
             </CardContent>
           </Card>
 
-          <Card className={`border-white/10 backdrop-blur-sm ${interventionQueue.length > 0 ? "bg-red-500/10 border-red-500/20" : "bg-emerald-500/10 border-emerald-500/20"}`} data-testid="stat-interventions">
+          <Card className={`border-border dark:border-white/10 backdrop-blur-sm ${interventionQueue.length > 0 ? "bg-red-500/10 border-red-500/20" : "bg-emerald-500/10 border-emerald-500/20"}`} data-testid="stat-interventions">
             <CardHeader className="pb-2">
               <CardTitle className={`text-sm font-medium flex items-center gap-2 ${interventionQueue.length > 0 ? "text-red-300" : "text-emerald-300"}`}>
                 {interventionQueue.length > 0 ? <AlertCircle className="w-4 h-4" /> : <Shield className="w-4 h-4" />}
@@ -443,7 +443,7 @@ export default function OnboardingDashboard() {
         <div className="grid grid-cols-12 gap-6">
           {/* Workflows List */}
           <div className="col-span-12 lg:col-span-4">
-            <Card className="border-white/10 bg-card/20" data-testid="workflows-list">
+            <Card className="border-border dark:border-white/10 bg-card/20" data-testid="workflows-list">
               <CardHeader>
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-primary/20 rounded-lg">
@@ -469,7 +469,7 @@ export default function OnboardingDashboard() {
                           className={`p-4 rounded-lg cursor-pointer transition-all border ${
                             isSelected
                               ? "bg-primary/20 border-primary/30"
-                              : "bg-card/30 border-white/10 hover:border-white/20 hover:bg-card/50"
+                              : "bg-card/30 border-border dark:border-white/10 hover:border-border hover:dark:border-white/20 hover:bg-card/50"
                           }`}
                           data-testid={`workflow-item-${workflow.id}`}
                         >
@@ -515,9 +515,9 @@ export default function OnboardingDashboard() {
           <div className="col-span-12 lg:col-span-8">
             {selectedWorkflow ? (
               <div className="space-y-6">
-                <Card className="border-white/10 bg-card/20 overflow-hidden">
+                <Card className="border-border dark:border-white/10 bg-card/20 overflow-hidden">
                   {/* Candidate Header */}
-                  <div className="bg-gradient-to-r from-primary/20 to-purple-500/20 border-b border-white/10 p-6">
+                  <div className="bg-gradient-to-r from-primary/20 to-purple-500/20 border-b border-border dark:border-white/10 p-6">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className="w-14 h-14 rounded-full bg-white/10 backdrop-blur flex items-center justify-center text-white font-bold text-xl">
@@ -540,7 +540,7 @@ export default function OnboardingDashboard() {
                   </div>
                   
                   <Tabs defaultValue="documents" className="w-full">
-                    <div className="border-b border-white/10 px-6">
+                    <div className="border-b border-border dark:border-white/10 px-6">
                       <TabsList className="bg-transparent border-0 p-0 h-14">
                         <TabsTrigger 
                           value="documents" 
@@ -618,7 +618,7 @@ export default function OnboardingDashboard() {
                                           variant="outline"
                                           onClick={() => sendReminderMutation.mutate(doc.id)}
                                           disabled={sendReminderMutation.isPending}
-                                          className="gap-1 border-white/10 hover:bg-white/5"
+                                          className="gap-1 border-border dark:border-white/10 hover:bg-white/5"
                                           data-testid={`button-remind-${doc.id}`}
                                         >
                                           <Bell className="w-4 h-4" />
@@ -680,7 +680,7 @@ export default function OnboardingDashboard() {
                                       <div className={`absolute left-2 w-7 h-7 rounded-full bg-gradient-to-br ${agentStyle} border flex items-center justify-center`}>
                                         <ChannelIcon className="w-3.5 h-3.5 text-white" />
                                       </div>
-                                      <div className={`bg-card/30 border border-white/10 rounded-lg p-4 ${
+                                      <div className={`bg-card/30 border border-border dark:border-white/10 rounded-lg p-4 ${
                                         log.status === "requires_intervention" ? "border-red-500/30" : ""
                                       }`}>
                                         <div className="flex items-center justify-between mb-2">
@@ -698,7 +698,7 @@ export default function OnboardingDashboard() {
                                           </span>
                                         </div>
                                         {log.messageContent && (
-                                          <div className="mt-3 p-3 bg-white/5 rounded-lg border border-white/5">
+                                          <div className="mt-3 p-3 bg-white/5 rounded-lg border border-border dark:border-white/5">
                                             <p className="text-sm text-muted-foreground italic">"{log.messageContent}"</p>
                                           </div>
                                         )}
@@ -730,7 +730,7 @@ export default function OnboardingDashboard() {
                 </Card>
               </div>
             ) : (
-              <Card className="h-full flex items-center justify-center border-white/10 bg-card/20" data-testid="no-selection">
+              <Card className="h-full flex items-center justify-center border-border dark:border-white/10 bg-card/20" data-testid="no-selection">
                 <CardContent className="text-center py-16">
                   <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-6">
                     <Users className="w-8 h-8 text-muted-foreground" />
@@ -748,7 +748,7 @@ export default function OnboardingDashboard() {
 
       {/* Resolution Dialog */}
       <Dialog open={!!interventionDialog} onOpenChange={() => setInterventionDialog(null)}>
-        <DialogContent className="sm:max-w-lg bg-card border-white/10">
+        <DialogContent className="sm:max-w-lg bg-card border-border dark:border-white/10">
           <DialogHeader>
             <div className="flex items-center gap-3">
               <div className="p-2 bg-red-500/20 rounded-lg">
@@ -778,7 +778,7 @@ export default function OnboardingDashboard() {
                     </p>
                   </div>
                 </div>
-                <div className="bg-card/50 rounded-lg p-3 border border-white/5">
+                <div className="bg-card/50 rounded-lg p-3 border border-border dark:border-white/5">
                   <p className="text-sm text-red-300 font-medium">
                     Issue: {(interventionDialog.details as any)?.reason || "Manual review required"}
                   </p>
@@ -794,14 +794,14 @@ export default function OnboardingDashboard() {
                   onChange={(e) => setResolutionNotes(e.target.value)}
                   placeholder="Describe how you resolved this issue..."
                   rows={4}
-                  className="resize-none bg-card/50 border-white/10"
+                  className="resize-none bg-card/50 border-border dark:border-white/10"
                   data-testid="input-resolution-notes"
                 />
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setInterventionDialog(null)} className="border-white/10">
+            <Button variant="outline" onClick={() => setInterventionDialog(null)} className="border-border dark:border-white/10">
               Cancel
             </Button>
             <Button

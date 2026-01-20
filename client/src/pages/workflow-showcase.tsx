@@ -593,7 +593,7 @@ BENEFITS:
             </div>
           )}
           
-          <div className={activeJobs.length > 0 ? "border-t border-white/10 pt-4" : ""}>
+          <div className={activeJobs.length > 0 ? "border-t border-border dark:border-white/10 pt-4" : ""}>
             <h4 className="font-medium mb-4 flex items-center gap-2">
               <Plus className="h-4 w-4" /> Create New Job
             </h4>
@@ -719,7 +719,7 @@ BENEFITS:
                   />
                   <div 
                     onClick={handleFileUploadClick}
-                    className="border-2 border-dashed border-white/20 rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                    className="border-2 border-dashed border-border dark:border-white/20 rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
                   >
                     {isUploading ? (
                       <div className="flex flex-col items-center">
@@ -768,11 +768,11 @@ BENEFITS:
         <ScrollArea className="h-[400px]">
           <div className="space-y-3">
             {stepCandidates.map((candidate: Candidate) => (
-              <Card key={candidate.id} className="bg-background/50 border-white/10" data-testid={`screening-card-${candidate.id}`}>
+              <Card key={candidate.id} className="bg-background/50 border-border dark:border-white/10" data-testid={`screening-card-${candidate.id}`}>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-12 w-12 border border-white/10">
+                      <Avatar className="h-12 w-12 border border-border dark:border-white/10">
                         <AvatarFallback className="bg-purple-500/20 text-purple-400 text-sm">
                           {candidate.fullName?.split(' ').map(n => n[0]).join('').slice(0, 2)}
                         </AvatarFallback>
@@ -1434,11 +1434,11 @@ BENEFITS:
             const integrity = getIntegrityForCandidate(candidate.id);
             
             return (
-              <Card key={candidate.id} className="bg-background/50 border-white/10" data-testid={`workflow-card-${candidate.id}`}>
+              <Card key={candidate.id} className="bg-background/50 border-border dark:border-white/10" data-testid={`workflow-card-${candidate.id}`}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10 border border-white/10">
+                      <Avatar className="h-10 w-10 border border-border dark:border-white/10">
                         <AvatarFallback className="bg-primary/20 text-primary text-sm">
                           {candidate.fullName?.split(' ').map(n => n[0]).join('').slice(0, 2)}
                         </AvatarFallback>
@@ -1534,7 +1534,7 @@ BENEFITS:
           </div>
         </div>
 
-        <Card className="mb-6 bg-gradient-to-r from-card/80 to-card/60 border-white/10">
+        <Card className="mb-6 bg-gradient-to-r from-card/80 to-card/60 border-border dark:border-white/10">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-4">
@@ -1605,7 +1605,7 @@ BENEFITS:
 
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <Card className="bg-card/50 border-white/10">
+            <Card className="bg-card/50 border-border dark:border-white/10">
               <CardHeader className="pb-3">
                 <CardDescription>{stepAction.description}</CardDescription>
               </CardHeader>
@@ -1614,7 +1614,7 @@ BENEFITS:
               </CardContent>
             </Card>
 
-            <Card className="bg-card/50 border-white/10">
+            <Card className="bg-card/50 border-border dark:border-white/10">
               <CardHeader>
                 <CardTitle className="text-sm flex items-center gap-2">
                   <Zap className="h-4 w-4 text-yellow-400" />Automations at This Stage
@@ -1633,7 +1633,7 @@ BENEFITS:
           </div>
 
           <div className="space-y-6">
-            <Card className="bg-card/50 border-white/10">
+            <Card className="bg-card/50 border-border dark:border-white/10">
               <CardHeader>
                 <CardTitle className="text-sm">Pipeline Summary</CardTitle>
               </CardHeader>
@@ -1648,7 +1648,7 @@ BENEFITS:
                       <span className="text-muted-foreground">Candidates</span>
                       <span className="font-medium">{jobCandidates.length}</span>
                     </div>
-                    <div className="border-t border-white/10 pt-2 mt-2">
+                    <div className="border-t border-border dark:border-white/10 pt-2 mt-2">
                       {WORKFLOW_STEPS.filter(s => s.key !== "create_job").map(step => {
                         const stats = getStepStats(step.key);
                         return (
@@ -1670,7 +1670,7 @@ BENEFITS:
               </CardContent>
             </Card>
 
-            <Card className="bg-card/50 border-white/10">
+            <Card className="bg-card/50 border-border dark:border-white/10">
               <CardHeader><CardTitle className="text-sm">Quick Actions</CardTitle></CardHeader>
               <CardContent className="space-y-2">
                 <Button variant="outline" className="w-full justify-start text-sm h-9" onClick={() => setActiveStep(1)} data-testid="button-quick-new-job">

@@ -78,6 +78,8 @@
   --border: 222 47% 18%;
   --input: 222 47% 18%;
   --ring: 25 95% 53%; /* Orange Ring */
+  
+  --button-outline: hsl(0 0% 100% / 0.2); /* White border for dark theme */
 
   --radius: 0.5rem;
   
@@ -118,6 +120,8 @@
   --border: 220 13% 87%; /* Grey border */
   --input: 220 14% 96%; /* Light grey input */
   --ring: 25 95% 53%; /* Orange focus ring */
+  
+  --button-outline: hsl(220 13% 75%); /* Grey border for light theme */
 
   /* Chart Colors for Light Mode */
   --chart-1: 25 95% 53%; /* Orange */
@@ -154,11 +158,11 @@
 /* Custom Utility Classes for Glassmorphism & Glow */
 @layer utilities {
   .glass-panel {
-    @apply bg-white/5 backdrop-blur-md border border-white/10;
+    @apply bg-muted/50 dark:bg-white/5 backdrop-blur-md border border-border dark:border-white/10;
   }
   
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-linear-to-r from-primary to-cyan-400;
+    @apply bg-clip-text text-transparent bg-linear-to-r from-primary to-orange-600;
   }
 
   .glow-effect {

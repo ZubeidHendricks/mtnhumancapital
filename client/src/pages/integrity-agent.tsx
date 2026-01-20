@@ -325,7 +325,7 @@ export default function IntegrityAgent() {
           
           {/* LEFT: Candidate Selection & Controls */}
           <div className="lg:col-span-3 space-y-6 overflow-y-auto">
-            <Card className="bg-card/30 border-white/10 backdrop-blur-sm" data-testid="card-candidate-selection">
+            <Card className="bg-card/30 border-border dark:border-white/10 backdrop-blur-sm" data-testid="card-candidate-selection">
               <CardHeader>
                 <CardTitle className="text-sm font-bold flex items-center gap-2">
                   <Users className="w-4 h-4 text-primary" /> 
@@ -336,7 +336,7 @@ export default function IntegrityAgent() {
                 <div>
                   <label className="text-xs text-muted-foreground mb-2 block">Candidate</label>
                   <Select value={selectedCandidateId} onValueChange={setSelectedCandidateId} disabled={isRunningEvaluation}>
-                    <SelectTrigger className="bg-white/5 border-white/10" data-testid="select-candidate">
+                    <SelectTrigger className="bg-white/5 border-border dark:border-white/10" data-testid="select-candidate">
                       <SelectValue placeholder="Choose a candidate..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -359,7 +359,7 @@ export default function IntegrityAgent() {
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-3 rounded-lg bg-white/5 border border-white/10"
+                    className="p-3 rounded-lg bg-white/5 border border-border dark:border-white/10"
                     data-testid="card-selected-candidate"
                   >
                     <div className="flex items-center gap-2 mb-2">
@@ -373,7 +373,7 @@ export default function IntegrityAgent() {
                     </div>
                     
                     {overallRiskScore !== null && candidateChecks.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-white/10">
+                      <div className="mt-3 pt-3 border-t border-border dark:border-white/10">
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-muted-foreground">Overall Risk Score</span>
                           <span className={`text-lg font-bold ${getRiskScoreColor(overallRiskScore)}`}>
@@ -406,7 +406,7 @@ export default function IntegrityAgent() {
               </CardContent>
             </Card>
 
-            <Card className="bg-card/30 border-white/10 backdrop-blur-sm" data-testid="card-stats">
+            <Card className="bg-card/30 border-border dark:border-white/10 backdrop-blur-sm" data-testid="card-stats">
               <CardHeader>
                 <CardTitle className="text-sm font-bold">System Overview</CardTitle>
               </CardHeader>
@@ -442,7 +442,7 @@ export default function IntegrityAgent() {
 
           {/* MIDDLE: AI Agent Workflow Visualization */}
           <div className="lg:col-span-5 flex flex-col overflow-hidden">
-            <Card className="flex-1 bg-card/30 border-white/10 backdrop-blur-sm flex flex-col overflow-hidden" data-testid="card-workflow">
+            <Card className="flex-1 bg-card/30 border-border dark:border-white/10 backdrop-blur-sm flex flex-col overflow-hidden" data-testid="card-workflow">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-bold flex items-center gap-2">
                   <Zap className="w-4 h-4 text-primary" /> 
@@ -524,7 +524,7 @@ export default function IntegrityAgent() {
 
           {/* RIGHT: Results & Evidence */}
           <div className="lg:col-span-4 flex flex-col overflow-hidden">
-            <Card className="flex-1 bg-card/30 border-white/10 backdrop-blur-sm flex flex-col overflow-hidden" data-testid="card-results">
+            <Card className="flex-1 bg-card/30 border-border dark:border-white/10 backdrop-blur-sm flex flex-col overflow-hidden" data-testid="card-results">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-bold flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -571,7 +571,7 @@ export default function IntegrityAgent() {
                               <Card className={`bg-white/5 border transition-colors overflow-hidden ${
                                 check.result === "Flagged" ? "border-yellow-500/30" :
                                 check.result === "Clear" || check.result === "Verified" ? "border-green-500/30" :
-                                "border-white/10"
+                                "border-border dark:border-white/10"
                               }`}>
                                 <CardHeader className="pb-2">
                                   <div className="flex items-start justify-between">
@@ -628,7 +628,7 @@ export default function IntegrityAgent() {
 
                                               return (
                                                 <div key={checkType} className="space-y-2 w-full">
-                                                  <div className="p-2 rounded bg-black/20 border border-white/5 overflow-hidden w-full">
+                                                  <div className="p-2 rounded bg-black/20 border border-border dark:border-white/5 overflow-hidden w-full">
                                                     <div className="text-[10px] font-semibold text-primary mb-1 uppercase">{checkType} Check:</div>
                                                     <div className="text-[10px] text-muted-foreground whitespace-pre-wrap" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                                                       {checkData.findings || 'No findings available'}
@@ -668,7 +668,7 @@ export default function IntegrityAgent() {
                                           </>
                                         ) : (
                                           /* Fallback for string-based findings (legacy checks or in-progress status) */
-                                          <div className="p-2 rounded bg-black/20 border border-white/5 overflow-hidden w-full">
+                                          <div className="p-2 rounded bg-black/20 border border-border dark:border-white/5 overflow-hidden w-full">
                                             <div className="text-[10px] font-semibold text-primary mb-1">Findings:</div>
                                             <div className="text-[10px] text-muted-foreground whitespace-pre-wrap" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                                               {String(parsedFindings)}

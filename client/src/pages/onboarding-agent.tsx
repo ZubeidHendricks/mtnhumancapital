@@ -196,7 +196,7 @@ export default function OnboardingAgent() {
           
           {/* LEFT: Workflow Visualization */}
           <div className="hidden lg:block lg:col-span-3 flex flex-col gap-6 h-full overflow-hidden">
-            <Card className="bg-card/30 border-white/10 backdrop-blur-sm flex-1 flex flex-col overflow-hidden" data-testid="card-workflow-steps">
+            <Card className="bg-card/30 border-border dark:border-white/10 backdrop-blur-sm flex-1 flex flex-col overflow-hidden" data-testid="card-workflow-steps">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-bold flex items-center gap-2">
                   <UserPlus className="w-4 h-4 text-primary" /> 
@@ -261,8 +261,8 @@ export default function OnboardingAgent() {
 
           {/* MIDDLE: Chat Interface */}
           <div className="lg:col-span-6 flex flex-col h-full">
-            <Card className="flex-1 flex flex-col bg-card/50 border-white/10 backdrop-blur-md overflow-hidden" data-testid="card-chat">
-              <CardHeader className="border-b border-white/5 py-3">
+            <Card className="flex-1 flex flex-col bg-card/50 border-border dark:border-white/10 backdrop-blur-md overflow-hidden" data-testid="card-chat">
+              <CardHeader className="border-b border-border dark:border-white/5 py-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
@@ -287,7 +287,7 @@ export default function OnboardingAgent() {
                       className={`flex items-start gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
                       data-testid={`message-${msg.role}`}
                     >
-                      <Avatar className={`w-8 h-8 ${msg.role === "agent" ? "border border-primary/50" : "border border-white/10"}`}>
+                      <Avatar className={`w-8 h-8 ${msg.role === "agent" ? "border border-primary/50" : "border border-border dark:border-white/10"}`}>
                         <AvatarImage src={msg.role === "agent" ? "" : "/user.png"} />
                         <AvatarFallback className={msg.role === "agent" ? "bg-primary/10 text-primary" : "bg-white/10"}>
                           {msg.role === "agent" ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}
@@ -297,7 +297,7 @@ export default function OnboardingAgent() {
                       <div className={`rounded-2xl px-4 py-3 max-w-[80%] text-sm leading-relaxed ${
                         msg.role === "user" 
                           ? "bg-primary text-primary-foreground rounded-tr-none" 
-                          : "bg-white/5 border border-white/10 rounded-tl-none"
+                          : "bg-white/5 border border-border dark:border-white/10 rounded-tl-none"
                       }`}>
                         <div className="whitespace-pre-wrap">{msg.content}</div>
                         <div className={`text-[10px] mt-1 opacity-50 ${msg.role === "user" ? "text-primary-foreground" : "text-muted-foreground"}`}>
@@ -318,7 +318,7 @@ export default function OnboardingAgent() {
                           <Bot className="w-4 h-4" />
                         </AvatarFallback>
                       </Avatar>
-                      <div className="bg-white/5 border border-white/10 rounded-2xl rounded-tl-none px-4 py-3 flex items-center gap-2">
+                      <div className="bg-white/5 border border-border dark:border-white/10 rounded-2xl rounded-tl-none px-4 py-3 flex items-center gap-2">
                         <Loader2 className="w-4 h-4 animate-spin text-primary" />
                         <span className="text-xs text-muted-foreground">Starting onboarding workflow...</span>
                       </div>
@@ -333,7 +333,7 @@ export default function OnboardingAgent() {
           {/* RIGHT: Candidate Selector & Doc Tracker */}
           <div className="hidden lg:block lg:col-span-3 flex flex-col gap-6 h-full overflow-hidden">
             {!selectedCandidate ? (
-              <Card className="bg-card/30 border-white/10 backdrop-blur-sm flex-1 flex flex-col overflow-hidden" data-testid="card-candidate-selector">
+              <Card className="bg-card/30 border-border dark:border-white/10 backdrop-blur-sm flex-1 flex flex-col overflow-hidden" data-testid="card-candidate-selector">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-bold flex items-center gap-2">
                     <Search className="w-4 h-4 text-primary" /> 
@@ -344,7 +344,7 @@ export default function OnboardingAgent() {
                       placeholder="Search candidates..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="bg-black/40 border-white/10 text-white text-sm"
+                      className="bg-black/40 border-border dark:border-white/10 text-white text-sm"
                       data-testid="input-search-candidate"
                     />
                   </div>
@@ -364,7 +364,7 @@ export default function OnboardingAgent() {
                         <div
                           key={candidate.id}
                           onClick={() => handleCandidateSelect(candidate)}
-                          className="p-3 rounded-lg bg-white/5 border border-white/10 hover:border-primary/50 cursor-pointer transition-all group"
+                          className="p-3 rounded-lg bg-white/5 border border-border dark:border-white/10 hover:border-primary/50 cursor-pointer transition-all group"
                           data-testid={`candidate-${candidate.id}`}
                         >
                           <h5 className="text-sm font-medium group-hover:text-primary transition-colors">
@@ -379,7 +379,7 @@ export default function OnboardingAgent() {
                 </CardContent>
               </Card>
             ) : (
-              <Card className="bg-card/30 border-white/10 backdrop-blur-sm flex-1 flex flex-col overflow-hidden" data-testid="card-document-tracker">
+              <Card className="bg-card/30 border-border dark:border-white/10 backdrop-blur-sm flex-1 flex flex-col overflow-hidden" data-testid="card-document-tracker">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-bold flex items-center gap-2">
                     <Briefcase className="w-4 h-4 text-primary" /> 
@@ -412,8 +412,8 @@ export default function OnboardingAgent() {
                             data-testid={`document-${doc.id}`}
                           >
                             <div className={`p-3 rounded-lg bg-white/5 border transition-colors group cursor-pointer ${
-                              doc.status === "pending" ? "border-white/10 border-dashed" : 
-                              "border-white/5 hover:border-green-500/30"
+                              doc.status === "pending" ? "border-border dark:border-white/10 border-dashed" : 
+                              "border-border dark:border-white/5 hover:border-green-500/30"
                             }`}>
                               <div className="flex items-start justify-between mb-1">
                                 <div className="flex items-center gap-2">

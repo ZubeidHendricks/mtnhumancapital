@@ -251,7 +251,7 @@ export default function InterviewInvite() {
   if (state === "loading" && !session) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-card/80 backdrop-blur border-white/10">
+        <Card className="w-full max-w-md bg-card/80 backdrop-blur border-border dark:border-white/10">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Loader2 className="h-12 w-12 animate-spin text-purple-400 mb-4" />
             <p className="text-muted-foreground">Loading your interview...</p>
@@ -264,7 +264,7 @@ export default function InterviewInvite() {
   if (state === "error") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-red-900/20 to-slate-900 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-card/80 backdrop-blur border-white/10">
+        <Card className="w-full max-w-md bg-card/80 backdrop-blur border-border dark:border-white/10">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <AlertCircle className="h-12 w-12 text-red-400 mb-4" />
             <h2 className="text-xl font-bold text-white mb-2">Unable to Load Interview</h2>
@@ -278,7 +278,7 @@ export default function InterviewInvite() {
   if (state === "completed") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-green-900/20 to-slate-900 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-card/80 backdrop-blur border-white/10">
+        <Card className="w-full max-w-md bg-card/80 backdrop-blur border-border dark:border-white/10">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <motion.div
               initial={{ scale: 0 }}
@@ -302,7 +302,7 @@ export default function InterviewInvite() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex flex-col">
-      <header className="p-4 border-b border-white/10 bg-background/50 backdrop-blur">
+      <header className="p-4 border-b border-border dark:border-white/10 bg-background/50 backdrop-blur">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div>
             <h1 className="text-lg font-bold text-white">Voice Interview</h1>
@@ -318,7 +318,7 @@ export default function InterviewInvite() {
 
       <main className="flex-1 flex flex-col max-w-2xl mx-auto w-full p-4">
         {state === "ready" ? (
-          <Card className="flex-1 bg-card/50 backdrop-blur border-white/10 flex flex-col items-center justify-center">
+          <Card className="flex-1 bg-card/50 backdrop-blur border-border dark:border-white/10 flex flex-col items-center justify-center">
             <CardHeader className="text-center">
               <CardTitle className="text-2xl text-white">Ready to Begin</CardTitle>
               <CardDescription className="text-muted-foreground max-w-sm">
@@ -346,8 +346,8 @@ export default function InterviewInvite() {
           </Card>
         ) : (
           <>
-            <Card className="flex-1 bg-card/50 backdrop-blur border-white/10 flex flex-col overflow-hidden mb-4">
-              <CardHeader className="border-b border-white/10 py-3">
+            <Card className="flex-1 bg-card/50 backdrop-blur border-border dark:border-white/10 flex flex-col overflow-hidden mb-4">
+              <CardHeader className="border-b border-border dark:border-white/10 py-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <AnimatePresence mode="wait">
@@ -403,7 +403,7 @@ export default function InterviewInvite() {
                           className={`max-w-[85%] rounded-2xl px-4 py-2 ${
                             transcript.role === 'user'
                               ? 'bg-purple-600 text-white'
-                              : 'bg-card border border-white/10 text-white'
+                              : 'bg-card border border-border dark:border-white/10 text-white'
                           }`}
                         >
                           <p className="text-sm">{transcript.text}</p>

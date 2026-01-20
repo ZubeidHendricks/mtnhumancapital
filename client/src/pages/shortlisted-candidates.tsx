@@ -128,7 +128,7 @@ export default function ShortlistedCandidates() {
       
       <div className="flex-1 flex overflow-hidden pt-16">
         {/* LEFT PANEL */}
-        <div className="w-[400px] border-r border-white/10 bg-[#0a0a0a] flex flex-col h-full overflow-hidden">
+        <div className="w-[400px] border-r border-border dark:border-white/10 bg-[#0a0a0a] flex flex-col h-full overflow-hidden">
           <div className="p-6 space-y-6 overflow-y-auto flex-1">
             
             {/* Header */}
@@ -156,7 +156,7 @@ export default function ShortlistedCandidates() {
             </div>
 
             {/* Info Box */}
-            <div className="bg-white/5 border border-white/10 rounded-lg p-4 space-y-2">
+            <div className="bg-white/5 border border-border dark:border-white/10 rounded-lg p-4 space-y-2">
               <p className="text-sm font-medium text-white">About Shortlisted</p>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 These candidates have passed initial screening and are ready for interviews or offers. 
@@ -171,12 +171,12 @@ export default function ShortlistedCandidates() {
         <div className="flex-1 flex flex-col bg-[#0a0a0a]">
           
           {/* Search Bar */}
-          <div className="border-b border-white/10 p-6 flex items-center gap-4">
+          <div className="border-b border-border dark:border-white/10 p-6 flex items-center gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
                 placeholder="Search shortlisted candidates..." 
-                className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-muted-foreground"
+                className="pl-10 bg-white/5 border-border dark:border-white/10 text-white placeholder:text-muted-foreground"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 data-testid="input-search-candidates"
@@ -198,13 +198,13 @@ export default function ShortlistedCandidates() {
                   layout
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg p-4 transition-all cursor-pointer group"
+                  className="bg-white/5 hover:bg-white/10 border border-border dark:border-white/10 rounded-lg p-4 transition-all cursor-pointer group"
                   data-testid={`card-candidate-${candidate.id}`}
                 >
                   <div className="flex items-center justify-between gap-4">
                     {/* Left: Avatar & Info */}
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <Avatar className="h-10 w-10 border-2 border-white/20">
+                      <Avatar className="h-10 w-10 border-2 border-border dark:border-white/20">
                         <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-semibold">
                           {candidate.fullName?.split(' ')?.map((n: string) => n[0])?.join('')?.toUpperCase() || '?'}
                         </AvatarFallback>
@@ -298,7 +298,7 @@ export default function ShortlistedCandidates() {
 
       {/* Email Invitation Dialog */}
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-        <DialogContent className="bg-[#1a1a1a] border-white/10 text-white sm:max-w-[500px]">
+        <DialogContent className="bg-[#1a1a1a] border-border dark:border-white/10 text-white sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Invite to Voice Interview</DialogTitle>
             <DialogDescription className="text-gray-400">
@@ -309,18 +309,18 @@ export default function ShortlistedCandidates() {
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label>Recipient</Label>
-              <Input value={selectedCandidate?.email || selectedCandidate?.fullName || ""} disabled className="bg-black/50 border-white/10" />
+              <Input value={selectedCandidate?.email || selectedCandidate?.fullName || ""} disabled className="bg-black/50 border-border dark:border-white/10" />
             </div>
             
             <div className="grid gap-2">
               <Label>Subject</Label>
-              <Input defaultValue={`Interview Invitation: ${selectedCandidate?.role || 'Position'}`} className="bg-black/50 border-white/10" />
+              <Input defaultValue={`Interview Invitation: ${selectedCandidate?.role || 'Position'}`} className="bg-black/50 border-border dark:border-white/10" />
             </div>
 
             <div className="grid gap-2">
               <Label>Message</Label>
               <Textarea 
-                className="min-h-[150px] bg-black/50 border-white/10 font-sans" 
+                className="min-h-[150px] bg-black/50 border-border dark:border-white/10 font-sans" 
                 defaultValue={`Dear ${selectedCandidate?.fullName || 'Candidate'},
 
 We are impressed with your profile and would like to invite you to an initial voice interview with our AI interview system.
@@ -337,8 +337,8 @@ Avatar Human Capital Team`}
             <div className="grid gap-2">
               <Label>Interview Link</Label>
               <div className="flex gap-2">
-                <Input value={inviteLink} readOnly className="bg-black/50 border-white/10 font-mono text-xs" />
-                <Button size="icon" variant="outline" className="border-white/10" onClick={handleCopyLink}>
+                <Input value={inviteLink} readOnly className="bg-black/50 border-border dark:border-white/10 font-mono text-xs" />
+                <Button size="icon" variant="outline" className="border-border dark:border-white/10" onClick={handleCopyLink}>
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
@@ -346,7 +346,7 @@ Avatar Human Capital Team`}
           </div>
 
           <DialogFooter className="flex gap-2">
-            <Button variant="outline" className="border-white/10" onClick={() => setInviteOpen(false)}>
+            <Button variant="outline" className="border-border dark:border-white/10" onClick={() => setInviteOpen(false)}>
               Cancel
             </Button>
             <Button className="bg-indigo-600 hover:bg-indigo-500" onClick={handleSendInvite}>

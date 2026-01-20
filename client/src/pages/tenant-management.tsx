@@ -194,7 +194,7 @@ export default function TenantManagementPage() {
 
         {/* Tenants Overview */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <Card className="bg-black/40 border-white/10">
+          <Card className="bg-black/40 border-border dark:border-white/10">
             <CardHeader>
               <CardTitle className="text-white text-sm font-medium">Total Tenants</CardTitle>
             </CardHeader>
@@ -203,7 +203,7 @@ export default function TenantManagementPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-black/40 border-white/10">
+          <Card className="bg-black/40 border-border dark:border-white/10">
             <CardHeader>
               <CardTitle className="text-white text-sm font-medium">Active Subscriptions</CardTitle>
             </CardHeader>
@@ -214,7 +214,7 @@ export default function TenantManagementPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-black/40 border-white/10">
+          <Card className="bg-black/40 border-border dark:border-white/10">
             <CardHeader>
               <CardTitle className="text-white text-sm font-medium">Trials</CardTitle>
             </CardHeader>
@@ -227,7 +227,7 @@ export default function TenantManagementPage() {
         </div>
 
         {/* Tenants Table */}
-        <Card className="bg-black/40 border-white/10">
+        <Card className="bg-black/40 border-border dark:border-white/10">
           <CardHeader>
             <CardTitle className="text-white">All Tenants</CardTitle>
             <CardDescription>Manage tenant subscriptions and access</CardDescription>
@@ -245,7 +245,7 @@ export default function TenantManagementPage() {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-white/10">
+                    <TableRow className="border-border dark:border-white/10">
                       <TableHead className="text-white">Company</TableHead>
                       <TableHead className="text-white">Subdomain</TableHead>
                       <TableHead className="text-white">Status</TableHead>
@@ -257,7 +257,7 @@ export default function TenantManagementPage() {
                   </TableHeader>
                   <TableBody>
                     {tenants.map((tenant) => (
-                      <TableRow key={tenant.id} className="border-white/10">
+                      <TableRow key={tenant.id} className="border-border dark:border-white/10">
                         <TableCell className="font-medium text-white">
                           {tenant.companyName}
                         </TableCell>
@@ -311,7 +311,7 @@ export default function TenantManagementPage() {
         {selectedTenant && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Subscription Management */}
-            <Card className="bg-black/40 border-white/10">
+            <Card className="bg-black/40 border-border dark:border-white/10">
               <CardHeader>
                 <CardTitle className="text-white flex items-center justify-between">
                   <span>Subscription Details</span>
@@ -371,7 +371,7 @@ export default function TenantManagementPage() {
                     ].map((module) => (
                       <div
                         key={module.key}
-                        className="flex items-center justify-between p-3 rounded-lg bg-black/20 border border-white/5"
+                        className="flex items-center justify-between p-3 rounded-lg bg-black/20 border border-border dark:border-white/5"
                       >
                         <span className="text-white text-sm">{module.label}</span>
                         <Switch
@@ -393,7 +393,7 @@ export default function TenantManagementPage() {
             </Card>
 
             {/* Payment History */}
-            <Card className="bg-black/40 border-white/10">
+            <Card className="bg-black/40 border-border dark:border-white/10">
               <CardHeader>
                 <CardTitle className="text-white flex items-center justify-between">
                   <span>Payment History</span>
@@ -422,7 +422,7 @@ export default function TenantManagementPage() {
                     {payments.map((payment) => (
                       <div
                         key={payment.id}
-                        className="flex items-center justify-between p-3 rounded-lg bg-black/20 border border-white/5"
+                        className="flex items-center justify-between p-3 rounded-lg bg-black/20 border border-border dark:border-white/5"
                       >
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
@@ -462,7 +462,7 @@ export default function TenantManagementPage() {
 
         {/* Record Payment Dialog */}
         <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
-          <DialogContent className="bg-zinc-950 border-white/10">
+          <DialogContent className="bg-zinc-950 border-border dark:border-white/10">
             <DialogHeader>
               <DialogTitle className="text-white">Record Payment</DialogTitle>
               <DialogDescription>
@@ -493,17 +493,17 @@ export default function TenantManagementPage() {
                     step="0.01"
                     required
                     placeholder="1000.00"
-                    className="bg-black/40 border-white/10 text-white"
+                    className="bg-black/40 border-border dark:border-white/10 text-white"
                   />
                 </div>
 
                 <div>
                   <Label htmlFor="status" className="text-white">Status</Label>
                   <Select name="status" defaultValue="completed">
-                    <SelectTrigger className="bg-black/40 border-white/10 text-white">
+                    <SelectTrigger className="bg-black/40 border-border dark:border-white/10 text-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-zinc-950 border-white/10">
+                    <SelectContent className="bg-zinc-950 border-border dark:border-white/10">
                       <SelectItem value="completed">Completed</SelectItem>
                       <SelectItem value="pending">Pending</SelectItem>
                       <SelectItem value="failed">Failed</SelectItem>
@@ -514,10 +514,10 @@ export default function TenantManagementPage() {
                 <div>
                   <Label htmlFor="paymentMethod" className="text-white">Payment Method</Label>
                   <Select name="paymentMethod" defaultValue="bank_transfer">
-                    <SelectTrigger className="bg-black/40 border-white/10 text-white">
+                    <SelectTrigger className="bg-black/40 border-border dark:border-white/10 text-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-zinc-950 border-white/10">
+                    <SelectContent className="bg-zinc-950 border-border dark:border-white/10">
                       <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
                       <SelectItem value="card">Card</SelectItem>
                       <SelectItem value="invoice">Invoice</SelectItem>
@@ -531,7 +531,7 @@ export default function TenantManagementPage() {
                     id="transactionId"
                     name="transactionId"
                     placeholder="TXN-12345"
-                    className="bg-black/40 border-white/10 text-white"
+                    className="bg-black/40 border-border dark:border-white/10 text-white"
                   />
                 </div>
 
@@ -541,7 +541,7 @@ export default function TenantManagementPage() {
                     id="description"
                     name="description"
                     placeholder="Monthly subscription payment"
-                    className="bg-black/40 border-white/10 text-white"
+                    className="bg-black/40 border-border dark:border-white/10 text-white"
                   />
                 </div>
               </div>
@@ -574,7 +574,7 @@ export default function TenantManagementPage() {
 
         {/* Update Subscription Dialog */}
         <Dialog open={showSubscriptionDialog} onOpenChange={setShowSubscriptionDialog}>
-          <DialogContent className="bg-zinc-950 border-white/10">
+          <DialogContent className="bg-zinc-950 border-border dark:border-white/10">
             <DialogHeader>
               <DialogTitle className="text-white">Update Subscription</DialogTitle>
               <DialogDescription>
@@ -599,10 +599,10 @@ export default function TenantManagementPage() {
                 <div>
                   <Label htmlFor="subscriptionStatus" className="text-white">Status</Label>
                   <Select name="subscriptionStatus" defaultValue={selectedTenant?.subscriptionStatus || "trial"}>
-                    <SelectTrigger className="bg-black/40 border-white/10 text-white">
+                    <SelectTrigger className="bg-black/40 border-border dark:border-white/10 text-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-zinc-950 border-white/10">
+                    <SelectContent className="bg-zinc-950 border-border dark:border-white/10">
                       <SelectItem value="trial">Trial</SelectItem>
                       <SelectItem value="active">Active</SelectItem>
                       <SelectItem value="suspended">Suspended</SelectItem>
@@ -614,10 +614,10 @@ export default function TenantManagementPage() {
                 <div>
                   <Label htmlFor="subscriptionTier" className="text-white">Tier</Label>
                   <Select name="subscriptionTier" defaultValue={selectedTenant?.subscriptionTier || "free"}>
-                    <SelectTrigger className="bg-black/40 border-white/10 text-white">
+                    <SelectTrigger className="bg-black/40 border-border dark:border-white/10 text-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-zinc-950 border-white/10">
+                    <SelectContent className="bg-zinc-950 border-border dark:border-white/10">
                       <SelectItem value="free">Free</SelectItem>
                       <SelectItem value="basic">Basic</SelectItem>
                       <SelectItem value="professional">Professional</SelectItem>
@@ -633,7 +633,7 @@ export default function TenantManagementPage() {
                     name="nextPaymentDate"
                     type="date"
                     defaultValue={selectedTenant?.nextPaymentDate ? format(new Date(selectedTenant.nextPaymentDate), "yyyy-MM-dd") : ""}
-                    className="bg-black/40 border-white/10 text-white"
+                    className="bg-black/40 border-border dark:border-white/10 text-white"
                   />
                 </div>
 
@@ -645,7 +645,7 @@ export default function TenantManagementPage() {
                     type="email"
                     placeholder="billing@company.com"
                     defaultValue={selectedTenant?.billingEmail || ""}
-                    className="bg-black/40 border-white/10 text-white"
+                    className="bg-black/40 border-border dark:border-white/10 text-white"
                   />
                 </div>
               </div>

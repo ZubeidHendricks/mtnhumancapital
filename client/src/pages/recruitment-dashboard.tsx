@@ -267,7 +267,7 @@ export default function RecruitmentDashboard() {
 
         {/* Vianna's Graphs - Monthly Revenue & Placements Trend */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <Card className="bg-black/40 border-white/10">
+          <Card className="bg-black/40 border-border dark:border-white/10">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-purple-400" />
@@ -312,7 +312,7 @@ export default function RecruitmentDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-black/40 border-white/10">
+          <Card className="bg-black/40 border-border dark:border-white/10">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Filter className="h-5 w-5 text-blue-400" />
@@ -349,7 +349,7 @@ export default function RecruitmentDashboard() {
         </div>
 
         {/* Talent Pipeline Funnel */}
-        <Card className="bg-black/40 border-white/10 mb-8">
+        <Card className="bg-black/40 border-border dark:border-white/10 mb-8">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5 text-cyan-400" />
@@ -437,7 +437,7 @@ export default function RecruitmentDashboard() {
         {/* Additional Analytics Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
           {/* Employer Type Share */}
-          <Card className="bg-black/40 border-white/10">
+          <Card className="bg-black/40 border-border dark:border-white/10">
             <CardHeader>
               <CardTitle>Employer Type Share</CardTitle>
             </CardHeader>
@@ -471,7 +471,7 @@ export default function RecruitmentDashboard() {
           </Card>
 
           {/* Fit Scores */}
-          <Card className="bg-black/40 border-white/10">
+          <Card className="bg-black/40 border-border dark:border-white/10">
             <CardHeader>
               <CardTitle>Fit Scores</CardTitle>
               <CardDescription className="text-gray-400">
@@ -498,7 +498,7 @@ export default function RecruitmentDashboard() {
 
       {/* Modals for detailed views */}
       <Dialog open={selectedModal === 'revenue'} onOpenChange={() => setSelectedModal(null)}>
-        <DialogContent className="bg-black border-white/10 text-white max-w-2xl">
+        <DialogContent className="bg-black border-border dark:border-white/10 text-white max-w-2xl">
           <DialogHeader>
             <DialogTitle>Revenue Details</DialogTitle>
             <DialogDescription className="text-gray-400">
@@ -506,7 +506,7 @@ export default function RecruitmentDashboard() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-4 text-sm font-semibold border-b border-white/10 pb-2">
+            <div className="grid grid-cols-3 gap-4 text-sm font-semibold border-b border-border dark:border-white/10 pb-2">
               <div>Month</div>
               <div>Placements</div>
               <div>Revenue</div>
@@ -518,7 +518,7 @@ export default function RecruitmentDashboard() {
                 <div>R{(month.revenue / 1000).toFixed(0)}k</div>
               </div>
             ))}
-            <div className="pt-4 border-t border-white/10 font-bold">
+            <div className="pt-4 border-t border-border dark:border-white/10 font-bold">
               <div className="grid grid-cols-3 gap-4">
                 <div>Total</div>
                 <div>{totalPlacements}</div>
@@ -530,7 +530,7 @@ export default function RecruitmentDashboard() {
       </Dialog>
 
       <Dialog open={selectedModal === 'jobs'} onOpenChange={() => setSelectedModal(null)}>
-        <DialogContent className="bg-black border-white/10 text-white max-w-3xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="bg-black border-border dark:border-white/10 text-white max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Active Job Searches</DialogTitle>
             <DialogDescription className="text-gray-400">
@@ -540,7 +540,7 @@ export default function RecruitmentDashboard() {
           <div className="space-y-3">
             {activeJobs.length > 0 ? (
               activeJobs.map((job) => (
-                <div key={job.id} className="p-4 bg-white/5 rounded-lg border border-white/10">
+                <div key={job.id} className="p-4 bg-white/5 rounded-lg border border-border dark:border-white/10">
                   <h3 className="font-semibold text-lg">{job.title}</h3>
                   <p className="text-sm text-gray-400 mt-1">{job.location || 'Location not specified'}</p>
                   <p className="text-sm text-gray-400">{job.department} • {job.status}</p>
@@ -557,7 +557,7 @@ export default function RecruitmentDashboard() {
       </Dialog>
 
       <Dialog open={selectedModal === 'candidates'} onOpenChange={() => setSelectedModal(null)}>
-        <DialogContent className="bg-black border-white/10 text-white max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="bg-black border-border dark:border-white/10 text-white max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>All Candidates</DialogTitle>
             <DialogDescription className="text-gray-400">
@@ -567,7 +567,7 @@ export default function RecruitmentDashboard() {
           <div className="space-y-3">
             {candidates && candidates.length > 0 ? (
               candidates.map((candidate) => (
-                <div key={candidate.id} className="p-4 bg-white/5 rounded-lg border border-white/10">
+                <div key={candidate.id} className="p-4 bg-white/5 rounded-lg border border-border dark:border-white/10">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <h3 className="font-semibold">{candidate.fullName}</h3>
@@ -584,7 +584,7 @@ export default function RecruitmentDashboard() {
                         <Button 
                           size="sm" 
                           variant="outline" 
-                          className="gap-1 border-white/20 hover:bg-white/10"
+                          className="gap-1 border-border dark:border-white/20 hover:bg-white/10"
                           data-testid={`button-view-profile-${candidate.id}`}
                         >
                           <Eye className="w-4 h-4" />
@@ -603,7 +603,7 @@ export default function RecruitmentDashboard() {
       </Dialog>
 
       <Dialog open={selectedModal === 'shortlisted'} onOpenChange={() => setSelectedModal(null)}>
-        <DialogContent className="bg-black border-white/10 text-white max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="bg-black border-border dark:border-white/10 text-white max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Shortlisted Candidates</DialogTitle>
             <DialogDescription className="text-gray-400">
@@ -612,7 +612,7 @@ export default function RecruitmentDashboard() {
           </DialogHeader>
           <div className="space-y-3">
             {candidates?.filter(c => c.stage === "Shortlisted").map((candidate) => (
-              <div key={candidate.id} className="p-4 bg-white/5 rounded-lg border border-white/10">
+              <div key={candidate.id} className="p-4 bg-white/5 rounded-lg border border-border dark:border-white/10">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <h3 className="font-semibold">{candidate.fullName}</h3>
@@ -626,7 +626,7 @@ export default function RecruitmentDashboard() {
                       <Button 
                         size="sm" 
                         variant="outline" 
-                        className="gap-1 border-white/20 hover:bg-white/10"
+                        className="gap-1 border-border dark:border-white/20 hover:bg-white/10"
                         data-testid={`button-view-shortlisted-${candidate.id}`}
                       >
                         <Eye className="w-4 h-4" />
@@ -645,7 +645,7 @@ export default function RecruitmentDashboard() {
       </Dialog>
 
       <Dialog open={selectedModal === 'placements'} onOpenChange={() => setSelectedModal(null)}>
-        <DialogContent className="bg-black border-white/10 text-white max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="bg-black border-border dark:border-white/10 text-white max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Successful Placements</DialogTitle>
             <DialogDescription className="text-gray-400">
@@ -654,7 +654,7 @@ export default function RecruitmentDashboard() {
           </DialogHeader>
           <div className="space-y-3">
             {candidates?.filter(c => c.stage === "Hired").map((candidate) => (
-              <div key={candidate.id} className="p-4 bg-white/5 rounded-lg border border-white/10">
+              <div key={candidate.id} className="p-4 bg-white/5 rounded-lg border border-border dark:border-white/10">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <h3 className="font-semibold">{candidate.fullName}</h3>
@@ -667,7 +667,7 @@ export default function RecruitmentDashboard() {
                       <Button 
                         size="sm" 
                         variant="outline" 
-                        className="gap-1 border-white/20 hover:bg-white/10"
+                        className="gap-1 border-border dark:border-white/20 hover:bg-white/10"
                         data-testid={`button-view-hired-${candidate.id}`}
                       >
                         <Eye className="w-4 h-4" />
@@ -686,7 +686,7 @@ export default function RecruitmentDashboard() {
       </Dialog>
 
       <Dialog open={selectedModal === 'lost'} onOpenChange={() => setSelectedModal(null)}>
-        <DialogContent className="bg-black border-white/10 text-white max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="bg-black border-border dark:border-white/10 text-white max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Lost Candidates</DialogTitle>
             <DialogDescription className="text-gray-400">
@@ -695,7 +695,7 @@ export default function RecruitmentDashboard() {
           </DialogHeader>
           <div className="space-y-3">
             {candidates?.filter(c => c.stage === "Lost" || c.status === "Rejected").map((candidate) => (
-              <div key={candidate.id} className="p-4 bg-white/5 rounded-lg border border-white/10">
+              <div key={candidate.id} className="p-4 bg-white/5 rounded-lg border border-border dark:border-white/10">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <h3 className="font-semibold">{candidate.fullName}</h3>
@@ -711,7 +711,7 @@ export default function RecruitmentDashboard() {
                       <Button 
                         size="sm" 
                         variant="outline" 
-                        className="gap-1 border-white/20 hover:bg-white/10"
+                        className="gap-1 border-border dark:border-white/20 hover:bg-white/10"
                         data-testid={`button-view-lost-${candidate.id}`}
                       >
                         <Eye className="w-4 h-4" />

@@ -229,7 +229,7 @@ function EmployeeReviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gray-900 border-white/10">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gray-900 border-border dark:border-white/10">
         <DialogHeader>
           <DialogTitle className="text-xl text-white flex items-center gap-2">
             <User className="w-5 h-5 text-blue-400" />
@@ -254,7 +254,7 @@ function EmployeeReviewDialog({
             )}
 
             {assignments.map(assignment => (
-              <Card key={assignment.id} className="bg-gray-800/50 border-white/10">
+              <Card key={assignment.id} className="bg-gray-800/50 border-border dark:border-white/10">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div>
@@ -413,7 +413,7 @@ export default function KPIManagerReviewPage() {
         </div>
 
         {activeCycles.length === 0 ? (
-          <Card className="bg-gray-900/50 border-white/10">
+          <Card className="bg-gray-900/50 border-border dark:border-white/10">
             <CardContent className="py-12 text-center">
               <Clock className="w-12 h-12 text-gray-500 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-white mb-2">No Review Cycles</h3>
@@ -444,7 +444,7 @@ export default function KPIManagerReviewPage() {
             </div>
 
             {selectedCycle && (
-              <Card className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 border-white/10 mb-6">
+              <Card className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 border-border dark:border-white/10 mb-6">
                 <CardContent className="py-4">
                   <div className="flex items-center justify-between flex-wrap gap-4">
                     <div className="flex items-center gap-6">
@@ -565,7 +565,7 @@ export default function KPIManagerReviewPage() {
                 )}
 
                 {pendingReviews.length === 0 && completedReviews.length === 0 && (
-                  <Card className="bg-gray-900/50 border-white/10">
+                  <Card className="bg-gray-900/50 border-border dark:border-white/10">
                     <CardContent className="py-12 text-center">
                       <Users className="w-12 h-12 text-gray-500 mx-auto mb-4" />
                       <h3 className="text-xl font-semibold text-white mb-2">No Reviews Yet</h3>

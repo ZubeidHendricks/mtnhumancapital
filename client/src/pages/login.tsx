@@ -69,7 +69,7 @@ export default function Login() {
           <p className="text-muted-foreground mt-2">Sign in to your Avatar Human Capital workspace</p>
         </div>
 
-        <Card className="border-white/10 bg-card/50 backdrop-blur-xl">
+        <Card className="border-border dark:border-white/10 bg-card/50 backdrop-blur-xl">
           <CardHeader>
             <CardTitle>Authentication</CardTitle>
             <CardDescription>Enter your credentials to access the platform</CardDescription>
@@ -88,7 +88,7 @@ export default function Login() {
                   id="email" 
                   type="email" 
                   placeholder="admin@company.com" 
-                  className="bg-black/20 border-white/10"
+                  className="bg-black/20 border-border dark:border-white/10"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -106,7 +106,7 @@ export default function Login() {
                     id="password" 
                     type="password" 
                     placeholder="••••••••" 
-                    className="pl-9 bg-black/20 border-white/10"
+                    className="pl-9 bg-black/20 border-border dark:border-white/10"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -129,18 +129,18 @@ export default function Login() {
               </Button>
             </form>
           </CardContent>
-          <CardFooter className="flex flex-col gap-4 border-t border-white/5 pt-6">
+          <CardFooter className="flex flex-col gap-4 border-t border-border dark:border-white/5 pt-6">
             <div className="text-center text-sm text-muted-foreground">
               Don't have an account? <span className="text-primary cursor-pointer hover:underline">Contact Sales</span>
             </div>
             
             {/* Demo Bypass */}
-            <div className="w-full pt-4 border-t border-white/5">
+            <div className="w-full pt-4 border-t border-border dark:border-white/5">
               <p className="text-xs text-center text-muted-foreground mb-2">Dev Mode Options</p>
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="w-full border-white/10 hover:bg-white/5"
+                className="w-full border-border dark:border-white/10 hover:bg-white/5"
                 onClick={handleDemoLogin}
               >
                 Use Demo Credentials (Mock)

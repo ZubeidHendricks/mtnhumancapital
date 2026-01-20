@@ -156,7 +156,7 @@ export default function HRManagementAgent() {
           
           {/* LEFT: Workflow Visualization */}
           <div className="hidden lg:block lg:col-span-3 flex flex-col gap-6 h-full overflow-hidden">
-            <Card className="bg-card/30 border-white/10 backdrop-blur-sm flex-1 flex flex-col overflow-hidden">
+            <Card className="bg-card/30 border-border dark:border-white/10 backdrop-blur-sm flex-1 flex flex-col overflow-hidden">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-bold flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-primary" /> 
@@ -221,8 +221,8 @@ export default function HRManagementAgent() {
 
           {/* MIDDLE: Chat Interface */}
           <div className="lg:col-span-6 flex flex-col h-full">
-            <Card className="flex-1 flex flex-col bg-card/50 border-white/10 backdrop-blur-md overflow-hidden">
-              <CardHeader className="border-b border-white/5 py-3">
+            <Card className="flex-1 flex flex-col bg-card/50 border-border dark:border-white/10 backdrop-blur-md overflow-hidden">
+              <CardHeader className="border-b border-border dark:border-white/5 py-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
@@ -244,7 +244,7 @@ export default function HRManagementAgent() {
                       animate={{ opacity: 1, y: 0 }}
                       className={`flex items-start gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
                     >
-                      <Avatar className={`w-8 h-8 ${msg.role === "agent" ? "border border-primary/50" : "border border-white/10"}`}>
+                      <Avatar className={`w-8 h-8 ${msg.role === "agent" ? "border border-primary/50" : "border border-border dark:border-white/10"}`}>
                         <AvatarImage src={msg.role === "agent" ? "" : "/user.png"} />
                         <AvatarFallback className={msg.role === "agent" ? "bg-primary/10 text-primary" : "bg-white/10"}>
                           {msg.role === "agent" ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}
@@ -254,7 +254,7 @@ export default function HRManagementAgent() {
                       <div className={`rounded-2xl px-4 py-3 max-w-[80%] text-sm leading-relaxed ${
                         msg.role === "user" 
                           ? "bg-primary text-primary-foreground rounded-tr-none" 
-                          : "bg-white/5 border border-white/10 rounded-tl-none"
+                          : "bg-white/5 border border-border dark:border-white/10 rounded-tl-none"
                       }`}>
                         <div className="whitespace-pre-wrap">{msg.content}</div>
                         <div className={`text-[10px] mt-1 opacity-50 ${msg.role === "user" ? "text-primary-foreground" : "text-muted-foreground"}`}>
@@ -275,7 +275,7 @@ export default function HRManagementAgent() {
                           <Bot className="w-4 h-4" />
                         </AvatarFallback>
                       </Avatar>
-                      <div className="bg-white/5 border border-white/10 rounded-2xl rounded-tl-none px-4 py-3 flex items-center gap-2">
+                      <div className="bg-white/5 border border-border dark:border-white/10 rounded-2xl rounded-tl-none px-4 py-3 flex items-center gap-2">
                         <Loader2 className="w-4 h-4 animate-spin text-primary" />
                         <span className="text-xs text-muted-foreground">Compiling department reports...</span>
                       </div>
@@ -285,14 +285,14 @@ export default function HRManagementAgent() {
                 </div>
               </ScrollArea>
 
-              <div className="p-4 border-t border-white/5 bg-black/20">
+              <div className="p-4 border-t border-border dark:border-white/5 bg-black/20">
                 <div className="flex gap-2">
                   <Input 
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
                     placeholder="Ask for performance reports, payroll status, or training stats..." 
-                    className="bg-white/5 border-white/10 focus-visible:ring-primary/50"
+                    className="bg-white/5 border-border dark:border-white/10 focus-visible:ring-primary/50"
                   />
                   <Button 
                     onClick={handleSendMessage}
@@ -308,7 +308,7 @@ export default function HRManagementAgent() {
 
           {/* RIGHT: Live Analytics Dashboard */}
           <div className="hidden lg:block lg:col-span-3 flex flex-col gap-6 h-full overflow-hidden">
-            <Card className="bg-card/30 border-white/10 backdrop-blur-sm flex-1 flex flex-col overflow-hidden">
+            <Card className="bg-card/30 border-border dark:border-white/10 backdrop-blur-sm flex-1 flex flex-col overflow-hidden">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-bold flex items-center gap-2">
                   <BarChart3 className="w-4 h-4 text-primary" /> 

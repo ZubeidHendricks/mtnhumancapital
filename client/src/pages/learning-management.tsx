@@ -494,7 +494,7 @@ export default function LearningManagement() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-black/40 border-white/10">
+          <Card className="bg-black/40 border-border dark:border-white/10">
             <CardHeader className="pb-2">
               <CardDescription className="flex items-center gap-2">
                 <BookOpen className="w-4 h-4" />
@@ -506,7 +506,7 @@ export default function LearningManagement() {
               <p className="text-xs text-muted-foreground">Across all departments</p>
             </CardContent>
           </Card>
-          <Card className="bg-black/40 border-white/10">
+          <Card className="bg-black/40 border-border dark:border-white/10">
             <CardHeader className="pb-2">
               <CardDescription className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
@@ -518,7 +518,7 @@ export default function LearningManagement() {
               <p className="text-xs text-muted-foreground">Total enrollments</p>
             </CardContent>
           </Card>
-          <Card className="bg-black/40 border-white/10">
+          <Card className="bg-black/40 border-border dark:border-white/10">
             <CardHeader className="pb-2">
               <CardDescription className="flex items-center gap-2">
                 <Target className="w-4 h-4" />
@@ -534,7 +534,7 @@ export default function LearningManagement() {
               <p className="text-xs text-muted-foreground">Target: 85%</p>
             </CardContent>
           </Card>
-          <Card className="bg-black/40 border-white/10">
+          <Card className="bg-black/40 border-border dark:border-white/10">
             <CardHeader className="pb-2">
               <CardDescription className="flex items-center gap-2">
                 <GraduationCap className="w-4 h-4" />
@@ -549,7 +549,7 @@ export default function LearningManagement() {
         </div>
 
         <Tabs defaultValue="courses" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-black/40 border border-white/10">
+          <TabsList className="grid w-full grid-cols-5 bg-black/40 border border-border dark:border-white/10">
             <TabsTrigger value="courses">Courses</TabsTrigger>
             <TabsTrigger value="assignments">Assign Courses</TabsTrigger>
             <TabsTrigger value="progress">Learner Progress</TabsTrigger>
@@ -565,7 +565,7 @@ export default function LearningManagement() {
                   placeholder="Search courses..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-black/40 border-white/10"
+                  className="pl-10 bg-black/40 border-border dark:border-white/10"
                   data-testid="input-search-courses"
                 />
               </div>
@@ -589,7 +589,7 @@ export default function LearningManagement() {
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
               </div>
             ) : filteredCourses.length === 0 ? (
-              <Card className="bg-black/40 border-white/10">
+              <Card className="bg-black/40 border-border dark:border-white/10">
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <BookOpen className="w-12 h-12 text-muted-foreground mb-4" />
                   <h3 className="text-lg font-medium text-white mb-2">No courses found</h3>
@@ -607,7 +607,7 @@ export default function LearningManagement() {
                 {filteredCourses.map((course) => {
                   const progress = getProgressForCourse(course.id);
                   return (
-                    <Card key={course.id} className="bg-black/40 border-white/10 overflow-hidden group hover:border-primary/50 transition-all" data-testid={`card-course-${course.id}`}>
+                    <Card key={course.id} className="bg-black/40 border-border dark:border-white/10 overflow-hidden group hover:border-primary/50 transition-all" data-testid={`card-course-${course.id}`}>
                       <div className="relative h-48 bg-gradient-to-br from-primary/20 to-purple-500/20 overflow-hidden">
                         <div className="absolute inset-0 flex items-center justify-center">
                           <BookOpen className="w-16 h-16 text-primary/50" />
@@ -666,7 +666,7 @@ export default function LearningManagement() {
           </TabsContent>
 
           <TabsContent value="assignments" className="space-y-6">
-            <Card className="bg-black/40 border-white/10">
+            <Card className="bg-black/40 border-border dark:border-white/10">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Users className="w-5 h-5" />
@@ -680,7 +680,7 @@ export default function LearningManagement() {
                     <div>
                       <Label className="text-white mb-2 block">Select Course</Label>
                       <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
-                        <SelectTrigger className="bg-black/40 border-white/10" data-testid="select-course">
+                        <SelectTrigger className="bg-black/40 border-border dark:border-white/10" data-testid="select-course">
                           <SelectValue placeholder="Choose a course..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -693,7 +693,7 @@ export default function LearningManagement() {
                     <div>
                       <Label className="text-white mb-2 block">Select Employee</Label>
                       <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-                        <SelectTrigger className="bg-black/40 border-white/10" data-testid="select-employee">
+                        <SelectTrigger className="bg-black/40 border-border dark:border-white/10" data-testid="select-employee">
                           <SelectValue placeholder="Choose an employee..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -753,25 +753,25 @@ export default function LearningManagement() {
 
           <TabsContent value="progress" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="bg-black/40 border-white/10">
+              <Card className="bg-black/40 border-border dark:border-white/10">
                 <CardHeader className="pb-3">
                   <CardDescription>Courses Completed</CardDescription>
                   <CardTitle className="text-3xl text-white">{allProgress.filter(p => p.status === "completed").length}</CardTitle>
                 </CardHeader>
               </Card>
-              <Card className="bg-black/40 border-white/10">
+              <Card className="bg-black/40 border-border dark:border-white/10">
                 <CardHeader className="pb-3">
                   <CardDescription>Hours Learned</CardDescription>
                   <CardTitle className="text-3xl text-white">{Math.round(allProgress.reduce((sum, p) => sum + (p.timeSpent || 0), 0) / 60)}h</CardTitle>
                 </CardHeader>
               </Card>
-              <Card className="bg-black/40 border-white/10">
+              <Card className="bg-black/40 border-border dark:border-white/10">
                 <CardHeader className="pb-3">
                   <CardDescription>In Progress</CardDescription>
                   <CardTitle className="text-3xl text-white">{allProgress.filter(p => p.status === "in_progress").length}</CardTitle>
                 </CardHeader>
               </Card>
-              <Card className="bg-black/40 border-white/10">
+              <Card className="bg-black/40 border-border dark:border-white/10">
                 <CardHeader className="pb-3">
                   <CardDescription>Badges Earned</CardDescription>
                   <CardTitle className="text-3xl text-white">{allBadges.length}</CardTitle>
@@ -779,7 +779,7 @@ export default function LearningManagement() {
               </Card>
             </div>
 
-            <Card className="bg-black/40 border-white/10">
+            <Card className="bg-black/40 border-border dark:border-white/10">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Target className="w-5 h-5 text-yellow-500" />
@@ -812,7 +812,7 @@ export default function LearningManagement() {
             </Card>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="bg-black/40 border-white/10">
+              <Card className="bg-black/40 border-border dark:border-white/10">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <Award className="w-5 h-5 text-green-500" />
@@ -836,7 +836,7 @@ export default function LearningManagement() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-black/40 border-white/10">
+              <Card className="bg-black/40 border-border dark:border-white/10">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <Clock className="w-5 h-5 text-gray-400" />
@@ -848,7 +848,7 @@ export default function LearningManagement() {
                     <p className="text-muted-foreground text-center py-4">All assigned courses have been started.</p>
                   ) : (
                     allProgress.filter(p => p.status === "not_started").map((progress, idx) => (
-                      <div key={`notstarted-${idx}`} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
+                      <div key={`notstarted-${idx}`} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-border dark:border-white/10">
                         <div>
                           <p className="text-white font-medium">{progress.userName}</p>
                           <p className="text-sm text-muted-foreground">{progress.courseTitle}</p>
@@ -861,7 +861,7 @@ export default function LearningManagement() {
               </Card>
             </div>
 
-            <Card className="bg-black/40 border-white/10">
+            <Card className="bg-black/40 border-border dark:border-white/10">
               <CardHeader>
                 <CardTitle className="text-white">All Learner Progress</CardTitle>
                 <CardDescription>Complete overview of all employees' training progress</CardDescription>
@@ -870,7 +870,7 @@ export default function LearningManagement() {
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-white/10">
+                      <tr className="border-b border-border dark:border-white/10">
                         <th className="text-left p-3 text-muted-foreground font-medium">Employee</th>
                         <th className="text-left p-3 text-muted-foreground font-medium">Course</th>
                         <th className="text-left p-3 text-muted-foreground font-medium">Status</th>
@@ -888,7 +888,7 @@ export default function LearningManagement() {
                         </tr>
                       ) : (
                         allProgress.map((progress, idx) => (
-                          <tr key={`row-${idx}`} className="border-b border-white/5 hover:bg-white/5">
+                          <tr key={`row-${idx}`} className="border-b border-border dark:border-white/5 hover:bg-white/5">
                             <td className="p-3 text-white">{progress.userName}</td>
                             <td className="p-3 text-muted-foreground">{progress.courseTitle}</td>
                             <td className="p-3">
@@ -966,7 +966,7 @@ export default function LearningManagement() {
               </Card>
             </div>
 
-            <Card className="bg-black/40 border-white/10">
+            <Card className="bg-black/40 border-border dark:border-white/10">
               <CardHeader>
                 <CardTitle className="text-white">Badges Earned by Employees</CardTitle>
                 <CardDescription>Recognition for learning achievements across the organization</CardDescription>
@@ -1009,7 +1009,7 @@ export default function LearningManagement() {
           </TabsContent>
 
           <TabsContent value="leaderboard" className="space-y-6">
-            <Card className="bg-black/40 border-white/10">
+            <Card className="bg-black/40 border-border dark:border-white/10">
               <CardHeader>
                 <CardTitle className="text-white">Top Learners</CardTitle>
                 <CardDescription>Employee rankings based on learning achievements</CardDescription>
@@ -1025,7 +1025,7 @@ export default function LearningManagement() {
                     {leaderboard.map((entry, index) => (
                       <div
                         key={entry.userId}
-                        className={`flex items-center gap-4 p-4 rounded-lg bg-black/20 border border-white/5`}
+                        className={`flex items-center gap-4 p-4 rounded-lg bg-black/20 border border-border dark:border-white/5`}
                         data-testid={`leaderboard-entry-${entry.userId}`}
                       >
                         <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold ${
@@ -1059,7 +1059,7 @@ export default function LearningManagement() {
 
       {/* Send Reminder Dialog */}
       <Dialog open={reminderDialogOpen} onOpenChange={setReminderDialogOpen}>
-        <DialogContent className="bg-black/95 border-white/10">
+        <DialogContent className="bg-black/95 border-border dark:border-white/10">
           <DialogHeader>
             <DialogTitle className="text-white flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-primary" />
@@ -1067,7 +1067,7 @@ export default function LearningManagement() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="bg-white/5 p-4 rounded-lg border border-white/10">
+            <div className="bg-white/5 p-4 rounded-lg border border-border dark:border-white/10">
               <p className="text-sm text-muted-foreground mb-1">Sending reminder to:</p>
               <p className="text-white font-medium">{reminderProgress?.userName}</p>
               <p className="text-sm text-muted-foreground mt-2 mb-1">About course:</p>
@@ -1082,7 +1082,7 @@ export default function LearningManagement() {
                 value={reminderMessage}
                 onChange={(e) => setReminderMessage(e.target.value)}
                 rows={4}
-                className="bg-white/5 border-white/10 text-white"
+                className="bg-white/5 border-border dark:border-white/10 text-white"
                 data-testid="input-reminder-message"
               />
               <p className="text-xs text-muted-foreground">This message will be sent via WhatsApp if the employee has a phone number on file.</p>

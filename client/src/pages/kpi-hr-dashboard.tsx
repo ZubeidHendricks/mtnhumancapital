@@ -249,7 +249,7 @@ HR Team`);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl bg-gray-900 border-white/10">
+      <DialogContent className="max-w-2xl bg-gray-900 border-border dark:border-white/10">
         <DialogHeader>
           <DialogTitle className="text-xl text-white flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-blue-400" />
@@ -402,7 +402,7 @@ function EmployeeDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gray-900 border-white/10">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gray-900 border-border dark:border-white/10">
         <DialogHeader>
           <DialogTitle className="text-xl text-white flex items-center gap-2">
             <User className="w-5 h-5 text-blue-400" />
@@ -415,7 +415,7 @@ function EmployeeDetailDialog({
 
         <div className="space-y-6">
           <div className="grid grid-cols-3 gap-4">
-            <Card className="bg-gray-800/50 border-white/10">
+            <Card className="bg-gray-800/50 border-border dark:border-white/10">
               <CardContent className="p-4 text-center">
                 <p className="text-sm text-gray-400">Final Score</p>
                 <p className={cn(
@@ -430,7 +430,7 @@ function EmployeeDetailDialog({
                 </p>
               </CardContent>
             </Card>
-            <Card className="bg-gray-800/50 border-white/10">
+            <Card className="bg-gray-800/50 border-border dark:border-white/10">
               <CardContent className="p-4 text-center">
                 <p className="text-sm text-gray-400">Self-Assessment</p>
                 <Badge variant={submission.selfAssessmentStatus === "completed" ? "default" : "secondary"} className="mt-2">
@@ -438,7 +438,7 @@ function EmployeeDetailDialog({
                 </Badge>
               </CardContent>
             </Card>
-            <Card className="bg-gray-800/50 border-white/10">
+            <Card className="bg-gray-800/50 border-border dark:border-white/10">
               <CardContent className="p-4 text-center">
                 <p className="text-sm text-gray-400">Manager Review</p>
                 <Badge variant={submission.managerReviewStatus === "completed" ? "default" : "secondary"} className="mt-2">
@@ -459,7 +459,7 @@ function EmployeeDetailDialog({
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow className="border-white/10">
+                  <TableRow className="border-border dark:border-white/10">
                     <TableHead className="text-gray-400">KPI</TableHead>
                     <TableHead className="text-gray-400">Category</TableHead>
                     <TableHead className="text-gray-400">Weight</TableHead>
@@ -470,7 +470,7 @@ function EmployeeDetailDialog({
                 </TableHeader>
                 <TableBody>
                   {assignments.map(assignment => (
-                    <TableRow key={assignment.id} className="border-white/10">
+                    <TableRow key={assignment.id} className="border-border dark:border-white/10">
                       <TableCell className="text-white font-medium">
                         {assignment.template?.name}
                       </TableCell>
@@ -530,7 +530,7 @@ function EmployeeDetailDialog({
               <h3 className="text-lg font-semibold text-white mb-3">360° Feedback</h3>
               <div className="space-y-3">
                 {feedback360.map(fb => (
-                  <Card key={fb.id} className="bg-gray-800/50 border-white/10">
+                  <Card key={fb.id} className="bg-gray-800/50 border-border dark:border-white/10">
                     <CardContent className="p-4">
                       {fb.competencyScores && Object.keys(fb.competencyScores).length > 0 && (
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
@@ -856,7 +856,7 @@ export default function KPIHRDashboard() {
         </div>
 
         {selectedCycle && (
-          <Card className="bg-gray-900/50 border-white/10 mb-6">
+          <Card className="bg-gray-900/50 border-border dark:border-white/10 mb-6">
             <CardContent className="py-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -881,7 +881,7 @@ export default function KPIHRDashboard() {
           </Card>
         )}
 
-        <Card className="bg-gray-900/50 border-white/10">
+        <Card className="bg-gray-900/50 border-border dark:border-white/10">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -935,7 +935,7 @@ export default function KPIHRDashboard() {
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow className="border-white/10">
+                  <TableRow className="border-border dark:border-white/10">
                     <TableHead className="w-12">
                       <Checkbox
                         checked={selectedEmployeeIds.size === filteredSubmissions.length && filteredSubmissions.length > 0}
@@ -956,7 +956,7 @@ export default function KPIHRDashboard() {
                     <TableRow 
                       key={submission.id} 
                       className={cn(
-                        "border-white/10 cursor-pointer hover:bg-white/5",
+                        "border-border dark:border-white/10 cursor-pointer hover:bg-white/5",
                         selectedEmployeeIds.has(submission.id) && "bg-blue-500/10"
                       )}
                       data-testid={`employee-row-${submission.id}`}
