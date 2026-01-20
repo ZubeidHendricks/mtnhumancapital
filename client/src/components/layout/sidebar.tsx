@@ -174,7 +174,7 @@ export function Sidebar() {
           return (
             <div key={section.title} className="mb-4">
               {!collapsed && (
-                <h3 className="px-3 mb-2 text-[10px] font-semibold text-muted-foreground tracking-wider uppercase">
+                <h3 className="px-3 mb-2 text-[10px] font-bold text-foreground/60 tracking-wider uppercase">
                   {section.title}
                 </h3>
               )}
