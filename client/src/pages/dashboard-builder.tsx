@@ -284,7 +284,6 @@ export default function DashboardBuilder() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
       
       <style>{`
         .react-grid-item > .react-resizable-handle {

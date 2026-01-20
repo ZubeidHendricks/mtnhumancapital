@@ -1,10 +1,11 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { ScrollToTop } from "@/components/ui/scroll-to-top";
 import { TenantProvider } from "@/contexts/TenantContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { AppLayout } from "@/components/layout/app-layout";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Login from "@/pages/login";
@@ -126,12 +127,32 @@ function Router() {
   );
 }
 
+function AppWithLayout() {
+  const [location] = useLocation();
+  
+  const publicRoutes = ['/', '/login', '/interview/invite', '/self-assessment', '/verify-certificate', '/onboarding'];
+  const isPublicRoute = publicRoutes.some(route => {
+    if (route === '/') return location === '/';
+    return location.startsWith(route);
+  });
+
+  if (isPublicRoute) {
+    return <Router />;
+  }
+
+  return (
+    <AppLayout>
+      <Router />
+    </AppLayout>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <TenantProvider>
-          <Router />
+          <AppWithLayout />
           <Toaster />
           <ScrollToTop />
         </TenantProvider>

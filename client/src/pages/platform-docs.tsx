@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Navbar } from "@/components/layout/navbar";
 import { BackButton } from "@/components/ui/back-button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -133,7 +132,6 @@ export default function PlatformDocumentation() {
 
   return (
     <div className="min-h-screen bg-black">
-      <Navbar />
       <div className="container mx-auto p-4 md:p-6 space-y-8 pt-20 md:pt-24">
         <BackButton fallbackPath="/admin-dashboard" />
 

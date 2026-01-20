@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Navbar } from "@/components/layout/navbar";
 import { BackButton } from "@/components/ui/back-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -388,7 +387,6 @@ export default function LearningManagement() {
 
   return (
     <div className="min-h-screen bg-black">
-      <Navbar />
       <div className="container mx-auto p-4 md:p-6 space-y-6 pt-20 md:pt-24">
         <BackButton fallbackPath="/hr-dashboard" />
 

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTenantQueryKey } from "@/hooks/useTenant";
-import { Navbar } from "@/components/layout/navbar";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/ui/back-button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -309,7 +308,6 @@ export default function IntegrityAgent() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <Navbar />
       
       <div className="flex-1 pt-20 container mx-auto px-4 py-6 h-[calc(100vh-80px)]">
         <div className="mb-6">

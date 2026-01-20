@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -127,7 +126,6 @@ export default function LMSManagement() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
       <div className="container mx-auto py-8 px-4">
         <div className="flex items-center justify-between mb-8">
           <div>

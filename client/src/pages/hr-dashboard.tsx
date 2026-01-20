@@ -1,7 +1,6 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { jobsService, candidateService, api } from "@/lib/api";
-import { Navbar } from "@/components/layout/navbar";
 import { useTenantQueryKey } from "@/hooks/useTenant";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -674,7 +673,6 @@ BENEFITS:
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Navbar />
       
       <main className="pt-24 pb-12 px-6 container mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">

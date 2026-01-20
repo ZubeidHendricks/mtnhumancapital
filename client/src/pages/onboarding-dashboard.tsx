@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -281,7 +280,6 @@ export default function OnboardingDashboard() {
   if (loadingWorkflows) {
     return (
       <div className="min-h-screen bg-background text-foreground">
-        <Navbar />
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4" data-testid="loading-spinner">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
           <p className="text-muted-foreground">Loading onboarding data...</p>
@@ -292,7 +290,6 @@ export default function OnboardingDashboard() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Navbar />
       
       <main className="pt-24 pb-12 px-6 container mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">

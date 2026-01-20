@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Navbar } from "@/components/layout/navbar";
 import { BackButton } from "@/components/ui/back-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -99,7 +98,6 @@ This is an initial screening interview to assess the candidate's potential fit f
 
   return (
     <div className="min-h-screen bg-black">
-      <Navbar />
       <div className="container mx-auto px-4 py-8 max-w-5xl pt-24 md:pt-28">
         <BackButton />
         

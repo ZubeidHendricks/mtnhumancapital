@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -151,7 +150,6 @@ export default function TenantRequests() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
       
       <main className="container mx-auto px-4 py-8 mt-20">
         <div className="mb-8">

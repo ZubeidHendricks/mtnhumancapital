@@ -2,7 +2,6 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { jobsService, candidateService, api } from "@/lib/api";
 import { useTenantQueryKey } from "@/hooks/useTenant";
-import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -1509,7 +1508,6 @@ BENEFITS:
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
       
       <main className="container mx-auto px-6 pt-24 pb-12">
         <div className="flex items-center justify-between mb-6">

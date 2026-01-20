@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { candidateService } from "@/lib/api";
 import { useTenantQueryKey } from "@/hooks/useTenant";
-import { Navbar } from "@/components/layout/navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -126,7 +125,6 @@ export default function ShortlistedCandidates() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-foreground flex flex-col">
-      <Navbar />
       
       <div className="flex-1 flex overflow-hidden pt-16">
         {/* LEFT PANEL */}

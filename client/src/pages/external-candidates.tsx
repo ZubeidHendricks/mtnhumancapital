@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -254,7 +253,6 @@ export default function ExternalCandidates() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
       <main className="pt-20 pb-16">
         <div className="container mx-auto px-4 md:px-6 py-8">
           <div className="flex flex-col gap-6">

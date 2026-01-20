@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Navbar } from "@/components/layout/navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -765,7 +764,6 @@ export default function KPIHRDashboard() {
 
   return (
     <div className="min-h-screen bg-black">
-      <Navbar />
       
       <main className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">

@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { jobsService, candidateService, api } from "@/lib/api";
 import { useTenantQueryKey } from "@/hooks/useTenant";
-import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -126,7 +125,6 @@ export default function PipelineBoard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
       
       <main className="container mx-auto px-6 pt-24 pb-12">
         <div className="mb-6">

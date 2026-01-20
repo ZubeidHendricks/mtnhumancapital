@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import { Navbar } from "@/components/layout/navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -151,7 +150,6 @@ export default function HRManagementAgent() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <Navbar />
       
       <div className="flex-1 pt-20 container mx-auto px-4 py-6 h-[calc(100vh-80px)]">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">

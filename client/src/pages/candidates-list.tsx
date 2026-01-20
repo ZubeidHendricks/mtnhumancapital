@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { candidateService, jobsService } from "@/lib/api";
-import { Navbar } from "@/components/layout/navbar";
 import { useTenantQueryKey } from "@/hooks/useTenant";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -340,7 +339,6 @@ AHC Recruiting Team`;
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-foreground flex flex-col">
-      <Navbar />
       
       <div className="flex-1 flex overflow-hidden pt-16">
         {/* LEFT PANEL: JOB CONFIGURATION */}

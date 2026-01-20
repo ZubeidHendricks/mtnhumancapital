@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -92,7 +91,6 @@ export default function PlatformSettings() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <Navbar />
       <div className="pt-20 pb-8">
         <div className="container mx-auto px-4 max-w-4xl">
           <div className="mb-8">

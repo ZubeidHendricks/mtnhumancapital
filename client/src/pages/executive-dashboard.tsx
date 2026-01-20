@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { candidateService } from "@/lib/api";
 import { useTenantQueryKey } from "@/hooks/useTenant";
-import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -111,7 +110,6 @@ export default function ExecutiveDashboard() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Navbar />
       
       <main className="pt-24 pb-12 px-6 container mx-auto">
         

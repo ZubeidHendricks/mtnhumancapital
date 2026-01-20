@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSearch, useLocation } from "wouter";
-import { Navbar } from "@/components/layout/navbar";
 import { useTenantQueryKey } from "@/hooks/useTenant";
 import { api } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -540,7 +539,6 @@ export default function WhatsAppMonitor() {
 
   return (
     <div className="min-h-screen bg-background text-foreground" data-testid="whatsapp-monitor-page">
-      <Navbar />
       <main className="container mx-auto px-6 pt-24 pb-12">
         <div className="mb-8">
           <div className="flex items-center justify-between">

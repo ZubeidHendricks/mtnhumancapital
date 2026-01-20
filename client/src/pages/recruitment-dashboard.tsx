@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { candidateService, jobsService } from "@/lib/api";
 import { useTenantQueryKey } from "@/hooks/useTenant";
-import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -174,7 +173,6 @@ export default function RecruitmentDashboard() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <Navbar />
       
       <main className="pt-24 pb-12 px-6 container mx-auto">
         {/* Header */}
