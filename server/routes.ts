@@ -8524,6 +8524,37 @@ Format your response as JSON:
   // Register Fleet Logix routes
   registerFleetLogixRoutes(app);
 
+  // ============= EXTERNAL API PROXY: WEFINDJOBS =============
+  const WEFINDJOBS_BASE = "https://wefindjobs.co.za";
+  
+  app.get("/api/proxy/wefindjobs/profiles", async (req, res) => {
+    try {
+      const response = await fetch(`${WEFINDJOBS_BASE}/api/profiles`);
+      if (!response.ok) {
+        throw new Error(`WeFindjobs API error: ${response.statusText}`);
+      }
+      const data = await response.json();
+      res.json(data);
+    } catch (error: any) {
+      console.error("Error fetching wefindjobs profiles:", error);
+      res.status(500).json({ success: false, message: error.message || "Failed to fetch profiles" });
+    }
+  });
+
+  app.get("/api/proxy/wefindjobs/contacts", async (req, res) => {
+    try {
+      const response = await fetch(`${WEFINDJOBS_BASE}/api/contacts`);
+      if (!response.ok) {
+        throw new Error(`WeFindjobs API error: ${response.statusText}`);
+      }
+      const data = await response.json();
+      res.json(data);
+    } catch (error: any) {
+      console.error("Error fetching wefindjobs contacts:", error);
+      res.status(500).json({ success: false, message: error.message || "Failed to fetch contacts" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

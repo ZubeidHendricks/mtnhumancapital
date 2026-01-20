@@ -80,8 +80,8 @@ export default function ExternalCandidates() {
     queryKey: ["external-profiles"],
     queryFn: async () => {
       const [profilesRes, contactsRes] = await Promise.all([
-        fetch(`${EXTERNAL_API_BASE}/api/profiles`),
-        fetch(`${EXTERNAL_API_BASE}/api/contacts`)
+        fetch(`/api/proxy/wefindjobs/profiles`),
+        fetch(`/api/proxy/wefindjobs/contacts`)
       ]);
       
       if (!profilesRes.ok) {
