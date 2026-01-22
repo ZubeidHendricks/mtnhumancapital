@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { ArrowRight, PlayCircle } from "lucide-react";
+import { Link } from "wouter";
 import heroBg from "@assets/generated_images/abstract_tech_network_visualization.png";
 
 export function Hero() {
@@ -63,9 +64,11 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <Button size="lg" className="h-12 px-8 text-base bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/25 transition-all hover:scale-105">
-              Start Transformation <ArrowRight className="ml-2 w-4 h-4" />
-            </Button>
+            <Link href="/login">
+              <Button size="lg" className="h-12 px-8 text-base bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/25 transition-all hover:scale-105">
+                Start Transformation <ArrowRight className="ml-2 w-4 h-4" />
+              </Button>
+            </Link>
             <Button size="lg" variant="outline" className="h-12 px-8 text-base border-border hover:bg-accent">
               <PlayCircle className="mr-2 w-4 h-4" /> Watch Demo
             </Button>
