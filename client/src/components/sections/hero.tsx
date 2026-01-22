@@ -26,13 +26,11 @@ export function Hero() {
             transition={{ duration: 0.5 }}
             className="flex flex-col items-center"
           >
-            <div className="bg-zinc-900 rounded-xl px-4 py-3 mb-8">
-              <img 
-                src="/logos/main-logo.png" 
-                alt="Avatar Human Capital" 
-                className="h-20 md:h-28 w-auto object-contain"
-              />
-            </div>
+            <img 
+              src="/logos/main-logo.png" 
+              alt="Avatar Human Capital" 
+              className="h-24 sm:h-32 md:h-40 lg:h-48 w-auto object-contain mb-8"
+            />
             <span className="inline-block py-1.5 px-4 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium tracking-wide mb-6">
               NEXT GEN ADVISORY SERVICES
             </span>
