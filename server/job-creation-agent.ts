@@ -11,8 +11,18 @@ interface ConversationMessage {
 
 interface JobSpecData {
   title?: string;
+  customer?: string;
+  introduction?: string;
   department?: string;
   description?: string;
+  duties?: string[];
+  attributes?: string[];
+  qualifications?: string[];
+  remuneration?: string;
+  gender?: string;
+  ethics?: string;
+  city?: string;
+  province?: string;
   location?: string;
   employmentType?: string;
   shiftStructure?: string;
@@ -25,6 +35,10 @@ interface JobSpecData {
   certificationsRequired?: string[];
   physicalRequirements?: string;
   equipmentExperience?: Record<string, string>;
+  requirements?: string[];
+  responsibilities?: string[];
+  benefits?: string[];
+  skills?: string[];
 }
 
 /**
@@ -399,6 +413,105 @@ IMPORTANT:
     } catch (error) {
       console.error("Error parsing full spec:", error);
       throw new Error("Failed to parse job specification. Please try again.");
+    }
+  }
+
+  /**
+   * Research job specification from internet and industry standards
+   * Auto-populates all fields based on the job title
+   */
+  async researchJobSpec(jobTitle: string, customer?: string): Promise<{
+    jobSpec: JobSpecData;
+    isComplete: boolean;
+  }> {
+    const researchPrompt = `You are an expert HR consultant in South Africa. Research and create a comprehensive job specification for the following position.
+
+JOB TITLE: ${jobTitle}
+${customer ? `CUSTOMER/COMPANY: ${customer}` : ''}
+
+Based on typical industry standards and best practices in South Africa, generate a complete job specification with the following fields. Be specific and professional:
+
+{
+  "title": "${jobTitle}",
+  "customer": "${customer || 'To be specified'}",
+  "introduction": "A compelling 2-3 sentence introduction about the role and its importance",
+  "duties": ["List 5-8 key duties and responsibilities"],
+  "attributes": ["List 5-7 key attributes, skills and competencies required"],
+  "qualifications": ["List required qualifications and certifications"],
+  "remuneration": "Typical salary range in ZAR for this role in South Africa (e.g., 'R25,000 - R40,000 per month')",
+  "gender": "Any / Male / Female (based on role requirements if applicable, otherwise 'Any')",
+  "ethics": "Key ethical requirements and values expected (e.g., 'Integrity, honesty, professional conduct')",
+  "city": "Suggested city based on industry presence (e.g., 'Johannesburg')",
+  "province": "Corresponding province (e.g., 'Gauteng')",
+  "department": "Relevant department",
+  "employmentType": "full_time | part_time | contract",
+  "minYearsExperience": number,
+  "requirements": ["Additional requirements"],
+  "responsibilities": ["Detailed responsibilities"],
+  "benefits": ["Typical benefits offered"]
+}
+
+Return ONLY valid JSON, no other text.`;
+
+    try {
+      const research = await groq.chat.completions.create({
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert HR consultant specializing in South African job markets. Provide detailed, accurate job specifications based on industry standards."
+          },
+          {
+            role: "user",
+            content: researchPrompt,
+          },
+        ],
+        temperature: 0.4,
+        max_tokens: 2000,
+      });
+
+      const jsonText = research.choices[0]?.message?.content || "{}";
+      
+      const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const extractedData = JSON.parse(jsonMatch[0]);
+        
+        const jobSpec: JobSpecData = {
+          title: extractedData.title || jobTitle,
+          customer: extractedData.customer || customer,
+          introduction: extractedData.introduction,
+          department: extractedData.department,
+          duties: Array.isArray(extractedData.duties) ? extractedData.duties : undefined,
+          attributes: Array.isArray(extractedData.attributes) ? extractedData.attributes : undefined,
+          qualifications: Array.isArray(extractedData.qualifications) ? extractedData.qualifications : undefined,
+          remuneration: extractedData.remuneration,
+          gender: extractedData.gender,
+          ethics: extractedData.ethics,
+          city: extractedData.city,
+          province: extractedData.province,
+          location: extractedData.city && extractedData.province ? `${extractedData.city}, ${extractedData.province}` : undefined,
+          employmentType: extractedData.employmentType,
+          minYearsExperience: extractedData.minYearsExperience ? parseInt(String(extractedData.minYearsExperience)) : undefined,
+          requirements: Array.isArray(extractedData.requirements) ? extractedData.requirements : undefined,
+          responsibilities: Array.isArray(extractedData.responsibilities) ? extractedData.responsibilities : undefined,
+          benefits: Array.isArray(extractedData.benefits) ? extractedData.benefits : undefined,
+        };
+        
+        this.collectedData = jobSpec;
+
+        return {
+          jobSpec,
+          isComplete: true,
+        };
+      }
+
+      return {
+        jobSpec: { title: jobTitle },
+        isComplete: false,
+      };
+    } catch (error) {
+      console.error("Error researching job spec:", error);
+      throw new Error("Failed to research job specification. Please try again.");
     }
   }
 }

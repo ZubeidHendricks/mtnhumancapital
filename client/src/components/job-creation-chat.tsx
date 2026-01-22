@@ -6,7 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { Loader2, Send, Sparkles, CheckCircle2, Bot, FileText, MessageSquare, Upload, Pencil, Save, X } from "lucide-react";
+import { Loader2, Send, Sparkles, CheckCircle2, Bot, FileText, MessageSquare, Upload, Pencil, Save, X, Search, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 
@@ -29,9 +29,12 @@ export function JobCreationChat({ onJobCreated, onCancel }: JobCreationChatProps
   const [sessionId] = useState(() => `session-${Date.now()}-${Math.random()}`);
   const [jobSpec, setJobSpec] = useState<any>(null);
   const [showCollectedData, setShowCollectedData] = useState(true);
-  const [mode, setMode] = useState<"chat" | "paste">("chat");
+  const [mode, setMode] = useState<"chat" | "paste" | "research">("research");
   const [fullJobSpec, setFullJobSpec] = useState("");
   const [isParsing, setIsParsing] = useState(false);
+  const [researchJobTitle, setResearchJobTitle] = useState("");
+  const [researchCustomer, setResearchCustomer] = useState("");
+  const [isResearching, setIsResearching] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedJobSpec, setEditedJobSpec] = useState<any>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -247,6 +250,50 @@ export function JobCreationChat({ onJobCreated, onCancel }: JobCreationChatProps
     handleCreateJob(true);
   };
 
+  const handleAIResearch = async () => {
+    if (!researchJobTitle.trim() || isResearching) return;
+
+    setIsResearching(true);
+    setMessages([
+      {
+        role: "assistant",
+        content: `Researching "${researchJobTitle}" job specifications from industry standards...`,
+        timestamp: new Date(),
+      },
+    ]);
+    
+    try {
+      const response = await api.post("/jobs/conversation/research", {
+        sessionId,
+        jobTitle: researchJobTitle.trim(),
+        customer: researchCustomer.trim() || undefined,
+      });
+
+      if (response.data.jobSpec) {
+        setJobSpec(response.data.jobSpec);
+        setIsComplete(true);
+        setMessages([
+          {
+            role: "assistant",
+            content: `I've researched and compiled a comprehensive job specification for "${researchJobTitle}". Please review the details on the right panel and make any necessary edits. Click 'Create Job' when ready.`,
+            timestamp: new Date(),
+          },
+        ]);
+      }
+    } catch (error) {
+      console.error("Failed to research job spec:", error);
+      setMessages([
+        {
+          role: "assistant",
+          content: "I had trouble researching that job specification. Please try again or use the chat mode.",
+          timestamp: new Date(),
+        },
+      ]);
+    } finally {
+      setIsResearching(false);
+    }
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -260,15 +307,19 @@ export function JobCreationChat({ onJobCreated, onCancel }: JobCreationChatProps
     <div className="flex flex-col h-[600px]">
       {/* Mode Selector */}
       <div className="p-4 border-b border-white/10">
-        <Tabs value={mode} onValueChange={(v) => setMode(v as "chat" | "paste")}>
-          <TabsList className="grid w-full grid-cols-2 bg-card/50">
+        <Tabs value={mode} onValueChange={(v) => setMode(v as "chat" | "paste" | "research")}>
+          <TabsList className="grid w-full grid-cols-3 bg-card/50">
+            <TabsTrigger value="research" className="gap-2" data-testid="tab-research-mode">
+              <Globe className="w-4 h-4" />
+              AI Research
+            </TabsTrigger>
             <TabsTrigger value="chat" className="gap-2" data-testid="tab-chat-mode">
               <MessageSquare className="w-4 h-4" />
               Chat with AI
             </TabsTrigger>
             <TabsTrigger value="paste" className="gap-2" data-testid="tab-paste-mode">
               <FileText className="w-4 h-4" />
-              Paste Full Job Spec
+              Paste Spec
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -277,7 +328,120 @@ export function JobCreationChat({ onJobCreated, onCancel }: JobCreationChatProps
       <div className="flex gap-4 flex-1 overflow-hidden p-4">
         {/* Main Content Area */}
         <div className="flex flex-col flex-1">
-          {mode === "chat" ? (
+          {mode === "research" ? (
+            <>
+              {/* AI Research Mode */}
+              <div className="flex items-center gap-3 p-4 border-b border-white/10 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-t-lg">
+                <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                  <Globe className="w-5 h-5 text-green-400" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-white">AI Job Research</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Enter a job title and let AI research industry-standard specifications
+                  </p>
+                </div>
+                {isComplete && (
+                  <div className="flex items-center gap-2 text-green-500 text-sm">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Complete</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex-1 p-4 bg-card/20 rounded-b-lg flex flex-col gap-4">
+                {!isComplete ? (
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-muted-foreground text-sm">Customer / Company</Label>
+                      <Input
+                        value={researchCustomer}
+                        onChange={(e) => setResearchCustomer(e.target.value)}
+                        placeholder="e.g., ABC Logistics, Client Name"
+                        className="mt-1 bg-background/50 border-white/10"
+                        data-testid="input-research-customer"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-sm">Job Title *</Label>
+                      <Input
+                        value={researchJobTitle}
+                        onChange={(e) => setResearchJobTitle(e.target.value)}
+                        placeholder="e.g., Truck Driver, Warehouse Manager, Accountant"
+                        className="mt-1 bg-background/50 border-white/10"
+                        data-testid="input-research-job-title"
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      AI will research typical job specifications for this position and auto-populate all fields including duties, qualifications, remuneration, and more.
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={onCancel}
+                        data-testid="button-cancel-research"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleAIResearch}
+                        disabled={isResearching || !researchJobTitle.trim()}
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                        data-testid="button-start-research"
+                      >
+                        {isResearching ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Researching...
+                          </>
+                        ) : (
+                          <>
+                            <Search className="w-4 h-4 mr-2" />
+                            Research Job Spec
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3">
+                      <p className="text-sm text-green-400 font-medium">
+                        ✓ Job specification researched successfully! Review the details on the right and click "Create Job" to publish.
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={onCancel}
+                        data-testid="button-cancel-research-complete"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={() => handleCreateJob(false)}
+                        disabled={isLoading}
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                        data-testid="button-create-job-research"
+                      >
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Creating...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                            Create Job
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : mode === "chat" ? (
             <>
               {/* Chat Header */}
               <div className="flex items-center gap-3 p-4 border-b border-white/10 bg-gradient-to-r from-primary/10 to-purple-500/10 rounded-t-lg">
@@ -622,151 +786,210 @@ Benefits: Medical aid, retirement fund, flexible hours`}
               ) : isEditing ? (
                 <div className="space-y-4 text-xs">
                   <div>
+                    <Label className="text-muted-foreground text-xs">Customer / Company</Label>
+                    <Input
+                      value={editedJobSpec?.customer || ''}
+                      onChange={(e) => updateEditedField('customer', e.target.value)}
+                      className="mt-1 h-8 text-xs bg-background/50 border-white/10"
+                      placeholder="e.g., ABC Logistics"
+                      data-testid="input-edit-customer"
+                    />
+                  </div>
+                  <div>
                     <Label className="text-muted-foreground text-xs">Job Title *</Label>
                     <Input
                       value={editedJobSpec?.title || ''}
                       onChange={(e) => updateEditedField('title', e.target.value)}
                       className="mt-1 h-8 text-xs bg-background/50 border-white/10"
-                      placeholder="e.g., Senior Software Engineer"
+                      placeholder="e.g., Truck Driver"
                       data-testid="input-edit-title"
                     />
                   </div>
                   <div>
-                    <Label className="text-muted-foreground text-xs">Department</Label>
-                    <Input
-                      value={editedJobSpec?.department || ''}
-                      onChange={(e) => updateEditedField('department', e.target.value)}
-                      className="mt-1 h-8 text-xs bg-background/50 border-white/10"
-                      placeholder="e.g., Engineering"
-                      data-testid="input-edit-department"
+                    <Label className="text-muted-foreground text-xs">Introduction</Label>
+                    <Textarea
+                      value={editedJobSpec?.introduction || ''}
+                      onChange={(e) => updateEditedField('introduction', e.target.value)}
+                      className="mt-1 min-h-[60px] text-xs bg-background/50 border-white/10"
+                      placeholder="Brief introduction about the role..."
+                      data-testid="input-edit-introduction"
                     />
                   </div>
                   <div>
-                    <Label className="text-muted-foreground text-xs">Location</Label>
-                    <Input
-                      value={editedJobSpec?.location || ''}
-                      onChange={(e) => updateEditedField('location', e.target.value)}
-                      className="mt-1 h-8 text-xs bg-background/50 border-white/10"
-                      placeholder="e.g., Johannesburg, Gauteng"
-                      data-testid="input-edit-location"
+                    <Label className="text-muted-foreground text-xs">Duties & Responsibilities (one per line)</Label>
+                    <Textarea
+                      value={(editedJobSpec?.duties || []).join('\n')}
+                      onChange={(e) => updateEditedField('duties', e.target.value.split('\n').filter(r => r.trim()))}
+                      className="mt-1 min-h-[60px] text-xs bg-background/50 border-white/10"
+                      placeholder="Enter duties..."
+                      data-testid="input-edit-duties"
                     />
                   </div>
                   <div>
-                    <Label className="text-muted-foreground text-xs">Employment Type</Label>
+                    <Label className="text-muted-foreground text-xs">Attributes, Skills & Competencies (one per line)</Label>
+                    <Textarea
+                      value={(editedJobSpec?.attributes || []).join('\n')}
+                      onChange={(e) => updateEditedField('attributes', e.target.value.split('\n').filter(r => r.trim()))}
+                      className="mt-1 min-h-[60px] text-xs bg-background/50 border-white/10"
+                      placeholder="Enter attributes..."
+                      data-testid="input-edit-attributes"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Qualifications (one per line)</Label>
+                    <Textarea
+                      value={(editedJobSpec?.qualifications || []).join('\n')}
+                      onChange={(e) => updateEditedField('qualifications', e.target.value.split('\n').filter(r => r.trim()))}
+                      className="mt-1 min-h-[60px] text-xs bg-background/50 border-white/10"
+                      placeholder="Enter qualifications..."
+                      data-testid="input-edit-qualifications"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Remuneration</Label>
                     <Input
-                      value={editedJobSpec?.employmentType || ''}
-                      onChange={(e) => updateEditedField('employmentType', e.target.value)}
+                      value={editedJobSpec?.remuneration || ''}
+                      onChange={(e) => updateEditedField('remuneration', e.target.value)}
                       className="mt-1 h-8 text-xs bg-background/50 border-white/10"
-                      placeholder="e.g., Full-time, Contract"
-                      data-testid="input-edit-employment-type"
+                      placeholder="e.g., R25,000 - R40,000 per month"
+                      data-testid="input-edit-remuneration"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <Label className="text-muted-foreground text-xs">Min Salary (R)</Label>
+                      <Label className="text-muted-foreground text-xs">Gender</Label>
                       <Input
-                        type="number"
-                        value={formatNumericValue(editedJobSpec?.salaryMin)}
-                        onChange={(e) => updateEditedField('salaryMin', parseNumericInput(e.target.value))}
+                        value={editedJobSpec?.gender || ''}
+                        onChange={(e) => updateEditedField('gender', e.target.value)}
                         className="mt-1 h-8 text-xs bg-background/50 border-white/10"
-                        placeholder="Min"
-                        data-testid="input-edit-salary-min"
+                        placeholder="Any"
+                        data-testid="input-edit-gender"
                       />
                     </div>
                     <div>
-                      <Label className="text-muted-foreground text-xs">Max Salary (R)</Label>
+                      <Label className="text-muted-foreground text-xs">Ethics</Label>
                       <Input
-                        type="number"
-                        value={formatNumericValue(editedJobSpec?.salaryMax)}
-                        onChange={(e) => updateEditedField('salaryMax', parseNumericInput(e.target.value))}
+                        value={editedJobSpec?.ethics || ''}
+                        onChange={(e) => updateEditedField('ethics', e.target.value)}
                         className="mt-1 h-8 text-xs bg-background/50 border-white/10"
-                        placeholder="Max"
-                        data-testid="input-edit-salary-max"
+                        placeholder="Integrity, honesty"
+                        data-testid="input-edit-ethics"
                       />
                     </div>
                   </div>
-                  <div>
-                    <Label className="text-muted-foreground text-xs">Min. Years Experience</Label>
-                    <Input
-                      type="number"
-                      value={formatNumericValue(editedJobSpec?.minYearsExperience)}
-                      onChange={(e) => updateEditedField('minYearsExperience', parseNumericInput(e.target.value))}
-                      className="mt-1 h-8 text-xs bg-background/50 border-white/10"
-                      placeholder="Years"
-                      data-testid="input-edit-experience"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground text-xs">Description</Label>
-                    <Textarea
-                      value={editedJobSpec?.description || ''}
-                      onChange={(e) => updateEditedField('description', e.target.value)}
-                      className="mt-1 min-h-[80px] text-xs bg-background/50 border-white/10"
-                      placeholder="Job description..."
-                      data-testid="input-edit-description"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground text-xs">Requirements (one per line)</Label>
-                    <Textarea
-                      value={(editedJobSpec?.requirements || []).join('\n')}
-                      onChange={(e) => updateEditedField('requirements', e.target.value.split('\n').filter(r => r.trim()))}
-                      className="mt-1 min-h-[60px] text-xs bg-background/50 border-white/10"
-                      placeholder="Enter requirements..."
-                      data-testid="input-edit-requirements"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground text-xs">Responsibilities (one per line)</Label>
-                    <Textarea
-                      value={(editedJobSpec?.responsibilities || []).join('\n')}
-                      onChange={(e) => updateEditedField('responsibilities', e.target.value.split('\n').filter(r => r.trim()))}
-                      className="mt-1 min-h-[60px] text-xs bg-background/50 border-white/10"
-                      placeholder="Enter responsibilities..."
-                      data-testid="input-edit-responsibilities"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground text-xs">Benefits (comma separated)</Label>
-                    <Input
-                      value={(editedJobSpec?.benefits || []).join(', ')}
-                      onChange={(e) => updateEditedField('benefits', e.target.value.split(',').map(b => b.trim()).filter(b => b))}
-                      className="mt-1 h-8 text-xs bg-background/50 border-white/10"
-                      placeholder="e.g., Medical aid, Pension, Flexible hours"
-                      data-testid="input-edit-benefits"
-                    />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-muted-foreground text-xs">City</Label>
+                      <Input
+                        value={editedJobSpec?.city || ''}
+                        onChange={(e) => updateEditedField('city', e.target.value)}
+                        className="mt-1 h-8 text-xs bg-background/50 border-white/10"
+                        placeholder="e.g., Johannesburg"
+                        data-testid="input-edit-city"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-xs">Province</Label>
+                      <Input
+                        value={editedJobSpec?.province || ''}
+                        onChange={(e) => updateEditedField('province', e.target.value)}
+                        className="mt-1 h-8 text-xs bg-background/50 border-white/10"
+                        placeholder="e.g., Gauteng"
+                        data-testid="input-edit-province"
+                      />
+                    </div>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-3 text-xs">
+                  {jobSpec?.customer && (
+                    <div data-testid="collected-customer">
+                      <span className="text-muted-foreground">Customer:</span>
+                      <p className="font-medium mt-1">{jobSpec.customer}</p>
+                    </div>
+                  )}
                   {jobSpec?.title && (
                     <div data-testid="collected-title">
-                      <span className="text-muted-foreground">Title:</span>
+                      <span className="text-muted-foreground">Job Title:</span>
                       <p className="font-medium mt-1">{jobSpec.title}</p>
                     </div>
                   )}
-                  {jobSpec?.department && (
-                    <div data-testid="collected-department">
-                      <span className="text-muted-foreground">Department:</span>
-                      <p className="font-medium mt-1">{jobSpec.department}</p>
+                  {jobSpec?.introduction && (
+                    <div data-testid="collected-introduction">
+                      <span className="text-muted-foreground">Introduction:</span>
+                      <p className="font-medium mt-1 line-clamp-3">{jobSpec.introduction}</p>
                     </div>
                   )}
-                  {jobSpec?.description && (
-                    <div data-testid="collected-description">
-                      <span className="text-muted-foreground">Description:</span>
-                      <p className="font-medium mt-1 line-clamp-3">{jobSpec.description}</p>
+                  {jobSpec?.duties && jobSpec.duties.length > 0 && (
+                    <div data-testid="collected-duties">
+                      <span className="text-muted-foreground">Duties & Responsibilities:</span>
+                      <ul className="mt-1 space-y-1">
+                        {jobSpec.duties.slice(0, 5).map((duty: string, i: number) => (
+                          <li key={i} className="text-xs flex items-start gap-1">
+                            <span className="text-primary">•</span>
+                            <span className="line-clamp-2">{duty}</span>
+                          </li>
+                        ))}
+                        {jobSpec.duties.length > 5 && (
+                          <li className="text-muted-foreground">+{jobSpec.duties.length - 5} more...</li>
+                        )}
+                      </ul>
                     </div>
                   )}
-                  {jobSpec?.location && (
+                  {jobSpec?.attributes && jobSpec.attributes.length > 0 && (
+                    <div data-testid="collected-attributes">
+                      <span className="text-muted-foreground">Attributes & Skills:</span>
+                      <ul className="mt-1 space-y-1">
+                        {jobSpec.attributes.slice(0, 5).map((attr: string, i: number) => (
+                          <li key={i} className="text-xs flex items-start gap-1">
+                            <span className="text-green-400">•</span>
+                            <span className="line-clamp-2">{attr}</span>
+                          </li>
+                        ))}
+                        {jobSpec.attributes.length > 5 && (
+                          <li className="text-muted-foreground">+{jobSpec.attributes.length - 5} more...</li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
+                  {jobSpec?.qualifications && jobSpec.qualifications.length > 0 && (
+                    <div data-testid="collected-qualifications">
+                      <span className="text-muted-foreground">Qualifications:</span>
+                      <ul className="mt-1 space-y-1">
+                        {jobSpec.qualifications.slice(0, 5).map((qual: string, i: number) => (
+                          <li key={i} className="text-xs flex items-start gap-1">
+                            <span className="text-amber-400">•</span>
+                            <span className="line-clamp-2">{qual}</span>
+                          </li>
+                        ))}
+                        {jobSpec.qualifications.length > 5 && (
+                          <li className="text-muted-foreground">+{jobSpec.qualifications.length - 5} more...</li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
+                  {jobSpec?.remuneration && (
+                    <div data-testid="collected-remuneration">
+                      <span className="text-muted-foreground">Remuneration:</span>
+                      <p className="font-medium mt-1">{jobSpec.remuneration}</p>
+                    </div>
+                  )}
+                  {(jobSpec?.city || jobSpec?.province) && (
                     <div data-testid="collected-location">
                       <span className="text-muted-foreground">Location:</span>
-                      <p className="font-medium mt-1">{jobSpec.location}</p>
+                      <p className="font-medium mt-1">{jobSpec.city}{jobSpec.city && jobSpec.province ? ', ' : ''}{jobSpec.province}</p>
                     </div>
                   )}
-                  {jobSpec?.employmentType && (
-                    <div data-testid="collected-employment-type">
-                      <span className="text-muted-foreground">Employment Type:</span>
-                      <p className="font-medium mt-1">{jobSpec.employmentType}</p>
+                  {jobSpec?.gender && (
+                    <div data-testid="collected-gender">
+                      <span className="text-muted-foreground">Gender:</span>
+                      <p className="font-medium mt-1">{jobSpec.gender}</p>
+                    </div>
+                  )}
+                  {jobSpec?.ethics && (
+                    <div data-testid="collected-ethics">
+                      <span className="text-muted-foreground">Ethics:</span>
+                      <p className="font-medium mt-1">{jobSpec.ethics}</p>
                     </div>
                   )}
                   {(jobSpec?.salaryMin || jobSpec?.salaryMax) && (

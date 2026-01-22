@@ -117,6 +117,8 @@ export default function HRDashboard() {
   const [jobDescription, setJobDescription] = useState("");
 
   const [isUploading, setIsUploading] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<any>(null);
+  const [isJobDetailOpen, setIsJobDetailOpen] = useState(false);
 
   const createJobMutation = useMutation({
     mutationFn: jobsService.create,
@@ -1431,8 +1433,9 @@ BENEFITS:
                       {displayJobs.map((job: any) => (
                         <div 
                           key={job.id}
-                          className="p-4 rounded-xl bg-card hover:bg-accent transition-all border-2 border-border hover:border-primary group"
+                          className="p-4 rounded-xl bg-card hover:bg-accent transition-all border-2 border-border hover:border-primary group cursor-pointer"
                           data-testid={`card-job-${job.id}`}
+                          onClick={() => { setSelectedJob(job); setIsJobDetailOpen(true); }}
                         >
                           <div className="flex items-start gap-3 mb-3">
                             <div className="w-12 h-12 rounded-lg bg-purple-500 flex items-center justify-center">
@@ -1451,16 +1454,18 @@ BENEFITS:
                           </div>
 
                           <div className="space-y-1.5 mb-3">
-                            {job.location && (
+                            {(job.city || job.province || job.location) && (
                               <div className="flex items-center gap-2 text-xs text-zinc-400">
                                 <MapPin className="h-3 w-3 flex-shrink-0" />
-                                <span className="truncate">{job.location}</span>
+                                <span className="truncate">
+                                  {job.city && job.province ? `${job.city}, ${job.province}` : job.location}
+                                </span>
                               </div>
                             )}
-                            {(job.salaryMin || job.salaryMax) && (
+                            {(job.remuneration || job.salaryMin || job.salaryMax) && (
                               <div className="flex items-center gap-2 text-xs text-zinc-400">
                                 <span className="truncate">
-                                  R{job.salaryMin?.toLocaleString() || '0'} - R{job.salaryMax?.toLocaleString() || job.salaryMin?.toLocaleString() || '0'} {job.payRateUnit || 'monthly'}
+                                  {job.remuneration || `R${job.salaryMin?.toLocaleString() || '0'} - R${job.salaryMax?.toLocaleString() || job.salaryMin?.toLocaleString() || '0'} ${job.payRateUnit || 'monthly'}`}
                                 </span>
                               </div>
                             )}
@@ -1583,7 +1588,9 @@ BENEFITS:
                                 <span className="text-zinc-400 text-sm">{job.department || 'General'}</span>
                               </td>
                               <td className="px-4 py-3">
-                                <span className="text-zinc-400 text-sm">{job.location || '-'}</span>
+                                <span className="text-zinc-400 text-sm">
+                                  {job.city && job.province ? `${job.city}, ${job.province}` : (job.location || '-')}
+                                </span>
                               </td>
                               <td className="px-4 py-3">
                                 <Badge className={`${job.status === 'Active' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'} border-0 text-xs`}>
@@ -3018,6 +3025,198 @@ BENEFITS:
                   </>
                 );
               })()}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Job Detail Dialog */}
+      <Dialog open={isJobDetailOpen} onOpenChange={setIsJobDetailOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-white flex items-center gap-2">
+              <Briefcase className="h-5 w-5 text-purple-400" />
+              {selectedJob?.title || 'Job Details'}
+            </DialogTitle>
+            <DialogDescription>
+              Full job specification details
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedJob && (
+            <div className="space-y-6 py-4">
+              {/* Header Info */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {selectedJob.customer && (
+                  <div className="bg-zinc-800/50 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground">Customer</p>
+                    <p className="font-medium text-white">{selectedJob.customer}</p>
+                  </div>
+                )}
+                {selectedJob.department && (
+                  <div className="bg-zinc-800/50 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground">Department</p>
+                    <p className="font-medium text-white">{selectedJob.department}</p>
+                  </div>
+                )}
+                <div className="bg-zinc-800/50 rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground">Status</p>
+                  <Badge className={`${selectedJob.status === 'Active' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}`}>
+                    {selectedJob.status}
+                  </Badge>
+                </div>
+                {(selectedJob.city || selectedJob.province || selectedJob.location) && (
+                  <div className="bg-zinc-800/50 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground">Location</p>
+                    <p className="font-medium text-white flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      {selectedJob.city && selectedJob.province 
+                        ? `${selectedJob.city}, ${selectedJob.province}` 
+                        : selectedJob.location}
+                    </p>
+                  </div>
+                )}
+                {selectedJob.remuneration && (
+                  <div className="bg-zinc-800/50 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground">Remuneration</p>
+                    <p className="font-medium text-green-400">{selectedJob.remuneration}</p>
+                  </div>
+                )}
+                {(selectedJob.salaryMin || selectedJob.salaryMax) && !selectedJob.remuneration && (
+                  <div className="bg-zinc-800/50 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground">Salary Range</p>
+                    <p className="font-medium text-green-400">
+                      R{selectedJob.salaryMin?.toLocaleString() || '0'} - R{selectedJob.salaryMax?.toLocaleString() || '0'}
+                    </p>
+                  </div>
+                )}
+                {selectedJob.gender && (
+                  <div className="bg-zinc-800/50 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground">Gender</p>
+                    <p className="font-medium text-white">{selectedJob.gender}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Introduction */}
+              {selectedJob.introduction && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-purple-400">Introduction</h3>
+                  <p className="text-sm text-muted-foreground bg-zinc-800/30 rounded-lg p-3">
+                    {selectedJob.introduction}
+                  </p>
+                </div>
+              )}
+
+              {/* Description */}
+              {selectedJob.description && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-purple-400">Description</h3>
+                  <p className="text-sm text-muted-foreground bg-zinc-800/30 rounded-lg p-3">
+                    {selectedJob.description}
+                  </p>
+                </div>
+              )}
+
+              {/* Duties */}
+              {selectedJob.duties && selectedJob.duties.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-purple-400">Duties & Responsibilities</h3>
+                  <ul className="space-y-1 bg-zinc-800/30 rounded-lg p-3">
+                    {selectedJob.duties.map((duty: string, i: number) => (
+                      <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                        <span className="text-purple-400 mt-1">•</span>
+                        {duty}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Attributes */}
+              {selectedJob.attributes && selectedJob.attributes.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-green-400">Attributes, Skills & Competencies</h3>
+                  <ul className="space-y-1 bg-zinc-800/30 rounded-lg p-3">
+                    {selectedJob.attributes.map((attr: string, i: number) => (
+                      <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                        <span className="text-green-400 mt-1">•</span>
+                        {attr}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Qualifications */}
+              {selectedJob.qualifications && selectedJob.qualifications.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-amber-400">Qualifications</h3>
+                  <ul className="space-y-1 bg-zinc-800/30 rounded-lg p-3">
+                    {selectedJob.qualifications.map((qual: string, i: number) => (
+                      <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                        <span className="text-amber-400 mt-1">•</span>
+                        {qual}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Ethics */}
+              {selectedJob.ethics && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-blue-400">Ethics & Values</h3>
+                  <p className="text-sm text-muted-foreground bg-zinc-800/30 rounded-lg p-3">
+                    {selectedJob.ethics}
+                  </p>
+                </div>
+              )}
+
+              {/* Requirements */}
+              {selectedJob.requirements && selectedJob.requirements.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-cyan-400">Requirements</h3>
+                  <ul className="space-y-1 bg-zinc-800/30 rounded-lg p-3">
+                    {selectedJob.requirements.map((req: string, i: number) => (
+                      <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                        <span className="text-cyan-400 mt-1">•</span>
+                        {req}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Benefits */}
+              {selectedJob.benefits && selectedJob.benefits.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-yellow-400">Benefits</h3>
+                  <div className="flex flex-wrap gap-2 bg-zinc-800/30 rounded-lg p-3">
+                    {selectedJob.benefits.map((benefit: string, i: number) => (
+                      <Badge key={i} variant="outline" className="text-xs border-yellow-500/30 text-yellow-300">
+                        {benefit}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4 border-t border-border">
+                <Link href={`/recruitment-agent?jobId=${selectedJob.id}`} className="flex-1">
+                  <Button className="w-full bg-purple-600 hover:bg-purple-700">
+                    <Search className="h-4 w-4 mr-2" />
+                    Start Candidate Search
+                  </Button>
+                </Link>
+                <Link href={`/candidates-list?jobId=${selectedJob.id}`}>
+                  <Button variant="outline">
+                    <Eye className="h-4 w-4 mr-2" />
+                    View Candidates
+                  </Button>
+                </Link>
+              </div>
             </div>
           )}
         </DialogContent>
