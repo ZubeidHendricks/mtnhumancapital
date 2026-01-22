@@ -51,9 +51,12 @@ export function Sidebar() {
 
   const sections: NavSection[] = [
     {
-      title: "DASHBOARD",
+      title: "HR COMMAND CENTRE",
       items: [
-        { name: "Executive Pulse", href: "/", icon: LayoutDashboard },
+        { name: "HR Dashboard", href: "/hr-dashboard", icon: Users, module: "hr_management" },
+        { name: "Integrity Checks", href: "/integrity-agent", icon: Shield, module: "integrity" },
+        { name: "Onboarding", href: "/onboarding", icon: Building2, module: "onboarding" },
+        { name: "Time & Attendance", href: "/hr-dashboard?tab=time-attendance", icon: Cpu },
       ]
     },
     {
@@ -71,15 +74,6 @@ export function Sidebar() {
       items: [
         { name: "Voice Interview", href: "/interview/voice", icon: Mic },
         { name: "Video Interview", href: "/interview/video", icon: Video },
-      ]
-    },
-    {
-      title: "HR MANAGEMENT",
-      items: [
-        { name: "HR Dashboard", href: "/hr-dashboard", icon: Users, module: "hr_management" },
-        { name: "Integrity Checks", href: "/integrity-agent", icon: Shield, module: "integrity" },
-        { name: "Onboarding", href: "/onboarding", icon: Building2, module: "onboarding" },
-        { name: "Time & Attendance", href: "/hr-dashboard?tab=time-attendance", icon: Cpu },
       ]
     },
     {
