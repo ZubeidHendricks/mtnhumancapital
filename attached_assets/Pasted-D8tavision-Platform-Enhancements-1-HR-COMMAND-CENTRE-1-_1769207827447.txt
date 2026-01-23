@@ -1,0 +1,69 @@
+D8tavision Platform Enhancements
+
+1.	HR COMMAND CENTRE
+1.1.	JOBS
+1.1.1.	Create new Job
+•	AI assistant
+•	Change the extracted information section to show the following fields as scraped from the internet. Also create the ability to edit or amend manually
+•	Customer
+•	Job Tile
+•	Introduction
+•	Duties and responsibilities 
+•	Attributes, skills and competence
+•	Qualifications
+•	Remuneration
+•	Gender
+•	Ethics
+•	City
+•	Province
+1.1.2.	Create Job Spec
+•	Please add an input field for “Industry” between company and Job Title
+•	Update the AI search for Job Spec to include an industry related job Title
+1.1.3.	Recruitment Setup
+•	Add a tab on the left menu under HR COMMAND CENTRE and before the Integrity tab call “Recruitment Setup”
+•	In this tab I want to be able to select and integrate the platforms that I would use to do the automated recruitment such as PNET, Indeed, etc.
+•	Should be able to add my login details to these platforms or API keys   
+1.1.4.	Integrity Checks (on the left menu under the heading HR COMMAND CENTRE)
+•	This is a bit of duplication as there is an Integrity Check tab on the HR Command Centre page.
+•	Change this selection to be the place where you can select which integrity checks you want to do and which platforms you typically use when doing the integrity checks.
+•	This would then be where you set up the process instead of where you do integrity checks.
+•	Change the name of the tab to “Integrity Setup”
+•	Leave the Integrity tab on the HR Command Centre page as is.
+1.1.5.	Onboarding (Menu item on the left)
+•	This is currently confusing. It is a tab for the onboarding of a customer instead of the onboarding of an employee, which would make more sense in terms of the workflow.
+•	Lets change this tab to where we rather create the onboarding process for the employee.
+•	Move the customer Onboarding tab to ADMIN and change the name to Customer Onboarding
+•	I want to be able to do the following on this tab:
+o	Download a welcome letter template
+o	Download the employee handbook
+o	Select the employee
+o	Enter or prompt for a start date
+o	Request IT setup if required
+•	Create a “Send Onboarding Pack” button
+1.1.3	Offer
+•	Add a tab between integrity and onboarding called offer (makes the navigation easier and more intuitive)
+•	I want to be able to:
+o	Download an offer template
+o	Select a candidate
+o	Enter the salary package
+•	Create a “Send the Offer” button. This might be automated, but there isn’t a clear pathway from Integrity check complete to sending the offer letter so perhaps we just make that more obvious or evident in the process.
+
+2.	RECRUITMENT
+2.1.	Candidate Pipeline
+•	Please add the following to Documents required
+o	Banking Details
+o	Signed offer Letter
+o	NDA / Non-compete
+
+3.	DOCUMENTS
+3.1.	Document Automation
+•	Please add the following download options
+o	Welcome Letters
+o	Employee Handbook
+o	Offer letters
+3.2	CV Templates
+•	Please change the name to “Templates”
+•	Add the follow templates 
+o	Offer Letter Template
+o	Welcome Letter Template
+

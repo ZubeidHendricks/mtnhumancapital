@@ -34,6 +34,7 @@ export function JobCreationChat({ onJobCreated, onCancel }: JobCreationChatProps
   const [isParsing, setIsParsing] = useState(false);
   const [researchJobTitle, setResearchJobTitle] = useState("");
   const [researchCustomer, setResearchCustomer] = useState("");
+  const [researchIndustry, setResearchIndustry] = useState("");
   const [isResearching, setIsResearching] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedJobSpec, setEditedJobSpec] = useState<any>(null);
@@ -267,6 +268,7 @@ export function JobCreationChat({ onJobCreated, onCancel }: JobCreationChatProps
         sessionId,
         jobTitle: researchJobTitle.trim(),
         customer: researchCustomer.trim() || undefined,
+        industry: researchIndustry.trim() || undefined,
       });
 
       if (response.data.jobSpec) {
@@ -360,6 +362,16 @@ export function JobCreationChat({ onJobCreated, onCancel }: JobCreationChatProps
                         placeholder="e.g., ABC Logistics, Client Name"
                         className="mt-1 bg-background/50 border-white/10"
                         data-testid="input-research-customer"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground text-sm">Industry</Label>
+                      <Input
+                        value={researchIndustry}
+                        onChange={(e) => setResearchIndustry(e.target.value)}
+                        placeholder="e.g., Logistics, Manufacturing, Finance, Healthcare"
+                        className="mt-1 bg-background/50 border-white/10"
+                        data-testid="input-research-industry"
                       />
                     </div>
                     <div>

@@ -1214,14 +1214,14 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
   // AI Research: Auto-generate job spec based on job title
   app.post("/api/jobs/conversation/research", async (req, res) => {
     try {
-      const { sessionId, jobTitle, customer } = req.body;
+      const { sessionId, jobTitle, customer, industry } = req.body;
 
       if (!sessionId || !jobTitle) {
         return res.status(400).json({ message: "Session ID and job title are required" });
       }
 
       const agent = getOrCreateConversation(sessionId);
-      const response = await agent.researchJobSpec(jobTitle, customer);
+      const response = await agent.researchJobSpec(jobTitle, customer, industry);
 
       res.json(response);
     } catch (error) {

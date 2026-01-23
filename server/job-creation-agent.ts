@@ -12,6 +12,7 @@ interface ConversationMessage {
 interface JobSpecData {
   title?: string;
   customer?: string;
+  industry?: string;
   introduction?: string;
   department?: string;
   description?: string;
@@ -420,7 +421,7 @@ IMPORTANT:
    * Research job specification from internet and industry standards
    * Auto-populates all fields based on the job title
    */
-  async researchJobSpec(jobTitle: string, customer?: string): Promise<{
+  async researchJobSpec(jobTitle: string, customer?: string, industry?: string): Promise<{
     jobSpec: JobSpecData;
     isComplete: boolean;
   }> {
@@ -428,12 +429,14 @@ IMPORTANT:
 
 JOB TITLE: ${jobTitle}
 ${customer ? `CUSTOMER/COMPANY: ${customer}` : ''}
+${industry ? `INDUSTRY: ${industry}` : ''}
 
 Based on typical industry standards and best practices in South Africa, generate a complete job specification with the following fields. Be specific and professional:
 
 {
   "title": "${jobTitle}",
   "customer": "${customer || 'To be specified'}",
+  "industry": "${industry || 'General'}",
   "introduction": "A compelling 2-3 sentence introduction about the role and its importance",
   "duties": ["List 5-8 key duties and responsibilities"],
   "attributes": ["List 5-7 key attributes, skills and competencies required"],
@@ -479,6 +482,7 @@ Return ONLY valid JSON, no other text.`;
         const jobSpec: JobSpecData = {
           title: extractedData.title || jobTitle,
           customer: extractedData.customer || customer,
+          industry: extractedData.industry || industry,
           introduction: extractedData.introduction,
           department: extractedData.department,
           duties: Array.isArray(extractedData.duties) ? extractedData.duties : undefined,

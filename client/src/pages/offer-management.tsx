@@ -1,0 +1,255 @@
+import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  FileText, 
+  Download,
+  Send,
+  User,
+  DollarSign,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  XCircle
+} from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+
+interface Candidate {
+  id: string;
+  name: string;
+  position: string;
+  status: "pending" | "sent" | "accepted" | "declined";
+  offerDate?: string;
+}
+
+export default function OfferManagement() {
+  const [selectedCandidate, setSelectedCandidate] = useState<string>("");
+  const [salaryAmount, setSalaryAmount] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [additionalBenefits, setAdditionalBenefits] = useState("");
+
+  const candidates: Candidate[] = [
+    { id: "1", name: "John Smith", position: "Senior Developer", status: "pending" },
+    { id: "2", name: "Sarah Johnson", position: "Project Manager", status: "sent", offerDate: "2024-01-15" },
+    { id: "3", name: "Mike Wilson", position: "Data Analyst", status: "accepted", offerDate: "2024-01-10" },
+    { id: "4", name: "Emily Brown", position: "HR Coordinator", status: "declined", offerDate: "2024-01-08" },
+  ];
+
+  const handleDownloadTemplate = () => {
+    toast({
+      title: "Template Downloaded",
+      description: "Offer letter template has been downloaded.",
+    });
+  };
+
+  const handleSendOffer = () => {
+    if (!selectedCandidate || !salaryAmount || !startDate) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Offer Sent",
+      description: `Offer letter has been sent to the candidate.`,
+    });
+
+    setSelectedCandidate("");
+    setSalaryAmount("");
+    setStartDate("");
+    setAdditionalBenefits("");
+  };
+
+  const getStatusBadge = (status: Candidate["status"]) => {
+    switch (status) {
+      case "pending":
+        return <Badge className="bg-gray-500/20 text-gray-400 border-0"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
+      case "sent":
+        return <Badge className="bg-blue-500/20 text-blue-400 border-0"><Send className="h-3 w-3 mr-1" />Sent</Badge>;
+      case "accepted":
+        return <Badge className="bg-green-500/20 text-green-400 border-0"><CheckCircle2 className="h-3 w-3 mr-1" />Accepted</Badge>;
+      case "declined":
+        return <Badge className="bg-red-500/20 text-red-400 border-0"><XCircle className="h-3 w-3 mr-1" />Declined</Badge>;
+    }
+  };
+
+  return (
+    <div className="container mx-auto py-8 px-4 max-w-6xl">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+          <FileText className="h-8 w-8 text-green-400" />
+          Offer Management
+        </h1>
+        <p className="text-muted-foreground mt-2">
+          Create and send offer letters to successful candidates
+        </p>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5 text-blue-400" />
+              Send New Offer
+            </CardTitle>
+            <CardDescription>Create and send an offer letter to a candidate</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Select Candidate *</Label>
+              <Select value={selectedCandidate} onValueChange={setSelectedCandidate}>
+                <SelectTrigger data-testid="select-candidate">
+                  <SelectValue placeholder="Choose a candidate" />
+                </SelectTrigger>
+                <SelectContent>
+                  {candidates.filter(c => c.status === "pending").map((candidate) => (
+                    <SelectItem key={candidate.id} value={candidate.id}>
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        {candidate.name} - {candidate.position}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Salary Package (Monthly) *</Label>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  value={salaryAmount}
+                  onChange={(e) => setSalaryAmount(e.target.value)}
+                  placeholder="e.g., R45,000"
+                  className="pl-10"
+                  data-testid="input-salary"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Proposed Start Date *</Label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="pl-10"
+                  data-testid="input-start-date"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Additional Benefits</Label>
+              <Textarea
+                value={additionalBenefits}
+                onChange={(e) => setAdditionalBenefits(e.target.value)}
+                placeholder="e.g., Medical aid, Pension fund, Travel allowance..."
+                rows={3}
+                data-testid="input-benefits"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={handleDownloadTemplate}
+                data-testid="button-download-template"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download Template
+              </Button>
+              <Button 
+                className="flex-1 bg-green-600 hover:bg-green-700"
+                onClick={handleSendOffer}
+                data-testid="button-send-offer"
+              >
+                <Send className="h-4 w-4 mr-2" />
+                Send Offer
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-purple-400" />
+              Recent Offers
+            </CardTitle>
+            <CardDescription>Track the status of sent offer letters</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {candidates.map((candidate) => (
+              <div 
+                key={candidate.id}
+                className="p-4 rounded-lg bg-zinc-800/50 border border-zinc-700/50"
+                data-testid={`offer-item-${candidate.id}`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
+                      <User className="h-5 w-5 text-purple-400" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-white">{candidate.name}</h4>
+                      <p className="text-sm text-muted-foreground">{candidate.position}</p>
+                    </div>
+                  </div>
+                  {getStatusBadge(candidate.status)}
+                </div>
+                {candidate.offerDate && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Offer sent: {new Date(candidate.offerDate).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="mt-6 bg-card border-border">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Download className="h-5 w-5 text-amber-400" />
+            Offer Letter Templates
+          </CardTitle>
+          <CardDescription>Download and customize offer letter templates</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-3">
+            <Button variant="outline" className="h-auto py-4 flex-col gap-2" data-testid="button-template-standard">
+              <FileText className="h-8 w-8 text-blue-400" />
+              <span>Standard Offer</span>
+              <span className="text-xs text-muted-foreground">Permanent position</span>
+            </Button>
+            <Button variant="outline" className="h-auto py-4 flex-col gap-2" data-testid="button-template-contract">
+              <FileText className="h-8 w-8 text-amber-400" />
+              <span>Contract Offer</span>
+              <span className="text-xs text-muted-foreground">Fixed-term contract</span>
+            </Button>
+            <Button variant="outline" className="h-auto py-4 flex-col gap-2" data-testid="button-template-executive">
+              <FileText className="h-8 w-8 text-purple-400" />
+              <span>Executive Offer</span>
+              <span className="text-xs text-muted-foreground">Senior management</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

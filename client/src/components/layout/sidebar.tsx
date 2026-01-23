@@ -54,8 +54,10 @@ export function Sidebar() {
       title: "HR COMMAND CENTRE",
       items: [
         { name: "HR Dashboard", href: "/hr-dashboard", icon: Users, module: "hr_management" },
-        { name: "Integrity Checks", href: "/integrity-agent", icon: Shield, module: "integrity" },
-        { name: "Onboarding", href: "/onboarding", icon: Building2, module: "onboarding" },
+        { name: "Recruitment Setup", href: "/recruitment-setup", icon: Settings },
+        { name: "Integrity Setup", href: "/integrity-setup", icon: Shield, module: "integrity" },
+        { name: "Offer Management", href: "/offer-management", icon: FileText },
+        { name: "Employee Onboarding", href: "/employee-onboarding", icon: Building2, module: "onboarding" },
         { name: "Time & Attendance", href: "/hr-dashboard?tab=time-attendance", icon: Cpu },
       ]
     },
@@ -92,7 +94,7 @@ export function Sidebar() {
       items: [
         { name: "Document Automation", href: "/document-automation", icon: FileText },
         { name: "Document Library", href: "/document-library", icon: ClipboardList },
-        { name: "CV Templates", href: "/cv-templates", icon: FileText },
+        { name: "Templates", href: "/cv-templates", icon: FileText },
       ]
     },
     {
@@ -121,6 +123,7 @@ export function Sidebar() {
         { name: "System Admin", href: "/admin-dashboard", icon: Settings },
         { name: "Tenant Management", href: "/tenant-management", icon: Building2 },
         { name: "Tenant Requests", href: "/tenant-requests", icon: FileText },
+        { name: "Customer Onboarding", href: "/onboarding", icon: UserPlus },
         { name: "Persona Management", href: "/persona-management", icon: Users },
         { name: "Platform Docs", href: "/platform-docs", icon: BookOpen },
       ]
