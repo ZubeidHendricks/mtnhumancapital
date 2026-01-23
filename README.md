@@ -48,12 +48,19 @@
 
 ## ✨ Features
 
+### 🎯 HR Command Centre
+- **AI Job Research** - Enter a job title and AI automatically researches and generates complete job specifications from industry standards
+- **Smart Job Creation** - Three modes: AI Research (auto-generate), Chat (conversational), or Paste (from existing specs)
+- **Clickable Job Cards** - View full job details including duties, qualifications, remuneration, and more
+- **Comprehensive Job Specs** - Fields include Customer, Introduction, Duties, Attributes, Qualifications, Remuneration, Gender, Ethics, City/Province
+
 ### 🎯 Recruitment & Sourcing
-- **AI Recruitment Agent** - Conversational AI for job definition and candidate matching
-- **Smart Job Creation** - AI-assisted job description generation
-- **Candidate Pipeline** - Visual kanban board with drag-and-drop
-- **CV Parsing** - Automatic skill extraction and profile creation
-- **RAG-Powered Matching** - Semantic search using pgvector embeddings
+- **AI Recruitment Agent** - Conversational AI for candidate matching and intelligent sourcing
+- **Multi-Source Candidate Search** - Search across PNet, LinkedIn, and local database simultaneously
+- **Candidate Pipeline** - Visual kanban board with drag-and-drop stage management
+- **CV Parsing** - Automatic skill extraction and profile creation using AI
+- **RAG-Powered Matching** - Semantic search using pgvector embeddings for best candidate fit
+- **Bulk CV Upload** - Upload multiple CVs at once for batch processing
 
 ### 🎙️ AI Interview Suite
 - **Voice Interview (Hume AI)** - Empathic voice screening with sentiment analysis
@@ -78,12 +85,17 @@
 - **KPI Tracking** - Goal setting and performance monitoring
 - **Workforce Intelligence** - Analytics and insights dashboard
 - **Executive Dashboard** - High-level metrics and visualizations
+- **Learning Management** - Training modules and skill development tracking
+- **Document Automation** - AI-generated contracts, letters, and HR documents
 
 ### 🏢 Multi-Tenant Architecture
 - **White-Label Branding** - Custom logos, colors, and domains
 - **Subdomain Isolation** - Tenant-specific URLs (client.ahc.ai)
-- **Modular Features** - Enable/disable modules per tenant
+- **Modular Features** - Enable/disable modules per tenant in real-time
 - **Role-Based Access** - User, Admin, Super Admin roles
+- **Tenant Management Dashboard** - Control subscriptions, payments, and module access
+- **Admin Tenant Switching** - View any tenant's workspace as admin
+- **Subscription Tiers** - Free, Basic, Professional, and Enterprise plans
 
 ---
 
