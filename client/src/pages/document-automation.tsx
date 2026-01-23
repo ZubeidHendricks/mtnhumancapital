@@ -434,6 +434,10 @@ export default function DocumentAutomation() {
               <FolderOpen className="h-4 w-4 mr-2" />
               Upload History
             </TabsTrigger>
+            <TabsTrigger value="templates" className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400" data-testid="tab-templates">
+              <FileText className="h-4 w-4 mr-2" />
+              Templates
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="upload" className="space-y-6">
@@ -1335,6 +1339,114 @@ export default function DocumentAutomation() {
                     ))}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="templates" className="space-y-6">
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle className="text-lg text-foreground">Document Templates</CardTitle>
+                <CardDescription>Download templates for HR documents and onboarding materials</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  <div className="p-4 rounded-lg bg-muted border border-border hover:border-green-500/50 transition-colors">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-lg bg-green-500/20">
+                        <FileText className="h-5 w-5 text-green-400" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-foreground">Offer Letter</h4>
+                        <p className="text-xs text-muted-foreground">Standard employment offer</p>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full" data-testid="button-download-offer-letter">
+                      <Download className="h-4 w-4 mr-2" />
+                      Download Template
+                    </Button>
+                  </div>
+
+                  <div className="p-4 rounded-lg bg-muted border border-border hover:border-blue-500/50 transition-colors">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-lg bg-blue-500/20">
+                        <Mail className="h-5 w-5 text-blue-400" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-foreground">Welcome Letter</h4>
+                        <p className="text-xs text-muted-foreground">New employee welcome</p>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full" data-testid="button-download-welcome-letter">
+                      <Download className="h-4 w-4 mr-2" />
+                      Download Template
+                    </Button>
+                  </div>
+
+                  <div className="p-4 rounded-lg bg-muted border border-border hover:border-purple-500/50 transition-colors">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-lg bg-purple-500/20">
+                        <FolderOpen className="h-5 w-5 text-purple-400" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-foreground">Employee Handbook</h4>
+                        <p className="text-xs text-muted-foreground">Company policies & guidelines</p>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full" data-testid="button-download-handbook">
+                      <Download className="h-4 w-4 mr-2" />
+                      Download Template
+                    </Button>
+                  </div>
+
+                  <div className="p-4 rounded-lg bg-muted border border-border hover:border-amber-500/50 transition-colors">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-lg bg-amber-500/20">
+                        <FileText className="h-5 w-5 text-amber-400" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-foreground">CV Template</h4>
+                        <p className="text-xs text-muted-foreground">Branded CV format</p>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full" data-testid="button-download-cv-template">
+                      <Download className="h-4 w-4 mr-2" />
+                      Download Template
+                    </Button>
+                  </div>
+
+                  <div className="p-4 rounded-lg bg-muted border border-border hover:border-red-500/50 transition-colors">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-lg bg-red-500/20">
+                        <FileText className="h-5 w-5 text-red-400" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-foreground">NDA Agreement</h4>
+                        <p className="text-xs text-muted-foreground">Non-disclosure template</p>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full" data-testid="button-download-nda">
+                      <Download className="h-4 w-4 mr-2" />
+                      Download Template
+                    </Button>
+                  </div>
+
+                  <div className="p-4 rounded-lg bg-muted border border-border hover:border-cyan-500/50 transition-colors">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-lg bg-cyan-500/20">
+                        <FileText className="h-5 w-5 text-cyan-400" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-foreground">Employment Contract</h4>
+                        <p className="text-xs text-muted-foreground">Standard contract template</p>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full" data-testid="button-download-contract">
+                      <Download className="h-4 w-4 mr-2" />
+                      Download Template
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

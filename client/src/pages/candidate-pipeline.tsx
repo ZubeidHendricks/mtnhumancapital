@@ -34,7 +34,8 @@ import {
   ExternalLink,
   MessageCircle,
   ChevronRight,
-  Ban
+  Ban,
+  CreditCard
 } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -57,6 +58,9 @@ type CandidateMetadata = {
     references?: DocumentRecord;
     backgroundCheck?: DocumentRecord;
     contract?: DocumentRecord;
+    bankingDetails?: DocumentRecord;
+    signedOfferLetter?: DocumentRecord;
+    ndaNonCompete?: DocumentRecord;
   };
   [key: string]: any;
 };
@@ -67,6 +71,9 @@ const DOCUMENT_DEFINITIONS = [
   { key: "references", name: "References", icon: UserCheck },
   { key: "backgroundCheck", name: "Background Check", icon: Shield },
   { key: "contract", name: "Signed Contract", icon: FileCheck },
+  { key: "bankingDetails", name: "Banking Details", icon: CreditCard },
+  { key: "signedOfferLetter", name: "Signed Offer Letter", icon: FileCheck },
+  { key: "ndaNonCompete", name: "NDA / Non-Compete", icon: FileText },
 ] as const;
 
 const PIPELINE_STAGES = [
