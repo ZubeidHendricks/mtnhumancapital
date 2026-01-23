@@ -6,6 +6,7 @@ import { ScrollToTop } from "@/components/ui/scroll-to-top";
 import { TenantProvider } from "@/contexts/TenantContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AppLayout } from "@/components/layout/app-layout";
+import { TutorialWalkthrough, TutorialButton, useTutorial } from "@/components/tutorial-walkthrough";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Login from "@/pages/login";
@@ -128,7 +129,7 @@ function Router() {
 }
 
 function AppWithLayout() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   
   const publicRoutes = ['/', '/login', '/interview/invite', '/self-assessment', '/verify-certificate', '/onboarding'];
   const isPublicRoute = publicRoutes.some(route => {
@@ -140,10 +141,30 @@ function AppWithLayout() {
     return <Router />;
   }
 
+  return <AuthenticatedApp />;
+}
+
+function AuthenticatedApp() {
+  const [location, setLocation] = useLocation();
+  const { isOpen, openTutorial, closeTutorial } = useTutorial();
+
+  const handleNavigate = (route: string) => {
+    setLocation(route);
+    closeTutorial();
+  };
+
   return (
-    <AppLayout>
-      <Router />
-    </AppLayout>
+    <>
+      <AppLayout>
+        <Router />
+      </AppLayout>
+      <TutorialWalkthrough 
+        isOpen={isOpen} 
+        onClose={closeTutorial}
+        onNavigate={handleNavigate}
+      />
+      <TutorialButton onClick={openTutorial} />
+    </>
   );
 }
 
