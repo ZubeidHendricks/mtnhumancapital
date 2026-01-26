@@ -707,11 +707,12 @@ BENEFITS:
 
         <Tabs defaultValue="jobs" className="space-y-6" onValueChange={setActiveTab}>
           <div className="flex items-center gap-3 flex-wrap">
-            {/* Main 4 Tabs */}
-            <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:w-[500px] bg-white dark:bg-gray-800 border-2 border-orange-200 dark:border-orange-700">
+            {/* Main 5 Tabs */}
+            <TabsList className="grid grid-cols-2 md:grid-cols-5 lg:w-[600px] bg-white dark:bg-gray-800 border-2 border-orange-200 dark:border-orange-700">
               <TabsTrigger value="jobs" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white font-semibold">Jobs</TabsTrigger>
               <TabsTrigger value="recruitment" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white font-semibold">Recruitment</TabsTrigger>
               <TabsTrigger value="integrity" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white font-semibold">Integrity</TabsTrigger>
+              <TabsTrigger value="offer" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white font-semibold">Offer</TabsTrigger>
               <TabsTrigger value="onboarding" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white font-semibold">Onboarding</TabsTrigger>
             </TabsList>
           </div>
@@ -2067,6 +2068,73 @@ BENEFITS:
                       ))}
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* OFFER TAB */}
+          <TabsContent value="offer" className="space-y-6">
+            <div className="rounded-lg bg-green-50 dark:bg-green-900 border-2 border-green-200 dark:border-green-700 p-6 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold flex items-center gap-2 text-gray-900 dark:text-white">
+                  <FileText className="w-5 h-5 text-green-500" />
+                  Ready to make an offer?
+                </h3>
+                <p className="text-gray-900 dark:text-gray-100 font-semibold text-sm mt-1">
+                  Generate professional offer letters, contracts, and NDAs for your selected candidates.
+                </p>
+              </div>
+              <Link href="/offer-management">
+                <Button className="bg-green-500 hover:bg-green-600 text-white font-semibold">
+                  Go to Offer Management
+                </Button>
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card className="border-2 border-green-200 dark:border-green-700">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-green-500" />
+                    Standard Offers
+                  </CardTitle>
+                  <CardDescription>Generate standard employment offer letters</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Link href="/offer-management">
+                    <Button variant="outline" className="w-full">Create Offer Letter</Button>
+                  </Link>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-blue-200 dark:border-blue-700">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileCheck className="w-5 h-5 text-blue-500" />
+                    Contract Offers
+                  </CardTitle>
+                  <CardDescription>Generate detailed employment contracts</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Link href="/offer-management">
+                    <Button variant="outline" className="w-full">Create Contract</Button>
+                  </Link>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-purple-200 dark:border-purple-700">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5 text-purple-500" />
+                    NDA Documents
+                  </CardTitle>
+                  <CardDescription>Generate non-disclosure agreements</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Link href="/offer-management">
+                    <Button variant="outline" className="w-full">Create NDA</Button>
+                  </Link>
                 </CardContent>
               </Card>
             </div>
