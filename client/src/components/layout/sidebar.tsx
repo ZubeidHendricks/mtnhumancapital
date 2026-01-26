@@ -112,6 +112,12 @@ export function Sidebar() {
       ]
     },
     {
+      title: "LEARNING",
+      items: [
+        { name: "LMS Dashboard", href: "/learning-management", icon: BookOpen },
+      ]
+    },
+    {
       title: "FLEET LOGIX",
       items: [
         { name: "Fleet Dashboard", href: "/fleetlogix", icon: Truck },
