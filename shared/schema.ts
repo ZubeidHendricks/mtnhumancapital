@@ -45,6 +45,15 @@ export const jobs = pgTable("jobs", {
   // Other
   unionAffiliation: text("union_affiliation"),
   
+  // Recruitment Agent Assignment
+  assignedAgentId: varchar("assigned_agent_id"),
+  assignedAgentName: text("assigned_agent_name"),
+  
+  // Job Closure
+  isClosed: integer("is_closed").default(0),
+  closedAt: timestamp("closed_at"),
+  closedReason: text("closed_reason"),
+  
   // RAG Embeddings
   requirementsEmbedding: vector("requirements_embedding", { dimensions: 1536 }),
   

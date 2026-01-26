@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { 
   FileText, 
   Download,
@@ -15,7 +16,9 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
-  XCircle
+  XCircle,
+  Loader2,
+  Sparkles
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -27,11 +30,31 @@ interface Candidate {
   offerDate?: string;
 }
 
+interface DocFormData {
+  fullName: string;
+  jobTitle: string;
+  startDate: string;
+  salary: string;
+  email: string;
+}
+
+const defaultDocForm: DocFormData = {
+  fullName: "",
+  jobTitle: "",
+  startDate: new Date().toISOString().split('T')[0],
+  salary: "",
+  email: "",
+};
+
 export default function OfferManagement() {
   const [selectedCandidate, setSelectedCandidate] = useState<string>("");
   const [salaryAmount, setSalaryAmount] = useState("");
   const [startDate, setStartDate] = useState("");
   const [additionalBenefits, setAdditionalBenefits] = useState("");
+  const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
+  const [docType, setDocType] = useState<string>("offer_letter");
+  const [docForm, setDocForm] = useState<DocFormData>(defaultDocForm);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const candidates: Candidate[] = [
     { id: "1", name: "John Smith", position: "Senior Developer", status: "pending" },
@@ -40,11 +63,65 @@ export default function OfferManagement() {
     { id: "4", name: "Emily Brown", position: "HR Coordinator", status: "declined", offerDate: "2024-01-08" },
   ];
 
+  const handleGenerateDocument = async () => {
+    if (!docForm.fullName || !docForm.jobTitle || !docForm.startDate) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in Full Name, Job Title, and Start Date.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const response = await fetch(`/api/documents/generate/${docType}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(docForm),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to generate document");
+      }
+
+      const blob = await response.blob();
+      const filename = `${docType}_${docForm.fullName.replace(/\s+/g, '_')}.docx`;
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Document Downloaded",
+        description: `${docType.replace(/_/g, ' ')} has been generated and downloaded.`,
+      });
+      setGenerateDialogOpen(false);
+      setDocForm(defaultDocForm);
+    } catch (error) {
+      toast({
+        title: "Generation Failed",
+        description: error instanceof Error ? error.message : "Failed to generate document",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const openGenerateDialog = (type: string) => {
+    setDocType(type);
+    setDocForm(defaultDocForm);
+    setGenerateDialogOpen(true);
+  };
+
   const handleDownloadTemplate = () => {
-    toast({
-      title: "Template Downloaded",
-      description: "Offer letter template has been downloaded.",
-    });
+    openGenerateDialog("offer_letter");
   };
 
   const handleSendOffer = () => {
@@ -232,17 +309,32 @@ export default function OfferManagement() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
-            <Button variant="outline" className="h-auto py-4 flex-col gap-2" data-testid="button-template-standard">
+            <Button 
+              variant="outline" 
+              className="h-auto py-4 flex-col gap-2" 
+              data-testid="button-template-standard"
+              onClick={() => openGenerateDialog("offer_letter")}
+            >
               <FileText className="h-8 w-8 text-blue-400" />
               <span>Standard Offer</span>
               <span className="text-xs text-muted-foreground">Permanent position</span>
             </Button>
-            <Button variant="outline" className="h-auto py-4 flex-col gap-2" data-testid="button-template-contract">
+            <Button 
+              variant="outline" 
+              className="h-auto py-4 flex-col gap-2" 
+              data-testid="button-template-contract"
+              onClick={() => openGenerateDialog("employment_contract")}
+            >
               <FileText className="h-8 w-8 text-amber-400" />
               <span>Contract Offer</span>
               <span className="text-xs text-muted-foreground">Fixed-term contract</span>
             </Button>
-            <Button variant="outline" className="h-auto py-4 flex-col gap-2" data-testid="button-template-executive">
+            <Button 
+              variant="outline" 
+              className="h-auto py-4 flex-col gap-2" 
+              data-testid="button-template-executive"
+              onClick={() => openGenerateDialog("offer_letter")}
+            >
               <FileText className="h-8 w-8 text-purple-400" />
               <span>Executive Offer</span>
               <span className="text-xs text-muted-foreground">Senior management</span>
@@ -250,6 +342,88 @@ export default function OfferManagement() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={generateDialogOpen} onOpenChange={setGenerateDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Generate {docType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+            </DialogTitle>
+            <DialogDescription>
+              Enter employee details to generate a personalized document.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Full Name *</Label>
+              <Input
+                id="fullName"
+                placeholder="John Smith"
+                value={docForm.fullName}
+                onChange={(e) => setDocForm(prev => ({ ...prev, fullName: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="john@company.com"
+                value={docForm.email}
+                onChange={(e) => setDocForm(prev => ({ ...prev, email: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="jobTitle">Job Title *</Label>
+              <Input
+                id="jobTitle"
+                placeholder="Senior Developer"
+                value={docForm.jobTitle}
+                onChange={(e) => setDocForm(prev => ({ ...prev, jobTitle: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="docStartDate">Start Date *</Label>
+              <Input
+                id="docStartDate"
+                type="date"
+                value={docForm.startDate}
+                onChange={(e) => setDocForm(prev => ({ ...prev, startDate: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="docSalary">Salary</Label>
+              <Input
+                id="docSalary"
+                placeholder="R50,000"
+                value={docForm.salary}
+                onChange={(e) => setDocForm(prev => ({ ...prev, salary: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setGenerateDialogOpen(false)} disabled={isGenerating}>
+              Cancel
+            </Button>
+            <Button onClick={handleGenerateDocument} disabled={isGenerating || !docForm.fullName || !docForm.jobTitle}>
+              {isGenerating ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4 mr-2" />
+                  Generate & Download
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

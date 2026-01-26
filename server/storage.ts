@@ -208,6 +208,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   
   getAllJobs(tenantId: string, includeArchived?: boolean): Promise<Job[]>;
+  getClosedJobs(tenantId: string): Promise<Job[]>;
   getArchivedJobs(tenantId: string): Promise<Job[]>;
   getJob(tenantId: string, id: string): Promise<Job | undefined>;
   createJob(tenantId: string, job: InsertJob): Promise<Job>;
@@ -628,9 +629,24 @@ export class DatabaseStorage implements IStorage {
     if (includeArchived) {
       return await db.select().from(jobs).where(eq(jobs.tenantId, tenantId)).orderBy(desc(jobs.createdAt));
     }
+    // Exclude archived and closed jobs from active list
     return await db.select().from(jobs).where(
-      and(eq(jobs.tenantId, tenantId), sql`${jobs.archivedAt} IS NULL`)
+      and(
+        eq(jobs.tenantId, tenantId), 
+        sql`${jobs.archivedAt} IS NULL`,
+        sql`(${jobs.isClosed} IS NULL OR ${jobs.isClosed} = 0)`
+      )
     ).orderBy(desc(jobs.createdAt));
+  }
+
+  async getClosedJobs(tenantId: string): Promise<Job[]> {
+    return await db.select().from(jobs).where(
+      and(
+        eq(jobs.tenantId, tenantId), 
+        sql`${jobs.archivedAt} IS NULL`,
+        sql`${jobs.isClosed} = 1`
+      )
+    ).orderBy(desc(jobs.closedAt));
   }
 
   async getArchivedJobs(tenantId: string): Promise<Job[]> {

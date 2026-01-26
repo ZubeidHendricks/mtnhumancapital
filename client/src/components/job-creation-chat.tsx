@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -6,9 +7,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { Loader2, Send, Sparkles, CheckCircle2, Bot, FileText, MessageSquare, Upload, Pencil, Save, X, Search, Globe } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, Send, Sparkles, CheckCircle2, Bot, FileText, MessageSquare, Upload, Pencil, Save, X, Search, Globe, UserCog } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
+import { useTenantQueryKey } from "@/hooks/useTenant";
 
 interface Message {
   role: "user" | "assistant";
@@ -38,8 +41,18 @@ export function JobCreationChat({ onJobCreated, onCancel }: JobCreationChatProps
   const [isResearching, setIsResearching] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedJobSpec, setEditedJobSpec] = useState<any>(null);
+  const [selectedAgentId, setSelectedAgentId] = useState<string>("");
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch employees for agent selection
+  const { data: employees = [] } = useQuery({
+    queryKey: useTenantQueryKey(["employees"]),
+    queryFn: async () => {
+      const response = await api.get("/employees");
+      return response.data;
+    },
+  });
 
   const handleStartEdit = () => {
     setEditedJobSpec({ ...jobSpec });
@@ -222,10 +235,15 @@ export function JobCreationChat({ onJobCreated, onCancel }: JobCreationChatProps
         setIsEditing(false);
       }
       
+      // Find selected agent name for caching
+      const selectedAgent = employees.find((emp: any) => emp.id === selectedAgentId);
+      
       await api.post("/jobs/conversation/create", {
         sessionId,
         isDraft,
         jobSpec: finalJobSpec,
+        assignedAgentId: selectedAgentId || undefined,
+        assignedAgentName: selectedAgent?.fullName || undefined,
       });
 
       await api.delete(`/jobs/conversation/${sessionId}`);
@@ -911,6 +929,30 @@ Benefits: Medical aid, retirement fund, flexible hours`}
                       />
                     </div>
                   </div>
+                  <div className="border-t border-white/10 pt-3 mt-3">
+                    <Label className="text-muted-foreground text-xs flex items-center gap-1">
+                      <UserCog className="w-3 h-3" />
+                      Assign Recruitment Agent
+                    </Label>
+                    <Select
+                      value={selectedAgentId}
+                      onValueChange={setSelectedAgentId}
+                    >
+                      <SelectTrigger className="mt-1 h-8 text-xs bg-background/50 border-white/10" data-testid="select-agent">
+                        <SelectValue placeholder="Select an agent..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {employees.map((emp: any) => (
+                          <SelectItem key={emp.id} value={emp.id} data-testid={`agent-option-${emp.id}`}>
+                            {emp.fullName} {emp.jobTitle ? `- ${emp.jobTitle}` : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Internal recruiter responsible for this job
+                    </p>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-3 text-xs">
@@ -1093,6 +1135,32 @@ Benefits: Medical aid, retirement fund, flexible hours`}
                       </div>
                     </div>
                   )}
+                  
+                  {/* Agent Selection - Always visible in view mode */}
+                  <div className="border-t border-white/10 pt-3 mt-3" data-testid="agent-selection-section">
+                    <Label className="text-muted-foreground text-xs flex items-center gap-1">
+                      <UserCog className="w-3 h-3" />
+                      Recruitment Agent
+                    </Label>
+                    <Select
+                      value={selectedAgentId}
+                      onValueChange={setSelectedAgentId}
+                    >
+                      <SelectTrigger className="mt-1 h-8 text-xs bg-background/50 border-white/10" data-testid="select-agent-view">
+                        <SelectValue placeholder="Select an agent..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {employees.map((emp: any) => (
+                          <SelectItem key={emp.id} value={emp.id}>
+                            {emp.fullName} {emp.jobTitle ? `- ${emp.jobTitle}` : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Internal recruiter responsible for this job
+                    </p>
+                  </div>
                 </div>
               )}
             </ScrollArea>

@@ -403,6 +403,49 @@ export default function CandidatePipeline() {
                         {Math.round(progressPercent)}% Complete
                       </Badge>
                     </div>
+                    
+                    {/* Contact Details - Prominently Displayed */}
+                    <div className="mt-3 p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                      <p className="text-xs font-medium text-blue-400 mb-2 uppercase tracking-wide">Contact Details</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {candidate.email ? (
+                          <a 
+                            href={`mailto:${candidate.email}`} 
+                            className="flex items-center gap-2 text-sm text-white hover:text-blue-400 transition-colors"
+                            data-testid={`email-${candidate.id}`}
+                          >
+                            <Mail className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                            <span className="truncate">{candidate.email}</span>
+                          </a>
+                        ) : (
+                          <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Mail className="h-4 w-4 flex-shrink-0" />
+                            No email provided
+                          </span>
+                        )}
+                        {candidate.phone ? (
+                          <a 
+                            href={`tel:${candidate.phone}`} 
+                            className="flex items-center gap-2 text-sm text-white hover:text-green-400 transition-colors"
+                            data-testid={`phone-${candidate.id}`}
+                          >
+                            <Phone className="h-4 w-4 text-green-400 flex-shrink-0" />
+                            <span>{candidate.phone}</span>
+                          </a>
+                        ) : (
+                          <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Phone className="h-4 w-4 flex-shrink-0" />
+                            No phone provided
+                          </span>
+                        )}
+                      </div>
+                      {candidate.location && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
+                          <MapPin className="h-4 w-4 flex-shrink-0" />
+                          <span>{candidate.location}</span>
+                        </div>
+                      )}
+                    </div>
                   </CardHeader>
 
                   <CardContent className="space-y-4">

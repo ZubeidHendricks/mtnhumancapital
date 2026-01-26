@@ -1387,6 +1387,45 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     }
   });
 
+  // Close job (mark as completed/candidates sourced - removes from active list)
+  app.post("/api/jobs/:id/close", async (req, res) => {
+    try {
+      const { reason = "candidates_sourced" } = req.body;
+      const job = await storage.updateJob(req.tenant.id, req.params.id, {
+        isClosed: 1,
+        closedAt: new Date(),
+        closedReason: reason,
+        status: "Closed",
+      } as any);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      res.json(job);
+    } catch (error) {
+      console.error("Error closing job:", error);
+      res.status(500).json({ message: "Failed to close job" });
+    }
+  });
+
+  // Reopen a closed job
+  app.post("/api/jobs/:id/reopen", async (req, res) => {
+    try {
+      const job = await storage.updateJob(req.tenant.id, req.params.id, {
+        isClosed: 0,
+        closedAt: null,
+        closedReason: null,
+        status: "Active",
+      } as any);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+      res.json(job);
+    } catch (error) {
+      console.error("Error reopening job:", error);
+      res.status(500).json({ message: "Failed to reopen job" });
+    }
+  });
+
   // Archive job (soft delete - preserves historical data)
   app.post("/api/jobs/:id/archive", async (req, res) => {
     try {
@@ -1413,6 +1452,17 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     } catch (error) {
       console.error("Error restoring job:", error);
       res.status(500).json({ message: "Failed to restore job" });
+    }
+  });
+
+  // Get closed jobs (candidates sourced, filled, etc.)
+  app.get("/api/jobs/closed", async (req, res) => {
+    try {
+      const closedJobs = await storage.getClosedJobs(req.tenant.id);
+      res.json(closedJobs);
+    } catch (error) {
+      console.error("Error fetching closed jobs:", error);
+      res.status(500).json({ message: "Failed to fetch closed jobs" });
     }
   });
 
@@ -1489,7 +1539,7 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
 
   app.post("/api/jobs/conversation/create", async (req, res) => {
     try {
-      const { sessionId, isDraft = false, jobSpec: editedJobSpec } = req.body;
+      const { sessionId, isDraft = false, jobSpec: editedJobSpec, assignedAgentId, assignedAgentName } = req.body;
       
       console.log("[Job Creation] Received request:", { sessionId, isDraft, hasEditedSpec: !!editedJobSpec });
 
@@ -1552,6 +1602,8 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
         physicalRequirements: jobSpec.physicalRequirements,
         equipmentExperience: jobSpec.equipmentExperience as any,
         status: isDraft ? "Draft" : "Active",
+        assignedAgentId: assignedAgentId || undefined,
+        assignedAgentName: assignedAgentName || undefined,
       });
       
       console.log("[Job Creation] Job created successfully:", { id: job.id, title: job.title });
