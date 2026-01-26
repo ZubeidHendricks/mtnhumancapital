@@ -37,6 +37,7 @@ interface NavItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   module?: string;
+  external?: boolean;
 }
 
 interface NavSection {
@@ -114,7 +115,7 @@ export function Sidebar() {
     {
       title: "LEARNING",
       items: [
-        { name: "LMS Dashboard", href: "/learning-management", icon: BookOpen },
+        { name: "LMS Dashboard", href: "http://165.227.113.197/", icon: BookOpen, external: true },
       ]
     },
     {
@@ -190,23 +191,35 @@ export function Sidebar() {
                   
                   return (
                     <li key={item.href}>
-                      <Link href={item.href}>
-                        <div className={cn(
-                          "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer group relative",
-                          active 
-                            ? "bg-primary/10 text-primary" 
-                            : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                        )}>
-                          {active && (
-                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full" />
-                          )}
-                          <Icon className={cn(
-                            "w-4 h-4 flex-shrink-0",
-                            active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
-                          )} />
-                          {!collapsed && <span>{item.name}</span>}
-                        </div>
-                      </Link>
+                      {item.external ? (
+                        <a href={item.href} target="_blank" rel="noopener noreferrer">
+                          <div className={cn(
+                            "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer group relative",
+                            "text-muted-foreground hover:bg-accent hover:text-foreground"
+                          )}>
+                            <Icon className="w-4 h-4 flex-shrink-0 text-muted-foreground group-hover:text-foreground" />
+                            {!collapsed && <span>{item.name}</span>}
+                          </div>
+                        </a>
+                      ) : (
+                        <Link href={item.href}>
+                          <div className={cn(
+                            "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer group relative",
+                            active 
+                              ? "bg-primary/10 text-primary" 
+                              : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                          )}>
+                            {active && (
+                              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full" />
+                            )}
+                            <Icon className={cn(
+                              "w-4 h-4 flex-shrink-0",
+                              active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                            )} />
+                            {!collapsed && <span>{item.name}</span>}
+                          </div>
+                        </Link>
+                      )}
                     </li>
                   );
                 })}
