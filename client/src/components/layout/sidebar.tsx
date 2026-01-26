@@ -116,6 +116,7 @@ export function Sidebar() {
       title: "LEARNING",
       items: [
         { name: "LMS Dashboard", href: "http://165.227.113.197/", icon: BookOpen, external: true },
+        { name: "Attendance", href: "http://208.68.39.111/", icon: ClipboardList, external: true },
       ]
     },
     {
