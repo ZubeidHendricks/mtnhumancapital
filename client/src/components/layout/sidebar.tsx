@@ -115,12 +115,6 @@ export function Sidebar() {
       ]
     },
     {
-      title: "FLEET LOGIX",
-      items: [
-        { name: "Fleet Dashboard", href: "/fleetlogix", icon: Truck },
-      ]
-    },
-    {
       title: "ADMIN",
       items: [
         { name: "System Admin", href: "/admin-dashboard", icon: Settings },
