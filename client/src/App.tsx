@@ -147,11 +147,12 @@ function Router() {
 function AppWithLayout() {
   const [location, setLocation] = useLocation();
   
-  const publicRoutes = ['/', '/login', '/interview/invite', '/self-assessment', '/verify-certificate', '/onboarding'];
+  const publicRoutes = ['/', '/login', '/interview/invite', '/self-assessment', '/verify-certificate'];
+  const exactPublicRoutes = ['/onboarding'];
   const isPublicRoute = publicRoutes.some(route => {
     if (route === '/') return location === '/';
     return location.startsWith(route);
-  });
+  }) || exactPublicRoutes.includes(location);
 
   if (isPublicRoute) {
     return <Router />;
