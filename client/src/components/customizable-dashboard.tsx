@@ -16,7 +16,12 @@ import {
   Trash2,
   Save,
   GripVertical,
-  Maximize2
+  Maximize2,
+  Target,
+  ScatterChart as ScatterChartIcon,
+  Filter,
+  Disc,
+  Layers
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { 
@@ -34,7 +39,21 @@ import {
   Tooltip, 
   ResponsiveContainer, 
   Cell, 
-  Legend 
+  Legend,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  ScatterChart,
+  Scatter,
+  ZAxis,
+  RadialBarChart,
+  RadialBar,
+  ComposedChart,
+  Funnel,
+  FunnelChart,
+  LabelList
 } from "recharts";
 import "react-grid-layout/css/styles.css";
 // @ts-expect-error - react-grid-layout types are incompatible but runtime works correctly
@@ -53,7 +72,7 @@ type LayoutItem = {
 export interface ChartConfig {
   id: string;
   title: string;
-  chartType: "bar" | "line" | "pie" | "area";
+  chartType: "bar" | "line" | "pie" | "area" | "radar" | "scatter" | "radialBar" | "funnel" | "composed";
   dataSource: string;
   xAxisField: string;
   yAxisField: string;
@@ -86,6 +105,11 @@ const CHART_TYPES = [
   { value: "line", label: "Line Chart", icon: LineChartIcon },
   { value: "pie", label: "Pie Chart", icon: PieChartIcon },
   { value: "area", label: "Area Chart", icon: AreaChart },
+  { value: "radar", label: "Radar Chart", icon: Target },
+  { value: "scatter", label: "Scatter Plot", icon: ScatterChartIcon },
+  { value: "radialBar", label: "Radial Bar", icon: Disc },
+  { value: "funnel", label: "Funnel Chart", icon: Filter },
+  { value: "composed", label: "Composed (Bar + Line)", icon: Layers },
 ];
 
 export function CustomizableDashboard({
@@ -289,6 +313,87 @@ export function CustomizableDashboard({
               <Area type="monotone" dataKey="value" stroke="#8884d8" fill="#8884d8" fillOpacity={0.3} name={config.aggregation === "count" ? "Count" : config.yAxisField} />
             </RechartsAreaChart>
           </ResponsiveContainer>
+        );
+      case "radar":
+        return (
+          <ResponsiveContainer width="100%" height={chartHeight}>
+            <RadarChart data={data}>
+              <PolarGrid />
+              <PolarAngleAxis dataKey="name" fontSize={10} />
+              <PolarRadiusAxis fontSize={10} />
+              <Tooltip />
+              <Legend />
+              <Radar name={config.aggregation === "count" ? "Count" : config.yAxisField} dataKey="value" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
+            </RadarChart>
+          </ResponsiveContainer>
+        );
+      case "scatter": {
+        const scatterData = data.map((d, i) => ({ ...d, x: i, y: d.value, z: d.value }));
+        return (
+          <ResponsiveContainer width="100%" height={chartHeight}>
+            <ScatterChart>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="x" name="Index" fontSize={12} />
+              <YAxis dataKey="y" name="Value" fontSize={12} />
+              <ZAxis dataKey="z" range={[50, 400]} />
+              <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+              <Legend />
+              <Scatter name={config.aggregation === "count" ? "Count" : config.yAxisField} data={scatterData} fill="#8884d8">
+                {scatterData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                ))}
+              </Scatter>
+            </ScatterChart>
+          </ResponsiveContainer>
+        );
+      }
+      case "radialBar": {
+        const radialData = data.map((d, i) => ({ ...d, fill: CHART_COLORS[i % CHART_COLORS.length] }));
+        return (
+          <ResponsiveContainer width="100%" height={chartHeight}>
+            <RadialBarChart innerRadius="10%" outerRadius="80%" data={radialData} startAngle={180} endAngle={0}>
+              <RadialBar background dataKey="value" label={{ position: 'insideStart', fill: '#fff', fontSize: 10 }} />
+              <Tooltip />
+              <Legend iconSize={10} layout="vertical" verticalAlign="middle" align="right" />
+            </RadialBarChart>
+          </ResponsiveContainer>
+        );
+      }
+      case "funnel": {
+        const funnelData = [...data].sort((a, b) => b.value - a.value);
+        return (
+          <ResponsiveContainer width="100%" height={chartHeight}>
+            <FunnelChart>
+              <Tooltip />
+              <Funnel dataKey="value" data={funnelData} isAnimationActive>
+                <LabelList position="right" fill="#000" stroke="none" dataKey="name" fontSize={10} />
+                {funnelData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                ))}
+              </Funnel>
+            </FunnelChart>
+          </ResponsiveContainer>
+        );
+      }
+      case "composed":
+        return (
+          <ResponsiveContainer width="100%" height={chartHeight}>
+            <ComposedChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" fontSize={12} />
+              <YAxis fontSize={12} />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="value" fill="#8884d8" name="Bar" />
+              <Line type="monotone" dataKey="value" stroke="#ff7300" name="Trend" strokeWidth={2} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        );
+      default:
+        return (
+          <div className="h-full flex items-center justify-center text-muted-foreground">
+            Unsupported chart type
+          </div>
         );
     }
   };
