@@ -37,7 +37,6 @@ export function TopHeader() {
       '/whatsapp-monitor': 'WhatsApp Monitor',
       '/recommendations': 'AI Recommendations',
       '/dashboard-builder': 'Dashboard Builder',
-      '/fleetlogix': 'Fleet Logix Dashboard',
       '/admin-dashboard': 'System Administration',
       '/tenant-management': 'Tenant Management',
       '/platform-docs': 'Platform Documentation',

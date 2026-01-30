@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Cpu, LayoutDashboard, Building2, Mic, Video, ChevronDown, UserSearch, Shield, Settings, Users, Briefcase, TrendingUp, FileText, MessageCircle, ClipboardList, Sparkles, Target, Star, UserCheck, BarChart3, BookOpen, LayoutGrid, UserPlus, Truck } from "lucide-react";
+import { Menu, X, Cpu, LayoutDashboard, Building2, Mic, Video, ChevronDown, UserSearch, Shield, Settings, Users, Briefcase, TrendingUp, FileText, MessageCircle, ClipboardList, Sparkles, Target, Star, UserCheck, BarChart3, BookOpen, LayoutGrid, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -205,13 +205,6 @@ export function Navbar() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-popover border-border text-popover-foreground">
-              <Link href="/fleetlogix">
-                <DropdownMenuItem className="cursor-pointer hover:bg-accent focus:bg-accent">
-                  <Truck className="w-4 h-4 mr-2 text-orange-400" />
-                  <span>Fleet Logix</span>
-                </DropdownMenuItem>
-              </Link>
-              <DropdownMenuSeparator className="bg-border" />
               <Link href="/recruitment-dashboard">
                 <DropdownMenuItem className="cursor-pointer hover:bg-accent focus:bg-accent">
                   <TrendingUp className="w-4 h-4 mr-2 text-purple-400" />
