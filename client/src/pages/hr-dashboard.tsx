@@ -698,6 +698,8 @@ BENEFITS:
         { value: "department", label: "Department", type: "categorical" },
         { value: "location", label: "Location", type: "categorical" },
         { value: "employmentType", label: "Employment Type", type: "categorical" },
+        { value: "salaryMin", label: "Minimum Salary (R)", type: "numeric" },
+        { value: "salaryMax", label: "Maximum Salary (R)", type: "numeric" },
       ]
     },
     {
@@ -708,8 +710,27 @@ BENEFITS:
         { value: "team", label: "Team", type: "categorical" },
         { value: "jobTitle", label: "Job Title", type: "categorical" },
         { value: "employmentType", label: "Employment Type", type: "categorical" },
+        { value: "basicSalary", label: "Basic Salary (R)", type: "numeric" },
+      ]
+    },
+    {
+      key: "financialMetrics",
+      label: "Financial Metrics",
+      fields: [
+        { value: "category", label: "Quarter", type: "categorical" },
+        { value: "revenue", label: "Revenue (R)", type: "numeric" },
+        { value: "expenses", label: "Expenses (R)", type: "numeric" },
+        { value: "profit", label: "Profit (R)", type: "numeric" },
       ]
     }
+  ];
+
+  // Sample financial metrics data
+  const financialMetricsData = [
+    { category: "Q1", revenue: 450000, expenses: 280000, profit: 170000 },
+    { category: "Q2", revenue: 520000, expenses: 310000, profit: 210000 },
+    { category: "Q3", revenue: 480000, expenses: 295000, profit: 185000 },
+    { category: "Q4", revenue: 610000, expenses: 340000, profit: 270000 },
   ];
 
   const getChartData = (sourceKey: string) => {
@@ -717,6 +738,7 @@ BENEFITS:
       case "candidates": return displayCandidates;
       case "jobs": return displayJobs;
       case "employees": return employees || [];
+      case "financialMetrics": return financialMetricsData;
       default: return [];
     }
   };

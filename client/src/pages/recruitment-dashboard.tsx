@@ -194,14 +194,30 @@ export default function RecruitmentDashboard() {
         { value: "department", label: "Department", type: "categorical" },
         { value: "location", label: "Location", type: "categorical" },
         { value: "employmentType", label: "Employment Type", type: "categorical" },
+        { value: "salaryMin", label: "Minimum Salary (R)", type: "numeric" },
+        { value: "salaryMax", label: "Maximum Salary (R)", type: "numeric" },
+      ]
+    },
+    {
+      key: "placements",
+      label: "Placements & Revenue",
+      fields: [
+        { value: "month", label: "Month", type: "categorical" },
+        { value: "placements", label: "Number of Placements", type: "numeric" },
+        { value: "revenue", label: "Revenue (R)", type: "numeric" },
+        { value: "avgRevenue", label: "Average Revenue per Placement (R)", type: "numeric" },
       ]
     }
   ];
+
+  // Sample placements data for visualization
+  const placementsData = monthlyData;
 
   const getData = (sourceKey: string) => {
     switch (sourceKey) {
       case "candidates": return candidates || [];
       case "jobs": return jobs || [];
+      case "placements": return placementsData;
       default: return [];
     }
   };

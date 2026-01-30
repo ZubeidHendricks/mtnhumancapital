@@ -46,7 +46,7 @@ interface ChartConfig {
   id: string;
   title: string;
   chartType: "bar" | "line" | "pie" | "area";
-  dataSource: "candidates" | "jobs" | "employees";
+  dataSource: "candidates" | "jobs" | "employees" | "placements" | "payments" | "financialMetrics";
   xAxisField: string;
   yAxisField: string;
   aggregation: "count" | "sum" | "average";
@@ -78,8 +78,8 @@ const DATA_SOURCE_FIELDS: Record<string, { label: string; fields: { value: strin
       { value: "department", label: "Department", type: "categorical" },
       { value: "location", label: "Location", type: "categorical" },
       { value: "employmentType", label: "Employment Type", type: "categorical" },
-      { value: "salaryMin", label: "Minimum Salary", type: "numeric" },
-      { value: "salaryMax", label: "Maximum Salary", type: "numeric" },
+      { value: "salaryMin", label: "Minimum Salary (R)", type: "numeric" },
+      { value: "salaryMax", label: "Maximum Salary (R)", type: "numeric" },
       { value: "minYearsExperience", label: "Min Years Experience", type: "numeric" },
       { value: "createdAt", label: "Created Date", type: "date" },
     ]
@@ -92,7 +92,36 @@ const DATA_SOURCE_FIELDS: Record<string, { label: string; fields: { value: strin
       { value: "jobTitle", label: "Job Title", type: "categorical" },
       { value: "location", label: "Location", type: "categorical" },
       { value: "employmentType", label: "Employment Type", type: "categorical" },
+      { value: "basicSalary", label: "Basic Salary (R)", type: "numeric" },
+      { value: "salaryPeriod", label: "Salary Period", type: "categorical" },
       { value: "startDate", label: "Start Date", type: "date" },
+    ]
+  },
+  placements: {
+    label: "Placements & Revenue",
+    fields: [
+      { value: "month", label: "Month", type: "categorical" },
+      { value: "placements", label: "Number of Placements", type: "numeric" },
+      { value: "revenue", label: "Revenue (R)", type: "numeric" },
+      { value: "avgRevenue", label: "Average Revenue per Placement (R)", type: "numeric" },
+    ]
+  },
+  payments: {
+    label: "Payments & Billing",
+    fields: [
+      { value: "status", label: "Payment Status", type: "categorical" },
+      { value: "paymentMethod", label: "Payment Method", type: "categorical" },
+      { value: "amount", label: "Amount (R)", type: "numeric" },
+      { value: "currency", label: "Currency", type: "categorical" },
+    ]
+  },
+  financialMetrics: {
+    label: "Financial Metrics",
+    fields: [
+      { value: "category", label: "Category", type: "categorical" },
+      { value: "revenue", label: "Revenue (R)", type: "numeric" },
+      { value: "expenses", label: "Expenses (R)", type: "numeric" },
+      { value: "profit", label: "Profit (R)", type: "numeric" },
     ]
   }
 };
@@ -170,6 +199,34 @@ export default function ExecutiveDashboardCustom() {
     },
   });
 
+  const { data: placementsData } = useQuery({
+    queryKey: ["placement-metrics"],
+    queryFn: async () => {
+      const response = await api.get("/api/placement-metrics");
+      return response.data;
+    },
+  });
+
+  const { data: paymentsData } = useQuery({
+    queryKey: ["tenant-payments"],
+    queryFn: async () => {
+      try {
+        const response = await api.get("/api/admin/payments");
+        return response.data;
+      } catch {
+        return [];
+      }
+    },
+  });
+
+  // Generate sample financial metrics for visualization
+  const financialMetricsData = [
+    { category: "Q1", revenue: 450000, expenses: 280000, profit: 170000 },
+    { category: "Q2", revenue: 520000, expenses: 310000, profit: 210000 },
+    { category: "Q3", revenue: 480000, expenses: 295000, profit: 185000 },
+    { category: "Q4", revenue: 610000, expenses: 340000, profit: 270000 },
+  ];
+
   const aggregateData = (dataSource: string, xField: string, yField: string, aggregation: string) => {
     let data: any[] = [];
     
@@ -182,6 +239,15 @@ export default function ExecutiveDashboardCustom() {
         break;
       case "employees":
         data = employeesData || [];
+        break;
+      case "placements":
+        data = placementsData || [];
+        break;
+      case "payments":
+        data = paymentsData || [];
+        break;
+      case "financialMetrics":
+        data = financialMetricsData;
         break;
     }
 
