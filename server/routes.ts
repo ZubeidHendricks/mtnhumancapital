@@ -26,6 +26,7 @@ import { pnetApplicationAgent } from "./pnet-application-agent";
 import { pnetJobPostingAgent } from "./pnet-job-posting-agent";
 import { registerWeighbridgeRoutes } from "./routes/weighbridge";
 import { registerFleetLogixRoutes } from "./fleetlogix-routes";
+import { ragSupportService } from "./rag-support-service";
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -9023,6 +9024,33 @@ Format your response as JSON:
     } catch (error: any) {
       console.error("Error fetching wefindjobs contacts:", error);
       res.status(500).json({ success: false, message: error.message || "Failed to fetch contacts" });
+    }
+  });
+
+  // ============= RAG SUPPORT CHATBOT =============
+  app.post("/api/support/chat", async (req, res) => {
+    try {
+      const { question, sessionId } = req.body;
+      
+      if (!question || typeof question !== "string") {
+        return res.status(400).json({ success: false, message: "Question is required" });
+      }
+
+      const response = await ragSupportService.getAnswer(question, sessionId || "default");
+      res.json({ success: true, ...response });
+    } catch (error: any) {
+      console.error("RAG Support error:", error);
+      res.status(500).json({ success: false, message: error.message || "Failed to get support response" });
+    }
+  });
+
+  app.post("/api/support/clear-history", async (req, res) => {
+    try {
+      const { sessionId } = req.body;
+      ragSupportService.clearHistory(sessionId || "default");
+      res.json({ success: true, message: "Conversation history cleared" });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message || "Failed to clear history" });
     }
   });
 

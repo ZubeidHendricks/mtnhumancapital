@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -15,12 +14,7 @@ import {
   Plus,
   Settings,
   Trash2,
-  Save,
-  TrendingUp,
-  Users,
-  Briefcase,
-  Building2,
-  GripVertical
+  Save
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { 
@@ -40,62 +34,36 @@ import {
   Cell, 
   Legend 
 } from "recharts";
-import { candidateService, jobsService, api } from "@/lib/api";
 
-interface ChartConfig {
+export interface ChartConfig {
   id: string;
   title: string;
   chartType: "bar" | "line" | "pie" | "area";
-  dataSource: "candidates" | "jobs" | "employees";
+  dataSource: string;
   xAxisField: string;
   yAxisField: string;
   aggregation: "count" | "sum" | "average";
+}
+
+export interface DataSourceConfig {
+  key: string;
+  label: string;
+  fields: { value: string; label: string; type: "categorical" | "numeric" | "date" }[];
+}
+
+interface CustomizableDashboardProps {
+  dataSources: DataSourceConfig[];
+  getData: (sourceKey: string) => any[];
+  initialCharts?: ChartConfig[];
+  onChartsChange?: (charts: ChartConfig[]) => void;
+  storageKey?: string;
+  columns?: 1 | 2 | 3;
 }
 
 const CHART_COLORS = [
   "#8884d8", "#82ca9d", "#ffc658", "#ff7300", "#0088fe", 
   "#00c49f", "#ffbb28", "#ff8042", "#a4de6c", "#d0ed57"
 ];
-
-const DATA_SOURCE_FIELDS: Record<string, { label: string; fields: { value: string; label: string; type: string }[] }> = {
-  candidates: {
-    label: "Candidates",
-    fields: [
-      { value: "status", label: "Status", type: "categorical" },
-      { value: "stage", label: "Stage", type: "categorical" },
-      { value: "source", label: "Source", type: "categorical" },
-      { value: "role", label: "Role", type: "categorical" },
-      { value: "location", label: "Location", type: "categorical" },
-      { value: "match", label: "Match Score", type: "numeric" },
-      { value: "yearsOfExperience", label: "Years of Experience", type: "numeric" },
-      { value: "createdAt", label: "Created Date", type: "date" },
-    ]
-  },
-  jobs: {
-    label: "Jobs",
-    fields: [
-      { value: "status", label: "Status", type: "categorical" },
-      { value: "department", label: "Department", type: "categorical" },
-      { value: "location", label: "Location", type: "categorical" },
-      { value: "employmentType", label: "Employment Type", type: "categorical" },
-      { value: "salaryMin", label: "Minimum Salary", type: "numeric" },
-      { value: "salaryMax", label: "Maximum Salary", type: "numeric" },
-      { value: "minYearsExperience", label: "Min Years Experience", type: "numeric" },
-      { value: "createdAt", label: "Created Date", type: "date" },
-    ]
-  },
-  employees: {
-    label: "Employees",
-    fields: [
-      { value: "department", label: "Department", type: "categorical" },
-      { value: "team", label: "Team", type: "categorical" },
-      { value: "jobTitle", label: "Job Title", type: "categorical" },
-      { value: "location", label: "Location", type: "categorical" },
-      { value: "employmentType", label: "Employment Type", type: "categorical" },
-      { value: "startDate", label: "Start Date", type: "date" },
-    ]
-  }
-};
 
 const CHART_TYPES = [
   { value: "bar", label: "Bar Chart", icon: BarChart3 },
@@ -104,88 +72,49 @@ const CHART_TYPES = [
   { value: "area", label: "Area Chart", icon: AreaChart },
 ];
 
-export default function ExecutiveDashboardCustom() {
-  const STORAGE_KEY = "executive-dashboard-charts";
-  
+export function CustomizableDashboard({
+  dataSources,
+  getData,
+  initialCharts = [],
+  onChartsChange,
+  storageKey,
+  columns = 2
+}: CustomizableDashboardProps) {
   const [charts, setCharts] = useState<ChartConfig[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        return [];
+    if (storageKey) {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {
+          return initialCharts;
+        }
       }
     }
-    return [
-      {
-        id: "1",
-        title: "Candidates by Status",
-        chartType: "bar",
-        dataSource: "candidates",
-        xAxisField: "status",
-        yAxisField: "count",
-        aggregation: "count"
-      },
-      {
-        id: "2",
-        title: "Jobs by Department",
-        chartType: "pie",
-        dataSource: "jobs",
-        xAxisField: "department",
-        yAxisField: "count",
-        aggregation: "count"
-      }
-    ];
+    return initialCharts;
   });
-  
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(charts));
-  }, [charts]);
   
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editingChart, setEditingChart] = useState<ChartConfig | null>(null);
   const [newChart, setNewChart] = useState<Partial<ChartConfig>>({
     chartType: "bar",
-    dataSource: "candidates",
-    xAxisField: "status",
+    dataSource: dataSources[0]?.key || "",
+    xAxisField: "",
     yAxisField: "count",
     aggregation: "count"
   });
 
-  const { data: candidatesData } = useQuery({
-    queryKey: ["candidates"],
-    queryFn: () => candidateService.getAll(),
-  });
-
-  const { data: jobsData } = useQuery({
-    queryKey: ["jobs"],
-    queryFn: () => jobsService.getAll(),
-  });
-
-  const { data: employeesData } = useQuery({
-    queryKey: ["employees"],
-    queryFn: async () => {
-      const response = await api.get("/api/employees");
-      return response.data;
-    },
-  });
+  useEffect(() => {
+    if (storageKey) {
+      localStorage.setItem(storageKey, JSON.stringify(charts));
+    }
+    onChartsChange?.(charts);
+  }, [charts, storageKey, onChartsChange]);
 
   const aggregateData = (dataSource: string, xField: string, yField: string, aggregation: string) => {
-    let data: any[] = [];
-    
-    switch (dataSource) {
-      case "candidates":
-        data = candidatesData || [];
-        break;
-      case "jobs":
-        data = jobsData || [];
-        break;
-      case "employees":
-        data = employeesData || [];
-        break;
-    }
+    const data = getData(dataSource);
 
-    if (!data.length) return [];
+    if (!data || !data.length) return [];
 
     const grouped = data.reduce((acc: Record<string, any[]>, item: any) => {
       const key = item[xField] || "Unknown";
@@ -216,7 +145,7 @@ export default function ExecutiveDashboardCustom() {
     
     if (!data.length) {
       return (
-        <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+        <div className="h-[250px] flex items-center justify-center text-muted-foreground">
           No data available
         </div>
       );
@@ -225,11 +154,11 @@ export default function ExecutiveDashboardCustom() {
     switch (config.chartType) {
       case "bar":
         return (
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={250}>
             <BarChart data={data}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
+              <XAxis dataKey="name" fontSize={12} />
+              <YAxis fontSize={12} />
               <Tooltip />
               <Legend />
               <Bar dataKey="value" fill="#8884d8" name={config.aggregation === "count" ? "Count" : config.yAxisField} />
@@ -238,11 +167,11 @@ export default function ExecutiveDashboardCustom() {
         );
       case "line":
         return (
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={250}>
             <LineChart data={data}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
+              <XAxis dataKey="name" fontSize={12} />
+              <YAxis fontSize={12} />
               <Tooltip />
               <Legend />
               <Line type="monotone" dataKey="value" stroke="#8884d8" name={config.aggregation === "count" ? "Count" : config.yAxisField} />
@@ -251,7 +180,7 @@ export default function ExecutiveDashboardCustom() {
         );
       case "pie":
         return (
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
                 data={data}
@@ -259,7 +188,7 @@ export default function ExecutiveDashboardCustom() {
                 cy="50%"
                 labelLine={false}
                 label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                outerRadius={100}
+                outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
               >
@@ -274,11 +203,11 @@ export default function ExecutiveDashboardCustom() {
         );
       case "area":
         return (
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={250}>
             <RechartsAreaChart data={data}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
+              <XAxis dataKey="name" fontSize={12} />
+              <YAxis fontSize={12} />
               <Tooltip />
               <Legend />
               <Area type="monotone" dataKey="value" stroke="#8884d8" fill="#8884d8" fillOpacity={0.3} name={config.aggregation === "count" ? "Count" : config.yAxisField} />
@@ -302,7 +231,7 @@ export default function ExecutiveDashboardCustom() {
       id: Date.now().toString(),
       title: newChart.title!,
       chartType: newChart.chartType as ChartConfig["chartType"],
-      dataSource: newChart.dataSource as ChartConfig["dataSource"],
+      dataSource: newChart.dataSource!,
       xAxisField: newChart.xAxisField!,
       yAxisField: newChart.yAxisField || "count",
       aggregation: newChart.aggregation as ChartConfig["aggregation"] || "count"
@@ -312,15 +241,15 @@ export default function ExecutiveDashboardCustom() {
     setAddDialogOpen(false);
     setNewChart({
       chartType: "bar",
-      dataSource: "candidates",
-      xAxisField: "status",
+      dataSource: dataSources[0]?.key || "",
+      xAxisField: "",
       yAxisField: "count",
       aggregation: "count"
     });
     
     toast({
       title: "Chart Added",
-      description: "Your custom chart has been added to the dashboard.",
+      description: "Your custom chart has been added.",
     });
   };
 
@@ -332,7 +261,7 @@ export default function ExecutiveDashboardCustom() {
     
     toast({
       title: "Chart Updated",
-      description: "Your chart has been updated successfully.",
+      description: "Your chart has been updated.",
     });
   };
 
@@ -340,33 +269,26 @@ export default function ExecutiveDashboardCustom() {
     setCharts(charts.filter(c => c.id !== chartId));
     toast({
       title: "Chart Removed",
-      description: "The chart has been removed from the dashboard.",
+      description: "The chart has been removed.",
     });
   };
 
-  const getAvailableFields = (dataSource: string) => {
-    return DATA_SOURCE_FIELDS[dataSource]?.fields || [];
+  const getAvailableFields = (dataSourceKey: string) => {
+    return dataSources.find(ds => ds.key === dataSourceKey)?.fields || [];
   };
 
-  const totalCandidates = candidatesData?.length || 0;
-  const totalJobs = jobsData?.length || 0;
-  const totalEmployees = employeesData?.length || 0;
+  const getDataSourceLabel = (key: string) => {
+    return dataSources.find(ds => ds.key === key)?.label || key;
+  };
+
+  const gridCols = columns === 1 ? "grid-cols-1" : columns === 3 ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 md:grid-cols-2";
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-7xl">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <TrendingUp className="w-8 h-8 text-primary" />
-            Executive Dashboard
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Customizable analytics and insights
-          </p>
-        </div>
+    <div className="space-y-6">
+      <div className="flex justify-end">
         <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-primary/90" data-testid="button-add-chart">
+            <Button data-testid="button-add-custom-chart">
               <Plus className="w-4 h-4 mr-2" />
               Add Chart
             </Button>
@@ -382,10 +304,10 @@ export default function ExecutiveDashboardCustom() {
               <div className="space-y-2">
                 <Label>Chart Title</Label>
                 <Input 
-                  placeholder="e.g., Candidates by Status"
+                  placeholder="e.g., Items by Status"
                   value={newChart.title || ""}
                   onChange={(e) => setNewChart({ ...newChart, title: e.target.value })}
-                  data-testid="input-chart-title"
+                  data-testid="input-custom-chart-title"
                 />
               </div>
               <div className="space-y-2">
@@ -394,7 +316,7 @@ export default function ExecutiveDashboardCustom() {
                   value={newChart.chartType} 
                   onValueChange={(value) => setNewChart({ ...newChart, chartType: value as ChartConfig["chartType"] })}
                 >
-                  <SelectTrigger data-testid="select-chart-type">
+                  <SelectTrigger data-testid="select-custom-chart-type">
                     <SelectValue placeholder="Select chart type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -413,30 +335,17 @@ export default function ExecutiveDashboardCustom() {
                 <Label>Data Source</Label>
                 <Select 
                   value={newChart.dataSource} 
-                  onValueChange={(value) => setNewChart({ ...newChart, dataSource: value as ChartConfig["dataSource"], xAxisField: "" })}
+                  onValueChange={(value) => setNewChart({ ...newChart, dataSource: value, xAxisField: "" })}
                 >
-                  <SelectTrigger data-testid="select-data-source">
+                  <SelectTrigger data-testid="select-custom-data-source">
                     <SelectValue placeholder="Select data source" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="candidates">
-                      <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4" />
-                        Candidates
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="jobs">
-                      <div className="flex items-center gap-2">
-                        <Briefcase className="w-4 h-4" />
-                        Jobs
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="employees">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="w-4 h-4" />
-                        Employees
-                      </div>
-                    </SelectItem>
+                    {dataSources.map((ds) => (
+                      <SelectItem key={ds.key} value={ds.key}>
+                        {ds.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -446,11 +355,11 @@ export default function ExecutiveDashboardCustom() {
                   value={newChart.xAxisField} 
                   onValueChange={(value) => setNewChart({ ...newChart, xAxisField: value })}
                 >
-                  <SelectTrigger data-testid="select-x-axis">
+                  <SelectTrigger data-testid="select-custom-x-axis">
                     <SelectValue placeholder="Select field for X-axis" />
                   </SelectTrigger>
                   <SelectContent>
-                    {getAvailableFields(newChart.dataSource || "candidates").map((field) => (
+                    {getAvailableFields(newChart.dataSource || "").map((field) => (
                       <SelectItem key={field.value} value={field.value}>
                         {field.label}
                       </SelectItem>
@@ -464,7 +373,7 @@ export default function ExecutiveDashboardCustom() {
                   value={newChart.aggregation} 
                   onValueChange={(value) => setNewChart({ ...newChart, aggregation: value as ChartConfig["aggregation"] })}
                 >
-                  <SelectTrigger data-testid="select-y-axis">
+                  <SelectTrigger data-testid="select-custom-y-axis">
                     <SelectValue placeholder="Select aggregation" />
                   </SelectTrigger>
                   <SelectContent>
@@ -481,11 +390,11 @@ export default function ExecutiveDashboardCustom() {
                     value={newChart.yAxisField} 
                     onValueChange={(value) => setNewChart({ ...newChart, yAxisField: value })}
                   >
-                    <SelectTrigger data-testid="select-value-field">
+                    <SelectTrigger data-testid="select-custom-value-field">
                       <SelectValue placeholder="Select value field" />
                     </SelectTrigger>
                     <SelectContent>
-                      {getAvailableFields(newChart.dataSource || "candidates")
+                      {getAvailableFields(newChart.dataSource || "")
                         .filter(f => f.type === "numeric")
                         .map((field) => (
                           <SelectItem key={field.value} value={field.value}>
@@ -501,7 +410,7 @@ export default function ExecutiveDashboardCustom() {
               <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleAddChart} data-testid="button-confirm-add">
+              <Button onClick={handleAddChart} data-testid="button-confirm-custom-add">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Chart
               </Button>
@@ -510,71 +419,37 @@ export default function ExecutiveDashboardCustom() {
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <Card className="border-blue-200 dark:border-blue-700">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Total Candidates
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-blue-500">{totalCandidates}</div>
-          </CardContent>
-        </Card>
-        <Card className="border-green-200 dark:border-green-700">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Briefcase className="w-4 h-4" />
-              Active Jobs
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-green-500">{totalJobs}</div>
-          </CardContent>
-        </Card>
-        <Card className="border-purple-200 dark:border-purple-700">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Building2 className="w-4 h-4" />
-              Total Employees
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-purple-500">{totalEmployees}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className={`grid ${gridCols} gap-6`}>
         {charts.map((chart) => (
-          <Card key={chart.id} className="relative" data-testid={`chart-card-${chart.id}`}>
+          <Card key={chart.id} className="relative" data-testid={`custom-chart-${chart.id}`}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
-                <CardTitle className="text-lg">{chart.title}</CardTitle>
+                <CardTitle className="text-base">{chart.title}</CardTitle>
                 <CardDescription className="flex items-center gap-2">
                   <Badge variant="outline" className="text-xs">
-                    {DATA_SOURCE_FIELDS[chart.dataSource]?.label}
+                    {getDataSourceLabel(chart.dataSource)}
                   </Badge>
                   <Badge variant="secondary" className="text-xs">
                     {chart.xAxisField}
                   </Badge>
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 <Button 
                   variant="ghost" 
                   size="icon" 
+                  className="h-8 w-8"
                   onClick={() => setEditingChart(chart)}
-                  data-testid={`button-edit-${chart.id}`}
+                  data-testid={`button-edit-custom-${chart.id}`}
                 >
                   <Settings className="w-4 h-4" />
                 </Button>
                 <Button 
                   variant="ghost" 
                   size="icon" 
+                  className="h-8 w-8"
                   onClick={() => handleDeleteChart(chart.id)}
-                  data-testid={`button-delete-${chart.id}`}
+                  data-testid={`button-delete-custom-${chart.id}`}
                 >
                   <Trash2 className="w-4 h-4 text-red-500" />
                 </Button>
@@ -645,15 +520,17 @@ export default function ExecutiveDashboardCustom() {
                 <Label>Data Source</Label>
                 <Select 
                   value={editingChart.dataSource} 
-                  onValueChange={(value) => setEditingChart({ ...editingChart, dataSource: value as ChartConfig["dataSource"] })}
+                  onValueChange={(value) => setEditingChart({ ...editingChart, dataSource: value })}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="candidates">Candidates</SelectItem>
-                    <SelectItem value="jobs">Jobs</SelectItem>
-                    <SelectItem value="employees">Employees</SelectItem>
+                    {dataSources.map((ds) => (
+                      <SelectItem key={ds.key} value={ds.key}>
+                        {ds.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
