@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { candidateService, jobsService } from "@/lib/api";
+import { candidateService, jobsService, api } from "@/lib/api";
 import { useTenantQueryKey } from "@/hooks/useTenant";
+import { CustomizableDashboard, DataSourceConfig } from "@/components/customizable-dashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -170,6 +171,40 @@ export default function RecruitmentDashboard() {
   const totalShortlisted = candidates?.filter(c => c.stage === "Shortlisted").length || 0;
   const totalLost = candidates?.filter(c => c.stage === "Lost" || c.status === "Rejected").length || 0;
   const totalHired = candidates?.filter(c => c.stage === "Hired").length || 0;
+
+  // Customizable dashboard data sources
+  const dataSources: DataSourceConfig[] = [
+    {
+      key: "candidates",
+      label: "Candidates",
+      fields: [
+        { value: "status", label: "Status", type: "categorical" },
+        { value: "stage", label: "Stage", type: "categorical" },
+        { value: "source", label: "Source", type: "categorical" },
+        { value: "role", label: "Role", type: "categorical" },
+        { value: "location", label: "Location", type: "categorical" },
+        { value: "match", label: "Match Score", type: "numeric" },
+      ]
+    },
+    {
+      key: "jobs",
+      label: "Jobs",
+      fields: [
+        { value: "status", label: "Status", type: "categorical" },
+        { value: "department", label: "Department", type: "categorical" },
+        { value: "location", label: "Location", type: "categorical" },
+        { value: "employmentType", label: "Employment Type", type: "categorical" },
+      ]
+    }
+  ];
+
+  const getData = (sourceKey: string) => {
+    switch (sourceKey) {
+      case "candidates": return candidates || [];
+      case "jobs": return jobs || [];
+      default: return [];
+    }
+  };
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -728,6 +763,26 @@ export default function RecruitmentDashboard() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Customizable Charts Section */}
+      <div className="mt-8">
+        <Card className="bg-zinc-900/50 border-border dark:border-white/10">
+          <CardHeader>
+            <CardTitle className="text-xl text-white">Custom Analytics</CardTitle>
+            <CardDescription className="text-gray-400">
+              Build your own charts by selecting data sources and fields
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CustomizableDashboard
+              dataSources={dataSources}
+              getData={getData}
+              storageKey="recruitment-dashboard-charts"
+              columns={2}
+            />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

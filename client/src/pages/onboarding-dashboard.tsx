@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { CustomizableDashboard, DataSourceConfig } from "@/components/customizable-dashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -275,6 +276,36 @@ export default function OnboardingDashboard() {
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     return `${diffDays}d ago`;
+  };
+
+  // Customizable dashboard data sources
+  const dataSources: DataSourceConfig[] = [
+    {
+      key: "workflows",
+      label: "Onboarding Workflows",
+      fields: [
+        { value: "status", label: "Status", type: "categorical" },
+        { value: "currentStep", label: "Current Step", type: "categorical" },
+      ]
+    },
+    {
+      key: "documents",
+      label: "Document Requests",
+      fields: [
+        { value: "status", label: "Status", type: "categorical" },
+        { value: "documentType", label: "Document Type", type: "categorical" },
+        { value: "priority", label: "Priority", type: "categorical" },
+        { value: "isRequired", label: "Required", type: "categorical" },
+      ]
+    }
+  ];
+
+  const getData = (sourceKey: string) => {
+    switch (sourceKey) {
+      case "workflows": return workflows || [];
+      case "documents": return documentRequests || [];
+      default: return [];
+    }
   };
 
   if (loadingWorkflows) {
@@ -818,6 +849,26 @@ export default function OnboardingDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Customizable Charts Section */}
+      <div className="mt-8 px-6 pb-12 container mx-auto">
+        <Card className="bg-card/30 border-border dark:border-white/10 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="text-xl">Custom Analytics</CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Build your own charts by selecting data sources and fields
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CustomizableDashboard
+              dataSources={dataSources}
+              getData={getData}
+              storageKey="onboarding-dashboard-charts"
+              columns={2}
+            />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

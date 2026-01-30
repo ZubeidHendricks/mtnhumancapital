@@ -2,6 +2,7 @@ import { useState, useRef, lazy, Suspense } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { jobsService, candidateService, api } from "@/lib/api";
 import { useTenantQueryKey } from "@/hooks/useTenant";
+import { CustomizableDashboard, DataSourceConfig } from "@/components/customizable-dashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -674,6 +675,51 @@ BENEFITS:
   const displayCandidates = candidatesError ? MOCK_CANDIDATES : (Array.isArray(candidates) ? candidates : []);
   const displayJobs = jobsError ? [] : (Array.isArray(jobs) ? jobs : []);
   const jobCount = displayJobs.length || 12;
+
+  // Customizable dashboard data sources
+  const chartDataSources: DataSourceConfig[] = [
+    {
+      key: "candidates",
+      label: "Candidates",
+      fields: [
+        { value: "status", label: "Status", type: "categorical" },
+        { value: "stage", label: "Stage", type: "categorical" },
+        { value: "source", label: "Source", type: "categorical" },
+        { value: "role", label: "Role", type: "categorical" },
+        { value: "location", label: "Location", type: "categorical" },
+        { value: "match", label: "Match Score", type: "numeric" },
+      ]
+    },
+    {
+      key: "jobs",
+      label: "Jobs",
+      fields: [
+        { value: "status", label: "Status", type: "categorical" },
+        { value: "department", label: "Department", type: "categorical" },
+        { value: "location", label: "Location", type: "categorical" },
+        { value: "employmentType", label: "Employment Type", type: "categorical" },
+      ]
+    },
+    {
+      key: "employees",
+      label: "Employees",
+      fields: [
+        { value: "department", label: "Department", type: "categorical" },
+        { value: "team", label: "Team", type: "categorical" },
+        { value: "jobTitle", label: "Job Title", type: "categorical" },
+        { value: "employmentType", label: "Employment Type", type: "categorical" },
+      ]
+    }
+  ];
+
+  const getChartData = (sourceKey: string) => {
+    switch (sourceKey) {
+      case "candidates": return displayCandidates;
+      case "jobs": return displayJobs;
+      case "employees": return employees || [];
+      default: return [];
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -3174,6 +3220,26 @@ BENEFITS:
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Customizable Charts Section */}
+      <div className="mt-8 px-6 pb-12 container mx-auto">
+        <Card className="bg-card/30 border-border dark:border-white/10 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="text-xl">Custom Analytics</CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Build your own charts by selecting data sources and fields
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CustomizableDashboard
+              dataSources={chartDataSources}
+              getData={getChartData}
+              storageKey="hr-dashboard-charts"
+              columns={2}
+            />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

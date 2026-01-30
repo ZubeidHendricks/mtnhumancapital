@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { CustomizableDashboard, DataSourceConfig } from "@/components/customizable-dashboard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -762,6 +763,26 @@ export default function KPIHRDashboard() {
     }
   };
 
+  // Customizable dashboard data sources
+  const chartDataSources: DataSourceConfig[] = [
+    {
+      key: "submissions",
+      label: "Review Submissions",
+      fields: [
+        { value: "selfAssessmentStatus", label: "Self Assessment Status", type: "categorical" },
+        { value: "managerReviewStatus", label: "Manager Review Status", type: "categorical" },
+        { value: "finalScore", label: "Final Score", type: "numeric" },
+      ]
+    }
+  ];
+
+  const getChartData = (sourceKey: string) => {
+    switch (sourceKey) {
+      case "submissions": return submissions || [];
+      default: return [];
+    }
+  };
+
   return (
     <div className="min-h-screen bg-black">
       
@@ -1081,6 +1102,24 @@ export default function KPIHRDashboard() {
             cycleName={selectedCycle?.name || "Review Cycle"}
           />
         )}
+
+        {/* Customizable Charts Section */}
+        <Card className="mt-8 bg-gray-900/50 border-border dark:border-white/10">
+          <CardHeader>
+            <CardTitle className="text-xl text-white">Custom Analytics</CardTitle>
+            <CardDescription className="text-gray-400">
+              Build your own charts by selecting data sources and fields
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CustomizableDashboard
+              dataSources={chartDataSources}
+              getData={getChartData}
+              storageKey="kpi-hr-dashboard-charts"
+              columns={2}
+            />
+          </CardContent>
+        </Card>
       </main>
     </div>
   );
