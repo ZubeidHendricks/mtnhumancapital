@@ -66,7 +66,6 @@ import SelfAssessment from "@/pages/self-assessment";
 import WorkflowShowcase from "@/pages/workflow-showcase";
 import DashboardBuilder from "@/pages/dashboard-builder";
 import ExternalCandidates from "@/pages/external-candidates";
-import { FleetLogixDashboard } from "@/components/FleetLogixDashboard";
 import RecruitmentSetup from "@/pages/recruitment-setup";
 import IntegritySetup from "@/pages/integrity-setup";
 import OfferManagement from "@/pages/offer-management";
@@ -135,7 +134,6 @@ function Router() {
       <Route path="/workflow-showcase" component={WorkflowShowcase} />
       <Route path="/dashboard-builder" component={DashboardBuilder} />
       <Route path="/external-candidates" component={ExternalCandidates} />
-      <Route path="/fleetlogix" component={FleetLogixDashboard} />
       <Route path="/recruitment-setup" component={RecruitmentSetup} />
       <Route path="/integrity-setup" component={IntegritySetup} />
       <Route path="/offer-management" component={OfferManagement} />
