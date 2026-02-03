@@ -17,6 +17,7 @@ import { Packer } from "docx";
 import { embeddingService } from "./embedding-service";
 import { getOrCreateConversation, deleteConversation } from "./job-creation-agent";
 import { requireAdmin } from "./admin-middleware";
+import { authService } from "./auth-service";
 import multer from "multer";
 import { PDFParse } from "pdf-parse";
 import AdmZip from "adm-zip";
@@ -61,6 +62,93 @@ function inferDepartmentFromTitle(title: string): string {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
+  // ============= AUTHENTICATION =============
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+      }
+      
+      const result = await authService.loginByUsername(username, password);
+      
+      if (!result) {
+        return res.status(401).json({ message: "Invalid username or password" });
+      }
+      
+      res.json({
+        token: result.token,
+        user: {
+          id: result.user.id,
+          username: result.user.username,
+          role: result.user.role,
+          tenantId: result.user.tenantId,
+          isSuperAdmin: result.user.isSuperAdmin
+        }
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Authentication failed" });
+    }
+  });
+
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const { tenantId, username, password, role } = req.body;
+      
+      if (!tenantId || !username || !password) {
+        return res.status(400).json({ message: "Tenant ID, username, and password are required" });
+      }
+      
+      const result = await authService.register(tenantId, username, password, role || "user");
+      
+      res.status(201).json({
+        token: result.token,
+        user: {
+          id: result.user.id,
+          username: result.user.username,
+          role: result.user.role,
+          tenantId: result.user.tenantId,
+          isSuperAdmin: result.user.isSuperAdmin
+        }
+      });
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      if (error.message === "Username already exists") {
+        return res.status(409).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Registration failed" });
+    }
+  });
+
+  app.get("/api/auth/me", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader?.startsWith("Bearer ")) {
+        return res.status(401).json({ message: "No token provided" });
+      }
+      
+      const token = authHeader.substring(7);
+      const user = await authService.getUserFromToken(token);
+      
+      if (!user) {
+        return res.status(401).json({ message: "Invalid or expired token" });
+      }
+      
+      res.json({
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        tenantId: user.tenantId,
+        isSuperAdmin: user.isSuperAdmin
+      });
+    } catch (error) {
+      console.error("Get user error:", error);
+      res.status(500).json({ message: "Failed to get user" });
+    }
+  });
+
   // ============= ADMIN: TENANT MANAGEMENT =============
   app.get("/api/admin/tenants", requireAdmin, async (req, res) => {
     try {

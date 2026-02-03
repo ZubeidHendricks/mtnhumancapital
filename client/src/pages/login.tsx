@@ -12,7 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 
 export default function Login() {
   const [, setLocation] = useLocation();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -25,7 +25,7 @@ export default function Login() {
     try {
       // Login via API - user lookup by email only (cross-tenant)
       const response = await axios.post("/api/auth/login", {
-        username: email,
+        username: username,
         password: password
       });
       
@@ -83,14 +83,15 @@ export default function Login() {
             )}
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
+                <Label htmlFor="username">Username</Label>
                 <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="admin@company.com" 
+                  id="username" 
+                  type="text" 
+                  placeholder="admin"
+                  data-testid="input-username" 
                   className="bg-black/20 border-border dark:border-white/10"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   required
                 />
               </div>
