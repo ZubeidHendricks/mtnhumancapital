@@ -512,15 +512,37 @@ export class SourcingOrchestrator {
 
   async runAllSpecialists(
     job: Job,
-    candidatesPerSpecialist: number = 7
+    candidatesPerSpecialist: number = 7,
+    enabledPlatforms?: string[]
   ): Promise<{ results: SpecialistResult[]; allCandidates: SpecialistCandidate[]; configuration: SourcingConfiguration }> {
     console.log(`[SourcingOrchestrator] Running all specialists for: ${job.title}`);
+    
+    // Filter specialists based on enabled platforms from tenant config
+    let activeSpecialists = this.specialists;
+    if (enabledPlatforms && enabledPlatforms.length > 0) {
+      const platformMap: Record<string, string> = {
+        'pnet': 'PNet',
+        'linkedin': 'LinkedIn', 
+        'indeed': 'Indeed'
+      };
+      const enabledNames = enabledPlatforms.map(p => platformMap[p.toLowerCase()]).filter(Boolean);
+      activeSpecialists = this.specialists.filter(s => 
+        enabledNames.some(name => s.platform.toLowerCase().includes(name.toLowerCase()))
+      );
+      console.log(`[SourcingOrchestrator] Enabled platforms: ${enabledPlatforms.join(', ')}`);
+      console.log(`[SourcingOrchestrator] Active specialists: ${activeSpecialists.map(s => s.name).join(', ')}`);
+    }
+    
+    if (activeSpecialists.length === 0) {
+      console.log(`[SourcingOrchestrator] No active specialists configured, using all available`);
+      activeSpecialists = this.specialists;
+    }
 
     const linkedInSpecialist = this.specialists[0] as LinkedInSpecialist;
     const configuration = await linkedInSpecialist.generateSearchConfiguration(job);
 
     const results: SpecialistResult[] = await Promise.all(
-      this.specialists.map(async (specialist) => {
+      activeSpecialists.map(async (specialist) => {
         try {
           const candidates = await specialist.searchCandidates(job, configuration, candidatesPerSpecialist);
           return {
