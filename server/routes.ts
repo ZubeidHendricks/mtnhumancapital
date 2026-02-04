@@ -3964,6 +3964,243 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     }
   });
 
+  // ========== INTEGRITY CONFIGURATION ENDPOINTS ==========
+  
+  // Get integrity check configurations for a tenant
+  app.get("/api/integrity/checks", async (req, res) => {
+    try {
+      const tenantId = req.tenant?.id;
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID required" });
+      }
+      
+      const tenant = await storage.getTenantById(tenantId);
+      if (!tenant) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+      
+      const integrityConfig = (tenant.apiKeysConfigured as any)?.integrity || {};
+      const checksConfig = integrityConfig.checks || {};
+      
+      const checks = [
+        {
+          id: "criminal",
+          name: "Criminal Record Check",
+          description: "Verify criminal history through official databases",
+          enabled: checksConfig.criminal?.enabled ?? true,
+          cost: "R150"
+        },
+        {
+          id: "credit",
+          name: "Credit Check",
+          description: "Review credit history and financial standing",
+          enabled: checksConfig.credit?.enabled ?? true,
+          cost: "R75"
+        },
+        {
+          id: "id-verification",
+          name: "ID Verification",
+          description: "Confirm identity using Home Affairs database",
+          enabled: checksConfig["id-verification"]?.enabled ?? true,
+          cost: "R50"
+        },
+        {
+          id: "qualification",
+          name: "Qualification Verification",
+          description: "Verify educational qualifications and certificates",
+          enabled: checksConfig.qualification?.enabled ?? false,
+          cost: "R200"
+        },
+        {
+          id: "employment",
+          name: "Employment History",
+          description: "Verify previous employment and references",
+          enabled: checksConfig.employment?.enabled ?? false,
+          cost: "R100"
+        }
+      ];
+      
+      res.json(checks);
+    } catch (error) {
+      console.error("Error fetching integrity checks:", error);
+      res.status(500).json({ message: "Failed to fetch integrity checks" });
+    }
+  });
+  
+  // Update integrity check preferences
+  app.patch("/api/integrity/checks", async (req, res) => {
+    try {
+      const tenantId = req.tenant?.id;
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID required" });
+      }
+      
+      const { checks } = req.body;
+      if (!checks || !Array.isArray(checks)) {
+        return res.status(400).json({ message: "Checks array is required" });
+      }
+      
+      const tenant = await storage.getTenantById(tenantId);
+      if (!tenant) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+      
+      const apiKeysConfigured = { ...(tenant.apiKeysConfigured || {}) } as any;
+      if (!apiKeysConfigured.integrity) {
+        apiKeysConfigured.integrity = { checks: {}, providers: {} };
+      }
+      
+      // Update each check's enabled status
+      for (const check of checks) {
+        apiKeysConfigured.integrity.checks[check.id] = {
+          enabled: check.enabled
+        };
+      }
+      
+      await storage.updateTenantApiKeys(tenantId, apiKeysConfigured);
+      
+      res.json({ success: true, message: "Check preferences saved" });
+    } catch (error) {
+      console.error("Error updating integrity checks:", error);
+      res.status(500).json({ message: "Failed to update integrity checks" });
+    }
+  });
+  
+  // Get integrity provider configurations
+  app.get("/api/integrity/providers", async (req, res) => {
+    try {
+      const tenantId = req.tenant?.id;
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID required" });
+      }
+      
+      const tenant = await storage.getTenantById(tenantId);
+      if (!tenant) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+      
+      const integrityConfig = (tenant.apiKeysConfigured as any)?.integrity || {};
+      const providersConfig = integrityConfig.providers || {};
+      
+      const providers = [
+        {
+          id: "mie",
+          name: "MIE Background Screening",
+          checks: ["criminal", "credit", "id-verification", "qualification", "employment"],
+          connected: !!providersConfig.mie?.apiKey,
+          hasCredentials: !!providersConfig.mie?.apiKey
+        },
+        {
+          id: "lexisnexis",
+          name: "LexisNexis Risk Solutions",
+          checks: ["criminal", "id-verification"],
+          connected: !!providersConfig.lexisnexis?.apiKey,
+          hasCredentials: !!providersConfig.lexisnexis?.apiKey
+        },
+        {
+          id: "transunion",
+          name: "TransUnion",
+          checks: ["credit"],
+          connected: !!providersConfig.transunion?.apiKey,
+          hasCredentials: !!providersConfig.transunion?.apiKey
+        }
+      ];
+      
+      res.json(providers);
+    } catch (error) {
+      console.error("Error fetching integrity providers:", error);
+      res.status(500).json({ message: "Failed to fetch integrity providers" });
+    }
+  });
+  
+  // Connect an integrity provider
+  app.post("/api/integrity/providers/:providerId/connect", async (req, res) => {
+    try {
+      const tenantId = req.tenant?.id;
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID required" });
+      }
+      
+      const { providerId } = req.params;
+      const { apiKey, username, password } = req.body;
+      
+      if (!apiKey) {
+        return res.status(400).json({ message: "API key is required" });
+      }
+      
+      const tenant = await storage.getTenantById(tenantId);
+      if (!tenant) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+      
+      const apiKeysConfigured = { ...(tenant.apiKeysConfigured || {}) } as any;
+      if (!apiKeysConfigured.integrity) {
+        apiKeysConfigured.integrity = { checks: {}, providers: {} };
+      }
+      
+      apiKeysConfigured.integrity.providers[providerId] = {
+        apiKey,
+        username: username || undefined,
+        password: password || undefined,
+        connectedAt: new Date().toISOString()
+      };
+      
+      await storage.updateTenantApiKeys(tenantId, apiKeysConfigured);
+      
+      console.log(`[Integrity] Provider ${providerId} connected for tenant ${tenantId}`);
+      
+      res.json({
+        success: true,
+        message: `${providerId} connected successfully`,
+        provider: {
+          id: providerId,
+          connected: true
+        }
+      });
+    } catch (error) {
+      console.error("Error connecting integrity provider:", error);
+      res.status(500).json({ message: "Failed to connect provider" });
+    }
+  });
+  
+  // Disconnect an integrity provider
+  app.post("/api/integrity/providers/:providerId/disconnect", async (req, res) => {
+    try {
+      const tenantId = req.tenant?.id;
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID required" });
+      }
+      
+      const { providerId } = req.params;
+      
+      const tenant = await storage.getTenantById(tenantId);
+      if (!tenant) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+      
+      const apiKeysConfigured = { ...(tenant.apiKeysConfigured || {}) } as any;
+      if (apiKeysConfigured.integrity?.providers?.[providerId]) {
+        delete apiKeysConfigured.integrity.providers[providerId];
+      }
+      
+      await storage.updateTenantApiKeys(tenantId, apiKeysConfigured);
+      
+      console.log(`[Integrity] Provider ${providerId} disconnected for tenant ${tenantId}`);
+      
+      res.json({
+        success: true,
+        message: `${providerId} disconnected successfully`,
+        provider: {
+          id: providerId,
+          connected: false
+        }
+      });
+    } catch (error) {
+      console.error("Error disconnecting integrity provider:", error);
+      res.status(500).json({ message: "Failed to disconnect provider" });
+    }
+  });
+
   // Workforce AI RAG Assistant
   app.post("/api/workforce-ai/ask", async (req, res) => {
     try {
