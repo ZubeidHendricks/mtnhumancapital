@@ -147,6 +147,18 @@ export default function RecruitmentAgent() {
   // If no platforms configured, show message about configuration needed
   const hasEnabledPlatforms = platformConfigs?.some(p => p.enabled && p.connected) ?? false;
 
+  // Filter agent messages based on enabled platforms
+  const filteredAgentMessages = AGENT_MESSAGES.filter(msg => {
+    // Always include non-specialist messages
+    if (!msg.agent.includes('Specialist')) return true;
+    
+    // Check if this specialist's platform is enabled
+    const platform = msg.agent.replace(' Specialist', '').toLowerCase();
+    if (!platformConfigs) return true;
+    const config = platformConfigs.find(p => p.id === platform);
+    return config?.enabled && config?.connected;
+  });
+
   const startRecruitmentMutation = useMutation({
     mutationFn: async (params: { jobId: string; maxCandidates: number; minMatchScore: number }) => {
       const response = await api.post("/recruitment-sessions", params);
@@ -170,11 +182,11 @@ export default function RecruitmentAgent() {
     const stepDurations = [2000, 3000, 4000, 3000, 1000];
     
     const addMessage = () => {
-      if (messageIndex < AGENT_MESSAGES.length) {
-        setAgentMessages(prev => [...prev, AGENT_MESSAGES[messageIndex]]);
+      if (messageIndex < filteredAgentMessages.length) {
+        setAgentMessages(prev => [...prev, filteredAgentMessages[messageIndex]]);
         messageIndex++;
         
-        const currentMsg = AGENT_MESSAGES[messageIndex - 1];
+        const currentMsg = filteredAgentMessages[messageIndex - 1];
         const stepIndex = AGENT_STEPS.findIndex(s => s.id === currentMsg?.type);
         if (stepIndex >= 0) {
           setCurrentStep(stepIndex);
