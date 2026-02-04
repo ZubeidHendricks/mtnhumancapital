@@ -2828,6 +2828,15 @@ export class DatabaseStorage implements IStorage {
     return tenant || undefined;
   }
 
+  async updateTenantApiKeys(tenantId: string, apiKeysConfigured: Record<string, any>): Promise<void> {
+    await db.update(tenantConfig)
+      .set({ 
+        apiKeysConfigured,
+        updatedAt: new Date()
+      })
+      .where(eq(tenantConfig.id, tenantId));
+  }
+
   async getTenantPayments(tenantId: string): Promise<TenantPayment[]> {
     return await db.select().from(tenantPayments)
       .where(eq(tenantPayments.tenantId, tenantId))

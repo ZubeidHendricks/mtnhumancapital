@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,69 +12,24 @@ import {
   Key, 
   CheckCircle2, 
   XCircle,
-  ExternalLink,
   Save,
-  RefreshCw
+  Loader2
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 
 interface RecruitmentPlatform {
   id: string;
   name: string;
-  logo: string;
   description: string;
   enabled: boolean;
   connected: boolean;
-  apiKey?: string;
-  username?: string;
-  password?: string;
+  hasCredentials?: boolean;
 }
 
 export default function RecruitmentSetup() {
-  const [platforms, setPlatforms] = useState<RecruitmentPlatform[]>([
-    {
-      id: "pnet",
-      name: "PNet",
-      logo: "/logos/pnet.png",
-      description: "South Africa's leading job portal with millions of candidates",
-      enabled: true,
-      connected: true,
-      apiKey: "••••••••••••",
-    },
-    {
-      id: "indeed",
-      name: "Indeed",
-      logo: "/logos/indeed.png",
-      description: "Global job search engine with extensive candidate database",
-      enabled: false,
-      connected: false,
-    },
-    {
-      id: "linkedin",
-      name: "LinkedIn Recruiter",
-      logo: "/logos/linkedin.png",
-      description: "Professional networking platform for sourcing qualified candidates",
-      enabled: false,
-      connected: false,
-    },
-    {
-      id: "careers24",
-      name: "Careers24",
-      logo: "/logos/careers24.png",
-      description: "Popular South African job board powered by Media24",
-      enabled: false,
-      connected: false,
-    },
-    {
-      id: "gumtree",
-      name: "Gumtree Jobs",
-      logo: "/logos/gumtree.png",
-      description: "Classifieds platform with job listings section",
-      enabled: false,
-      connected: false,
-    },
-  ]);
-
+  const queryClient = useQueryClient();
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [credentials, setCredentials] = useState({
     apiKey: "",
@@ -82,10 +37,92 @@ export default function RecruitmentSetup() {
     password: "",
   });
 
-  const handleTogglePlatform = (platformId: string) => {
-    setPlatforms(prev => prev.map(p => 
-      p.id === platformId ? { ...p, enabled: !p.enabled } : p
-    ));
+  const { data: platforms = [], isLoading } = useQuery<RecruitmentPlatform[]>({
+    queryKey: ["/api/recruitment/platforms"],
+    queryFn: async () => {
+      const response = await axios.get("/api/recruitment/platforms");
+      return response.data;
+    },
+  });
+
+  const togglePlatformMutation = useMutation({
+    mutationFn: async ({ platformId, enabled }: { platformId: string; enabled: boolean }) => {
+      const response = await axios.patch(`/api/recruitment/platforms/${platformId}`, { enabled });
+      return response.data;
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/recruitment/platforms"] });
+      toast({
+        title: variables.enabled ? "Platform Enabled" : "Platform Disabled",
+        description: `The platform has been ${variables.enabled ? "enabled" : "disabled"} for recruitment.`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update platform status.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const connectPlatformMutation = useMutation({
+    mutationFn: async ({ platformId, apiKey, username, password }: { 
+      platformId: string; 
+      apiKey: string; 
+      username?: string; 
+      password?: string 
+    }) => {
+      const response = await axios.post(`/api/recruitment/platforms/${platformId}/connect`, {
+        apiKey,
+        username,
+        password,
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/recruitment/platforms"] });
+      setSelectedPlatform(null);
+      setCredentials({ apiKey: "", username: "", password: "" });
+      toast({
+        title: "Platform Connected",
+        description: "Your credentials have been saved and the platform is now active.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Connection Failed",
+        description: "Failed to connect to the platform. Please check your credentials.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const disconnectPlatformMutation = useMutation({
+    mutationFn: async (platformId: string) => {
+      const response = await axios.patch(`/api/recruitment/platforms/${platformId}`, {
+        disconnect: true,
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/recruitment/platforms"] });
+      toast({
+        title: "Platform Disconnected",
+        description: "Your credentials have been removed.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to disconnect platform.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleTogglePlatform = (platformId: string, currentEnabled: boolean) => {
+    togglePlatformMutation.mutate({ platformId, enabled: !currentEnabled });
   };
 
   const handleConnect = (platformId: string) => {
@@ -93,33 +130,34 @@ export default function RecruitmentSetup() {
   };
 
   const handleSaveCredentials = () => {
-    if (!selectedPlatform) return;
+    if (!selectedPlatform || !credentials.apiKey) {
+      toast({
+        title: "API Key Required",
+        description: "Please enter an API key to connect.",
+        variant: "destructive",
+      });
+      return;
+    }
     
-    setPlatforms(prev => prev.map(p => 
-      p.id === selectedPlatform 
-        ? { ...p, connected: true, apiKey: credentials.apiKey || p.apiKey }
-        : p
-    ));
-    
-    setSelectedPlatform(null);
-    setCredentials({ apiKey: "", username: "", password: "" });
-    toast({
-      title: "Platform Connected",
-      description: "Your credentials have been saved securely.",
+    connectPlatformMutation.mutate({
+      platformId: selectedPlatform,
+      apiKey: credentials.apiKey,
+      username: credentials.username || undefined,
+      password: credentials.password || undefined,
     });
   };
 
   const handleDisconnect = (platformId: string) => {
-    setPlatforms(prev => prev.map(p => 
-      p.id === platformId 
-        ? { ...p, connected: false, apiKey: undefined, username: undefined, password: undefined }
-        : p
-    ));
-    toast({
-      title: "Platform Disconnected",
-      description: "Your credentials have been removed.",
-    });
+    disconnectPlatformMutation.mutate(platformId);
   };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-8 px-4 max-w-6xl flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-6xl">
@@ -171,7 +209,8 @@ export default function RecruitmentSetup() {
                         <Switch
                           id={`enable-${platform.id}`}
                           checked={platform.enabled}
-                          onCheckedChange={() => handleTogglePlatform(platform.id)}
+                          onCheckedChange={() => handleTogglePlatform(platform.id, platform.enabled)}
+                          disabled={togglePlatformMutation.isPending}
                           data-testid={`switch-enable-${platform.id}`}
                         />
                       </div>
@@ -181,6 +220,7 @@ export default function RecruitmentSetup() {
                           variant="outline" 
                           size="sm"
                           onClick={() => handleDisconnect(platform.id)}
+                          disabled={disconnectPlatformMutation.isPending}
                           className="border-red-500/30 text-red-400 hover:bg-red-500/10"
                           data-testid={`button-disconnect-${platform.id}`}
                         >
@@ -252,7 +292,7 @@ export default function RecruitmentSetup() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>API Key</Label>
+                <Label>API Key *</Label>
                 <Input
                   type="password"
                   value={credentials.apiKey}
@@ -285,6 +325,7 @@ export default function RecruitmentSetup() {
                   variant="outline" 
                   className="flex-1"
                   onClick={() => setSelectedPlatform(null)}
+                  disabled={connectPlatformMutation.isPending}
                   data-testid="button-cancel-credentials"
                 >
                   Cancel
@@ -292,9 +333,14 @@ export default function RecruitmentSetup() {
                 <Button 
                   className="flex-1 bg-purple-600 hover:bg-purple-700"
                   onClick={handleSaveCredentials}
+                  disabled={connectPlatformMutation.isPending}
                   data-testid="button-save-credentials"
                 >
-                  <Save className="h-4 w-4 mr-2" />
+                  {connectPlatformMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4 mr-2" />
+                  )}
                   Save & Connect
                 </Button>
               </div>

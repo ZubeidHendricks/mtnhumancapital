@@ -3775,6 +3775,195 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     }
   });
 
+  // ============= RECRUITMENT PLATFORM CONFIGURATION =============
+  
+  // Get recruitment platform configurations for a tenant
+  app.get("/api/recruitment/platforms", async (req, res) => {
+    try {
+      const tenantId = req.tenant?.id;
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID required" });
+      }
+      
+      const tenant = await storage.getTenantById(tenantId);
+      if (!tenant) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+      
+      // Get platform configurations from api_keys_configured
+      const apiKeysConfigured = tenant.apiKeysConfigured || {};
+      
+      // Build platform response with connection status
+      const platforms = [
+        {
+          id: "pnet",
+          name: "PNet",
+          description: "South Africa's leading job portal with millions of candidates",
+          enabled: apiKeysConfigured.pnet?.enabled ?? false,
+          connected: !!apiKeysConfigured.pnet?.apiKey,
+          hasCredentials: !!apiKeysConfigured.pnet?.apiKey
+        },
+        {
+          id: "indeed",
+          name: "Indeed",
+          description: "Global job search engine with extensive candidate database",
+          enabled: apiKeysConfigured.indeed?.enabled ?? false,
+          connected: !!apiKeysConfigured.indeed?.apiKey,
+          hasCredentials: !!apiKeysConfigured.indeed?.apiKey
+        },
+        {
+          id: "linkedin",
+          name: "LinkedIn Recruiter",
+          description: "Professional networking platform for sourcing qualified candidates",
+          enabled: apiKeysConfigured.linkedin?.enabled ?? false,
+          connected: !!apiKeysConfigured.linkedin?.apiKey,
+          hasCredentials: !!apiKeysConfigured.linkedin?.apiKey
+        },
+        {
+          id: "careers24",
+          name: "Careers24",
+          description: "Popular South African job board powered by Media24",
+          enabled: apiKeysConfigured.careers24?.enabled ?? false,
+          connected: !!apiKeysConfigured.careers24?.apiKey,
+          hasCredentials: !!apiKeysConfigured.careers24?.apiKey
+        },
+        {
+          id: "gumtree",
+          name: "Gumtree Jobs",
+          description: "Classifieds platform with job listings section",
+          enabled: apiKeysConfigured.gumtree?.enabled ?? false,
+          connected: !!apiKeysConfigured.gumtree?.apiKey,
+          hasCredentials: !!apiKeysConfigured.gumtree?.apiKey
+        }
+      ];
+      
+      res.json(platforms);
+    } catch (error) {
+      console.error("Error fetching recruitment platforms:", error);
+      res.status(500).json({ message: "Failed to fetch platforms" });
+    }
+  });
+  
+  // Update platform configuration (enable/disable or connect/disconnect)
+  app.patch("/api/recruitment/platforms/:platformId", async (req, res) => {
+    try {
+      const tenantId = req.tenant?.id;
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID required" });
+      }
+      
+      const { platformId } = req.params;
+      const { enabled, apiKey, username, password, disconnect } = req.body;
+      
+      const tenant = await storage.getTenantById(tenantId);
+      if (!tenant) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+      
+      // Get existing api_keys_configured
+      const apiKeysConfigured = { ...(tenant.apiKeysConfigured || {}) };
+      
+      // Initialize platform config if not exists
+      if (!apiKeysConfigured[platformId]) {
+        apiKeysConfigured[platformId] = { enabled: false };
+      }
+      
+      // Handle disconnect
+      if (disconnect) {
+        apiKeysConfigured[platformId] = { enabled: false };
+      } else {
+        // Update enabled status if provided
+        if (typeof enabled === 'boolean') {
+          apiKeysConfigured[platformId].enabled = enabled;
+        }
+        
+        // Update credentials if provided
+        if (apiKey) {
+          apiKeysConfigured[platformId].apiKey = apiKey;
+        }
+        if (username) {
+          apiKeysConfigured[platformId].username = username;
+        }
+        if (password) {
+          apiKeysConfigured[platformId].password = password;
+        }
+      }
+      
+      // Save to database
+      await storage.updateTenantApiKeys(tenantId, apiKeysConfigured);
+      
+      // If platform is enabled and connected, configure the agent
+      if (apiKeysConfigured[platformId]?.enabled && apiKeysConfigured[platformId]?.apiKey) {
+        console.log(`[Recruitment] Platform ${platformId} configured and enabled for tenant ${tenantId}`);
+      }
+      
+      res.json({ 
+        success: true,
+        platform: {
+          id: platformId,
+          enabled: apiKeysConfigured[platformId]?.enabled ?? false,
+          connected: !!apiKeysConfigured[platformId]?.apiKey
+        }
+      });
+    } catch (error) {
+      console.error("Error updating recruitment platform:", error);
+      res.status(500).json({ message: "Failed to update platform" });
+    }
+  });
+  
+  // Connect a platform with credentials
+  app.post("/api/recruitment/platforms/:platformId/connect", async (req, res) => {
+    try {
+      const tenantId = req.tenant?.id;
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID required" });
+      }
+      
+      const { platformId } = req.params;
+      const { apiKey, username, password } = req.body;
+      
+      if (!apiKey) {
+        return res.status(400).json({ message: "API key is required" });
+      }
+      
+      const tenant = await storage.getTenantById(tenantId);
+      if (!tenant) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+      
+      // Get existing api_keys_configured
+      const apiKeysConfigured = { ...(tenant.apiKeysConfigured || {}) };
+      
+      // Update platform credentials
+      apiKeysConfigured[platformId] = {
+        ...apiKeysConfigured[platformId],
+        enabled: true,
+        apiKey,
+        username: username || undefined,
+        password: password || undefined,
+        connectedAt: new Date().toISOString()
+      };
+      
+      // Save to database
+      await storage.updateTenantApiKeys(tenantId, apiKeysConfigured);
+      
+      console.log(`[Recruitment] Platform ${platformId} connected for tenant ${tenantId}`);
+      
+      res.json({
+        success: true,
+        message: `${platformId} connected successfully`,
+        platform: {
+          id: platformId,
+          enabled: true,
+          connected: true
+        }
+      });
+    } catch (error) {
+      console.error("Error connecting recruitment platform:", error);
+      res.status(500).json({ message: "Failed to connect platform" });
+    }
+  });
+
   // Workforce AI RAG Assistant
   app.post("/api/workforce-ai/ask", async (req, res) => {
     try {
