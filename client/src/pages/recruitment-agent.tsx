@@ -97,6 +97,106 @@ const SOURCING_SPECIALISTS = [
 ];
 
 
+// Intelligent Contact Enrichment Component
+function ContactEnrichmentSection({ candidate, metadata }: { candidate: Candidate; metadata: any }) {
+  const [isEnriching, setIsEnriching] = useState(false);
+  const [enrichResult, setEnrichResult] = useState<any>(null);
+  const queryClient = useQueryClient();
+
+  const handleEnrichContact = async () => {
+    setIsEnriching(true);
+    setEnrichResult(null);
+    try {
+      const response = await api.post(`/candidates/${candidate.id}/enrich-contact`);
+      setEnrichResult(response.data);
+      if (response.data.success) {
+        queryClient.invalidateQueries({ queryKey: ['candidates'] });
+      }
+    } catch (error) {
+      console.error("Enrichment failed:", error);
+      setEnrichResult({ success: false, message: "Failed to enrich contact" });
+    } finally {
+      setIsEnriching(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-wrap gap-2 mt-2">
+      {candidate.email ? (
+        <a href={`mailto:${candidate.email}`} className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300">
+          <Mail className="h-3 w-3" /> {candidate.email}
+        </a>
+      ) : null}
+      {candidate.phone ? (
+        <a href={`tel:${candidate.phone}`} className="inline-flex items-center gap-1 text-xs text-green-400 hover:text-green-300">
+          <Phone className="h-3 w-3" /> {candidate.phone}
+        </a>
+      ) : null}
+      {metadata?.linkedinUrl && (
+        <a href={metadata.linkedinUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300">
+          <Linkedin className="h-3 w-3" /> LinkedIn
+        </a>
+      )}
+      
+      {/* Show enrich button if no contact info */}
+      {!candidate.email && !candidate.phone && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 text-xs gap-1 border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
+          onClick={handleEnrichContact}
+          disabled={isEnriching}
+          data-testid={`enrich-contact-${candidate.id}`}
+        >
+          {isEnriching ? (
+            <>
+              <Loader2 className="h-3 w-3 animate-spin" />
+              AI Searching...
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-3 w-3" />
+              AI Find Contact
+            </>
+          )}
+        </Button>
+      )}
+      
+      {/* Show LinkedIn search as fallback */}
+      {!candidate.email && !metadata?.linkedinUrl && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 text-xs gap-1 border-blue-500/50 text-blue-400 hover:bg-blue-500/10"
+          onClick={() => window.open(`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(candidate.fullName || '')}`, '_blank')}
+          data-testid={`linkedin-search-${candidate.id}`}
+        >
+          <Linkedin className="h-3 w-3" />
+          LinkedIn
+        </Button>
+      )}
+      
+      {/* Show enrichment result */}
+      {enrichResult && (
+        <div className={`w-full mt-2 p-2 rounded text-xs ${enrichResult.success ? 'bg-green-500/10 border border-green-500/30 text-green-400' : 'bg-amber-500/10 border border-amber-500/30 text-amber-400'}`}>
+          {enrichResult.success ? (
+            <span className="flex items-center gap-1">
+              <CheckCircle className="h-3 w-3" />
+              Contact found! {enrichResult.enriched?.email || enrichResult.enriched?.linkedinUrl || 'Profile updated'}
+              {enrichResult.enriched?.confidence && <Badge variant="outline" className="ml-1 text-[10px]">{enrichResult.enriched.confidence}</Badge>}
+            </span>
+          ) : (
+            <span className="flex items-center gap-1">
+              <AlertCircle className="h-3 w-3" />
+              {enrichResult.message || "No contact info found - try LinkedIn search"}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function RecruitmentAgent() {
   const searchString = useSearch();
   const urlParams = new URLSearchParams(searchString);
@@ -931,40 +1031,7 @@ export default function RecruitmentAgent() {
                             )}
                             
                             {/* Contact Actions */}
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {candidate.email ? (
-                                <a href={`mailto:${candidate.email}`} className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300">
-                                  <Mail className="h-3 w-3" /> {candidate.email}
-                                </a>
-                              ) : (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-7 text-xs gap-1 border-blue-500/50 text-blue-400 hover:bg-blue-500/10"
-                                  onClick={() => window.open(`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(candidate.fullName || '')}`, '_blank')}
-                                  data-testid={`linkedin-search-${candidate.id}`}
-                                >
-                                  <Linkedin className="h-3 w-3" />
-                                  Find on LinkedIn
-                                </Button>
-                              )}
-                              {candidate.phone ? (
-                                <a href={`tel:${candidate.phone}`} className="inline-flex items-center gap-1 text-xs text-green-400 hover:text-green-300">
-                                  <Phone className="h-3 w-3" /> {candidate.phone}
-                                </a>
-                              ) : !candidate.email && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-7 text-xs gap-1 border-amber-500/50 text-amber-400 hover:bg-amber-500/10"
-                                  onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(`"${candidate.fullName}" ${metadata?.company || ''} email contact`)}`, '_blank')}
-                                  data-testid={`find-contact-${candidate.id}`}
-                                >
-                                  <Search className="h-3 w-3" />
-                                  Find Contact Info
-                                </Button>
-                              )}
-                            </div>
+                            <ContactEnrichmentSection candidate={candidate} metadata={metadata} />
                           </div>
 
                           {/* Match Score */}

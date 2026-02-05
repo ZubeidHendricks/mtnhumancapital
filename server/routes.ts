@@ -452,6 +452,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI-powered contact enrichment
+  app.post("/api/candidates/:id/enrich-contact", async (req, res) => {
+    try {
+      const candidate = await storage.getCandidate(req.tenant.id, req.params.id);
+      if (!candidate) {
+        return res.status(404).json({ message: "Candidate not found" });
+      }
+
+      const metadata = candidate.metadata as any || {};
+      const searchQuery = `${candidate.fullName} ${metadata.company || ''} ${candidate.role || ''} email linkedin contact`;
+
+      // Use DuckDuckGo search to find contact info
+      const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(searchQuery)}`;
+      const searchResponse = await fetch(searchUrl, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
+      });
+      const searchHtml = await searchResponse.text();
+
+      // Extract search result snippets
+      const snippetMatches = searchHtml.match(/<a class="result__snippet"[^>]*>([^<]+)<\/a>/g) || [];
+      const titleMatches = searchHtml.match(/<a class="result__a"[^>]*>([^<]+)<\/a>/g) || [];
+      const snippets = snippetMatches.slice(0, 8).map(s => s.replace(/<[^>]+>/g, '').trim()).join('\n');
+      const titles = titleMatches.slice(0, 8).map(s => s.replace(/<[^>]+>/g, '').trim()).join('\n');
+
+      // Use GROQ AI to extract contact information
+      const groqApiKey = process.env.GROQ_API_KEY;
+      if (!groqApiKey) {
+        return res.status(500).json({ message: "GROQ API key not configured" });
+      }
+
+      const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${groqApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-70b-versatile',
+          messages: [{
+            role: 'system',
+            content: `You are a contact information extraction expert. Extract any email addresses, phone numbers, LinkedIn URLs, and professional details from the search results. Return ONLY valid JSON with no explanation.`
+          }, {
+            role: 'user',
+            content: `Find contact information for: ${candidate.fullName}
+Company: ${metadata.company || 'Unknown'}
+Role: ${candidate.role || 'Unknown'}
+
+Search Results:
+${titles}
+${snippets}
+
+Return JSON format:
+{
+  "email": "extracted email or null",
+  "phone": "extracted phone or null",
+  "linkedinUrl": "linkedin profile URL or null",
+  "additionalInfo": "any other relevant professional info",
+  "confidence": "high/medium/low",
+  "source": "where the info was found"
+}`
+          }],
+          temperature: 0.1,
+          max_tokens: 500
+        })
+      });
+
+      const groqData = await groqResponse.json() as any;
+      const aiContent = groqData.choices?.[0]?.message?.content || '{}';
+      
+      // Parse AI response
+      let enrichedData: any = {};
+      try {
+        const jsonMatch = aiContent.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          enrichedData = JSON.parse(jsonMatch[0]);
+        }
+      } catch (e) {
+        console.error("Failed to parse AI enrichment response:", e);
+      }
+
+      // Update candidate with enriched data if found
+      const updates: any = {};
+      if (enrichedData.email && enrichedData.email !== 'null' && enrichedData.email !== null) {
+        updates.email = enrichedData.email;
+      }
+      if (enrichedData.phone && enrichedData.phone !== 'null' && enrichedData.phone !== null) {
+        updates.phone = enrichedData.phone;
+      }
+      if (enrichedData.linkedinUrl || enrichedData.additionalInfo) {
+        updates.metadata = {
+          ...metadata,
+          linkedinUrl: enrichedData.linkedinUrl,
+          enrichedInfo: enrichedData.additionalInfo,
+          enrichmentConfidence: enrichedData.confidence,
+          enrichmentSource: enrichedData.source,
+          enrichedAt: new Date().toISOString()
+        };
+      }
+
+      // Save updates if any found
+      if (Object.keys(updates).length > 0) {
+        const updatedCandidate = await storage.updateCandidate(req.tenant.id, req.params.id, updates);
+        res.json({
+          success: true,
+          enriched: enrichedData,
+          candidate: updatedCandidate
+        });
+      } else {
+        res.json({
+          success: false,
+          message: "No contact information found",
+          enriched: enrichedData
+        });
+      }
+    } catch (error) {
+      console.error("Error enriching candidate contact:", error);
+      res.status(500).json({ message: "Failed to enrich contact information" });
+    }
+  });
+
   // ============= PIPELINE WORKFLOW =============
   
   // Get candidate pipeline status with history and blockers
