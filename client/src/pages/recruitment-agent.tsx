@@ -929,6 +929,42 @@ export default function RecruitmentAgent() {
                                 <MapPin className="h-3 w-3" /> {candidate.location || metadata?.location}
                               </p>
                             )}
+                            
+                            {/* Contact Actions */}
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {candidate.email ? (
+                                <a href={`mailto:${candidate.email}`} className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300">
+                                  <Mail className="h-3 w-3" /> {candidate.email}
+                                </a>
+                              ) : (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 text-xs gap-1 border-blue-500/50 text-blue-400 hover:bg-blue-500/10"
+                                  onClick={() => window.open(`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(candidate.fullName || '')}`, '_blank')}
+                                  data-testid={`linkedin-search-${candidate.id}`}
+                                >
+                                  <Linkedin className="h-3 w-3" />
+                                  Find on LinkedIn
+                                </Button>
+                              )}
+                              {candidate.phone ? (
+                                <a href={`tel:${candidate.phone}`} className="inline-flex items-center gap-1 text-xs text-green-400 hover:text-green-300">
+                                  <Phone className="h-3 w-3" /> {candidate.phone}
+                                </a>
+                              ) : !candidate.email && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 text-xs gap-1 border-amber-500/50 text-amber-400 hover:bg-amber-500/10"
+                                  onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(`"${candidate.fullName}" ${metadata?.company || ''} email contact`)}`, '_blank')}
+                                  data-testid={`find-contact-${candidate.id}`}
+                                >
+                                  <Search className="h-3 w-3" />
+                                  Find Contact Info
+                                </Button>
+                              )}
+                            </div>
                           </div>
 
                           {/* Match Score */}
