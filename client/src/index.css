@@ -240,14 +240,13 @@
   color: hsl(160 84% 35%) !important;
 }
 
-/* Input styling for light theme */
-.light input,
-.light .bg-muted {
+/* Form input styling for light theme */
+.light input:not([type="checkbox"]):not([type="radio"]) {
   background: hsl(0 0% 100%);
-  border: 1px solid hsl(214 32% 91%);
+  border-color: hsl(214 32% 91%);
 }
 
-.light input:focus {
+.light input:focus:not([type="checkbox"]):not([type="radio"]) {
   border-color: hsl(199 89% 48%);
   box-shadow: 0 0 0 3px hsl(199 89% 48% / 0.1);
 }
@@ -270,21 +269,17 @@
   color: hsl(199 89% 40%) !important;
 }
 
-/* Active/success badges */
-.light [class*="bg-green"],
-.light [class*="bg-emerald"] {
-  background: hsl(160 84% 39%) !important;
-}
-
+/* Status badge background overrides - specific classes only */
 .light .bg-green-500\/10,
-.light .bg-emerald-500\/10,
-.light .bg-green-100 {
-  background: hsl(160 84% 39% / 0.12) !important;
+.light .bg-emerald-500\/10 {
+  background: hsl(160 84% 39% / 0.15) !important;
 }
 
-.light .text-green-500,
-.light .text-green-400,
-.light .text-emerald-500,
+/* Status text colors for light theme readability */
+.light .text-green-400 {
+  color: hsl(160 84% 32%) !important;
+}
+
 .light .text-emerald-400 {
   color: hsl(160 84% 32%) !important;
 }
@@ -382,12 +377,12 @@
   background: hsl(210 20% 96%) !important;
 }
 
-/* Progress bars */
-.light [role="progressbar"] {
+/* Progress bars - using data attribute for specificity */
+.light [data-radix-progress-root] {
   background: hsl(210 20% 90%);
 }
 
-.light [role="progressbar"] > div {
+.light [data-radix-progress-indicator] {
   background: hsl(199 89% 48%);
 }
 
@@ -459,24 +454,7 @@
   color: hsl(215 16% 55%) !important;
 }
 
-/* Ensure all text is dark enough */
-.light p,
-.light span:not(.sidebar-nav span),
-.light div:not(.sidebar-nav div) {
-  color: inherit;
-}
-
-/* Specific component overrides */
-.light .border-border {
-  border-color: hsl(214 32% 91%) !important;
-}
-
-/* Make sure sidebar text stays light */
-.light .sidebar-nav,
-.light .sidebar-nav * {
-  color: hsl(210 40% 80%);
-}
-
+/* Make sure sidebar text stays light in light theme */
 .light .sidebar-nav .text-primary {
   color: hsl(199 89% 55%) !important;
 }
