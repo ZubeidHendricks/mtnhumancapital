@@ -261,6 +261,226 @@
   background: hsl(199 89% 42%) !important;
 }
 
+/* Badge styling for light theme */
+.light .bg-primary\/10 {
+  background: hsl(199 89% 48% / 0.12) !important;
+}
+
+.light .text-primary {
+  color: hsl(199 89% 40%) !important;
+}
+
+/* Active/success badges */
+.light [class*="bg-green"],
+.light [class*="bg-emerald"] {
+  background: hsl(160 84% 39%) !important;
+}
+
+.light .bg-green-500\/10,
+.light .bg-emerald-500\/10,
+.light .bg-green-100 {
+  background: hsl(160 84% 39% / 0.12) !important;
+}
+
+.light .text-green-500,
+.light .text-green-400,
+.light .text-emerald-500,
+.light .text-emerald-400 {
+  color: hsl(160 84% 32%) !important;
+}
+
+/* Warning badges */
+.light .bg-yellow-500\/10,
+.light .bg-amber-500\/10,
+.light .bg-yellow-100 {
+  background: hsl(45 93% 47% / 0.15) !important;
+}
+
+.light .text-yellow-500,
+.light .text-yellow-400,
+.light .text-amber-500 {
+  color: hsl(45 93% 35%) !important;
+}
+
+/* Error/danger badges */
+.light .bg-red-500\/10,
+.light .bg-red-100 {
+  background: hsl(0 84% 60% / 0.12) !important;
+}
+
+.light .text-red-500,
+.light .text-red-400 {
+  color: hsl(0 84% 45%) !important;
+}
+
+/* Blue info badges */
+.light .bg-blue-500\/10,
+.light .bg-blue-100 {
+  background: hsl(210 100% 50% / 0.12) !important;
+}
+
+.light .text-blue-500,
+.light .text-blue-400 {
+  color: hsl(210 100% 40%) !important;
+}
+
+/* Muted text styling */
+.light .text-muted-foreground {
+  color: hsl(215 16% 47%) !important;
+}
+
+/* Card header titles */
+.light .text-card-foreground {
+  color: hsl(222 47% 15%) !important;
+}
+
+/* Scroll area styling */
+.light [data-radix-scroll-area-viewport] {
+  background: transparent;
+}
+
+/* Dropdown menus */
+.light [role="menu"] {
+  background: hsl(0 0% 100%) !important;
+  border: 1px solid hsl(214 32% 91%) !important;
+  box-shadow: 0 10px 38px -10px rgba(22, 23, 24, 0.15), 0 10px 20px -15px rgba(22, 23, 24, 0.1) !important;
+}
+
+.light [role="menuitem"] {
+  color: hsl(222 47% 15%) !important;
+}
+
+.light [role="menuitem"]:hover,
+.light [role="menuitem"]:focus {
+  background: hsl(210 20% 96%) !important;
+}
+
+/* Dialog/Modal styling */
+.light [role="dialog"] {
+  background: hsl(0 0% 100%) !important;
+  border: 1px solid hsl(214 32% 91%) !important;
+}
+
+/* Tabs styling for light theme */
+.light [role="tablist"] {
+  background: hsl(210 20% 96%);
+  border-radius: 0.5rem;
+}
+
+.light [role="tab"] {
+  color: hsl(215 16% 47%);
+}
+
+.light [role="tab"][data-state="active"] {
+  background: hsl(0 0% 100%);
+  color: hsl(222 47% 15%);
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+
+/* Avatar styling */
+.light .bg-muted {
+  background: hsl(210 20% 96%) !important;
+}
+
+/* Progress bars */
+.light [role="progressbar"] {
+  background: hsl(210 20% 90%);
+}
+
+.light [role="progressbar"] > div {
+  background: hsl(199 89% 48%);
+}
+
+/* Separator lines */
+.light [data-orientation="horizontal"] {
+  background: hsl(214 32% 91%);
+}
+
+/* Tooltips */
+.light [role="tooltip"] {
+  background: hsl(222 47% 11%) !important;
+  color: hsl(0 0% 100%) !important;
+}
+
+/* Charts - ensure readable in light mode */
+.light .recharts-cartesian-grid-horizontal line,
+.light .recharts-cartesian-grid-vertical line {
+  stroke: hsl(214 32% 91%);
+}
+
+.light .recharts-text {
+  fill: hsl(215 16% 47%);
+}
+
+.light .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: hsl(0 0% 100%) !important;
+  border: 1px solid hsl(214 32% 91%) !important;
+}
+
+/* Stat cards with icons */
+.light .rounded-full.bg-primary\/10 {
+  background: hsl(199 89% 48% / 0.12) !important;
+}
+
+/* Search input */
+.light input[type="search"],
+.light input[placeholder*="Search"] {
+  background: hsl(0 0% 100%);
+  border: 1px solid hsl(214 32% 91%);
+}
+
+/* Select dropdowns */
+.light select,
+.light [role="combobox"] {
+  background: hsl(0 0% 100%);
+  border: 1px solid hsl(214 32% 91%);
+  color: hsl(222 47% 15%);
+}
+
+/* Textarea */
+.light textarea {
+  background: hsl(0 0% 100%);
+  border: 1px solid hsl(214 32% 91%);
+  color: hsl(222 47% 15%);
+}
+
+/* Ghost/outline buttons */
+.light .bg-transparent {
+  color: hsl(222 47% 15%);
+}
+
+.light button[class*="ghost"]:hover,
+.light .hover\:bg-accent:hover {
+  background: hsl(210 20% 96%) !important;
+}
+
+/* Icon colors in light mode */
+.light svg.text-muted-foreground {
+  color: hsl(215 16% 55%) !important;
+}
+
+/* Ensure all text is dark enough */
+.light p,
+.light span:not(.sidebar-nav span),
+.light div:not(.sidebar-nav div) {
+  color: inherit;
+}
+
+/* Specific component overrides */
+.light .border-border {
+  border-color: hsl(214 32% 91%) !important;
+}
+
+/* Make sure sidebar text stays light */
+.light .sidebar-nav,
+.light .sidebar-nav * {
+  color: hsl(210 40% 80%);
+}
+
+.light .sidebar-nav .text-primary {
+  color: hsl(199 89% 55%) !important;
+}
+
 @layer base {
   * {
     @apply border-border;
