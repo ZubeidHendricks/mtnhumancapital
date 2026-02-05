@@ -1,4 +1,5 @@
 import Groq from "groq-sdk";
+import puppeteer, { Browser, Page } from "puppeteer";
 import type { Job } from "@shared/schema";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
@@ -6,14 +7,14 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 export interface ScrapedCandidate {
   name: string;
   title?: string;
-  location?: string;
-  experience?: string;
   skills: string[];
+  experience?: string;
+  location?: string;
   contact?: string;
   source: string;
   sourceUrl?: string;
-  rawText: string;
   matchScore?: number;
+  rawText?: string;
 }
 
 export interface ScraperResult {
@@ -25,6 +26,35 @@ export interface ScraperResult {
   error?: string;
 }
 
+let browserInstance: Browser | null = null;
+
+async function getBrowser(): Promise<Browser> {
+  if (!browserInstance || !browserInstance.isConnected()) {
+    browserInstance = await puppeteer.launch({
+      headless: true,
+      executablePath: process.env.CHROMIUM_PATH || "/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium",
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-accelerated-2d-canvas",
+        "--disable-gpu",
+        "--single-process",
+        "--no-zygote",
+        "--window-size=1920,1080"
+      ]
+    });
+  }
+  return browserInstance;
+}
+
+async function closeBrowser(): Promise<void> {
+  if (browserInstance) {
+    await browserInstance.close();
+    browserInstance = null;
+  }
+}
+
 function generateSearchQuery(job: Job): string {
   const title = job.title.toLowerCase();
   
@@ -32,94 +62,49 @@ function generateSearchQuery(job: Job): string {
     if (title.includes('java')) return 'java developer';
     if (title.includes('python')) return 'python developer';
     if (title.includes('full stack')) return 'full stack developer';
+    if (title.includes('frontend') || title.includes('front-end')) return 'frontend developer';
+    if (title.includes('backend') || title.includes('back-end')) return 'backend developer';
     return 'software developer';
   }
-  if (title.includes('project manager')) return 'project manager IT';
-  if (title.includes('administrator')) return 'project administrator';
-  if (title.includes('analyst')) return 'business analyst';
+  if (title.includes('project manager')) return 'project manager';
+  if (title.includes('administrator')) return 'administrator';
+  if (title.includes('analyst')) return 'analyst';
+  if (title.includes('designer')) return 'designer';
   
   const words = job.title.split(/\s+/).slice(0, 3).join(' ');
-  return words.replace(/[^\w\s]/g, '');
+  return words.replace(/[^\w\s]/g, '').toLowerCase();
 }
 
-async function generateSimulatedCandidates(job: Job, source: string, limit: number): Promise<ScrapedCandidate[]> {
+async function extractCandidatesWithAI(rawText: string, job: Job, source: string): Promise<ScrapedCandidate[]> {
   try {
-    const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      messages: [
-        {
-          role: "system",
-          content: `You are a recruitment data simulator. Generate realistic candidate profiles based on job requirements. 
-Create candidates that would realistically apply through ${source}. Include diverse names, varying experience levels, and realistic skill combinations.
-Return ONLY valid JSON array, no other text.`
-        },
-        {
-          role: "user",
-          content: `Generate ${limit} realistic candidate profiles for this position:
-
-Job: ${job.title}
-Department: ${job.department || "Not specified"}
-Location: ${job.location || "South Africa"}
-Description: ${job.description?.slice(0, 500) || "Not provided"}
-Requirements: ${(job.requirements || []).join(", ")}
-
-Return JSON array with candidates:
-[{"name": "Full Name", "title": "Current Role", "skills": ["skill1", "skill2"], "experience": "X years", "location": "City", "matchScore": 60-95, "contact": "email or phone", "source": "${source}"}]`
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 2000
-    });
-
-    const content = completion.choices[0]?.message?.content || "[]";
-    const jsonMatch = content.match(/\[[\s\S]*\]/);
-    if (jsonMatch) {
-      const candidates = JSON.parse(jsonMatch[0]);
-      return candidates.map((c: any) => ({
-        name: c.name || "Unknown",
-        title: c.title || job.title,
-        skills: c.skills || [],
-        experience: c.experience || "Not specified",
-        location: c.location || job.location || "South Africa",
-        matchScore: c.matchScore || 70,
-        contact: c.contact,
-        source: source,
-        sourceUrl: `https://${source.toLowerCase().replace(/\s+/g, '')}.com/profile/${c.name?.replace(/\s+/g, '-').toLowerCase() || 'candidate'}`
-      }));
+    if (!rawText || rawText.length < 100) {
+      return [];
     }
-    return [];
-  } catch (error) {
-    console.error(`[generateSimulatedCandidates] Error:`, error);
-    return [];
-  }
-}
 
-async function extractCandidatesFromText(rawText: string, job: Job, source: string): Promise<ScrapedCandidate[]> {
-  try {
     const completion = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
       messages: [
         {
           role: "system",
-          content: `You are an AI that extracts candidate information from job listing text. Extract any potential candidates or job seekers mentioned. Output JSON array.`
+          content: `You are an expert at extracting candidate information from job board listings and CV posts. 
+Extract ONLY real people/candidates mentioned in the text - people offering their services or posting CVs.
+Return ONLY a valid JSON array. If no candidates found, return [].`
         },
         {
           role: "user",
-          content: `Job we're hiring for: ${job.title}
+          content: `Extract candidate profiles from this scraped content from ${source}.
+Look for: names, job titles, skills, experience, locations, contact info.
 
-Raw scraped text:
-${rawText.slice(0, 4000)}
+Job we're hiring for: ${job.title}
+Requirements: ${(job.requirements || []).slice(0, 5).join(", ")}
 
-Extract candidates from this text. For each person seeking work, extract:
-- name (or "Anonymous" if not found)
-- title (their current/desired role)
-- location
-- experience (years or description)
-- skills (array of skills mentioned)
-- contact (phone/email if visible)
+Scraped content:
+${rawText.slice(0, 6000)}
 
-Output as JSON array: [{"name":"...", "title":"...", "location":"...", "experience":"...", "skills":["..."], "contact":"..."}]
-If no candidates found, output empty array: []`
+Return JSON array:
+[{"name": "Full Name", "title": "Their Job Title", "skills": ["skill1"], "experience": "X years", "location": "City", "contact": "email/phone if found"}]
+
+Return [] if no real candidates found.`
         }
       ],
       temperature: 0.2,
@@ -128,23 +113,48 @@ If no candidates found, output empty array: []`
 
     const content = completion.choices[0]?.message?.content || "[]";
     const jsonMatch = content.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) return [];
     
-    const parsed = JSON.parse(jsonMatch[0]);
-    return parsed.map((c: any) => ({
-      name: c.name || "Anonymous",
-      title: c.title,
-      location: c.location,
-      experience: c.experience,
-      skills: c.skills || [],
-      contact: c.contact,
-      source,
-      rawText: rawText.slice(0, 500)
-    }));
+    if (jsonMatch) {
+      const candidates = JSON.parse(jsonMatch[0]);
+      return candidates
+        .filter((c: any) => c.name && c.name !== "Unknown" && c.name.length > 2)
+        .map((c: any) => ({
+          name: c.name,
+          title: c.title || undefined,
+          skills: Array.isArray(c.skills) ? c.skills : [],
+          experience: c.experience || undefined,
+          location: c.location || undefined,
+          contact: c.contact || undefined,
+          source: source,
+          matchScore: calculateMatchScore(c, job)
+        }));
+    }
+    return [];
   } catch (error) {
-    console.error("Error extracting candidates:", error);
+    console.error(`[extractCandidatesWithAI] Error:`, error);
     return [];
   }
+}
+
+function calculateMatchScore(candidate: any, job: Job): number {
+  let score = 50;
+  const jobReqs = (job.requirements || []).map(r => r.toLowerCase());
+  const candidateSkills = (candidate.skills || []).map((s: string) => s.toLowerCase());
+  
+  for (const skill of candidateSkills) {
+    if (jobReqs.some(req => req.includes(skill) || skill.includes(req))) {
+      score += 10;
+    }
+  }
+  
+  if (candidate.experience) {
+    const years = parseInt(candidate.experience);
+    if (years >= 5) score += 15;
+    else if (years >= 3) score += 10;
+    else if (years >= 1) score += 5;
+  }
+  
+  return Math.min(score, 95);
 }
 
 export class GumtreeScraper {
@@ -155,50 +165,63 @@ export class GumtreeScraper {
     console.log(`[GumtreeScraper] Searching for: ${job.title}`);
     
     const query = generateSearchQuery(job);
+    let page: Page | null = null;
     
-    // NOTE: Gumtree has anti-bot protection. In production, use:
-    // 1. Headless browser (Puppeteer/Playwright) with stealth mode
-    // 2. Rotating proxies with residential IPs
-    // 3. Browser fingerprint randomization
-    // For demo, we simulate realistic candidate data based on job requirements
-    
-    const simulatedCandidates = await generateSimulatedCandidates(job, this.platform, limit);
-    
-    console.log(`[GumtreeScraper] Found ${simulatedCandidates.length} simulated candidates`);
-    
-    return {
-      platform: this.platform,
-      query,
-      candidates: simulatedCandidates,
-      scrapedAt: new Date(),
-      status: "success"
-    };
-  }
-}
-
-export class FacebookGroupScraper {
-  name = "Facebook Groups Scraper";
-  platform = "Facebook Groups";
-
-  private groupUrls = [
-    "https://www.facebook.com/groups/sajobs",
-    "https://www.facebook.com/groups/itjobssa",
-    "https://www.facebook.com/groups/jobsinjohannesburg"
-  ];
-
-  async search(job: Job, limit: number = 10): Promise<ScraperResult> {
-    console.log(`[FacebookGroupScraper] Searching for: ${job.title}`);
-    
-    const query = generateSearchQuery(job);
-    
-    return {
-      platform: this.platform,
-      query,
-      candidates: [],
-      scrapedAt: new Date(),
-      status: "partial",
-      error: "Facebook requires authentication. Configure Facebook Graph API credentials in settings to enable this scraper."
-    };
+    try {
+      const browser = await getBrowser();
+      page = await browser.newPage();
+      
+      await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+      await page.setViewport({ width: 1920, height: 1080 });
+      
+      const encodedQuery = encodeURIComponent(query);
+      const searchUrl = `https://www.gumtree.co.za/s-services/${encodedQuery}`;
+      
+      console.log(`[GumtreeScraper] Navigating to: ${searchUrl}`);
+      
+      await page.goto(searchUrl, { 
+        waitUntil: "domcontentloaded",
+        timeout: 30000 
+      });
+      
+      await page.waitForSelector("body", { timeout: 10000 });
+      
+      const pageContent = await page.evaluate(() => {
+        const listings = document.querySelectorAll('[class*="listing"], [class*="result"], article, .ad-listing');
+        let text = "";
+        listings.forEach(el => {
+          text += el.textContent + "\n\n";
+        });
+        if (!text) {
+          text = document.body.innerText;
+        }
+        return text;
+      });
+      
+      console.log(`[GumtreeScraper] Scraped ${pageContent.length} characters`);
+      
+      const candidates = await extractCandidatesWithAI(pageContent, job, this.platform);
+      
+      return {
+        platform: this.platform,
+        query,
+        candidates: candidates.slice(0, limit),
+        scrapedAt: new Date(),
+        status: candidates.length > 0 ? "success" : "partial"
+      };
+    } catch (error) {
+      console.error(`[GumtreeScraper] Error:`, error);
+      return {
+        platform: this.platform,
+        query,
+        candidates: [],
+        scrapedAt: new Date(),
+        status: "failed",
+        error: error instanceof Error ? error.message : "Unknown error"
+      };
+    } finally {
+      if (page) await page.close();
+    }
   }
 }
 
@@ -210,23 +233,61 @@ export class IndeedScraper {
     console.log(`[IndeedScraper] Searching for: ${job.title}`);
     
     const query = generateSearchQuery(job);
+    let page: Page | null = null;
     
-    // NOTE: Indeed has Cloudflare protection. In production, use:
-    // 1. Puppeteer with stealth plugin
-    // 2. Residential proxy rotation
-    // 3. CAPTCHA solving service
-    
-    const simulatedCandidates = await generateSimulatedCandidates(job, this.platform, limit);
-    
-    console.log(`[IndeedScraper] Found ${simulatedCandidates.length} simulated candidates`);
-    
-    return {
-      platform: this.platform,
-      query,
-      candidates: simulatedCandidates,
-      scrapedAt: new Date(),
-      status: "success"
-    };
+    try {
+      const browser = await getBrowser();
+      page = await browser.newPage();
+      
+      await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+      
+      const searchUrl = `https://za.indeed.com/jobs?q=${encodeURIComponent(query)}&l=South+Africa`;
+      
+      console.log(`[IndeedScraper] Navigating to: ${searchUrl}`);
+      
+      await page.goto(searchUrl, { 
+        waitUntil: "domcontentloaded",
+        timeout: 30000 
+      });
+      
+      await new Promise(r => setTimeout(r, 3000));
+      
+      const pageContent = await page.evaluate(() => {
+        const jobCards = document.querySelectorAll('[class*="job_seen"], [class*="jobsearch"], .job_seen_beacon, .resultContent');
+        let text = "";
+        jobCards.forEach(el => {
+          text += el.textContent + "\n\n";
+        });
+        if (!text || text.length < 100) {
+          text = document.body.innerText;
+        }
+        return text;
+      });
+      
+      console.log(`[IndeedScraper] Scraped ${pageContent.length} characters`);
+      
+      const candidates = await extractCandidatesWithAI(pageContent, job, this.platform);
+      
+      return {
+        platform: this.platform,
+        query,
+        candidates: candidates.slice(0, limit),
+        scrapedAt: new Date(),
+        status: candidates.length > 0 ? "success" : "partial"
+      };
+    } catch (error) {
+      console.error(`[IndeedScraper] Error:`, error);
+      return {
+        platform: this.platform,
+        query,
+        candidates: [],
+        scrapedAt: new Date(),
+        status: "failed",
+        error: error instanceof Error ? error.message : "Unknown error"
+      };
+    } finally {
+      if (page) await page.close();
+    }
   }
 }
 
@@ -238,49 +299,185 @@ export class Careers24Scraper {
     console.log(`[Careers24Scraper] Searching for: ${job.title}`);
     
     const query = generateSearchQuery(job);
+    let page: Page | null = null;
     
-    // NOTE: Careers24 requires session handling. In production, use:
-    // 1. Headless browser with cookie management
-    // 2. Proper session initialization
-    
-    const simulatedCandidates = await generateSimulatedCandidates(job, this.platform, limit);
-    
-    console.log(`[Careers24Scraper] Found ${simulatedCandidates.length} simulated candidates`);
-    
-    return {
-      platform: this.platform,
-      query,
-      candidates: simulatedCandidates,
-      scrapedAt: new Date(),
-      status: "success"
-    };
+    try {
+      const browser = await getBrowser();
+      page = await browser.newPage();
+      
+      await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+      
+      const searchUrl = `https://www.careers24.com/jobs/kw-${encodeURIComponent(query.replace(/\s+/g, '-'))}`;
+      
+      console.log(`[Careers24Scraper] Navigating to: ${searchUrl}`);
+      
+      await page.goto(searchUrl, { 
+        waitUntil: "domcontentloaded",
+        timeout: 30000 
+      });
+      
+      await new Promise(r => setTimeout(r, 2000));
+      
+      const pageContent = await page.evaluate(() => {
+        const listings = document.querySelectorAll('[class*="job"], [class*="listing"], article');
+        let text = "";
+        listings.forEach(el => {
+          text += el.textContent + "\n\n";
+        });
+        if (!text || text.length < 100) {
+          text = document.body.innerText;
+        }
+        return text;
+      });
+      
+      console.log(`[Careers24Scraper] Scraped ${pageContent.length} characters`);
+      
+      const candidates = await extractCandidatesWithAI(pageContent, job, this.platform);
+      
+      return {
+        platform: this.platform,
+        query,
+        candidates: candidates.slice(0, limit),
+        scrapedAt: new Date(),
+        status: candidates.length > 0 ? "success" : "partial"
+      };
+    } catch (error) {
+      console.error(`[Careers24Scraper] Error:`, error);
+      return {
+        platform: this.platform,
+        query,
+        candidates: [],
+        scrapedAt: new Date(),
+        status: "failed",
+        error: error instanceof Error ? error.message : "Unknown error"
+      };
+    } finally {
+      if (page) await page.close();
+    }
   }
 }
 
-export class OLXScraper {
-  name = "OLX Scraper";
-  platform = "OLX South Africa";
+export class PNetScraper {
+  name = "PNet Scraper";
+  platform = "PNet";
 
   async search(job: Job, limit: number = 10): Promise<ScraperResult> {
-    console.log(`[OLXScraper] Searching for: ${job.title}`);
+    console.log(`[PNetScraper] Searching for: ${job.title}`);
     
     const query = generateSearchQuery(job);
+    let page: Page | null = null;
     
-    // NOTE: OLX has anti-scraping measures. In production, use:
-    // 1. Request rate limiting
-    // 2. Browser fingerprint spoofing
+    try {
+      const browser = await getBrowser();
+      page = await browser.newPage();
+      
+      await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+      
+      const searchUrl = `https://www.pnet.co.za/jobs/${encodeURIComponent(query.replace(/\s+/g, '-'))}-jobs`;
+      
+      console.log(`[PNetScraper] Navigating to: ${searchUrl}`);
+      
+      await page.goto(searchUrl, { 
+        waitUntil: "domcontentloaded",
+        timeout: 30000 
+      });
+      
+      await new Promise(r => setTimeout(r, 2000));
+      
+      const pageContent = await page.evaluate(() => {
+        return document.body.innerText;
+      });
+      
+      console.log(`[PNetScraper] Scraped ${pageContent.length} characters`);
+      
+      const candidates = await extractCandidatesWithAI(pageContent, job, this.platform);
+      
+      return {
+        platform: this.platform,
+        query,
+        candidates: candidates.slice(0, limit),
+        scrapedAt: new Date(),
+        status: candidates.length > 0 ? "success" : "partial"
+      };
+    } catch (error) {
+      console.error(`[PNetScraper] Error:`, error);
+      return {
+        platform: this.platform,
+        query,
+        candidates: [],
+        scrapedAt: new Date(),
+        status: "failed",
+        error: error instanceof Error ? error.message : "Unknown error"
+      };
+    } finally {
+      if (page) await page.close();
+    }
+  }
+}
+
+export class LinkedInJobsScraper {
+  name = "LinkedIn Jobs Scraper";
+  platform = "LinkedIn";
+
+  async search(job: Job, limit: number = 10): Promise<ScraperResult> {
+    console.log(`[LinkedInJobsScraper] Searching for: ${job.title}`);
     
-    const simulatedCandidates = await generateSimulatedCandidates(job, this.platform, limit);
+    const query = generateSearchQuery(job);
+    let page: Page | null = null;
     
-    console.log(`[OLXScraper] Found ${simulatedCandidates.length} simulated candidates`);
-    
-    return {
-      platform: this.platform,
-      query,
-      candidates: simulatedCandidates,
-      scrapedAt: new Date(),
-      status: "success"
-    };
+    try {
+      const browser = await getBrowser();
+      page = await browser.newPage();
+      
+      await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+      
+      const searchUrl = `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(query)}&location=South%20Africa`;
+      
+      console.log(`[LinkedInJobsScraper] Navigating to: ${searchUrl}`);
+      
+      await page.goto(searchUrl, { 
+        waitUntil: "domcontentloaded",
+        timeout: 30000 
+      });
+      
+      await new Promise(r => setTimeout(r, 3000));
+      
+      const pageContent = await page.evaluate(() => {
+        const jobCards = document.querySelectorAll('.job-card-container, .jobs-search__results-list li, [class*="job-result"]');
+        let text = "";
+        jobCards.forEach(el => {
+          text += el.textContent + "\n\n";
+        });
+        if (!text || text.length < 100) {
+          text = document.body.innerText;
+        }
+        return text;
+      });
+      
+      console.log(`[LinkedInJobsScraper] Scraped ${pageContent.length} characters`);
+      
+      const candidates = await extractCandidatesWithAI(pageContent, job, this.platform);
+      
+      return {
+        platform: this.platform,
+        query,
+        candidates: candidates.slice(0, limit),
+        scrapedAt: new Date(),
+        status: candidates.length > 0 ? "success" : "partial"
+      };
+    } catch (error) {
+      console.error(`[LinkedInJobsScraper] Error:`, error);
+      return {
+        platform: this.platform,
+        query,
+        candidates: [],
+        scrapedAt: new Date(),
+        status: "failed",
+        error: error instanceof Error ? error.message : "Unknown error"
+      };
+    } finally {
+      if (page) await page.close();
+    }
   }
 }
 
@@ -289,8 +486,8 @@ export class ScraperOrchestrator {
     new GumtreeScraper(),
     new IndeedScraper(),
     new Careers24Scraper(),
-    new OLXScraper(),
-    new FacebookGroupScraper()
+    new PNetScraper(),
+    new LinkedInJobsScraper()
   ];
 
   getScrapers() {
@@ -300,38 +497,10 @@ export class ScraperOrchestrator {
     }));
   }
 
-  async runAllScrapers(job: Job, enabledPlatforms?: string[]): Promise<{
-    results: ScraperResult[];
-    allCandidates: ScrapedCandidate[];
-    totalFound: number;
-  }> {
-    console.log(`[ScraperOrchestrator] Running scrapers for: ${job.title}`);
-    
-    let activeScrapers = this.scrapers;
-    if (enabledPlatforms && enabledPlatforms.length > 0) {
-      activeScrapers = this.scrapers.filter(s => 
-        enabledPlatforms.some(p => s.platform.toLowerCase().includes(p.toLowerCase()))
-      );
-    }
-
-    const results = await Promise.all(
-      activeScrapers.map(scraper => scraper.search(job, 10))
-    );
-
-    const allCandidates = results.flatMap(r => r.candidates);
-
-    console.log(`[ScraperOrchestrator] Total candidates found: ${allCandidates.length}`);
-
-    return {
-      results,
-      allCandidates,
-      totalFound: allCandidates.length
-    };
-  }
-
-  async runScraper(platform: string, job: Job): Promise<ScraperResult> {
-    const scraper = this.scrapers.find(s => 
-      s.platform.toLowerCase().includes(platform.toLowerCase())
+  async runScraper(platform: string, job: Job, limit: number = 10): Promise<ScraperResult> {
+    const scraper = this.scrapers.find(
+      s => s.platform.toLowerCase() === platform.toLowerCase() ||
+           s.name.toLowerCase().includes(platform.toLowerCase())
     );
     
     if (!scraper) {
@@ -341,11 +510,35 @@ export class ScraperOrchestrator {
         candidates: [],
         scrapedAt: new Date(),
         status: "failed",
-        error: `Scraper for "${platform}" not found`
+        error: `Scraper not found for platform: ${platform}`
       };
     }
 
-    return scraper.search(job, 10);
+    return scraper.search(job, limit);
+  }
+
+  async runAllScrapers(job: Job, limit: number = 5): Promise<{
+    results: ScraperResult[];
+    allCandidates: ScrapedCandidate[];
+    totalFound: number;
+  }> {
+    console.log(`[ScraperOrchestrator] Running all scrapers for: ${job.title}`);
+    
+    const results = await Promise.all(
+      this.scrapers.map(scraper => scraper.search(job, limit))
+    );
+    
+    const allCandidates = results.flatMap(r => r.candidates);
+    
+    console.log(`[ScraperOrchestrator] Total candidates found: ${allCandidates.length}`);
+    
+    await closeBrowser();
+    
+    return {
+      results,
+      allCandidates,
+      totalFound: allCandidates.length
+    };
   }
 }
 
