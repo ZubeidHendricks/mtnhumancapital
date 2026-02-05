@@ -92,8 +92,8 @@
 }
 
 .light {
-  /* Light Theme - Clean Professional Dashboard Style */
-  --background: 220 20% 97%; /* Very light grey background */
+  /* Light Theme - Clean Professional Dashboard Style (matching reference) */
+  --background: 210 20% 98%; /* Very light grey background */
   --foreground: 222 47% 11%; /* Dark navy text */
 
   --card: 0 0% 100%; /* Pure white cards */
@@ -105,10 +105,10 @@
   --primary: 199 89% 48%; /* Cyan/Teal - matching reference */
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 220 14% 96%; /* Light grey */
+  --secondary: 210 20% 96%; /* Light grey */
   --secondary-foreground: 222 47% 11%;
 
-  --muted: 220 14% 96%; /* Light grey background */
+  --muted: 210 20% 96%; /* Light grey background */
   --muted-foreground: 215 16% 47%; /* Medium grey text */
 
   --accent: 199 89% 48%; /* Teal accent */
@@ -117,11 +117,11 @@
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
 
-  --border: 220 13% 91%; /* Light grey border */
+  --border: 214 32% 91%; /* Light grey border */
   --input: 0 0% 100%; /* White input */
   --ring: 199 89% 48%; /* Teal focus ring */
   
-  --button-outline: hsl(220 13% 80%);
+  --button-outline: hsl(214 32% 85%);
 
   /* Sidebar colors for light theme */
   --sidebar-background: 222 47% 11%; /* Dark navy sidebar */
@@ -137,43 +137,128 @@
   --chart-5: 280 60% 55%; /* Purple */
 }
 
-/* Dark sidebar styling for light theme */
+/* Dark sidebar styling for light theme - matching reference image */
 .light .sidebar-nav {
-  background: hsl(222 47% 11%);
-  color: hsl(210 40% 98%);
+  background: hsl(222 47% 11%) !important;
+  color: hsl(210 40% 98%) !important;
+  border-right: none !important;
 }
 
-.light .sidebar-nav a {
-  color: hsl(210 40% 85%);
+.light .sidebar-nav * {
+  border-color: hsl(222 47% 18%) !important;
 }
 
-.light .sidebar-nav a:hover,
-.light .sidebar-nav a.active {
-  background: hsl(222 47% 18%);
-  color: hsl(0 0% 100%);
+.light .sidebar-nav h3,
+.light .sidebar-nav .text-foreground\/60 {
+  color: hsl(210 40% 70%) !important;
 }
 
-/* Table styling for light theme */
+.light .sidebar-nav span,
+.light .sidebar-nav .text-muted-foreground {
+  color: hsl(210 40% 80%) !important;
+}
+
+.light .sidebar-nav svg {
+  color: hsl(210 40% 70%) !important;
+}
+
+.light .sidebar-nav a:hover span,
+.light .sidebar-nav a:hover svg,
+.light .sidebar-nav .hover\:text-foreground:hover {
+  color: hsl(0 0% 100%) !important;
+}
+
+.light .sidebar-nav .bg-primary\/10 {
+  background: hsl(199 89% 48% / 0.15) !important;
+}
+
+.light .sidebar-nav .text-primary {
+  color: hsl(199 89% 55%) !important;
+}
+
+.light .sidebar-nav .hover\:bg-accent:hover {
+  background: hsl(222 47% 18%) !important;
+}
+
+.light .sidebar-nav button {
+  color: hsl(210 40% 80%) !important;
+}
+
+.light .sidebar-nav button:hover {
+  background: hsl(222 47% 18%) !important;
+  color: hsl(0 0% 100%) !important;
+}
+
+/* Cards in light theme */
+.light .bg-card {
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+/* Table styling for light theme - matching reference */
 .light table {
   background: hsl(0 0% 100%);
   border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.light thead {
+  background: hsl(210 20% 98%);
 }
 
 .light th {
-  background: hsl(220 14% 96%);
+  background: transparent;
   color: hsl(215 16% 47%);
   font-weight: 500;
-  text-transform: uppercase;
   font-size: 0.75rem;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid hsl(214 32% 91%);
 }
 
 .light td {
-  border-bottom: 1px solid hsl(220 13% 91%);
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid hsl(214 32% 93%);
+  color: hsl(222 47% 20%);
 }
 
-.light tr:hover td {
-  background: hsl(220 14% 98%);
+.light tbody tr:hover td {
+  background: hsl(210 20% 98%);
+}
+
+.light tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Status badges in light theme */
+.light .bg-green-500\/10,
+.light .bg-emerald-500\/10 {
+  background: hsl(160 84% 39% / 0.15) !important;
+}
+
+.light .text-green-400,
+.light .text-emerald-400 {
+  color: hsl(160 84% 35%) !important;
+}
+
+/* Input styling for light theme */
+.light input,
+.light .bg-muted {
+  background: hsl(0 0% 100%);
+  border: 1px solid hsl(214 32% 91%);
+}
+
+.light input:focus {
+  border-color: hsl(199 89% 48%);
+  box-shadow: 0 0 0 3px hsl(199 89% 48% / 0.1);
+}
+
+/* Button styling for light theme */
+.light .bg-primary {
+  background: hsl(199 89% 48%) !important;
+}
+
+.light .bg-primary:hover {
+  background: hsl(199 89% 42%) !important;
 }
 
 @layer base {
