@@ -145,7 +145,7 @@ export function Sidebar() {
 
   return (
     <aside className={cn(
-      "fixed left-0 top-0 h-screen bg-card border-r border-border flex flex-col transition-all duration-300 z-50",
+      "sidebar-nav fixed left-0 top-0 h-screen bg-card border-r border-border flex flex-col transition-all duration-300 z-50",
       collapsed ? "w-16" : "w-60"
     )}>
       {/* Logo */}

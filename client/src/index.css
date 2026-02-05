@@ -92,43 +92,88 @@
 }
 
 .light {
-  /* Light Theme - Clean Professional Style */
-  --background: 220 14% 96%; /* Light grey background */
-  --foreground: 224 71% 4%; /* Near black text */
+  /* Light Theme - Clean Professional Dashboard Style */
+  --background: 220 20% 97%; /* Very light grey background */
+  --foreground: 222 47% 11%; /* Dark navy text */
 
-  --card: 0 0% 100%; /* White cards */
-  --card-foreground: 224 71% 4%;
+  --card: 0 0% 100%; /* Pure white cards */
+  --card-foreground: 222 47% 11%;
 
   --popover: 0 0% 100%; /* White popovers */
-  --popover-foreground: 224 71% 4%;
+  --popover-foreground: 222 47% 11%;
 
-  --primary: 25 95% 53%; /* Orange brand color */
+  --primary: 199 89% 48%; /* Cyan/Teal - matching reference */
   --primary-foreground: 0 0% 100%;
 
   --secondary: 220 14% 96%; /* Light grey */
-  --secondary-foreground: 224 71% 4%;
+  --secondary-foreground: 222 47% 11%;
 
   --muted: 220 14% 96%; /* Light grey background */
-  --muted-foreground: 220 9% 46%; /* Medium grey text - readable */
+  --muted-foreground: 215 16% 47%; /* Medium grey text */
 
-  --accent: 220 14% 92%; /* Slightly darker grey hover */
-  --accent-foreground: 224 71% 4%;
+  --accent: 199 89% 48%; /* Teal accent */
+  --accent-foreground: 0 0% 100%;
 
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
 
-  --border: 220 13% 87%; /* Grey border */
-  --input: 220 14% 96%; /* Light grey input */
-  --ring: 25 95% 53%; /* Orange focus ring */
+  --border: 220 13% 91%; /* Light grey border */
+  --input: 0 0% 100%; /* White input */
+  --ring: 199 89% 48%; /* Teal focus ring */
   
-  --button-outline: hsl(220 13% 75%); /* Grey border for light theme */
+  --button-outline: hsl(220 13% 80%);
+
+  /* Sidebar colors for light theme */
+  --sidebar-background: 222 47% 11%; /* Dark navy sidebar */
+  --sidebar-foreground: 210 40% 98%; /* Light text */
+  --sidebar-muted: 222 47% 18%;
+  --sidebar-accent: 199 89% 48%;
 
   /* Chart Colors for Light Mode */
-  --chart-1: 25 95% 53%; /* Orange */
+  --chart-1: 199 89% 48%; /* Teal */
   --chart-2: 210 70% 50%; /* Blue */
-  --chart-3: 160 60% 40%; /* Teal */
+  --chart-3: 160 60% 45%; /* Green */
   --chart-4: 45 90% 48%; /* Amber */
   --chart-5: 280 60% 55%; /* Purple */
+}
+
+/* Dark sidebar styling for light theme */
+.light .sidebar-nav {
+  background: hsl(222 47% 11%);
+  color: hsl(210 40% 98%);
+}
+
+.light .sidebar-nav a {
+  color: hsl(210 40% 85%);
+}
+
+.light .sidebar-nav a:hover,
+.light .sidebar-nav a.active {
+  background: hsl(222 47% 18%);
+  color: hsl(0 0% 100%);
+}
+
+/* Table styling for light theme */
+.light table {
+  background: hsl(0 0% 100%);
+  border-radius: 0.5rem;
+}
+
+.light th {
+  background: hsl(220 14% 96%);
+  color: hsl(215 16% 47%);
+  font-weight: 500;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.light td {
+  border-bottom: 1px solid hsl(220 13% 91%);
+}
+
+.light tr:hover td {
+  background: hsl(220 14% 98%);
 }
 
 @layer base {
