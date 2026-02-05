@@ -11,6 +11,7 @@ import { IntegrityOrchestrator } from "./integrity-orchestrator";
 import { RecruitmentOrchestrator } from "./recruitment-orchestrator";
 import { interviewOrchestrator } from "./interview-orchestrator";
 import { sourcingOrchestrator, type SpecialistCandidate } from "./sourcing-specialists";
+import { scraperOrchestrator, type ScrapedCandidate, type ScraperResult } from "./web-scraper-agents";
 import { cvParser } from "./cv-parser";
 import { cvTemplateGenerator } from "./cv-template-generator";
 import { Packer } from "docx";
@@ -3313,6 +3314,143 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     } catch (error) {
       console.error("Error generating sourcing config:", error);
       res.status(500).json({ message: "Failed to generate sourcing configuration" });
+    }
+  });
+
+  // ===== Web Scraper Routes =====
+  
+  app.get("/api/scrapers", async (req, res) => {
+    try {
+      const scrapers = scraperOrchestrator.getScrapers();
+      res.json(scrapers);
+    } catch (error) {
+      console.error("Error fetching scrapers:", error);
+      res.status(500).json({ message: "Failed to fetch scrapers" });
+    }
+  });
+
+  app.post("/api/scrapers/run-all/:jobId", async (req, res) => {
+    try {
+      const { minMatchScore = 50, autoSave = true } = req.body;
+      
+      const job = await storage.getJobById(req.tenant.id, req.params.jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+
+      console.log(`[Scrapers] Running all scrapers for job: ${job.title}`);
+      
+      const { results, allCandidates, totalFound } = await scraperOrchestrator.runAllScrapers(job);
+
+      let savedCount = 0;
+      if (autoSave && allCandidates.length > 0) {
+        for (const candidate of allCandidates) {
+          try {
+            const candidateData: InsertCandidate = {
+              fullName: candidate.name,
+              role: candidate.title || job.title,
+              source: `Web Scraper (${candidate.source})`,
+              status: "New",
+              stage: "Screening",
+              match: candidate.matchScore || 70,
+              jobId: job.id,
+              skills: candidate.skills,
+              location: candidate.location,
+              email: candidate.contact?.includes("@") ? candidate.contact : undefined,
+              phone: candidate.contact && !candidate.contact.includes("@") ? candidate.contact : undefined,
+              metadata: {
+                experience: candidate.experience,
+                sourceUrl: candidate.sourceUrl,
+                scrapedFrom: candidate.source,
+                rawText: candidate.rawText?.slice(0, 500),
+              },
+            };
+            await storage.createCandidate(req.tenant.id, candidateData);
+            savedCount++;
+          } catch (err) {
+            console.error(`Failed to save scraped candidate ${candidate.name}:`, err);
+          }
+        }
+      }
+
+      res.json({
+        message: `Scraping completed across ${results.length} platforms`,
+        summary: {
+          totalFound,
+          savedToDB: savedCount,
+          platforms: results.map(r => ({
+            platform: r.platform,
+            status: r.status,
+            found: r.candidates.length,
+            query: r.query,
+            error: r.error
+          }))
+        },
+        candidates: allCandidates,
+      });
+    } catch (error) {
+      console.error("Error running scrapers:", error);
+      res.status(500).json({ message: "Failed to run scrapers" });
+    }
+  });
+
+  app.post("/api/scrapers/run/:platform/:jobId", async (req, res) => {
+    try {
+      const { autoSave = true } = req.body;
+      const platform = decodeURIComponent(req.params.platform);
+      
+      const job = await storage.getJobById(req.tenant.id, req.params.jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+
+      console.log(`[Scrapers] Running ${platform} scraper for job: ${job.title}`);
+      
+      const result = await scraperOrchestrator.runScraper(platform, job);
+
+      let savedCount = 0;
+      if (autoSave && result.candidates.length > 0) {
+        for (const candidate of result.candidates) {
+          try {
+            const candidateData: InsertCandidate = {
+              fullName: candidate.name,
+              role: candidate.title || job.title,
+              source: `Web Scraper (${candidate.source})`,
+              status: "New",
+              stage: "Screening",
+              match: candidate.matchScore || 70,
+              jobId: job.id,
+              skills: candidate.skills,
+              location: candidate.location,
+              metadata: {
+                experience: candidate.experience,
+                sourceUrl: candidate.sourceUrl,
+                scrapedFrom: candidate.source,
+              },
+            };
+            await storage.createCandidate(req.tenant.id, candidateData);
+            savedCount++;
+          } catch (err) {
+            console.error(`Failed to save candidate:`, err);
+          }
+        }
+      }
+
+      res.json({
+        message: `${platform} scraping completed`,
+        result: {
+          platform: result.platform,
+          status: result.status,
+          query: result.query,
+          found: result.candidates.length,
+          savedToDB: savedCount,
+          error: result.error
+        },
+        candidates: result.candidates,
+      });
+    } catch (error) {
+      console.error("Error running scraper:", error);
+      res.status(500).json({ message: "Failed to run scraper" });
     }
   });
 
