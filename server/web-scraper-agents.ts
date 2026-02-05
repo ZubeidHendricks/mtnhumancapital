@@ -96,7 +96,7 @@ Return ONLY a valid JSON array. If no candidates found, return [].`
 Look for: names, job titles, skills, experience, locations, contact info.
 
 Job we're hiring for: ${job.title}
-Requirements: ${(job.requirements || []).slice(0, 5).join(", ")}
+Requirements: ${(job.skillsRequired || []).slice(0, 5).join(", ")}
 
 Scraped content:
 ${rawText.slice(0, 6000)}
@@ -138,7 +138,7 @@ Return [] if no real candidates found.`
 
 function calculateMatchScore(candidate: any, job: Job): number {
   let score = 50;
-  const jobReqs = (job.requirements || []).map(r => r.toLowerCase());
+  const jobReqs = (job.skillsRequired || []).map((r: string) => r.toLowerCase());
   const candidateSkills = (candidate.skills || []).map((s: string) => s.toLowerCase());
   
   for (const skill of candidateSkills) {
@@ -428,6 +428,9 @@ export class Careers24Scraper {
 export class PNetScraper {
   name = "PNet Scraper";
   platform = "PNet";
+  
+  private username = process.env.PNET_USERNAME;
+  private password = process.env.PNET_PASSWORD;
 
   async search(job: Job, limit: number = 10): Promise<ScraperResult> {
     console.log(`[PNetScraper] Searching for candidates: ${job.title}`);
@@ -436,6 +439,18 @@ export class PNetScraper {
     let page: Page | null = null;
     const allCandidates: ScrapedCandidate[] = [];
     
+    if (!this.username || !this.password) {
+      console.error("[PNetScraper] Missing PNET_USERNAME or PNET_PASSWORD credentials");
+      return {
+        platform: this.platform,
+        query,
+        candidates: [],
+        scrapedAt: new Date(),
+        status: "failed",
+        error: "PNet credentials not configured"
+      };
+    }
+    
     try {
       const browser = await getBrowser();
       page = await browser.newPage();
@@ -443,11 +458,79 @@ export class PNetScraper {
       await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
       await page.setViewport({ width: 1920, height: 1080 });
       
-      // PNet has a talent/CV search section for recruiters
+      // Step 1: Login to PNet Recruiter Space
+      console.log("[PNetScraper] Logging into PNet Recruiter Space...");
+      
+      await page.goto("https://www.pnet.co.za/5/recruiterspace/login", { 
+        waitUntil: "networkidle2",
+        timeout: 30000 
+      });
+      
+      await new Promise(r => setTimeout(r, 2000));
+      
+      // Fill login form - PNet uses React with specific class names
+      // Username input: input[name="username"]
+      // Password input: input[type="password"][name="password"]
+      // Submit button: button.at-data-login-button
+      
+      await page.waitForSelector('input[name="username"]', { timeout: 10000 });
+      
+      // Clear and type username
+      await page.click('input[name="username"]');
+      await page.keyboard.down('Control');
+      await page.keyboard.press('a');
+      await page.keyboard.up('Control');
+      await page.type('input[name="username"]', this.username);
+      
+      // Clear and type password
+      await page.click('input[name="password"]');
+      await page.keyboard.down('Control');
+      await page.keyboard.press('a');
+      await page.keyboard.up('Control');
+      await page.type('input[name="password"]', this.password);
+      
+      await new Promise(r => setTimeout(r, 1000));
+      
+      // Click sign in button using the PNet specific class
+      const signInButton = await page.$('button.at-data-login-button') || 
+                           await page.$('button[type="submit"]');
+      
+      if (signInButton) {
+        console.log("[PNetScraper] Clicking sign in button...");
+        await Promise.all([
+          page.waitForNavigation({ waitUntil: "networkidle2", timeout: 45000 }).catch(() => {}),
+          signInButton.click()
+        ]);
+      }
+      
+      await new Promise(r => setTimeout(r, 4000));
+      
+      // Check if login was successful
+      const currentUrl = page.url();
+      console.log(`[PNetScraper] After login, URL: ${currentUrl}`);
+      
+      // Check for login errors
+      const pageContent = await page.evaluate(() => document.body.innerText.slice(0, 2000));
+      const isLoggedIn = !currentUrl.includes('login');
+      console.log(`[PNetScraper] Login successful: ${isLoggedIn}`);
+      
+      if (!isLoggedIn) {
+        // Check if there's an error message
+        if (pageContent.includes('Invalid') || pageContent.includes('incorrect') || pageContent.includes('error')) {
+          console.log(`[PNetScraper] Login error detected in page content`);
+        }
+        // Continue anyway and try to access public candidate sections
+      }
+      
+      // Step 2: Navigate to candidate search
+      console.log("[PNetScraper] Navigating to candidate search...");
+      
+      // Navigate to recruiter space - check actual dashboard to find CV/candidate search
       const searchUrls = [
-        `https://www.pnet.co.za/5/candidate-search.html?keywords=${encodeURIComponent(query)}`,
-        `https://www.pnet.co.za/5/job-seekers-search/?keywords=${encodeURIComponent(query)}`,
-        `https://www.pnet.co.za/recruiters/candidate-search?q=${encodeURIComponent(query)}`
+        `https://www.pnet.co.za/5/recruiterspace/dashboard`,
+        `https://www.pnet.co.za/5/recruiterspace/candidate-database`,
+        `https://www.pnet.co.za/5/recruiterspace/cv-search?keywords=${encodeURIComponent(query)}`,
+        `https://www.pnet.co.za/5/recruiterspace/candidates?q=${encodeURIComponent(query)}`
       ];
       
       for (const searchUrl of searchUrls) {
@@ -461,21 +544,38 @@ export class PNetScraper {
           
           await new Promise(r => setTimeout(r, 3000));
           
-          // Extract candidate cards/profiles
+          // Look for search input and enter query if needed
+          const searchInput = await page.$('input[name="keywords"], input[name="q"], input[type="search"], .search-input');
+          if (searchInput) {
+            await searchInput.click({ clickCount: 3 });
+            await searchInput.type(query);
+            
+            const searchBtn = await page.$('button[type="submit"], .search-btn, .btn-search');
+            if (searchBtn) {
+              await Promise.all([
+                page.waitForNavigation({ waitUntil: "networkidle2", timeout: 20000 }).catch(() => {}),
+                searchBtn.click()
+              ]);
+            }
+            
+            await new Promise(r => setTimeout(r, 3000));
+          }
+          
+          // Extract candidate data
           const candidateData = await page.evaluate(() => {
             const candidates: any[] = [];
             
-            // Look for candidate profile cards
+            // PNet specific selectors for candidate cards
             const profileSelectors = [
-              '.candidate-card',
-              '.profile-card', 
-              '.cv-result',
+              '.candidate-result',
+              '.cv-card',
               '.talent-card',
+              '.search-result',
               '[class*="candidate"]',
-              '[class*="profile"]',
-              '.search-result-item',
+              '[class*="profile-card"]',
+              '.result-item',
               'article',
-              '.listing'
+              '.card'
             ];
             
             for (const selector of profileSelectors) {
@@ -483,52 +583,57 @@ export class PNetScraper {
               elements.forEach((el) => {
                 const text = el.textContent || '';
                 if (text.length > 50) {
-                  // Try to extract structured data
-                  const nameEl = el.querySelector('h2, h3, h4, .name, [class*="name"], .title');
-                  const locationEl = el.querySelector('.location, [class*="location"], .city');
-                  const skillsEl = el.querySelector('.skills, [class*="skill"]');
+                  const nameEl = el.querySelector('h2, h3, h4, .name, [class*="name"], .candidate-name, .title a');
+                  const jobTitleEl = el.querySelector('.job-title, .current-role, [class*="title"]:not(.name)');
+                  const locationEl = el.querySelector('.location, [class*="location"], .city, .area');
+                  const skillsEl = el.querySelector('.skills, [class*="skill"], .tags');
+                  const experienceEl = el.querySelector('.experience, [class*="experience"], .years');
+                  const linkEl = el.querySelector('a[href*="candidate"], a[href*="profile"], a[href*="cv"]');
                   
-                  candidates.push({
-                    name: nameEl?.textContent?.trim() || '',
-                    location: locationEl?.textContent?.trim() || '',
-                    skills: skillsEl?.textContent?.trim() || '',
-                    rawText: text.slice(0, 1000)
-                  });
+                  const name = nameEl?.textContent?.trim() || '';
+                  if (name && name.length > 2 && !name.includes('Search') && !name.includes('Filter')) {
+                    candidates.push({
+                      name: name,
+                      jobTitle: jobTitleEl?.textContent?.trim() || '',
+                      location: locationEl?.textContent?.trim() || '',
+                      skills: skillsEl?.textContent?.trim() || '',
+                      experience: experienceEl?.textContent?.trim() || '',
+                      profileUrl: linkEl?.getAttribute('href') || '',
+                      rawText: text.slice(0, 800)
+                    });
+                  }
                 }
               });
             }
             
-            // If no structured data, get full page content
-            if (candidates.length === 0) {
-              return { 
-                candidates: [],
-                pageContent: document.body.innerText.slice(0, 15000)
-              };
-            }
-            
-            return { candidates, pageContent: '' };
+            return { 
+              candidates: candidates.slice(0, 20),
+              pageContent: document.body.innerText.slice(0, 15000),
+              pageUrl: window.location.href
+            };
           });
           
-          console.log(`[PNetScraper] Found ${candidateData.candidates.length} candidate elements`);
+          console.log(`[PNetScraper] Found ${candidateData.candidates.length} candidate cards on ${candidateData.pageUrl}`);
           
           // Process structured candidates
-          if (candidateData.candidates.length > 0) {
-            for (const c of candidateData.candidates) {
-              if (c.name && c.name.length > 2) {
-                allCandidates.push({
-                  name: c.name,
-                  location: c.location || undefined,
-                  skills: c.skills ? c.skills.split(/[,;]/).map((s: string) => s.trim()).filter(Boolean) : [],
-                  source: this.platform,
-                  rawText: c.rawText,
-                  matchScore: 70
-                });
-              }
+          for (const c of candidateData.candidates) {
+            if (c.name && c.name.length > 2) {
+              allCandidates.push({
+                name: c.name,
+                title: c.jobTitle || undefined,
+                location: c.location || undefined,
+                skills: c.skills ? c.skills.split(/[,;|]/).map((s: string) => s.trim()).filter(Boolean).slice(0, 10) : [],
+                experience: c.experience || undefined,
+                source: this.platform,
+                sourceUrl: c.profileUrl ? (c.profileUrl.startsWith('http') ? c.profileUrl : `https://www.pnet.co.za${c.profileUrl}`) : undefined,
+                matchScore: calculateMatchScore({ skills: c.skills?.split(/[,;|]/) || [], experience: c.experience }, job),
+                rawText: c.rawText
+              });
             }
           }
           
-          // Use AI to extract from page content
-          if (candidateData.pageContent && candidateData.pageContent.length > 200) {
+          // Use AI to extract additional candidates from page content
+          if (allCandidates.length < limit && candidateData.pageContent.length > 500) {
             const aiCandidates = await extractCandidatesWithAI(candidateData.pageContent, job, this.platform);
             allCandidates.push(...aiCandidates);
           }
@@ -536,7 +641,7 @@ export class PNetScraper {
           if (allCandidates.length >= limit) break;
           
         } catch (urlError) {
-          console.log(`[PNetScraper] URL failed: ${searchUrl}`);
+          console.log(`[PNetScraper] URL failed: ${searchUrl}`, urlError);
         }
       }
       
