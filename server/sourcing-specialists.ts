@@ -225,12 +225,14 @@ Generate ${limit} realistic LinkedIn candidate profiles. For each candidate prov
   "skills": ["<skill matching screening criteria>", ...],
   "experience": "<years and summary>",
   "match": <0-100>,
+  "email": "<realistic professional email based on name and company>",
+  "phone": "<realistic South African mobile number starting with +27 or 0>",
   "headline": "<LinkedIn headline>",
   "connections": <number>,
   "profileSummary": "<brief professional summary>"
 }
 
-Focus on passive candidates who are currently employed at target employers. Return as JSON array.`;
+Focus on passive candidates who are currently employed at target employers. Every candidate MUST have a phone number and email. Return as JSON array.`;
 
     try {
       const completion = await groq.chat.completions.create({
@@ -265,6 +267,8 @@ Focus on passive candidates who are currently employed at target employers. Retu
             match: validated.data.match,
             source: "LinkedIn",
             specialist: this.name,
+            email: c.email || undefined,
+            phone: c.phone || undefined,
             profileUrl: `https://linkedin.com/in/${validated.data.name.toLowerCase().replace(/\s+/g, '-')}`,
             rawData: { headline: c.headline, connections: c.connections, profileSummary: c.profileSummary },
           });
@@ -328,12 +332,14 @@ Generate ${limit} realistic PNet candidate profiles. These are ACTIVE job seeker
   "skills": ["<relevant skill>", ...],
   "experience": "<years and details>",
   "match": <0-100>,
+  "email": "<realistic email address based on name>",
+  "phone": "<realistic South African mobile number starting with +27 or 0>",
   "availability": "<immediate/1 month notice/2 months notice>",
   "expectedSalary": "<salary expectation in ZAR>",
   "lastActive": "<days ago on PNet>"
 }
 
-PNet candidates are typically actively looking for work. Include a mix of availability statuses. Return as JSON array.`;
+PNet candidates are typically actively looking for work. Include a mix of availability statuses. Every candidate MUST have a phone number and email. Return as JSON array.`;
 
     try {
       const completion = await groq.chat.completions.create({
@@ -368,6 +374,8 @@ PNet candidates are typically actively looking for work. Include a mix of availa
             match: validated.data.match,
             source: "PNet",
             specialist: this.name,
+            email: c.email || undefined,
+            phone: c.phone || undefined,
             rawData: {
               availability: c.availability,
               expectedSalary: c.expectedSalary,
@@ -434,12 +442,14 @@ Generate ${limit} realistic Indeed candidate profiles. Mix of employed and unemp
   "skills": ["<skill>", ...],
   "experience": "<years and summary>",
   "match": <0-100>,
+  "email": "<realistic email address based on name>",
+  "phone": "<realistic South African mobile number starting with +27 or 0>",
   "resumeUpdated": "<when resume was last updated>",
   "willingToRelocate": <true/false>,
   "education": "<highest qualification>"
 }
 
-Indeed has more entry-level and blue-collar candidates. Include diverse backgrounds. Return as JSON array.`;
+Indeed has more entry-level and blue-collar candidates. Include diverse backgrounds. Every candidate MUST have a phone number and email. Return as JSON array.`;
 
     try {
       const completion = await groq.chat.completions.create({
@@ -474,6 +484,8 @@ Indeed has more entry-level and blue-collar candidates. Include diverse backgrou
             match: validated.data.match,
             source: "Indeed",
             specialist: this.name,
+            email: c.email || undefined,
+            phone: c.phone || undefined,
             rawData: {
               resumeUpdated: c.resumeUpdated,
               willingToRelocate: c.willingToRelocate,

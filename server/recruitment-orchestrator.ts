@@ -128,6 +128,8 @@ export class RecruitmentOrchestrator {
         experience: sc.experience,
         source: sc.source,
         match: sc.match,
+        email: sc.email,
+        phone: sc.phone,
         rawData: {
           ...sc.rawData,
           specialist: sc.specialist,
@@ -186,6 +188,8 @@ export class RecruitmentOrchestrator {
               stage: "Screening",
               match,
               jobId,
+              email: profile.email,
+              phone: profile.phone,
               skills: profile.skills,
               metadata: {
                 company: profile.company,

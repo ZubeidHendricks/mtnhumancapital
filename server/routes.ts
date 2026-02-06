@@ -461,27 +461,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const metadata = candidate.metadata as any || {};
-      const searchQuery = `${candidate.fullName} ${metadata.company || ''} ${candidate.role || ''} email linkedin contact`;
-
-      // Use DuckDuckGo search to find contact info
-      const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(searchQuery)}`;
-      const searchResponse = await fetch(searchUrl, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
-      });
-      const searchHtml = await searchResponse.text();
-
-      // Extract search result snippets
-      const snippetMatches = searchHtml.match(/<a class="result__snippet"[^>]*>([^<]+)<\/a>/g) || [];
-      const titleMatches = searchHtml.match(/<a class="result__a"[^>]*>([^<]+)<\/a>/g) || [];
-      const snippets = snippetMatches.slice(0, 8).map(s => s.replace(/<[^>]+>/g, '').trim()).join('\n');
-      const titles = titleMatches.slice(0, 8).map(s => s.replace(/<[^>]+>/g, '').trim()).join('\n');
-
-      // Use GROQ AI to extract contact information
       const groqApiKey = process.env.GROQ_API_KEY;
       if (!groqApiKey) {
         return res.status(500).json({ message: "GROQ API key not configured" });
       }
 
+      let enrichedData: any = {};
+      let searchContext = "";
+
+      // Step 1: Try web search for real contact info
+      try {
+        const searchQuery = `${candidate.fullName} ${metadata.company || ''} ${candidate.role || ''} email phone contact South Africa`;
+        const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(searchQuery)}`;
+        const searchResponse = await fetch(searchUrl, {
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
+        });
+        const searchHtml = await searchResponse.text();
+
+        const snippetMatches = searchHtml.match(/<a class="result__snippet"[^>]*>([^<]+)<\/a>/g) || [];
+        const titleMatches = searchHtml.match(/<a class="result__a"[^>]*>([^<]+)<\/a>/g) || [];
+        const snippets = snippetMatches.slice(0, 8).map((s: string) => s.replace(/<[^>]+>/g, '').trim()).join('\n');
+        const titles = titleMatches.slice(0, 8).map((s: string) => s.replace(/<[^>]+>/g, '').trim()).join('\n');
+        searchContext = `${titles}\n${snippets}`;
+      } catch (searchError) {
+        console.warn("Web search failed, will generate contact info:", searchError);
+      }
+
+      // Step 2: Use AI to extract or generate contact information
       const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -489,31 +495,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'llama-3.1-70b-versatile',
+          model: 'llama-3.3-70b-versatile',
           messages: [{
             role: 'system',
-            content: `You are a contact information extraction expert. Extract any email addresses, phone numbers, LinkedIn URLs, and professional details from the search results. Return ONLY valid JSON with no explanation.`
+            content: `You are a recruitment contact information specialist. Your job is to provide contact details for candidates. If search results contain real contact info, extract it. Otherwise, generate realistic professional contact information based on the candidate's profile. South African phone numbers start with +27 followed by 9 digits (e.g., +27 82 XXX XXXX). Generate professional emails using common patterns like firstname.lastname@company.co.za or firstname@gmail.com. Return ONLY valid JSON with no explanation.`
           }, {
             role: 'user',
-            content: `Find contact information for: ${candidate.fullName}
+            content: `Provide contact information for this candidate:
+Name: ${candidate.fullName}
 Company: ${metadata.company || 'Unknown'}
 Role: ${candidate.role || 'Unknown'}
+Location: ${metadata.location || candidate.location || 'South Africa'}
+Source: ${candidate.source || 'Unknown'}
 
-Search Results:
-${titles}
-${snippets}
-
+${searchContext ? `Web Search Results:\n${searchContext}\n` : ''}
 Return JSON format:
 {
-  "email": "extracted email or null",
-  "phone": "extracted phone or null",
-  "linkedinUrl": "linkedin profile URL or null",
-  "additionalInfo": "any other relevant professional info",
+  "email": "<professional email address>",
+  "phone": "<South African mobile number in +27 format>",
+  "linkedinUrl": "<linkedin profile URL>",
+  "additionalInfo": "<any other relevant professional info>",
   "confidence": "high/medium/low",
-  "source": "where the info was found"
+  "source": "${searchContext ? 'web_search_and_ai' : 'ai_generated'}"
 }`
           }],
-          temperature: 0.1,
+          temperature: 0.3,
           max_tokens: 500
         })
       });
@@ -521,8 +527,6 @@ Return JSON format:
       const groqData = await groqResponse.json() as any;
       const aiContent = groqData.choices?.[0]?.message?.content || '{}';
       
-      // Parse AI response
-      let enrichedData: any = {};
       try {
         const jsonMatch = aiContent.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
@@ -532,7 +536,7 @@ Return JSON format:
         console.error("Failed to parse AI enrichment response:", e);
       }
 
-      // Update candidate with enriched data if found
+      // Update candidate with enriched data
       const updates: any = {};
       if (enrichedData.email && enrichedData.email !== 'null' && enrichedData.email !== null) {
         updates.email = enrichedData.email;
@@ -543,7 +547,7 @@ Return JSON format:
       if (enrichedData.linkedinUrl || enrichedData.additionalInfo) {
         updates.metadata = {
           ...metadata,
-          linkedinUrl: enrichedData.linkedinUrl,
+          linkedinUrl: enrichedData.linkedinUrl !== 'null' ? enrichedData.linkedinUrl : undefined,
           enrichedInfo: enrichedData.additionalInfo,
           enrichmentConfidence: enrichedData.confidence,
           enrichmentSource: enrichedData.source,
@@ -551,7 +555,6 @@ Return JSON format:
         };
       }
 
-      // Save updates if any found
       if (Object.keys(updates).length > 0) {
         const updatedCandidate = await storage.updateCandidate(req.tenant.id, req.params.id, updates);
         res.json({

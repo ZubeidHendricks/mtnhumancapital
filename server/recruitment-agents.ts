@@ -24,6 +24,8 @@ export interface CandidateProfile {
   experience?: string;
   match: number;
   source: string;
+  email?: string;
+  phone?: string;
   rawData: Record<string, any>;
 }
 
@@ -123,6 +125,8 @@ Generate ${limit} realistic candidate profiles. For each candidate, provide:
   "skills": ["<skill1>", "<skill2>", ...],
   "experience": "<years and details>",
   "match": <0-100 match score>,
+  "email": "<realistic professional email>",
+  "phone": "<realistic South African mobile number starting with +27 or 0>",
   "linkedInProfile": "<simulated profile summary>"
 }
 
@@ -159,6 +163,8 @@ Return as JSON array. Make profiles diverse and realistic for South African job 
           experience: candidate.experience,
           match: candidate.match || 50,
           source: "AI Sourced - LinkedIn Simulation",
+          email: candidate.email || undefined,
+          phone: candidate.phone || undefined,
           rawData: candidate,
         }));
       }
