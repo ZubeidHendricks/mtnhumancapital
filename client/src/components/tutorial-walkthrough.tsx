@@ -34,7 +34,7 @@ const tutorialSteps: TutorialStep[] = [
     id: "welcome",
     title: "Welcome to Avatar Human Capital",
     description: "Your AI-powered HR management platform. This quick tutorial will guide you through the key features to help you get started.",
-    icon: <Sparkles className="h-8 w-8 text-purple-600 dark:text-purple-400" />,
+    icon: <Sparkles className="h-8 w-8 text-blue-600 dark:text-blue-400" />,
     tips: [
       "The platform automates your entire recruitment process",
       "AI helps create job specs, find candidates, and conduct interviews",
@@ -110,7 +110,7 @@ const tutorialSteps: TutorialStep[] = [
     id: "documents",
     title: "Document Management",
     description: "Generate professional CVs, request documents from candidates, and manage all HR paperwork in one place.",
-    icon: <FileText className="h-8 w-8 text-orange-600 dark:text-orange-400" />,
+    icon: <FileText className="h-8 w-8 text-teal-700 dark:text-teal-400" />,
     route: "/document-library",
     action: "Explore document templates and generation",
     tips: [
@@ -200,7 +200,7 @@ export function TutorialWalkthrough({ isOpen, onClose, onNavigate }: TutorialWal
           </Button>
           
           <div className="flex items-center gap-2 mb-2">
-            <Badge variant="outline" className="text-xs border-purple-500/50 text-purple-600 dark:text-purple-400">
+            <Badge variant="outline" className="text-xs border-blue-500/50 text-blue-600 dark:text-blue-400">
               Step {currentStep + 1} of {tutorialSteps.length}
             </Badge>
           </div>
@@ -221,8 +221,8 @@ export function TutorialWalkthrough({ isOpen, onClose, onNavigate }: TutorialWal
           </p>
           
           {step.action && (
-            <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
-              <p className="text-sm text-purple-300 flex items-center gap-2">
+            <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
+              <p className="text-sm text-blue-300 flex items-center gap-2">
                 <PlayCircle className="h-4 w-4" />
                 <span className="font-medium">Try it:</span> {step.action}
               </p>
@@ -296,7 +296,7 @@ export function TutorialWalkthrough({ isOpen, onClose, onNavigate }: TutorialWal
             ) : (
               <Button 
                 onClick={handleNext}
-                className="bg-purple-600 hover:bg-purple-700 text-white"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
                 data-testid="button-next-step"
               >
                 Next
@@ -316,7 +316,7 @@ export function TutorialButton({ onClick }: { onClick: () => void }) {
       variant="ghost"
       size="icon"
       onClick={onClick}
-      className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-purple-600 hover:bg-purple-700 text-white shadow-lg z-40"
+      className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg z-40"
       title="Start Tutorial"
       data-testid="button-start-tutorial"
     >

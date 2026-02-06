@@ -123,7 +123,7 @@ export default function CustomerOnboarding() {
 
         {/* Wizard Content */}
         <Card className="w-full max-w-3xl bg-card/30 border-border dark:border-white/10 backdrop-blur-md overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-purple-500 to-primary opacity-50" />
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-blue-500 to-primary opacity-50" />
           
           <AnimatePresence mode="wait">
             <motion.div

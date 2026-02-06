@@ -48,7 +48,7 @@ export function Hero() {
             className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-6 text-foreground"
           >
             Operational Excellence <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-orange-600">Powered by Intelligence</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-teal-700">Powered by Intelligence</span>
           </motion.h1>
 
           <motion.p

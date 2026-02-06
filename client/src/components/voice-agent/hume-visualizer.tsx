@@ -19,7 +19,7 @@ export function HumeVisualizer({ state }: { state: "listening" | "speaking" | "p
         }}
         className={`relative z-10 w-32 h-32 rounded-full blur-xl transition-colors duration-1000 ${
           state === "listening" ? "bg-cyan-400/60" :
-          state === "speaking" ? "bg-purple-500/60" :
+          state === "speaking" ? "bg-blue-500/60" :
           state === "processing" ? "bg-amber-400/60" :
           "bg-white/20"
         }`}

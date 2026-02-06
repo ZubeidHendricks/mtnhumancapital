@@ -51,13 +51,13 @@ export default function PlatformDocumentation() {
       icon: Settings,
       title: "Subscription Management",
       description: "Four-tier subscription system with trial period and status tracking",
-      color: "text-purple-500",
+      color: "text-blue-500",
     },
     {
       icon: ToggleLeft,
       title: "Module Control",
       description: "Enable/disable features per tenant based on subscription and payment",
-      color: "text-orange-500",
+      color: "text-teal-600",
     },
   ];
 
@@ -85,7 +85,7 @@ export default function PlatformDocumentation() {
       period: "/month",
       modules: ["All Modules"],
       limits: ["Unlimited candidates", "Unlimited jobs", "20 users"],
-      color: "border-purple-500",
+      color: "border-blue-500",
     },
     {
       name: "Enterprise",
@@ -93,7 +93,7 @@ export default function PlatformDocumentation() {
       period: "pricing",
       modules: ["All + Custom"],
       limits: ["Unlimited everything", "Custom integrations", "White-label"],
-      color: "border-orange-500",
+      color: "border-teal-600",
     },
   ];
 
@@ -263,7 +263,7 @@ export default function PlatformDocumentation() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="p-6 rounded-lg bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-border dark:border-white/5">
+                  <div className="p-6 rounded-lg bg-gradient-to-br from-blue-500/10 to-blue-500/10 border border-border dark:border-white/5">
                     <div className="text-center space-y-6">
                       <div className="inline-block p-4 rounded-lg bg-black/40">
                         <Users className="w-8 h-8 text-blue-600 dark:text-blue-400" />
@@ -271,7 +271,7 @@ export default function PlatformDocumentation() {
                       </div>
                       <div className="text-2xl text-white">↓</div>
                       <div className="inline-block p-4 rounded-lg bg-black/40">
-                        <Shield className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+                        <Shield className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                         <p className="text-white mt-2 font-semibold">Tenant Middleware</p>
                         <p className="text-xs text-muted-foreground">Resolves subdomain</p>
                       </div>
@@ -282,7 +282,7 @@ export default function PlatformDocumentation() {
                           <p className="text-white mt-2 text-sm">Isolated Data</p>
                         </div>
                         <div className="p-4 rounded-lg bg-black/40">
-                          <Settings className="w-6 h-6 text-orange-600 dark:text-orange-400 mx-auto" />
+                          <Settings className="w-6 h-6 text-teal-700 dark:text-teal-400 mx-auto" />
                           <p className="text-white mt-2 text-sm">Module Access</p>
                         </div>
                         <div className="p-4 rounded-lg bg-black/40">
@@ -403,7 +403,7 @@ export default function PlatformDocumentation() {
                   <AccordionItem value="subscription" className="border border-border dark:border-white/10 rounded-lg px-4 bg-black/20">
                     <AccordionTrigger className="text-white hover:no-underline">
                       <div className="flex items-center gap-2">
-                        <CreditCard className="w-5 h-5 text-purple-500" />
+                        <CreditCard className="w-5 h-5 text-blue-500" />
                         <span>Subscription Management</span>
                       </div>
                     </AccordionTrigger>
@@ -445,7 +445,7 @@ export default function PlatformDocumentation() {
                   <AccordionItem value="modules" className="border border-border dark:border-white/10 rounded-lg px-4 bg-black/20">
                     <AccordionTrigger className="text-white hover:no-underline">
                       <div className="flex items-center gap-2">
-                        <ToggleLeft className="w-5 h-5 text-orange-500" />
+                        <ToggleLeft className="w-5 h-5 text-teal-600" />
                         <span>Module Control</span>
                       </div>
                     </AccordionTrigger>
@@ -612,9 +612,9 @@ export default function PlatformDocumentation() {
                       </ol>
                     </div>
 
-                    <div className="p-4 rounded-lg bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/20">
+                    <div className="p-4 rounded-lg bg-gradient-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/20">
                       <h4 className="text-white font-semibold mb-2 flex items-center gap-2">
-                        <Eye className="w-4 h-4 text-purple-500" />
+                        <Eye className="w-4 h-4 text-blue-500" />
                         Switch Tenant View
                       </h4>
                       <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
@@ -701,7 +701,7 @@ export default function PlatformDocumentation() {
                               ? "bg-blue-500"
                               : api.method === "POST"
                               ? "bg-green-500"
-                              : "bg-orange-500"
+                              : "bg-teal-600"
                           }
                         >
                           {api.method}
@@ -846,7 +846,7 @@ export default function PlatformDocumentation() {
         </Tabs>
 
         {/* Footer */}
-        <Card className="bg-gradient-to-br from-primary/20 to-purple-500/20 border-primary/30">
+        <Card className="bg-gradient-to-br from-primary/20 to-blue-500/20 border-primary/30">
           <CardContent className="p-6 text-center">
             <h3 className="text-2xl font-bold text-white mb-2">Ready to Get Started?</h3>
             <p className="text-muted-foreground mb-4">

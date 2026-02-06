@@ -314,8 +314,8 @@ export default function DataSourcesPage() {
                   <p className="text-gray-400 text-sm">Avg Health</p>
                   <p className="text-2xl font-bold text-white" data-testid="stat-health">{stats.avgHealth}%</p>
                 </div>
-                <div className="p-3 bg-purple-500/10 rounded-lg">
-                  <Activity className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                <div className="p-3 bg-blue-500/10 rounded-lg">
+                  <Activity className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 </div>
               </div>
               <Progress value={stats.avgHealth} className="mt-2 h-1" />

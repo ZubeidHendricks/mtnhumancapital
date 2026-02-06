@@ -80,7 +80,7 @@ const PIPELINE_STAGES = [
   { key: "sourcing", name: "Sourcing", color: "bg-slate-400", section: "recruitment" },
   { key: "screening", name: "Screening", color: "bg-blue-400", section: "recruitment" },
   { key: "shortlisted", name: "Shortlisted", color: "bg-yellow-500", section: "recruitment" },
-  { key: "interviewing", name: "Interviewing", color: "bg-purple-500", section: "recruitment" },
+  { key: "interviewing", name: "Interviewing", color: "bg-blue-500", section: "recruitment" },
   { key: "offer_pending", name: "Offer Pending", color: "bg-amber-500", section: "recruitment" },
   { key: "offer_accepted", name: "Offer Accepted", color: "bg-green-500", section: "recruitment" },
   { key: "integrity_checks", name: "Integrity Checks", color: "bg-blue-600", section: "integrity" },
@@ -90,7 +90,7 @@ const PIPELINE_STAGES = [
 ];
 
 const STAGE_SECTIONS = [
-  { key: "recruitment", name: "Recruitment", color: "bg-gradient-to-r from-blue-500 to-purple-500" },
+  { key: "recruitment", name: "Recruitment", color: "bg-gradient-to-r from-blue-500 to-blue-500" },
   { key: "integrity", name: "Integrity", color: "bg-gradient-to-r from-blue-600 to-emerald-500" },
   { key: "onboarding", name: "Onboarding", color: "bg-gradient-to-r from-teal-500 to-emerald-600" },
 ];
@@ -578,7 +578,7 @@ export default function CandidatePipeline() {
                       </Button>
                       <Button 
                         size="sm" 
-                        className="flex-1 bg-orange-500 hover:bg-orange-600 !text-white"
+                        className="flex-1 bg-teal-600 hover:bg-teal-700 !text-white"
                         onClick={() => handleViewProfile(candidate)}
                         data-testid={`button-view-profile-${candidate.id}`}
                       >
@@ -590,7 +590,7 @@ export default function CandidatePipeline() {
                     {getNextStage(candidate.stage || 'sourcing') && (
                       <Button 
                         size="sm" 
-                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 mt-2 !text-white"
+                        className="w-full bg-gradient-to-r from-blue-600 to-blue-600 hover:from-blue-500 hover:to-blue-500 mt-2 !text-white"
                         onClick={() => handleAdvanceStage(candidate)}
                         disabled={advancingCandidate === candidate.id}
                         data-testid={`button-advance-stage-${candidate.id}`}

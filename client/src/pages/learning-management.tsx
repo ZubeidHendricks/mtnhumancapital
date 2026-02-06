@@ -371,7 +371,7 @@ export default function LearningManagement() {
     switch (rarity) {
       case "common": return "border-gray-500";
       case "rare": return "border-blue-500";
-      case "epic": return "border-purple-500";
+      case "epic": return "border-blue-500";
       case "legendary": return "border-yellow-500";
       default: return "border-gray-500";
     }
@@ -608,7 +608,7 @@ export default function LearningManagement() {
                   const progress = getProgressForCourse(course.id);
                   return (
                     <Card key={course.id} className="bg-black/40 border-border dark:border-white/10 overflow-hidden group hover:border-primary/50 transition-all" data-testid={`card-course-${course.id}`}>
-                      <div className="relative h-48 bg-gradient-to-br from-primary/20 to-purple-500/20 overflow-hidden">
+                      <div className="relative h-48 bg-gradient-to-br from-primary/20 to-blue-500/20 overflow-hidden">
                         <div className="absolute inset-0 flex items-center justify-center">
                           <BookOpen className="w-16 h-16 text-primary/50" />
                         </div>
@@ -937,7 +937,7 @@ export default function LearningManagement() {
 
           <TabsContent value="gamification" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="bg-gradient-to-br from-primary/20 to-purple-500/20 border-primary/30">
+              <Card className="bg-gradient-to-br from-primary/20 to-blue-500/20 border-primary/30">
                 <CardHeader>
                   <CardDescription>Total Points</CardDescription>
                   <CardTitle className="text-4xl text-white flex items-center gap-2">
@@ -1036,7 +1036,7 @@ export default function LearningManagement() {
                         }`}>
                           {entry.rank || index + 1}
                         </div>
-                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-primary to-purple-500 text-white font-semibold">
+                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-primary to-blue-500 text-white font-semibold">
                           {entry.userName?.substring(0, 2).toUpperCase() || "??"}
                         </div>
                         <div className="flex-1">

@@ -102,7 +102,7 @@ This is an initial screening interview to assess the candidate's potential fit f
         <BackButton />
         
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-3 bg-purple-500 rounded-lg">
+          <div className="p-3 bg-blue-500 rounded-lg">
             <Sparkles className="h-6 w-6 text-white" />
           </div>
           <div>

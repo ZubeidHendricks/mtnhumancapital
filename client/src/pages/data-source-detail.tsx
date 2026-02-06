@@ -252,8 +252,8 @@ export default function DataSourceDetailPage() {
                   <p className="text-gray-400 text-sm">Health Score</p>
                   <p className="text-2xl font-bold text-white" data-testid="stat-health">{source.healthScore || 0}%</p>
                 </div>
-                <div className="p-3 bg-purple-500/10 rounded-lg">
-                  <Activity className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                <div className="p-3 bg-blue-500/10 rounded-lg">
+                  <Activity className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 </div>
               </div>
               <Progress value={source.healthScore || 0} className="mt-2 h-2" />
@@ -301,8 +301,8 @@ export default function DataSourceDetailPage() {
                   <p className="text-gray-400 text-sm">Linked KPIs</p>
                   <p className="text-2xl font-bold text-white" data-testid="stat-kpis">{linkedKpis.length}</p>
                 </div>
-                <div className="p-3 bg-orange-500/10 rounded-lg">
-                  <Target className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                <div className="p-3 bg-teal-600/10 rounded-lg">
+                  <Target className="h-6 w-6 text-teal-700 dark:text-teal-400" />
                 </div>
               </div>
             </CardContent>
@@ -486,7 +486,7 @@ export default function DataSourceDetailPage() {
             <Card className="bg-gray-900/50 border-gray-800">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
-                  <Target className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                  <Target className="h-5 w-5 text-teal-700 dark:text-teal-400" />
                   Linked KPI Templates
                 </CardTitle>
                 <CardDescription className="text-gray-400">
@@ -550,7 +550,7 @@ export default function DataSourceDetailPage() {
               <Card className="bg-gray-900/50 border-gray-800">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
-                    <Edit2 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    <Edit2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     Manual Data Entry
                   </CardTitle>
                   <CardDescription className="text-gray-400">
@@ -631,7 +631,7 @@ export default function DataSourceDetailPage() {
                         <Button
                           onClick={handleSaveManualValues}
                           disabled={savingValues || Object.values(manualValues).filter(v => v !== "").length === 0}
-                          className="bg-purple-600 hover:bg-purple-700"
+                          className="bg-blue-600 hover:bg-blue-700"
                           data-testid="button-save-values"
                         >
                           {savingValues ? (

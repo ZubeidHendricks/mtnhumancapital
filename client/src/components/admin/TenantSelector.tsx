@@ -70,7 +70,7 @@ export function TenantSelector({ currentTenant, onTenantChange }: TenantSelector
   return (
     <div className="flex items-center gap-2">
       {impersonatedTenant && (
-        <Badge variant="outline" className="bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20">
+        <Badge variant="outline" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20">
           <Eye className="w-3 h-3 mr-1" />
           Viewing
         </Badge>
@@ -157,7 +157,7 @@ export function TenantSelector({ currentTenant, onTenantChange }: TenantSelector
               <DropdownMenuSeparator className="bg-white/10" />
               <DropdownMenuItem
                 onClick={clearImpersonation}
-                className="cursor-pointer text-purple-600 dark:text-purple-400 hover:text-purple-300"
+                className="cursor-pointer text-blue-600 dark:text-blue-400 hover:text-blue-300"
               >
                 <Eye className="w-4 h-4 mr-2" />
                 Exit Tenant View

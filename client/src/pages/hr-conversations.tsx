@@ -455,7 +455,7 @@ export default function HRConversations() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-purple-600">{aiControlled}</div>
+            <div className="text-2xl font-bold text-blue-600">{aiControlled}</div>
             <p className="text-xs text-muted-foreground">AI Controlled</p>
           </CardContent>
         </Card>
@@ -683,12 +683,12 @@ export default function HRConversations() {
                             <div className={`max-w-[70%] rounded-lg px-4 py-2 ${
                               msg.direction === 'outbound'
                                 ? msg.senderType === 'ai' 
-                                  ? 'bg-purple-100 text-purple-900' 
+                                  ? 'bg-blue-100 text-blue-900' 
                                   : 'bg-blue-100 text-blue-900'
                                 : 'bg-gray-100 text-gray-900'
                             }`}>
                               {msg.senderType === 'ai' && msg.direction === 'outbound' && (
-                                <div className="text-xs text-purple-600 mb-1 flex items-center gap-1">
+                                <div className="text-xs text-blue-600 mb-1 flex items-center gap-1">
                                   <Bot className="h-3 w-3" /> AI
                                 </div>
                               )}
@@ -724,10 +724,10 @@ export default function HRConversations() {
                             </div>
                             {msg.direction === 'outbound' && (
                               <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                msg.senderType === 'ai' ? 'bg-purple-200' : 'bg-blue-200'
+                                msg.senderType === 'ai' ? 'bg-blue-200' : 'bg-blue-200'
                               }`}>
                                 {msg.senderType === 'ai' ? (
-                                  <Bot className="h-4 w-4 text-purple-600" />
+                                  <Bot className="h-4 w-4 text-blue-600" />
                                 ) : (
                                   <UserCheck className="h-4 w-4 text-blue-600" />
                                 )}

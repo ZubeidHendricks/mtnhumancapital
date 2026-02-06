@@ -75,7 +75,7 @@ export default function Recommendations() {
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case "better_fit": return "bg-purple-500/10 text-purple-500";
+      case "better_fit": return "bg-blue-500/10 text-blue-500";
       case "pipeline": return "bg-blue-500/10 text-blue-500";
       case "reinterview": return "bg-amber-500/10 text-amber-500";
       case "high_potential": return "bg-green-500/10 text-green-500";
@@ -137,7 +137,7 @@ export default function Recommendations() {
           label="Better Fit" 
           value={typeStats.better_fit} 
           icon={<TrendingUp className="h-5 w-5" />}
-          color="text-purple-500"
+          color="text-blue-500"
           onClick={() => setSelectedType("better_fit")}
           active={selectedType === "better_fit"}
         />
@@ -266,13 +266,13 @@ export default function Recommendations() {
 
                       {rec.alternativeRoles && rec.alternativeRoles.length > 0 && (
                         <div className="mt-3 pt-3 border-t">
-                          <p className="text-xs font-semibold text-purple-600 mb-1 flex items-center gap-1">
+                          <p className="text-xs font-semibold text-blue-600 mb-1 flex items-center gap-1">
                             <Briefcase className="h-3 w-3" />
                             Suggested Alternative Roles
                           </p>
                           <div className="flex flex-wrap gap-1">
                             {rec.alternativeRoles.map((role, i) => (
-                              <Badge key={i} variant="outline" className="text-xs bg-purple-50 dark:bg-purple-900/30">
+                              <Badge key={i} variant="outline" className="text-xs bg-blue-50 dark:bg-blue-900/30">
                                 {role}
                               </Badge>
                             ))}
@@ -332,8 +332,8 @@ export default function Recommendations() {
               <p className="text-sm text-muted-foreground">AI analyzes interview transcripts and emotional patterns</p>
             </div>
             <div className="text-center p-4">
-              <div className="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mx-auto mb-2">
-                <span className="text-purple-600 dark:text-purple-400 font-bold">2</span>
+              <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mx-auto mb-2">
+                <span className="text-blue-600 dark:text-blue-400 font-bold">2</span>
               </div>
               <p className="font-medium">Competency Mapping</p>
               <p className="text-sm text-muted-foreground">Skills and competencies are scored across dimensions</p>

@@ -133,7 +133,7 @@ export default function CourseCatalogue() {
                       {courses.reduce((sum, c) => sum + (c.durationHours || 0), 0)}
                     </p>
                   </div>
-                  <Clock className="h-8 w-8 text-purple-500 opacity-50" />
+                  <Clock className="h-8 w-8 text-blue-500 opacity-50" />
                 </div>
               </CardContent>
             </Card>

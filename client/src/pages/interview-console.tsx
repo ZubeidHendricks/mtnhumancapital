@@ -239,7 +239,7 @@ export default function InterviewConsole() {
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
                           {session.interviewType === "video" ? (
-                            <Video className="h-4 w-4 text-purple-500" />
+                            <Video className="h-4 w-4 text-blue-500" />
                           ) : (
                             <Mic className="h-4 w-4 text-blue-500" />
                           )}
@@ -466,7 +466,7 @@ export default function InterviewConsole() {
                           >
                             <div className="flex items-center gap-3">
                               {recording.recordingType === "video" ? (
-                                <Video className="h-8 w-8 text-purple-500" />
+                                <Video className="h-8 w-8 text-blue-500" />
                               ) : (
                                 <Mic className="h-8 w-8 text-blue-500" />
                               )}

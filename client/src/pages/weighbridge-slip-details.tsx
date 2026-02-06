@@ -114,7 +114,7 @@ export default function WeighbridgeSlipDetails() {
               </div>
               <div className="space-y-2">
                 <div className="text-sm text-muted-foreground">Net Weight</div>
-                <div className="text-2xl font-bold text-purple-600">
+                <div className="text-2xl font-bold text-blue-600">
                   {slip.netWeight ? `${slip.netWeight.toLocaleString()} kg` : "N/A"}
                 </div>
               </div>

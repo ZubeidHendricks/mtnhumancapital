@@ -102,7 +102,7 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.R
   received: { label: "Received", color: "bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30", icon: <Clock className="h-3 w-3" /> },
   verified: { label: "Verified", color: "bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30", icon: <CheckCircle className="h-3 w-3" /> },
   rejected: { label: "Rejected", color: "bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30", icon: <XCircle className="h-3 w-3" /> },
-  expired: { label: "Expired", color: "bg-orange-500/20 text-orange-600 dark:text-orange-400 border-orange-500/30", icon: <AlertCircle className="h-3 w-3" /> },
+  expired: { label: "Expired", color: "bg-teal-600/20 text-teal-700 dark:text-teal-400 border-teal-600/30", icon: <AlertCircle className="h-3 w-3" /> },
 };
 
 const collectedViaLabels: Record<string, string> = {
@@ -237,7 +237,7 @@ export default function DocumentLibrary() {
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-3" data-testid="text-page-title">
-              <FileCheck className="h-7 w-7 text-purple-600 dark:text-purple-400" />
+              <FileCheck className="h-7 w-7 text-blue-600 dark:text-blue-400" />
               Document Library
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
@@ -249,8 +249,8 @@ export default function DocumentLibrary() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card className="bg-card border-border">
             <CardContent className="p-4 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                <FileText className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground" data-testid="stat-total">{stats.total}</p>
@@ -300,7 +300,7 @@ export default function DocumentLibrary() {
           <CardHeader className="border-b border-border">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <CardTitle className="text-foreground flex items-center gap-2">
-                <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 All Documents
               </CardTitle>
               
@@ -358,7 +358,7 @@ export default function DocumentLibrary() {
           <CardContent className="p-0">
             {isLoading ? (
               <div className="flex items-center justify-center py-20">
-                <Loader2 className="h-8 w-8 animate-spin text-purple-600 dark:text-purple-400" />
+                <Loader2 className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400" />
               </div>
             ) : documents.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
@@ -392,7 +392,7 @@ export default function DocumentLibrary() {
                         >
                           <TableCell>
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/20 to-indigo-500/20 flex items-center justify-center">
+                              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/20 to-indigo-500/20 flex items-center justify-center">
                                 {getFileIcon(doc.mimeType)}
                               </div>
                               <div>
@@ -404,7 +404,7 @@ export default function DocumentLibrary() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="border-purple-500/30 text-purple-300">
+                            <Badge variant="outline" className="border-blue-500/30 text-blue-300">
                               {documentTypeLabels[doc.documentType] || doc.documentType}
                             </Badge>
                           </TableCell>
@@ -459,7 +459,7 @@ export default function DocumentLibrary() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-muted-foreground hover:text-purple-600 dark:text-purple-400"
+                                className="h-8 w-8 text-muted-foreground hover:text-blue-600 dark:text-blue-400"
                                 onClick={() => handleDownload(doc)}
                                 data-testid={`button-download-${doc.id}`}
                               >
@@ -508,7 +508,7 @@ export default function DocumentLibrary() {
           <DialogContent className="bg-background border-border max-w-2xl">
             <DialogHeader>
               <DialogTitle className="text-foreground flex items-center gap-2">
-                <FileText className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 Document Details
               </DialogTitle>
             </DialogHeader>
@@ -577,7 +577,7 @@ export default function DocumentLibrary() {
                         {selectedDocument.aiVerification.verified ? (
                           <Badge className="bg-green-500/20 text-green-600 dark:text-green-400">AI Verified</Badge>
                         ) : (
-                          <Badge className="bg-orange-500/20 text-orange-600 dark:text-orange-400">Needs Review</Badge>
+                          <Badge className="bg-teal-600/20 text-teal-700 dark:text-teal-400">Needs Review</Badge>
                         )}
                         {selectedDocument.aiVerification.confidence && (
                           <span className="text-sm text-muted-foreground">
@@ -605,7 +605,7 @@ export default function DocumentLibrary() {
                     Close
                   </Button>
                   <Button
-                    className="bg-purple-600 hover:bg-purple-700 text-white"
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
                     onClick={() => handleDownload(selectedDocument)}
                     data-testid="button-download-preview"
                   >

@@ -105,8 +105,8 @@ function AgentVisualization({ run, onClose }: { run: OrchestratorRun | null; onC
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-purple-500/20">
-              <Brain className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+            <div className="p-2 rounded-lg bg-blue-500/20">
+              <Brain className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
             Social Intelligence Agents
             <Badge variant={run.status === 'completed' ? 'default' : 'outline'} 
@@ -216,7 +216,7 @@ function AgentVisualization({ run, onClose }: { run: OrchestratorRun | null; onC
                     <span className="text-gray-500 shrink-0">
                       {new Date(log.timestamp).toLocaleTimeString()}
                     </span>
-                    <span className="text-purple-600 dark:text-purple-400 shrink-0">[{log.agent}]</span>
+                    <span className="text-blue-600 dark:text-blue-400 shrink-0">[{log.agent}]</span>
                     <span>{log.message}</span>
                   </motion.div>
                 ))}
@@ -243,7 +243,7 @@ function AgentVisualization({ run, onClose }: { run: OrchestratorRun | null; onC
                   <Badge className={
                     run.result.riskLevel === 'low' ? 'bg-green-500/20 text-green-600 dark:text-green-400' :
                     run.result.riskLevel === 'medium' ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400' :
-                    run.result.riskLevel === 'high' ? 'bg-orange-500/20 text-orange-600 dark:text-orange-400' :
+                    run.result.riskLevel === 'high' ? 'bg-teal-600/20 text-teal-700 dark:text-teal-400' :
                     'bg-red-500/20 text-red-600 dark:text-red-400'
                   }>
                     {run.result.riskLevel || 'Unknown'} Risk
@@ -264,7 +264,7 @@ function AgentVisualization({ run, onClose }: { run: OrchestratorRun | null; onC
             Close
           </Button>
           {run.status === 'completed' && (
-            <Button className="bg-purple-500 hover:bg-purple-400">
+            <Button className="bg-blue-500 hover:bg-blue-400">
               View Full Report
             </Button>
           )}
@@ -509,7 +509,7 @@ export default function SocialScreening() {
     const styles: Record<string, string> = {
       low: "bg-green-500/20 text-green-600 dark:text-green-400",
       medium: "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400",
-      high: "bg-orange-500/20 text-orange-600 dark:text-orange-400",
+      high: "bg-teal-600/20 text-teal-700 dark:text-teal-400",
       critical: "bg-red-500/20 text-red-600 dark:text-red-400",
     };
     return styles[riskLevel] || "bg-gray-500/20 text-gray-400";
@@ -667,7 +667,7 @@ export default function SocialScreening() {
               </Link>
             </div>
             <h1 className="text-3xl font-bold flex items-center gap-3">
-              <Users className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+              <Users className="w-8 h-8 text-blue-600 dark:text-blue-400" />
               Social Intelligence Screening
             </h1>
             <p className="text-muted-foreground mt-1">
@@ -676,7 +676,7 @@ export default function SocialScreening() {
           </div>
           
           <Button 
-            className="bg-purple-500 hover:bg-purple-400 text-purple-950"
+            className="bg-blue-500 hover:bg-blue-400 text-blue-950"
             onClick={() => setIsAIScreeningModalOpen(true)}
             data-testid="button-open-agent"
           >
@@ -706,7 +706,7 @@ export default function SocialScreening() {
           <Card className="border-border dark:border-white/10 bg-card/20" data-testid="stat-screenings">
             <CardContent className="pt-6">
               <div className="text-center">
-                <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{stats?.totalScreenings || 0}</p>
+                <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{stats?.totalScreenings || 0}</p>
                 <p className="text-sm text-muted-foreground">Total Screenings</p>
               </div>
             </CardContent>
@@ -755,7 +755,7 @@ export default function SocialScreening() {
                               className={`h-full ${
                                 level === "low" ? "bg-green-500" :
                                 level === "medium" ? "bg-yellow-500" :
-                                level === "high" ? "bg-orange-500" : "bg-red-500"
+                                level === "high" ? "bg-teal-600" : "bg-red-500"
                               }`}
                               style={{ width: `${percentage}%` }}
                             />
@@ -830,7 +830,7 @@ export default function SocialScreening() {
                           <div className={`w-2 h-2 rounded-full ${
                             finding.riskLevel === 'low' ? 'bg-green-500' :
                             finding.riskLevel === 'medium' ? 'bg-yellow-500' :
-                            finding.riskLevel === 'high' ? 'bg-orange-500' : 'bg-red-500'
+                            finding.riskLevel === 'high' ? 'bg-teal-600' : 'bg-red-500'
                           }`} />
                           <div>
                             <p className="font-medium">Candidate #{finding.candidateId?.slice(-6)}</p>
@@ -924,7 +924,7 @@ export default function SocialScreening() {
             <Card className="border-border dark:border-white/10 bg-card/20">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Search className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                  <Search className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   All Screenings
                 </CardTitle>
                 <CardDescription>Complete list of social media screenings</CardDescription>
@@ -984,7 +984,7 @@ export default function SocialScreening() {
                               <Badge className={
                                 finding.aiRecommendation === 'proceed' ? 'bg-green-500/20 text-green-600 dark:text-green-400' :
                                 finding.aiRecommendation === 'review' ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400' :
-                                finding.aiRecommendation === 'caution' ? 'bg-orange-500/20 text-orange-600 dark:text-orange-400' :
+                                finding.aiRecommendation === 'caution' ? 'bg-teal-600/20 text-teal-700 dark:text-teal-400' :
                                 'bg-red-500/20 text-red-600 dark:text-red-400'
                               }>
                                 AI: {finding.aiRecommendation || 'Pending'}
@@ -1064,8 +1064,8 @@ export default function SocialScreening() {
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-500/20">
-                <Brain className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+              <div className="p-2 rounded-lg bg-blue-500/20">
+                <Brain className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
               AI Social Screening Agent
               {isRunningScreening && (
@@ -1111,7 +1111,7 @@ export default function SocialScreening() {
                 <Button
                   onClick={startModalScreening}
                   disabled={!modalSelectedCandidateId || isRunningScreening}
-                  className="bg-purple-500 hover:bg-purple-400 text-purple-950"
+                  className="bg-blue-500 hover:bg-blue-400 text-blue-950"
                   data-testid="modal-button-start-screening"
                 >
                   {isRunningScreening ? (
@@ -1196,7 +1196,7 @@ export default function SocialScreening() {
                                 {getLogIcon(log.level)}
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center justify-between gap-2">
-                                    <span className="text-[10px] font-medium text-purple-600 dark:text-purple-400">{log.agent}</span>
+                                    <span className="text-[10px] font-medium text-blue-600 dark:text-blue-400">{log.agent}</span>
                                     <span className="text-[9px] text-muted-foreground whitespace-nowrap">
                                       {new Date(log.timestamp).toLocaleTimeString()}
                                     </span>
@@ -1242,7 +1242,7 @@ export default function SocialScreening() {
                   </Card>
                   <Card className="border-border dark:border-white/10 bg-card/30">
                     <CardContent className="pt-4 text-center">
-                      <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                      <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
                         {screeningResult.platformsSummary.reduce((sum, p) => sum + p.postsAnalyzed, 0)}
                       </p>
                       <p className="text-xs text-muted-foreground">Posts Analyzed</p>
@@ -1301,7 +1301,7 @@ export default function SocialScreening() {
                   Screen Another
                 </Button>
                 <Button 
-                  className="bg-purple-500 hover:bg-purple-400 text-purple-950"
+                  className="bg-blue-500 hover:bg-blue-400 text-blue-950"
                   onClick={() => {
                     setIsAIScreeningModalOpen(false);
                     resetModalState();
@@ -1350,7 +1350,7 @@ function PendingReviewCard({
     const styles: Record<string, string> = {
       low: "bg-green-500/20 text-green-600 dark:text-green-400",
       medium: "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400",
-      high: "bg-orange-500/20 text-orange-600 dark:text-orange-400",
+      high: "bg-teal-600/20 text-teal-700 dark:text-teal-400",
       critical: "bg-red-500/20 text-red-600 dark:text-red-400",
     };
     return styles[riskLevel] || "bg-gray-500/20 text-gray-400";
@@ -1394,10 +1394,10 @@ function PendingReviewCard({
       </div>
 
       {finding.aiSummary && (
-        <div className="mb-6 p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
+        <div className="mb-6 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
           <div className="flex items-center gap-2 mb-2">
-            <Brain className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-            <span className="font-medium text-purple-600 dark:text-purple-400">AI Summary</span>
+            <Brain className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <span className="font-medium text-blue-600 dark:text-blue-400">AI Summary</span>
           </div>
           <p className="text-sm">{finding.aiSummary}</p>
         </div>

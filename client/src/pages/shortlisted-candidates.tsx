@@ -108,7 +108,7 @@ export default function ShortlistedCandidates() {
     const sourceColors: Record<string, string> = {
       "Recruited": "text-blue-600 dark:text-blue-400 bg-blue-400/10",
       "Uploaded": "text-green-600 dark:text-green-400 bg-green-400/10",
-      "Referral": "text-purple-600 dark:text-purple-400 bg-purple-400/10",
+      "Referral": "text-blue-600 dark:text-blue-400 bg-blue-400/10",
       "LinkedIn": "text-blue-500 bg-blue-500/10",
       "Direct": "text-yellow-600 dark:text-yellow-400 bg-yellow-400/10"
     };
@@ -205,7 +205,7 @@ export default function ShortlistedCandidates() {
                     {/* Left: Avatar & Info */}
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <Avatar className="h-10 w-10 border-2 border-border dark:border-white/20">
-                        <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-semibold">
+                        <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-blue-600 text-white font-semibold">
                           {candidate.fullName?.split(' ')?.map((n: string) => n[0])?.join('')?.toUpperCase() || '?'}
                         </AvatarFallback>
                       </Avatar>

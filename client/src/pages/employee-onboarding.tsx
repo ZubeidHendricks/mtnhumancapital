@@ -193,7 +193,7 @@ export default function EmployeeOnboarding() {
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               Send Onboarding Pack
             </CardTitle>
             <CardDescription>Prepare and send onboarding documents to a new employee</CardDescription>
@@ -360,7 +360,7 @@ export default function EmployeeOnboarding() {
               onClick={handleDownloadHandbook}
               data-testid="button-download-handbook"
             >
-              <BookOpen className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+              <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400" />
               <span>Employee Handbook</span>
               <span className="text-xs text-muted-foreground">PDF Document</span>
             </Button>

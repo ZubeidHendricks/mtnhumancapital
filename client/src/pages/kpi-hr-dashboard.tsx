@@ -132,13 +132,12 @@ function StatCard({
   subtitle?: string; 
   icon: React.ElementType;
   trend?: { value: number; positive: boolean };
-  color?: "blue" | "green" | "amber" | "purple" | "rose";
+  color?: "blue" | "green" | "amber" | "rose";
 }) {
   const colorClasses = {
     blue: "from-blue-900/20 to-blue-800/10 border-blue-500/30",
     green: "from-green-900/20 to-green-800/10 border-green-500/30",
     amber: "from-amber-900/20 to-amber-800/10 border-amber-500/30",
-    purple: "from-purple-900/20 to-purple-800/10 border-purple-500/30",
     rose: "from-rose-900/20 to-rose-800/10 border-rose-500/30",
   };
 
@@ -146,7 +145,6 @@ function StatCard({
     blue: "text-blue-600 dark:text-blue-400",
     green: "text-green-600 dark:text-green-400",
     amber: "text-amber-600 dark:text-amber-400",
-    purple: "text-purple-600 dark:text-purple-400",
     rose: "text-rose-600 dark:text-rose-400",
   };
 
@@ -296,7 +294,7 @@ HR Team`);
                 variant={channel === "teams" ? "default" : "outline"}
                 className={cn(
                   "flex items-center gap-2",
-                  channel === "teams" ? "bg-purple-600 hover:bg-purple-700" : "border-gray-700"
+                  channel === "teams" ? "bg-blue-600 hover:bg-blue-700" : "border-gray-700"
                 )}
                 onClick={() => setChannel("teams")}
                 data-testid="channel-teams"
@@ -889,7 +887,7 @@ export default function KPIHRDashboard() {
             value={avgScore.toFixed(1) + "%"}
             subtitle="Across completed reviews"
             icon={TrendingUp}
-            color="purple"
+            color="blue"
             trend={avgScore >= 75 ? { value: 5, positive: true } : undefined}
           />
         </div>

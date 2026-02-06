@@ -330,7 +330,7 @@ AHC Recruiting Team`;
     const sourceColors: Record<string, string> = {
       "Recruited": "text-blue-600 dark:text-blue-400 bg-blue-400/10",
       "Uploaded": "text-green-600 dark:text-green-400 bg-green-400/10",
-      "Referral": "text-purple-600 dark:text-purple-400 bg-purple-400/10",
+      "Referral": "text-blue-600 dark:text-blue-400 bg-blue-400/10",
       "LinkedIn": "text-blue-500 bg-blue-500/10",
       "Direct": "text-yellow-600 dark:text-yellow-400 bg-yellow-400/10"
     };
@@ -917,7 +917,7 @@ AHC Recruiting Team`}
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden bg-[#0a0a0a] border-zinc-800 text-white" data-testid="dialog-candidate-profile">
           <DialogHeader className="border-b border-zinc-800 pb-4">
             <DialogTitle className="text-xl flex items-center gap-3">
-              <Avatar className="h-12 w-12 bg-gradient-to-br from-purple-500 to-blue-500">
+              <Avatar className="h-12 w-12 bg-gradient-to-br from-blue-500 to-blue-500">
                 <AvatarFallback className="text-white text-lg font-bold bg-transparent">
                   {profileCandidate?.fullName?.split(' ').map((n: string) => n[0]).join('') || '?'}
                 </AvatarFallback>
@@ -933,12 +933,12 @@ AHC Recruiting Team`}
             <div className="space-y-6 py-4">
               {/* Match Score */}
               {profileCandidate?.match && (
-                <div className="flex items-center gap-4 p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                  <div className="text-3xl font-bold text-purple-600 dark:text-purple-400" data-testid="text-profile-match">
+                <div className="flex items-center gap-4 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                  <div className="text-3xl font-bold text-blue-600 dark:text-blue-400" data-testid="text-profile-match">
                     {profileCandidate.match}%
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-purple-300">AI Match Score</p>
+                    <p className="text-sm font-medium text-blue-300">AI Match Score</p>
                     <p className="text-xs text-zinc-400">Based on job requirements and skill matching</p>
                   </div>
                 </div>
@@ -1007,8 +1007,8 @@ AHC Recruiting Team`}
 
               {/* AI Reasoning */}
               {(profileCandidate?.metadata as any)?.aiReasoning && (
-                <div className="p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                  <p className="text-xs text-purple-600 dark:text-purple-400 mb-2">AI Analysis</p>
+                <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mb-2">AI Analysis</p>
                   <p className="text-sm text-zinc-300" data-testid="text-profile-ai-reasoning">
                     {(profileCandidate.metadata as any).aiReasoning}
                   </p>

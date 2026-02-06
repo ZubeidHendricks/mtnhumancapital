@@ -58,7 +58,7 @@ const PLATFORMS: Omit<PlatformConfig, "isConfigured">[] = [
     name: "Indeed Employer",
     description: "Access Indeed's resume database and job seeker profiles",
     icon: Search,
-    color: "bg-purple-600",
+    color: "bg-blue-600",
     apiKeyEnvVar: "INDEED_API_KEY",
     docsUrl: "https://developer.indeed.com/",
     requiredKeys: [
@@ -95,11 +95,11 @@ export default function PlatformSettings() {
         <div className="container mx-auto px-4 max-w-4xl">
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-orange-500 to-red-500">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-teal-600 to-red-500">
                 <Settings className="h-8 w-8" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-400 to-red-400 bg-clip-text text-transparent">
                   Platform Settings
                 </h1>
                 <p className="text-zinc-400">
@@ -224,7 +224,7 @@ export default function PlatformSettings() {
                         ) : (
                           <Button 
                             size="sm"
-                            className="bg-gradient-to-r from-blue-600 to-purple-600"
+                            className="bg-gradient-to-r from-blue-600 to-blue-600"
                             data-testid={`button-save-${platform.platform}`}
                           >
                             <Save className="h-4 w-4 mr-2" />

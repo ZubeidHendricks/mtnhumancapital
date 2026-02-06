@@ -512,9 +512,9 @@ export default function WhatsAppMonitor() {
       case "recruitment":
         return <Badge className="bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/20">Recruitment</Badge>;
       case "document_request":
-        return <Badge className="bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/20">Documents</Badge>;
+        return <Badge className="bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/20">Documents</Badge>;
       case "appointment":
-        return <Badge className="bg-orange-500/20 text-orange-600 dark:text-orange-400 border-orange-500/20">Appointment</Badge>;
+        return <Badge className="bg-teal-600/20 text-teal-700 dark:text-teal-400 border-teal-600/20">Appointment</Badge>;
       case "general":
       default:
         return <Badge className="bg-white/10 text-muted-foreground border-border dark:border-white/10">General</Badge>;
@@ -752,7 +752,7 @@ export default function WhatsAppMonitor() {
                               className={`max-w-[80%] rounded-2xl px-4 py-2 ${
                                 message.direction === 'outbound'
                                   ? message.senderType === 'ai'
-                                    ? 'bg-purple-500/20 text-purple-200'
+                                    ? 'bg-blue-500/20 text-blue-200'
                                     : 'bg-primary text-primary-foreground'
                                   : 'bg-white/10 text-foreground'
                               }`}
@@ -1271,7 +1271,7 @@ export default function WhatsAppMonitor() {
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Mic className="h-5 w-5 text-purple-500" />
+                <Mic className="h-5 w-5 text-blue-500" />
                 Send Voice Interview Invite
               </DialogTitle>
               <DialogDescription>
@@ -1322,7 +1322,7 @@ export default function WhatsAppMonitor() {
               <Button
                 onClick={sendInterviewInvite}
                 disabled={isSendingInterviewInvite}
-                className="bg-purple-600 hover:bg-purple-700"
+                className="bg-blue-600 hover:bg-blue-700"
                 data-testid="btn-send-interview-invite"
               >
                 {isSendingInterviewInvite ? (

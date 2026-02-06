@@ -35,14 +35,14 @@ export default function Leaderboard() {
   const getRankIcon = (rank: number) => {
     if (rank === 1) return <Trophy className="h-6 w-6 text-yellow-500" />;
     if (rank === 2) return <Medal className="h-6 w-6 text-gray-400" />;
-    if (rank === 3) return <Medal className="h-6 w-6 text-orange-400" />;
+    if (rank === 3) return <Medal className="h-6 w-6 text-teal-400" />;
     return <span className="text-lg font-bold text-muted-foreground">#{rank}</span>;
   };
 
   const getAchievementIcon = (type: string) => {
     const icons = {
       badge: <Badge className="h-8 w-8 text-blue-500" />,
-      award: <Award className="h-8 w-8 text-purple-500" />,
+      award: <Award className="h-8 w-8 text-blue-500" />,
       milestone: <Star className="h-8 w-8 text-yellow-500" />,
     };
     return icons[type as keyof typeof icons] || <Zap className="h-8 w-8 text-green-500" />;
@@ -181,8 +181,8 @@ export default function Leaderboard() {
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-full bg-purple-100">
-                    <Award className="h-6 w-6 text-purple-600" />
+                  <div className="p-3 rounded-full bg-blue-100">
+                    <Award className="h-6 w-6 text-blue-600" />
                   </div>
                   <div>
                     <p className="text-2xl font-bold">

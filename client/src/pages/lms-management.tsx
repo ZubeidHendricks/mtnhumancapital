@@ -164,7 +164,7 @@ export default function LMSManagement() {
                   <p className="text-sm text-muted-foreground">Assessments</p>
                   <p className="text-2xl font-bold">{assessments.length}</p>
                 </div>
-                <FileText className="h-8 w-8 text-purple-500" />
+                <FileText className="h-8 w-8 text-blue-500" />
               </div>
             </CardContent>
           </Card>
@@ -410,7 +410,7 @@ export default function LMSManagement() {
                   </Card>
                   <Card>
                     <CardContent className="pt-6 text-center">
-                      <Award className="h-12 w-12 mx-auto mb-4 text-purple-500" />
+                      <Award className="h-12 w-12 mx-auto mb-4 text-blue-500" />
                       <h3 className="font-semibold mb-2">Awards</h3>
                       <p className="text-sm text-muted-foreground mb-4">Distribute learning awards</p>
                       <Button size="sm">Manage Awards</Button>

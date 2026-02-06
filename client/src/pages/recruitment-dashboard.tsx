@@ -231,7 +231,7 @@ export default function RecruitmentDashboard() {
           <div>
             <div className="flex items-center gap-3 mb-2">
                <h1 className="text-3xl font-bold tracking-tight">Recruitment Dashboard</h1>
-               <Badge variant="outline" className="bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30 text-xs">
+               <Badge variant="outline" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30 text-xs">
                   Live Data
                </Badge>
             </div>
@@ -341,7 +341,7 @@ export default function RecruitmentDashboard() {
           <Card className="bg-black/40 border-border dark:border-white/10">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 Monthly Placements & Revenue
               </CardTitle>
               <CardDescription className="text-gray-400">
@@ -648,7 +648,7 @@ export default function RecruitmentDashboard() {
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <Badge className="bg-purple-500/20 text-purple-300">{candidate.stage}</Badge>
+                        <Badge className="bg-blue-500/20 text-blue-300">{candidate.stage}</Badge>
                         <p className="text-xs text-gray-500 mt-1">{candidate.status}</p>
                       </div>
                       <Link href={`/candidates/${candidate.id}`}>

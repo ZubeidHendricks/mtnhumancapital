@@ -69,8 +69,8 @@ const PLATFORM_META: Record<string, { icon: any; color: string; category: string
   // Tech Sourcing
   "GitHub": { icon: Users, color: "bg-gray-800", category: "Tech", description: "Open source developers from GitHub" },
   "Dev.to": { icon: FileText, color: "bg-black", category: "Tech", description: "Technical writers & developers" },
-  "StackOverflow": { icon: Brain, color: "bg-orange-500", category: "Tech", description: "Top developers by reputation" },
-  "HackerNews": { icon: Zap, color: "bg-orange-600", category: "Tech", description: "Who's Hiring thread candidates" },
+  "StackOverflow": { icon: Brain, color: "bg-teal-600", category: "Tech", description: "Top developers by reputation" },
+  "HackerNews": { icon: Zap, color: "bg-teal-700", category: "Tech", description: "Who's Hiring thread candidates" },
   "Kaggle": { icon: TrendingUp, color: "bg-blue-500", category: "Tech", description: "Data scientists & ML engineers" },
   // Executive
   "Executive": { icon: Award, color: "bg-amber-600", category: "Executive", description: "C-suite from executive networks" },
@@ -83,7 +83,7 @@ const PLATFORM_META: Record<string, { icon: any; color: string; category: string
   "TradeForums": { icon: Users, color: "bg-yellow-600", category: "Blue Collar", description: "Skilled tradespeople" },
   // Job Boards
   "Gumtree South Africa": { icon: Search, color: "bg-green-500", category: "Job Boards", description: "SA classifieds & job listings" },
-  "Indeed South Africa": { icon: Search, color: "bg-purple-600", category: "Job Boards", description: "Global job board - SA section" },
+  "Indeed South Africa": { icon: Search, color: "bg-blue-600", category: "Job Boards", description: "Global job board - SA section" },
   "Careers24": { icon: FileSearch, color: "bg-blue-600", category: "Job Boards", description: "SA career portal" },
   "PNet": { icon: FileSearch, color: "bg-green-600", category: "Job Boards", description: "SA's largest recruitment portal" },
   "LinkedIn": { icon: Linkedin, color: "bg-blue-700", category: "Job Boards", description: "Professional network" },
@@ -93,7 +93,7 @@ const PLATFORM_META: Record<string, { icon: any; color: string; category: string
 const SOURCING_SPECIALISTS = [
   { name: "LinkedIn Specialist", platform: "LinkedIn", icon: Linkedin, color: "bg-blue-600", description: "Passive candidates from professional network" },
   { name: "PNet Specialist", platform: "PNet", icon: FileSearch, color: "bg-green-600", description: "Active job seekers from SA's largest portal" },
-  { name: "Indeed Specialist", platform: "Indeed South Africa", icon: Search, color: "bg-purple-600", description: "Diverse candidates from resume database" },
+  { name: "Indeed Specialist", platform: "Indeed South Africa", icon: Search, color: "bg-blue-600", description: "Diverse candidates from resume database" },
 ];
 
 
@@ -143,7 +143,7 @@ function ContactEnrichmentSection({ candidate, metadata }: { candidate: Candidat
         <Button
           variant="outline"
           size="sm"
-          className="h-7 text-xs gap-1 border-purple-500/50 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10"
+          className="h-7 text-xs gap-1 border-blue-500/50 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10"
           onClick={handleEnrichContact}
           disabled={isEnriching}
           data-testid={`enrich-contact-${candidate.id}`}
@@ -422,10 +422,10 @@ export default function RecruitmentAgent() {
       case "Job Analyzer": return "bg-blue-500";
       case "LinkedIn Specialist": return "bg-blue-600";
       case "PNet Specialist": return "bg-green-600";
-      case "Indeed Specialist": return "bg-purple-600";
+      case "Indeed Specialist": return "bg-blue-600";
       case "AI Search": return "bg-cyan-500";
-      case "Screening AI": return "bg-purple-500";
-      case "Ranking Engine": return "bg-orange-500";
+      case "Screening AI": return "bg-blue-500";
+      case "Ranking Engine": return "bg-teal-600";
       case "System": return "bg-green-500";
       default: return "bg-gray-500";
     }
@@ -434,7 +434,7 @@ export default function RecruitmentAgent() {
   const getMatchColor = (score: number) => {
     if (score >= 85) return 'text-green-600 dark:text-green-400 bg-green-500/20 border-green-500/30';
     if (score >= 70) return 'text-yellow-600 dark:text-yellow-400 bg-yellow-500/20 border-yellow-500/30';
-    if (score >= 50) return 'text-orange-600 dark:text-orange-400 bg-orange-500/20 border-orange-500/30';
+    if (score >= 50) return 'text-teal-600 dark:text-teal-400 bg-teal-600/20 border-teal-500/30';
     return 'text-zinc-400 bg-zinc-500/20 border-zinc-500/30';
   };
 
@@ -457,11 +457,11 @@ export default function RecruitmentAgent() {
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-500">
                 <Bot className="h-8 w-8" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-blue-400 bg-clip-text text-transparent">
                   AI Recruitment Command Center
                 </h1>
                 <p className="text-zinc-400">
@@ -548,7 +548,7 @@ export default function RecruitmentAgent() {
                   <Button
                     onClick={handleStartRecruitment}
                     disabled={!selectedJobId || startRecruitmentMutation.isPending || isSimulating}
-                    className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500"
+                    className="w-full bg-gradient-to-r from-blue-600 to-blue-600 hover:from-blue-500 hover:to-blue-500"
                     data-testid="button-start-recruitment"
                   >
                     {startRecruitmentMutation.isPending || isSimulating ? (
@@ -570,7 +570,7 @@ export default function RecruitmentAgent() {
               <Card className="bg-gray-100 dark:bg-zinc-900/50 border-zinc-800">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <Bot className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    <Bot className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     AI Agent Workflow
                   </CardTitle>
                   <CardDescription>
@@ -594,13 +594,13 @@ export default function RecruitmentAgent() {
                               key={category}
                               className={`flex items-center gap-3 px-4 py-3 border-l-2 transition-all ${
                                 categoryActive 
-                                  ? 'border-l-purple-500 bg-purple-500/5' 
+                                  ? 'border-l-blue-500 bg-blue-500/5' 
                                   : categoryComplete 
                                     ? 'border-l-green-500' 
                                     : 'border-l-transparent'
                               }`}
                             >
-                              <span className={`text-sm font-mono ${categoryActive ? 'text-purple-600 dark:text-purple-400' : categoryComplete ? 'text-green-600 dark:text-green-400' : 'text-zinc-500'}`}>
+                              <span className={`text-sm font-mono ${categoryActive ? 'text-blue-600 dark:text-blue-400' : categoryComplete ? 'text-green-600 dark:text-green-400' : 'text-zinc-500'}`}>
                                 {String(idx + 1).padStart(2, '0')}
                               </span>
                               <span className={`text-sm font-medium ${categoryActive ? 'text-white' : 'text-zinc-400'}`}>
@@ -628,7 +628,7 @@ export default function RecruitmentAgent() {
                               key={agent.platform}
                               className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
                                 isActive 
-                                  ? 'bg-purple-500/10' 
+                                  ? 'bg-blue-500/10' 
                                   : hasResult
                                     ? 'bg-gray-200 dark:bg-zinc-800/30'
                                     : 'bg-gray-200 dark:bg-zinc-800/20'
@@ -636,7 +636,7 @@ export default function RecruitmentAgent() {
                               data-testid={`agent-${agent.platform.toLowerCase().replace(/\s+/g, '-')}`}
                             >
                               <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
-                                isActive ? 'bg-purple-500' : hasResult ? 'bg-green-500' : 'bg-zinc-700'
+                                isActive ? 'bg-blue-500' : hasResult ? 'bg-green-500' : 'bg-zinc-700'
                               }`}>
                                 {isActive ? (
                                   <Loader2 className="h-3 w-3 animate-spin text-white" />
@@ -650,7 +650,7 @@ export default function RecruitmentAgent() {
                                 {agent.name}
                               </span>
                               <Badge className={`text-xs px-2 py-0.5 ${
-                                isActive ? 'bg-purple-500/20 text-purple-300' : 
+                                isActive ? 'bg-blue-500/20 text-blue-300' : 
                                 hasResult ? 'bg-green-500/20 text-green-300' : 
                                 'bg-zinc-700 text-zinc-400'
                               }`}>
@@ -676,7 +676,7 @@ export default function RecruitmentAgent() {
               <Card className="bg-gray-100 dark:bg-zinc-900/50 border-zinc-800">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <Activity className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    <Activity className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     Agent Workflow
                   </CardTitle>
                 </CardHeader>
@@ -692,7 +692,7 @@ export default function RecruitmentAgent() {
                           key={step.id}
                           className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
                             isActive 
-                              ? 'bg-purple-500/20 border border-purple-500/50' 
+                              ? 'bg-blue-500/20 border border-blue-500/50' 
                               : isComplete
                                 ? 'bg-green-500/10 border border-green-500/30'
                                 : 'bg-gray-200 dark:bg-zinc-800/50 border border-zinc-700/50'
@@ -700,7 +700,7 @@ export default function RecruitmentAgent() {
                         >
                           <div className={`p-2 rounded-lg ${
                             isActive 
-                              ? 'bg-purple-500 animate-pulse' 
+                              ? 'bg-blue-500 animate-pulse' 
                               : isComplete
                                 ? 'bg-green-500'
                                 : 'bg-zinc-700'
@@ -714,16 +714,16 @@ export default function RecruitmentAgent() {
                             )}
                           </div>
                           <div className="flex-1">
-                            <p className={`font-medium text-sm ${isActive ? 'text-purple-300' : isComplete ? 'text-green-300' : 'text-zinc-400'}`}>
+                            <p className={`font-medium text-sm ${isActive ? 'text-blue-300' : isComplete ? 'text-green-300' : 'text-zinc-400'}`}>
                               {step.name}
                             </p>
                             <p className="text-xs text-zinc-500">{step.description}</p>
                           </div>
                           {isActive && (
                             <div className="flex gap-1">
-                              <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                              <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                              <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                              <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                              <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                              <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                             </div>
                           )}
                         </div>
@@ -786,16 +786,16 @@ export default function RecruitmentAgent() {
                       )}
                       {isSimulating && (
                         <div className="flex gap-3 animate-pulse">
-                          <Avatar className="h-8 w-8 bg-purple-500">
+                          <Avatar className="h-8 w-8 bg-blue-500">
                             <AvatarFallback className="text-xs font-bold text-white bg-transparent">
                               AI
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1 bg-gray-200 dark:bg-zinc-800/50 rounded-lg p-3 border border-zinc-700/50">
                             <div className="flex items-center gap-2">
-                              <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" />
-                              <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                              <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                              <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" />
+                              <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                              <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                             </div>
                           </div>
                         </div>
@@ -832,7 +832,7 @@ export default function RecruitmentAgent() {
                     Top Matches
                   </CardTitle>
                   {displayJobTitle && (
-                    <CardDescription className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-1">
+                    <CardDescription className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1">
                       <Briefcase className="h-3 w-3" />
                       For: {displayJobTitle}
                     </CardDescription>
@@ -862,11 +862,11 @@ export default function RecruitmentAgent() {
                           <div
                             key={candidate.id}
                             onClick={() => handleCandidateClick(candidate)}
-                            className="flex items-center gap-3 p-3 bg-gray-200 dark:bg-zinc-800/50 rounded-lg border border-zinc-700/50 hover:border-purple-500/30 hover:bg-gray-200 dark:bg-zinc-800 transition-all cursor-pointer"
+                            className="flex items-center gap-3 p-3 bg-gray-200 dark:bg-zinc-800/50 rounded-lg border border-zinc-700/50 hover:border-blue-500/30 hover:bg-gray-200 dark:bg-zinc-800 transition-all cursor-pointer"
                             data-testid={`candidate-card-${candidate.id}`}
                           >
                             <div className="relative">
-                              <Avatar className="h-10 w-10 bg-gradient-to-br from-purple-500 to-blue-500">
+                              <Avatar className="h-10 w-10 bg-gradient-to-br from-blue-500 to-blue-500">
                                 <AvatarFallback className="text-white text-sm font-bold bg-transparent">
                                   {candidate.fullName?.split(' ').map(n => n[0]).join('') || '?'}
                                 </AvatarFallback>
@@ -970,7 +970,7 @@ export default function RecruitmentAgent() {
               <Star className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
               Top Matched Candidates
               {displayJobTitle && (
-                <Badge className="ml-2 bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/30">
+                <Badge className="ml-2 bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30">
                   {displayJobTitle}
                 </Badge>
               )}
@@ -991,14 +991,14 @@ export default function RecruitmentAgent() {
                     key={candidate.id}
                     className={`p-4 rounded-lg border transition-all ${
                       selectedCandidate?.id === candidate.id 
-                        ? 'bg-purple-500/10 border-purple-500/50' 
+                        ? 'bg-blue-500/10 border-blue-500/50' 
                         : 'bg-gray-200 dark:bg-zinc-800/50 border-zinc-700/50 hover:border-zinc-600'
                     }`}
                   >
                     <div className="flex items-start gap-4">
                       {/* Avatar & Rank */}
                       <div className="relative flex-shrink-0">
-                        <Avatar className="h-14 w-14 bg-gradient-to-br from-purple-500 to-blue-500">
+                        <Avatar className="h-14 w-14 bg-gradient-to-br from-blue-500 to-blue-500">
                           <AvatarFallback className="text-white text-lg font-bold bg-transparent">
                             {candidate.fullName?.split(' ').map(n => n[0]).join('') || '?'}
                           </AvatarFallback>
@@ -1073,8 +1073,8 @@ export default function RecruitmentAgent() {
 
                         {/* AI Reasoning */}
                         {metadata?.aiReasoning && (
-                          <div className="mt-3 p-3 bg-purple-500/10 rounded-lg border border-purple-500/20">
-                            <p className="text-xs text-purple-600 dark:text-purple-400 mb-1 flex items-center gap-1">
+                          <div className="mt-3 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                            <p className="text-xs text-blue-600 dark:text-blue-400 mb-1 flex items-center gap-1">
                               <Brain className="h-3 w-3" /> AI Analysis
                             </p>
                             <p className="text-sm text-zinc-300">{metadata.aiReasoning}</p>
@@ -1093,7 +1093,7 @@ export default function RecruitmentAgent() {
                         {/* Actions */}
                         <div className="mt-4 flex gap-2">
                           <Link href={`/candidates-list?candidateId=${candidate.id}`}>
-                            <Button size="sm" className="bg-purple-600 hover:bg-purple-500">
+                            <Button size="sm" className="bg-blue-600 hover:bg-blue-500">
                               <Eye className="h-4 w-4 mr-1" />
                               View Full Profile
                             </Button>

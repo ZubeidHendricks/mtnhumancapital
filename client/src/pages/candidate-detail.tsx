@@ -895,7 +895,7 @@ export default function CandidateDetail() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Mic className="h-5 w-5 text-purple-500" />
+                <Mic className="h-5 w-5 text-blue-500" />
                 Voice Interviews
               </CardTitle>
               <CardDescription>
@@ -946,7 +946,7 @@ export default function CandidateDetail() {
                                   {session.status}
                                 </Badge>
                                 {session.overallScore && (
-                                  <Badge variant="secondary" className="bg-purple-500/20 text-purple-600 dark:text-purple-400">
+                                  <Badge variant="secondary" className="bg-blue-500/20 text-blue-600 dark:text-blue-400">
                                     Score: {session.overallScore}%
                                   </Badge>
                                 )}
@@ -998,8 +998,8 @@ export default function CandidateDetail() {
                                       className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                                     >
                                       {msg.role !== 'user' && (
-                                        <div className="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
-                                          <Bot className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                                        <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                                          <Bot className="h-3 w-3 text-blue-600 dark:text-blue-400" />
                                         </div>
                                       )}
                                       <div className={`max-w-[80%] rounded-lg px-3 py-2 ${
@@ -1229,7 +1229,7 @@ export default function CandidateDetail() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="text-purple-600"
+                                className="text-blue-600"
                                 onClick={async () => {
                                   try {
                                     const response = await fetch(`/api/candidate-documents/${doc.id}/download`);
@@ -1474,12 +1474,12 @@ export default function CandidateDetail() {
                         <div className={`max-w-[70%] rounded-lg px-4 py-2 ${
                           msg.direction === 'outbound'
                             ? msg.senderType === 'ai' 
-                              ? 'bg-purple-100 text-purple-900' 
+                              ? 'bg-blue-100 text-blue-900' 
                               : 'bg-blue-100 text-blue-900'
                             : 'bg-gray-100 text-gray-900'
                         }`}>
                           {msg.senderType === 'ai' && msg.direction === 'outbound' && (
-                            <div className="text-xs text-purple-600 mb-1 flex items-center gap-1">
+                            <div className="text-xs text-blue-600 mb-1 flex items-center gap-1">
                               <Bot className="h-3 w-3" /> AI
                             </div>
                           )}
@@ -1515,10 +1515,10 @@ export default function CandidateDetail() {
                         </div>
                         {msg.direction === 'outbound' && (
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                            msg.senderType === 'ai' ? 'bg-purple-200' : 'bg-blue-200'
+                            msg.senderType === 'ai' ? 'bg-blue-200' : 'bg-blue-200'
                           }`}>
                             {msg.senderType === 'ai' ? (
-                              <Bot className="h-4 w-4 text-purple-600" />
+                              <Bot className="h-4 w-4 text-blue-600" />
                             ) : (
                               <UserCheck className="h-4 w-4 text-blue-600" />
                             )}

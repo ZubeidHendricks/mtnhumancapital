@@ -18,12 +18,12 @@ export default function Home() {
 
         {/* NEW: Interview Suite Section */}
         <section className="py-24 bg-muted/50 dark:bg-zinc-900/50 border-y border-border relative overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.05)_0%,rgba(0,0,0,0)_60%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(124,58,237,0.1)_0%,rgba(0,0,0,0)_60%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(13,148,136,0.05)_0%,rgba(0,0,0,0)_60%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.1)_0%,rgba(0,0,0,0)_60%)]" />
           
           <div className="container mx-auto px-6 relative z-10">
             <div className="text-center max-w-3xl mx-auto mb-16">
               <h2 className="text-3xl md:text-5xl font-bold mb-6 text-foreground">
-                The <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500">AI Interview Suite</span>
+                The <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-pink-500">AI Interview Suite</span>
               </h2>
               <p className="text-muted-foreground text-lg">
                 Revolutionize your hiring process with our dual-stage AI assessment platform.
@@ -33,10 +33,10 @@ export default function Home() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               {/* Voice Interview Card */}
-              <Card className="bg-card border-border hover:border-purple-500/30 transition-all group">
+              <Card className="bg-card border-border hover:border-blue-500/30 transition-all group">
                 <CardHeader>
-                  <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mb-4 border border-purple-500/20 group-hover:scale-110 transition-transform">
-                    <Mic className="w-6 h-6 text-purple-500 dark:text-purple-400" />
+                  <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-4 border border-blue-500/20 group-hover:scale-110 transition-transform">
+                    <Mic className="w-6 h-6 text-blue-500 dark:text-blue-400" />
                   </div>
                   <CardTitle className="text-2xl text-foreground">AI Voice Interview</CardTitle>
                   <CardDescription>Stage 1: Interactive Roleplay Practice</CardDescription>
@@ -46,7 +46,7 @@ export default function Home() {
                     Practice with an AI that transforms into any interviewer character you need. Get real-time feedback on your performance with empathic voice technology.
                   </p>
                   <Link href="/interview/voice">
-                    <Button className="w-full bg-purple-600 hover:bg-purple-500 text-white group-hover:shadow-lg group-hover:shadow-purple-500/20">
+                    <Button className="w-full bg-blue-600 hover:bg-blue-500 text-white group-hover:shadow-lg group-hover:shadow-blue-500/20">
                       Try Voice Demo <ArrowRight className="ml-2 w-4 h-4" />
                     </Button>
                   </Link>

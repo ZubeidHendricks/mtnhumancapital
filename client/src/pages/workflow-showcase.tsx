@@ -81,10 +81,10 @@ const WORKFLOW_STEPS = [
     name: "Candidate Sourcing", 
     shortName: "Source", 
     icon: Users, 
-    color: "from-purple-500 to-purple-600", 
-    bgColor: "bg-purple-500/10", 
-    borderColor: "border-purple-500/30", 
-    textColor: "text-purple-600 dark:text-purple-400" 
+    color: "from-blue-500 to-blue-600", 
+    bgColor: "bg-blue-500/10", 
+    borderColor: "border-blue-500/30", 
+    textColor: "text-blue-600 dark:text-blue-400" 
   },
   { 
     id: 3, 
@@ -136,10 +136,10 @@ const WORKFLOW_STEPS = [
     name: "Job Offer", 
     shortName: "Offer", 
     icon: FileSignature, 
-    color: "from-orange-500 to-orange-600", 
-    bgColor: "bg-orange-500/10", 
-    borderColor: "border-orange-500/30", 
-    textColor: "text-orange-600 dark:text-orange-400" 
+    color: "from-teal-600 to-teal-700", 
+    bgColor: "bg-teal-600/10", 
+    borderColor: "border-teal-600/30", 
+    textColor: "text-teal-700 dark:text-teal-400" 
   },
   { 
     id: 8, 
@@ -677,7 +677,7 @@ BENEFITS:
     if (currentStep.key === "sourcing") {
       return (
         <div className="space-y-4">
-          <div className="rounded-lg bg-gradient-to-r from-primary/20 to-purple-500/20 border border-primary/20 p-4 flex items-center justify-between">
+          <div className="rounded-lg bg-gradient-to-r from-primary/20 to-blue-500/20 border border-primary/20 p-4 flex items-center justify-between">
             <div>
               <h3 className="text-md font-bold flex items-center gap-2 text-white">
                 <Sparkles className="w-4 h-4 text-primary" />
@@ -773,7 +773,7 @@ BENEFITS:
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-12 w-12 border border-border dark:border-white/10">
-                        <AvatarFallback className="bg-purple-500/20 text-purple-600 dark:text-purple-400 text-sm">
+                        <AvatarFallback className="bg-blue-500/20 text-blue-600 dark:text-blue-400 text-sm">
                           {candidate.fullName?.split(' ').map(n => n[0]).join('').slice(0, 2)}
                         </AvatarFallback>
                       </Avatar>
@@ -783,7 +783,7 @@ BENEFITS:
                         {(candidate as any).skills && (
                           <div className="flex flex-wrap gap-1 mt-1">
                             {((candidate as any).skills || []).slice(0, 3).map((skill: string, i: number) => (
-                              <Badge key={i} variant="outline" className="text-xs bg-purple-500/10 border-purple-500/30">
+                              <Badge key={i} variant="outline" className="text-xs bg-blue-500/10 border-blue-500/30">
                                 {skill}
                               </Badge>
                             ))}
@@ -794,7 +794,7 @@ BENEFITS:
                     <div className="flex flex-col items-end gap-2">
                       {candidate.match && (
                         <div className="flex items-center gap-2">
-                          <span className="text-2xl font-bold text-purple-600 dark:text-purple-400">{candidate.match}%</span>
+                          <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{candidate.match}%</span>
                           <span className="text-xs text-muted-foreground">Match</span>
                         </div>
                       )}
@@ -1009,7 +1009,7 @@ BENEFITS:
                           </Badge>
                           <Button
                             size="sm"
-                            className="bg-gradient-to-r from-orange-500 to-orange-600"
+                            className="bg-gradient-to-r from-teal-600 to-teal-700"
                             onClick={() => handleAdvanceCandidate(candidate, "offer_pending")}
                             disabled={advancingCandidate === candidate.id}
                             data-testid={`button-to-offer-${candidate.id}`}
@@ -1054,12 +1054,12 @@ BENEFITS:
                   const offerStatus: string = candidateOfferStatus || (candidate.stage?.includes('accepted') ? 'accepted' : 'pending');
                   
                   return (
-                    <Card key={candidate.id} className="bg-background/50 border-orange-500/20" data-testid={`offer-card-${candidate.id}`}>
+                    <Card key={candidate.id} className="bg-background/50 border-teal-600/20" data-testid={`offer-card-${candidate.id}`}>
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10 border border-orange-500/30">
-                              <AvatarFallback className="bg-orange-500/20 text-orange-600 dark:text-orange-400 text-sm">
+                            <Avatar className="h-10 w-10 border border-teal-600/30">
+                              <AvatarFallback className="bg-teal-600/20 text-teal-700 dark:text-teal-400 text-sm">
                                 {candidate.fullName?.split(' ').map(n => n[0]).join('').slice(0, 2)}
                               </AvatarFallback>
                             </Avatar>
@@ -1074,7 +1074,7 @@ BENEFITS:
                                 ? 'bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400'
                                 : offerStatus === 'declined'
                                   ? 'bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400'
-                                  : 'bg-orange-500/10 border-orange-500/30 text-orange-600 dark:text-orange-400'
+                                  : 'bg-teal-600/10 border-teal-600/30 text-teal-700 dark:text-teal-400'
                             }>
                               {offerStatus === 'accepted' ? 'Offer Accepted' : offerStatus === 'declined' ? 'Declined' : 'Offer Pending'}
                             </Badge>
@@ -1168,7 +1168,7 @@ BENEFITS:
                           <Badge variant="outline" className={
                             riskData.riskLevel === 'low' ? 'bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400' :
                             riskData.riskLevel === 'medium' ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-600 dark:text-yellow-400' :
-                            riskData.riskLevel === 'high' ? 'bg-orange-500/10 border-orange-500/30 text-orange-600 dark:text-orange-400' :
+                            riskData.riskLevel === 'high' ? 'bg-teal-600/10 border-teal-600/30 text-teal-700 dark:text-teal-400' :
                             'bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400'
                           } data-testid={`risk-badge-${candidate.id}`}>
                             <AlertTriangle className="h-3 w-3 mr-1" />
@@ -1525,7 +1525,7 @@ BENEFITS:
             <Button 
               onClick={handleStart}
               disabled={loadingJobs || activeJobs.length === 0}
-              className="bg-gradient-to-r from-purple-500 to-pink-500"
+              className="bg-gradient-to-r from-blue-500 to-pink-500"
               data-testid="button-start"
             >
               <Play className="h-4 w-4 mr-2" />

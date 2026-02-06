@@ -21,7 +21,7 @@ export function DashboardPreview() {
             >
               <h2 className="text-3xl md:text-5xl font-bold mb-8 leading-tight text-foreground">
                 Control Center for <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-orange-600">Modern Leadership</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-teal-700">Modern Leadership</span>
               </h2>
               <p className="text-lg text-muted-foreground mb-8">
                 The AHC Executive Dashboard unifies data from HR, Finance, and Operations into a single source of truth. Receive real-time alerts via WhatsApp integration and monitor contract timelines effortlessly.
@@ -52,7 +52,7 @@ export function DashboardPreview() {
               transition={{ duration: 0.8 }}
               className="relative rounded-2xl overflow-hidden border border-border shadow-2xl bg-card backdrop-blur-xl group"
             >
-              <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <img 
                 src={dashImg} 
                 alt="Executive Dashboard Interface" 

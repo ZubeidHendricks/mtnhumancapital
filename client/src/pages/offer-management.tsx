@@ -264,7 +264,7 @@ export default function OfferManagement() {
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               Recent Offers
             </CardTitle>
             <CardDescription>Track the status of sent offer letters</CardDescription>
@@ -278,8 +278,8 @@ export default function OfferManagement() {
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
-                      <User className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                      <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
                       <h4 className="font-medium text-white">{candidate.name}</h4>
@@ -335,7 +335,7 @@ export default function OfferManagement() {
               data-testid="button-template-executive"
               onClick={() => openGenerateDialog("offer_letter")}
             >
-              <FileText className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+              <FileText className="h-8 w-8 text-blue-600 dark:text-blue-400" />
               <span>Executive Offer</span>
               <span className="text-xs text-muted-foreground">Senior management</span>
             </Button>

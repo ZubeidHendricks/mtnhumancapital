@@ -30,7 +30,7 @@ const products: ProductCard[] = [
     description: "AI-powered fleet and logistics management system with real-time tracking, driver management, weighbridge integration, and automated salary calculations.",
     url: "https://aifleetmanager.co.za/dashboard/executive",
     icon: Truck,
-    color: "from-orange-500 to-amber-500",
+    color: "from-teal-600 to-amber-500",
     features: ["Fleet Tracking", "Driver Management", "Weighbridge AI", "Load Reconciliation", "Salary Automation"],
     status: "live"
   },
@@ -48,7 +48,7 @@ const products: ProductCard[] = [
     description: "Advanced data analytics and automation platform for business intelligence. Transform raw data into actionable insights with AI-driven analytics.",
     url: "https://data-vision-automation-fresh-xvyx9.ondigitalocean.app/",
     icon: BarChart3,
-    color: "from-purple-500 to-pink-500",
+    color: "from-blue-500 to-pink-500",
     features: ["Data Analytics", "AI Insights", "Automated Reports", "Dashboard Builder", "Data Integration"],
     status: "live"
   },
@@ -83,7 +83,7 @@ export default function DemoShowcase() {
             <span className="text-sm font-medium">D8taVision Product Suite</span>
           </div>
           
-          <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-primary via-blue-500 to-pink-500 bg-clip-text text-transparent">
             Intelligent Software Solutions
           </h1>
           
@@ -94,7 +94,7 @@ export default function DemoShowcase() {
 
           <div className="flex flex-wrap justify-center gap-4 mb-8">
             <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-card border border-border">
-              <Cpu className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              <Cpu className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               <span className="text-sm">AI-Powered</span>
             </div>
             <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-card border border-border">
@@ -109,7 +109,7 @@ export default function DemoShowcase() {
         </div>
 
         {/* About D8taVision */}
-        <Card className="mb-12 bg-gradient-to-br from-primary/5 to-purple-500/5 border-primary/20">
+        <Card className="mb-12 bg-gradient-to-br from-primary/5 to-blue-500/5 border-primary/20">
           <CardHeader>
             <CardTitle className="text-2xl">About D8taVision</CardTitle>
             <CardDescription className="text-base">
@@ -205,7 +205,7 @@ export default function DemoShowcase() {
         </div>
 
         {/* Contact Section */}
-        <Card className="bg-gradient-to-r from-primary/10 via-purple-500/10 to-pink-500/10 border-primary/20">
+        <Card className="bg-gradient-to-r from-primary/10 via-blue-500/10 to-pink-500/10 border-primary/20">
           <CardContent className="py-8 text-center">
             <h3 className="text-2xl font-bold mb-3">Interested in Our Solutions?</h3>
             <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">

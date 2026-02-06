@@ -404,7 +404,7 @@ export default function KPIManagerReviewPage() {
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3" data-testid="page-title">
-            <Users className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+            <Users className="w-8 h-8 text-blue-600 dark:text-blue-400" />
             Manager Review Dashboard
           </h1>
           <p className="text-muted-foreground mt-2">
@@ -432,7 +432,7 @@ export default function KPIManagerReviewPage() {
                   onClick={() => setSelectedCycleId(cycle.id)}
                   className={cn(
                     selectedCycleId === cycle.id 
-                      ? "bg-purple-600 hover:bg-purple-700" 
+                      ? "bg-blue-600 hover:bg-blue-700" 
                       : "border-border text-muted-foreground"
                   )}
                   data-testid={`cycle-button-${cycle.id}`}
@@ -444,7 +444,7 @@ export default function KPIManagerReviewPage() {
             </div>
 
             {selectedCycle && (
-              <Card className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 dark:from-purple-900/20 dark:to-blue-900/20 border-border mb-6">
+              <Card className="bg-gradient-to-r from-blue-500/10 to-blue-500/10 dark:from-blue-900/20 dark:to-blue-900/20 border-border mb-6">
                 <CardContent className="py-4">
                   <div className="flex items-center justify-between flex-wrap gap-4">
                     <div className="flex items-center gap-6">
@@ -470,7 +470,7 @@ export default function KPIManagerReviewPage() {
 
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-purple-600 dark:text-purple-400" />
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600 dark:text-blue-400" />
               </div>
             ) : (
               <div className="space-y-6">

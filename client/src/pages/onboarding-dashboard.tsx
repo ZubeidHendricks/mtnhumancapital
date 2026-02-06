@@ -111,23 +111,23 @@ const statusConfig: Record<string, { bg: string; text: string; icon: any; border
 const priorityConfig: Record<string, { bg: string; text: string; border: string }> = {
   low: { bg: "bg-slate-500/20", text: "text-slate-300", border: "border-slate-500/30" },
   normal: { bg: "bg-blue-500/20", text: "text-blue-300", border: "border-blue-500/30" },
-  high: { bg: "bg-orange-500/20", text: "text-orange-300", border: "border-orange-500/30" },
+  high: { bg: "bg-teal-600/20", text: "text-teal-300", border: "border-teal-600/30" },
   urgent: { bg: "bg-red-500/20", text: "text-red-300", border: "border-red-500/30" },
 };
 
 const channelConfig: Record<string, { icon: any; color: string }> = {
   whatsapp: { icon: MessageSquare, color: "text-green-600 dark:text-green-400" },
   email: { icon: Mail, color: "text-blue-600 dark:text-blue-400" },
-  system: { icon: Bot, color: "text-purple-600 dark:text-purple-400" },
+  system: { icon: Bot, color: "text-blue-600 dark:text-blue-400" },
   manual: { icon: User, color: "text-slate-400" },
 };
 
 const agentColors: Record<string, string> = {
   onboarding_coordinator: "from-blue-500/30 to-blue-600/30 border-blue-500/30",
   welcome_agent: "from-green-500/30 to-green-600/30 border-green-500/30",
-  contract_agent: "from-purple-500/30 to-purple-600/30 border-purple-500/30",
+  contract_agent: "from-blue-500/30 to-blue-600/30 border-blue-500/30",
   document_collector: "from-amber-500/30 to-amber-600/30 border-amber-500/30",
-  reminder: "from-orange-500/30 to-orange-600/30 border-orange-500/30",
+  reminder: "from-teal-600/30 to-teal-700/30 border-teal-600/30",
   escalation: "from-red-500/30 to-red-600/30 border-red-500/30",
 };
 
@@ -548,7 +548,7 @@ export default function OnboardingDashboard() {
               <div className="space-y-6">
                 <Card className="border-border dark:border-white/10 bg-card/20 overflow-hidden">
                   {/* Candidate Header */}
-                  <div className="bg-gradient-to-r from-primary/20 to-purple-500/20 border-b border-border dark:border-white/10 p-6">
+                  <div className="bg-gradient-to-r from-primary/20 to-blue-500/20 border-b border-border dark:border-white/10 p-6">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className="w-14 h-14 rounded-full bg-white/10 backdrop-blur flex items-center justify-center text-white font-bold text-xl">
@@ -629,7 +629,7 @@ export default function OnboardingDashboard() {
                                             Due: {new Date(doc.dueDate).toLocaleDateString()}
                                           </span>
                                           {doc.reminderCount > 0 && (
-                                            <span className="flex items-center gap-1 text-orange-600 dark:text-orange-400">
+                                            <span className="flex items-center gap-1 text-teal-700 dark:text-teal-400">
                                               <Bell className="w-3 h-3" />
                                               {doc.reminderCount} reminder{doc.reminderCount > 1 ? "s" : ""} sent
                                             </span>

@@ -77,7 +77,7 @@ export function AHCFeatures() {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <Badge className="mb-4 bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 border-purple-500/20">DISCOVERY</Badge>
+            <Badge className="mb-4 bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 border-blue-500/20">DISCOVERY</Badge>
             <h3 className="text-4xl font-bold mb-4">Read through the lines.</h3>
             <p className="text-gray-400 text-lg mb-6">
               Spot hidden, growing, unusual talent, before your competitor does.
@@ -97,11 +97,11 @@ export function AHCFeatures() {
                   <div className="bg-white/5 p-4 rounded-xl border border-white/5 blur-sm opacity-50"></div>
                   <motion.div 
                     whileHover={{ scale: 1.05 }}
-                    className="bg-purple-500/20 p-4 rounded-xl border border-purple-500/50 shadow-[0_0_30px_-5px_rgba(168,85,247,0.3)]"
+                    className="bg-blue-500/20 p-4 rounded-xl border border-blue-500/50 shadow-[0_0_30px_-5px_rgba(59,130,246,0.3)]"
                   >
-                    <Sparkles className="w-8 h-8 text-purple-600 dark:text-purple-400 mb-2" />
-                    <div className="h-2 bg-purple-400/50 rounded w-1/2 mb-1"></div>
-                    <div className="h-2 bg-purple-400/30 rounded w-3/4"></div>
+                    <Sparkles className="w-8 h-8 text-blue-600 dark:text-blue-400 mb-2" />
+                    <div className="h-2 bg-blue-400/50 rounded w-1/2 mb-1"></div>
+                    <div className="h-2 bg-blue-400/30 rounded w-3/4"></div>
                   </motion.div>
                   <div className="bg-white/5 p-4 rounded-xl border border-white/5 blur-sm opacity-50"></div>
                   <div className="bg-white/5 p-4 rounded-xl border border-white/5 blur-sm opacity-50"></div>
@@ -121,7 +121,7 @@ export function AHCFeatures() {
             <div className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-zinc-800 to-zinc-900 border border-white/10 p-8 flex items-center justify-center">
                <div className="flex gap-4 items-end">
                   <motion.div initial={{ height: 20 }} whileInView={{ height: 120 }} className="w-12 bg-white/10 rounded-t-lg"></motion.div>
-                  <motion.div initial={{ height: 20 }} whileInView={{ height: 180 }} className="w-12 bg-primary rounded-t-lg shadow-[0_0_20px_rgba(249,115,22,0.5)]"></motion.div>
+                  <motion.div initial={{ height: 20 }} whileInView={{ height: 180 }} className="w-12 bg-primary rounded-t-lg shadow-[0_0_20px_rgba(13,148,136,0.5)]"></motion.div>
                   <motion.div initial={{ height: 20 }} whileInView={{ height: 90 }} className="w-12 bg-white/10 rounded-t-lg"></motion.div>
                </div>
             </div>
@@ -152,7 +152,7 @@ export function AHCFeatures() {
              whileInView={{ opacity: 1, y: 0 }}
              transition={{ duration: 0.8 }}
            >
-             <Badge className="mb-6 bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-500/20 border-orange-500/20">OUTREACH</Badge>
+             <Badge className="mb-6 bg-teal-600/10 text-teal-700 dark:text-teal-400 hover:bg-teal-600/20 border-teal-600/20">OUTREACH</Badge>
              <h2 className="text-4xl font-bold mb-6">Augment your outreach</h2>
              <p className="text-gray-400 max-w-2xl mx-auto text-lg mb-8">
                Get in contact with the best-fitting talent without leaving AHC. And with Agent Mode, you outreach to all suitable candidates in batch.

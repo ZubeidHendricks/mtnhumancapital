@@ -34,8 +34,8 @@ const PIPELINE_STAGES = [
   { key: "sourcing", name: "Sourcing", color: "from-slate-500 to-slate-600", bgColor: "bg-slate-500/10", borderColor: "border-slate-500/30" },
   { key: "screening", name: "Screening", color: "from-blue-500 to-blue-600", bgColor: "bg-blue-500/10", borderColor: "border-blue-500/30" },
   { key: "shortlisted", name: "Shortlisted", color: "from-yellow-500 to-amber-500", bgColor: "bg-yellow-500/10", borderColor: "border-yellow-500/30" },
-  { key: "interviewing", name: "Interviewing", color: "from-purple-500 to-purple-600", bgColor: "bg-purple-500/10", borderColor: "border-purple-500/30" },
-  { key: "offer_pending", name: "Offer Pending", color: "from-amber-500 to-orange-500", bgColor: "bg-amber-500/10", borderColor: "border-amber-500/30" },
+  { key: "interviewing", name: "Interviewing", color: "from-blue-500 to-blue-600", bgColor: "bg-blue-500/10", borderColor: "border-blue-500/30" },
+  { key: "offer_pending", name: "Offer Pending", color: "from-amber-500 to-teal-600", bgColor: "bg-amber-500/10", borderColor: "border-amber-500/30" },
   { key: "offer_accepted", name: "Offer Accepted", color: "from-green-500 to-emerald-500", bgColor: "bg-green-500/10", borderColor: "border-green-500/30" },
   { key: "integrity_checks", name: "Integrity", color: "from-blue-600 to-indigo-600", bgColor: "bg-blue-600/10", borderColor: "border-blue-600/30" },
   { key: "integrity_passed", name: "Checks Passed", color: "from-emerald-500 to-teal-500", bgColor: "bg-emerald-500/10", borderColor: "border-emerald-500/30" },
@@ -303,7 +303,7 @@ export default function PipelineBoard() {
                                       {!isLastStage && (
                                         <Button
                                           size="sm"
-                                          className="flex-1 h-7 text-xs bg-gradient-to-r from-primary/80 to-purple-500/80 hover:from-primary hover:to-purple-500"
+                                          className="flex-1 h-7 text-xs bg-gradient-to-r from-primary/80 to-blue-500/80 hover:from-primary hover:to-blue-500"
                                           onClick={() => handleAdvanceCandidate(candidate)}
                                           disabled={advancingCandidate === candidate.id}
                                           data-testid={`button-advance-${candidate.id}`}

@@ -843,7 +843,7 @@ export default function ExecutiveDashboardCustom() {
             <div className="text-3xl font-bold text-green-500">{totalJobs}</div>
           </CardContent>
         </Card>
-        <Card className="border-purple-200 dark:border-purple-700">
+        <Card className="border-blue-200 dark:border-blue-700">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <Building2 className="w-4 h-4" />
@@ -851,7 +851,7 @@ export default function ExecutiveDashboardCustom() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-purple-500">{totalEmployees}</div>
+            <div className="text-3xl font-bold text-blue-500">{totalEmployees}</div>
           </CardContent>
         </Card>
       </div>

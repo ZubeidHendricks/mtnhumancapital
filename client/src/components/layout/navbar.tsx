@@ -69,7 +69,7 @@ export function Navbar() {
               {isModuleEnabled("recruitment") && (
                 <Link href="/recruitment-agent">
                   <DropdownMenuItem className="cursor-pointer hover:bg-accent focus:bg-accent">
-                    <UserSearch className="w-4 h-4 mr-2 text-purple-600 dark:text-purple-400" />
+                    <UserSearch className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />
                     <span>AI Recruitment</span>
                   </DropdownMenuItem>
                 </Link>
@@ -140,13 +140,13 @@ export function Navbar() {
               </Link>
               <Link href="/document-library">
                 <DropdownMenuItem className="cursor-pointer hover:bg-accent focus:bg-accent">
-                  <ClipboardList className="w-4 h-4 mr-2 text-purple-600 dark:text-purple-400" />
+                  <ClipboardList className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />
                   <span>Document Library</span>
                 </DropdownMenuItem>
               </Link>
               <Link href="/cv-templates">
                 <DropdownMenuItem className="cursor-pointer hover:bg-accent focus:bg-accent">
-                  <FileText className="w-4 h-4 mr-2 text-orange-600 dark:text-orange-400" />
+                  <FileText className="w-4 h-4 mr-2 text-teal-700 dark:text-teal-400" />
                   <span>CV Templates</span>
                 </DropdownMenuItem>
               </Link>
@@ -168,7 +168,7 @@ export function Navbar() {
               <DropdownMenuLabel className="text-xs text-muted-foreground">Support</DropdownMenuLabel>
               <Link href="/ai-support">
                 <DropdownMenuItem className="cursor-pointer hover:bg-accent focus:bg-accent">
-                  <Sparkles className="w-4 h-4 mr-2 text-purple-600 dark:text-purple-400" />
+                  <Sparkles className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />
                   <span>AI Support</span>
                 </DropdownMenuItem>
               </Link>
@@ -215,7 +215,7 @@ export function Navbar() {
             <DropdownMenuContent align="end" className="w-56 bg-popover border-border text-popover-foreground">
               <Link href="/recruitment-dashboard">
                 <DropdownMenuItem className="cursor-pointer hover:bg-accent focus:bg-accent">
-                  <TrendingUp className="w-4 h-4 mr-2 text-purple-600 dark:text-purple-400" />
+                  <TrendingUp className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />
                   <span>Recruitment Dashboard</span>
                 </DropdownMenuItem>
               </Link>
@@ -251,13 +251,13 @@ export function Navbar() {
               </Link>
               <a href="http://165.227.113.197" target="_blank" rel="noopener noreferrer">
                 <DropdownMenuItem className="cursor-pointer hover:bg-accent focus:bg-accent">
-                  <BookOpen className="w-4 h-4 mr-2 text-orange-600 dark:text-orange-400" />
+                  <BookOpen className="w-4 h-4 mr-2 text-teal-700 dark:text-teal-400" />
                   <span>Learning Management</span>
                 </DropdownMenuItem>
               </a>
               <Link href="/kpi-manager-review">
                 <DropdownMenuItem className="cursor-pointer hover:bg-accent focus:bg-accent">
-                  <UserCheck className="w-4 h-4 mr-2 text-purple-600 dark:text-purple-400" />
+                  <UserCheck className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />
                   <span>Manager Review</span>
                 </DropdownMenuItem>
               </Link>
@@ -288,13 +288,13 @@ export function Navbar() {
             <DropdownMenuContent align="end" className="w-56 bg-popover border-border text-popover-foreground">
               <Link href="/admin-dashboard">
                 <DropdownMenuItem className="cursor-pointer hover:bg-accent focus:bg-accent">
-                  <Settings className="w-4 h-4 mr-2 text-purple-600 dark:text-purple-400" />
+                  <Settings className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />
                   <span>System Administration</span>
                 </DropdownMenuItem>
               </Link>
               <Link href="/tenant-management">
                 <DropdownMenuItem className="cursor-pointer hover:bg-accent focus:bg-accent">
-                  <Building2 className="w-4 h-4 mr-2 text-orange-600 dark:text-orange-400" />
+                  <Building2 className="w-4 h-4 mr-2 text-teal-700 dark:text-teal-400" />
                   <span>Tenant Management</span>
                 </DropdownMenuItem>
               </Link>

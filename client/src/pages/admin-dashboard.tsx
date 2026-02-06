@@ -280,7 +280,7 @@ export default function AdminDashboard() {
               <TenantSelector currentTenant={currentTenant} />
               <Button 
                 onClick={() => navigate("/persona-management")}
-                className="bg-purple-600 hover:bg-purple-700"
+                className="bg-blue-600 hover:bg-blue-700"
                 data-testid="button-persona-management"
               >
                 <Sparkles className="w-4 h-4 mr-2" />

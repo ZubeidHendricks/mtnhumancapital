@@ -298,7 +298,7 @@ export default function IntegrityAgent() {
     if (score === null || score === undefined) return "text-gray-500";
     if (score === 0) return "text-green-500";
     if (score < 30) return "text-yellow-500";
-    if (score < 70) return "text-orange-500";
+    if (score < 70) return "text-teal-600";
     return "text-red-500";
   };
 
@@ -651,12 +651,12 @@ export default function IntegrityAgent() {
                                                     
                                                     {/* Follow-Up Required Alert */}
                                                     {checkData.requiresFollowUp && (
-                                                      <div className="mt-2 p-2 rounded bg-orange-500/10 border border-orange-500/30 overflow-hidden">
-                                                        <div className="flex items-center gap-1 text-orange-500 mb-1">
+                                                      <div className="mt-2 p-2 rounded bg-teal-600/10 border border-teal-600/30 overflow-hidden">
+                                                        <div className="flex items-center gap-1 text-teal-600 mb-1">
                                                           <Bell className="w-3 h-3 shrink-0" />
                                                           <span className="text-[10px] font-semibold">HR Follow-Up Required:</span>
                                                         </div>
-                                                        <div className="text-[10px] text-orange-500/80" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                                                        <div className="text-[10px] text-teal-600/80" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                                                           {checkData.followUpReason || 'Manual verification needed'}
                                                         </div>
                                                       </div>

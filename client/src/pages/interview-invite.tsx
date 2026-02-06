@@ -250,10 +250,10 @@ export default function InterviewInvite() {
 
   if (state === "loading" && !session) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
         <Card className="w-full max-w-md bg-card/80 backdrop-blur border-border dark:border-white/10">
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <Loader2 className="h-12 w-12 animate-spin text-purple-600 dark:text-purple-400 mb-4" />
+            <Loader2 className="h-12 w-12 animate-spin text-blue-600 dark:text-blue-400 mb-4" />
             <p className="text-muted-foreground">Loading your interview...</p>
           </CardContent>
         </Card>
@@ -301,7 +301,7 @@ export default function InterviewInvite() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex flex-col">
       <header className="p-4 border-b border-border dark:border-white/10 bg-background/50 backdrop-blur">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div>
@@ -326,8 +326,8 @@ export default function InterviewInvite() {
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-6">
-              <div className="w-32 h-32 rounded-full bg-purple-500/20 border-2 border-purple-500/50 flex items-center justify-center">
-                <Mic className="h-12 w-12 text-purple-600 dark:text-purple-400" />
+              <div className="w-32 h-32 rounded-full bg-blue-500/20 border-2 border-blue-500/50 flex items-center justify-center">
+                <Mic className="h-12 w-12 text-blue-600 dark:text-blue-400" />
               </div>
               <div className="text-center text-sm text-muted-foreground space-y-1">
                 <p>Make sure you're in a quiet environment</p>
@@ -336,7 +336,7 @@ export default function InterviewInvite() {
               <Button 
                 size="lg" 
                 onClick={startInterview}
-                className="bg-purple-600 hover:bg-purple-700 text-white px-8"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8"
                 data-testid="btn-start-interview"
               >
                 <Mic className="h-5 w-5 mr-2" />
@@ -378,7 +378,7 @@ export default function InterviewInvite() {
                           exit={{ scale: 0 }}
                           className="flex items-center gap-1"
                         >
-                          <Volume2 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                          <Volume2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -402,7 +402,7 @@ export default function InterviewInvite() {
                         <div
                           className={`max-w-[85%] rounded-2xl px-4 py-2 ${
                             transcript.role === 'user'
-                              ? 'bg-purple-600 text-white'
+                              ? 'bg-blue-600 text-white'
                               : 'bg-card border border-border dark:border-white/10 text-white'
                           }`}
                         >

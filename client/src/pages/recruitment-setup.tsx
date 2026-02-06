@@ -163,7 +163,7 @@ export default function RecruitmentSetup() {
     <div className="container mx-auto py-8 px-4 max-w-6xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-          <Settings className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+          <Settings className="h-8 w-8 text-blue-600 dark:text-blue-400" />
           Recruitment Setup
         </h1>
         <p className="text-muted-foreground mt-2">
@@ -232,7 +232,7 @@ export default function RecruitmentSetup() {
                           variant="outline" 
                           size="sm"
                           onClick={() => handleConnect(platform.id)}
-                          className="border-purple-500/30 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10"
+                          className="border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10"
                           data-testid={`button-connect-${platform.id}`}
                         >
                           <Key className="h-4 w-4 mr-1" />
@@ -285,7 +285,7 @@ export default function RecruitmentSetup() {
           <Card className="w-full max-w-md bg-card border-border">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Key className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                <Key className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 Connect {platforms.find(p => p.id === selectedPlatform)?.name}
               </CardTitle>
               <CardDescription>Enter your API credentials to connect this platform</CardDescription>
@@ -331,7 +331,7 @@ export default function RecruitmentSetup() {
                   Cancel
                 </Button>
                 <Button 
-                  className="flex-1 bg-purple-600 hover:bg-purple-700"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
                   onClick={handleSaveCredentials}
                   disabled={connectPlatformMutation.isPending}
                   data-testid="button-save-credentials"

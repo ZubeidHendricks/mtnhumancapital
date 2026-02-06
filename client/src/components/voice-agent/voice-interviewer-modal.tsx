@@ -62,7 +62,7 @@ export function VoiceInterviewerModal() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-gradient-to-r from-purple-500 to-pink-600 text-white hover:from-purple-600 hover:to-pink-700 border-0 shadow-lg shadow-purple-500/20 gap-2">
+        <Button className="bg-gradient-to-r from-blue-500 to-pink-600 text-white hover:from-blue-600 hover:to-pink-700 border-0 shadow-lg shadow-blue-500/20 gap-2">
           <Mic className="w-4 h-4" /> Start Voice Interview
         </Button>
       </DialogTrigger>
@@ -83,7 +83,7 @@ export function VoiceInterviewerModal() {
         </div>
 
         {/* Visualizer Area */}
-        <div className="flex-1 flex flex-col items-center justify-center relative bg-gradient-to-b from-black to-purple-950/30">
+        <div className="flex-1 flex flex-col items-center justify-center relative bg-gradient-to-b from-black to-blue-950/30">
           <HumeVisualizer state={state} />
           
           <div className="absolute bottom-8 text-center w-full px-8">

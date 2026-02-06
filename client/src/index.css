@@ -50,7 +50,7 @@
 }
 
 :root {
-  /* Dark Theme Default - Orange & Blue Brand */
+  /* Dark Theme Default - Teal & Blue Professional Brand */
   --background: 222 47% 8%; /* Dark Blue-Gray */
   --foreground: 210 40% 98%;
 
@@ -60,7 +60,7 @@
   --popover: 222 47% 11%;
   --popover-foreground: 210 40% 98%;
 
-  --primary: 25 95% 53%; /* Orange - Brand Color */
+  --primary: 174 84% 32%; /* Teal - Professional Brand Color */
   --primary-foreground: 0 0% 100%;
 
   --secondary: 210 100% 30%; /* Dark Blue */
@@ -69,7 +69,7 @@
   --muted: 222 47% 15%;
   --muted-foreground: 215 20% 65%;
 
-  --accent: 25 95% 53%; /* Orange */
+  --accent: 174 84% 32%; /* Teal */
   --accent-foreground: 0 0% 100%;
 
   --destructive: 0 62% 50%;
@@ -77,18 +77,18 @@
 
   --border: 222 47% 18%;
   --input: 222 47% 18%;
-  --ring: 25 95% 53%; /* Orange Ring */
+  --ring: 174 84% 32%; /* Teal Ring */
   
   --button-outline: hsl(0 0% 100% / 0.2); /* White border for dark theme */
 
   --radius: 0.5rem;
   
-  /* Chart Colors using Orange/Blue Palette */
-  --chart-1: 25 95% 53%; /* Orange */
+  /* Chart Colors using Teal/Blue Palette */
+  --chart-1: 174 84% 32%; /* Teal */
   --chart-2: 210 100% 50%; /* Blue */
-  --chart-3: 45 100% 51%; /* Yellow */
+  --chart-3: 45 100% 51%; /* Amber */
   --chart-4: 0 0% 92%;
-  --chart-5: 160 84% 39%;
+  --chart-5: 160 84% 39%; /* Green */
 }
 
 .light {
@@ -134,7 +134,7 @@
   --chart-2: 210 70% 50%; /* Blue */
   --chart-3: 160 60% 45%; /* Green */
   --chart-4: 45 90% 48%; /* Amber */
-  --chart-5: 280 60% 55%; /* Purple */
+  --chart-5: 210 70% 55%; /* Steel Blue */
 }
 
 /* Dark sidebar styling for light theme - matching reference image */
@@ -490,7 +490,7 @@
   }
   
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-linear-to-r from-primary to-orange-600;
+    @apply bg-clip-text text-transparent bg-linear-to-r from-primary to-teal-600;
   }
 
   .glow-effect {

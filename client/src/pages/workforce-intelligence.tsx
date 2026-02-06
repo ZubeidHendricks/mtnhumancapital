@@ -82,7 +82,7 @@ const SKILL_STATUS_COLORS = {
   critical_gap: { bg: "bg-red-500/20", text: "text-red-600 dark:text-red-400", border: "border-red-500/30", dot: "bg-red-500" },
   training_needed: { bg: "bg-yellow-500/20", text: "text-yellow-600 dark:text-yellow-400", border: "border-yellow-500/30", dot: "bg-yellow-500" },
   good_match: { bg: "bg-green-500/20", text: "text-green-600 dark:text-green-400", border: "border-green-500/30", dot: "bg-green-500" },
-  beyond_expectations: { bg: "bg-purple-500/20", text: "text-purple-600 dark:text-purple-400", border: "border-purple-500/30", dot: "bg-purple-500" },
+  beyond_expectations: { bg: "bg-blue-500/20", text: "text-blue-600 dark:text-blue-400", border: "border-blue-500/30", dot: "bg-blue-500" },
 };
 
 export default function WorkforceIntelligence() {
@@ -378,11 +378,11 @@ export default function WorkforceIntelligence() {
         <div className="container mx-auto px-4">
           <div className="mb-8 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-amber-500 to-teal-600">
                 <Brain className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-amber-400 to-teal-400 bg-clip-text text-transparent">
                   Workforce Intelligence
                 </h1>
                 <p className="text-muted-foreground">
@@ -410,7 +410,7 @@ export default function WorkforceIntelligence() {
           {/* AI Assistant & Alerts Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {/* Ask AHC - AI Assistant */}
-            <Card className="bg-gradient-to-br from-cyan-500/10 via-purple-500/10 to-pink-500/10 dark:from-cyan-900/30 dark:via-purple-900/30 dark:to-pink-900/30 border-border overflow-hidden">
+            <Card className="bg-gradient-to-br from-cyan-500/10 via-blue-500/10 to-pink-500/10 dark:from-cyan-900/30 dark:via-blue-900/30 dark:to-pink-900/30 border-border overflow-hidden">
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-2">
                   <Badge className="bg-amber-500/20 text-amber-400 border-0">Ask AHC</Badge>
@@ -436,7 +436,7 @@ export default function WorkforceIntelligence() {
                     <Button 
                       onClick={handleAskAI}
                       disabled={isAiThinking || !aiQuestion.trim()}
-                      className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+                      className="bg-gradient-to-r from-amber-500 to-teal-600 hover:from-amber-600 hover:to-teal-700"
                       data-testid="button-ask-ai"
                     >
                       {isAiThinking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
@@ -500,7 +500,7 @@ export default function WorkforceIntelligence() {
                   ))}
                 </div>
 
-                <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                <Button className="w-full bg-gradient-to-r from-blue-600 to-pink-600 hover:from-blue-700 hover:to-pink-700">
                   Ask anything
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
@@ -508,7 +508,7 @@ export default function WorkforceIntelligence() {
             </Card>
 
             {/* Execution Co-Pilot - Alerts */}
-            <Card className="bg-gradient-to-br from-pink-500/10 via-purple-500/10 to-blue-500/10 dark:from-pink-900/30 dark:via-purple-900/30 dark:to-blue-900/30 border-border overflow-hidden">
+            <Card className="bg-gradient-to-br from-pink-500/10 via-blue-500/10 to-blue-500/10 dark:from-pink-900/30 dark:via-blue-900/30 dark:to-blue-900/30 border-border overflow-hidden">
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-2">
                   <Badge className="bg-pink-500/20 text-pink-400 border-0">Execution Co-Pilot</Badge>
@@ -532,7 +532,7 @@ export default function WorkforceIntelligence() {
                           <Badge className={`text-xs ${
                             alert.type === "urgent" 
                               ? "bg-red-100 text-red-700" 
-                              : "bg-purple-100 text-purple-700"
+                              : "bg-blue-100 text-blue-700"
                           }`}>
                             {alert.type === "urgent" ? <Flame className="h-3 w-3 mr-1" /> : <TrendingUp className="h-3 w-3 mr-1" />}
                             {alert.type === "urgent" ? "Urgent" : "Promotion alert"}
@@ -552,7 +552,7 @@ export default function WorkforceIntelligence() {
                   </div>
                 ))}
 
-                <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+                <Button className="w-full bg-gradient-to-r from-blue-600 to-blue-600 hover:from-blue-700 hover:to-blue-700">
                   Connect your systems
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
@@ -562,32 +562,32 @@ export default function WorkforceIntelligence() {
 
           <Tabs defaultValue="dashboard" className="space-y-6">
             <TabsList className="bg-muted border border-border p-1 flex-wrap h-auto gap-1">
-              <TabsTrigger value="dashboard" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-foreground">
+              <TabsTrigger value="dashboard" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-teal-600 data-[state=active]:text-foreground">
                 Dashboard
               </TabsTrigger>
-              <TabsTrigger value="skills" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-foreground">
+              <TabsTrigger value="skills" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-teal-600 data-[state=active]:text-foreground">
                 Skill Assessment
               </TabsTrigger>
-              <TabsTrigger value="passport" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-foreground">
+              <TabsTrigger value="passport" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-teal-600 data-[state=active]:text-foreground">
                 <Award className="h-4 w-4 mr-1" />
                 Skill Passport
               </TabsTrigger>
-              <TabsTrigger value="ambitions" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-foreground">
+              <TabsTrigger value="ambitions" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-teal-600 data-[state=active]:text-foreground">
                 <Target className="h-4 w-4 mr-1" />
                 Ambitions
               </TabsTrigger>
-              <TabsTrigger value="mentors" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-foreground">
+              <TabsTrigger value="mentors" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-teal-600 data-[state=active]:text-foreground">
                 <UserCheck className="h-4 w-4 mr-1" />
                 Mentors
               </TabsTrigger>
-              <TabsTrigger value="growth" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-foreground">
+              <TabsTrigger value="growth" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-teal-600 data-[state=active]:text-foreground">
                 <TrendingUp className="h-4 w-4 mr-1" />
                 Growth Areas
               </TabsTrigger>
-              <TabsTrigger value="matching" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-foreground">
+              <TabsTrigger value="matching" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-teal-600 data-[state=active]:text-foreground">
                 Matching
               </TabsTrigger>
-              <TabsTrigger value="people" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-foreground">
+              <TabsTrigger value="people" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-teal-600 data-[state=active]:text-foreground">
                 People
               </TabsTrigger>
             </TabsList>
@@ -776,7 +776,7 @@ export default function WorkforceIntelligence() {
                                   activity.activityType === "skill_added" ? "bg-green-500" :
                                   activity.activityType === "gap_closed" ? "bg-blue-500" :
                                   activity.activityType === "skill_improved" ? "bg-amber-500" :
-                                  "bg-purple-500"
+                                  "bg-blue-500"
                                 }`} />
                                 <div className="space-y-1">
                                   <p className="text-xs text-muted-foreground">{formatTimeAgo(activity.createdAt)}</p>
@@ -830,8 +830,8 @@ export default function WorkforceIntelligence() {
                       <span className="w-2 h-2 rounded-full bg-green-500 mr-1" />
                       Good skill match {skillStatusCounts.good_match}
                     </Badge>
-                    <Badge className="bg-purple-500/20 text-purple-600 dark:text-purple-400 border-0">
-                      <span className="w-2 h-2 rounded-full bg-purple-500 mr-1" />
+                    <Badge className="bg-blue-500/20 text-blue-600 dark:text-blue-400 border-0">
+                      <span className="w-2 h-2 rounded-full bg-blue-500 mr-1" />
                       Beyond expectations {skillStatusCounts.beyond_expectations}
                     </Badge>
                   </div>
@@ -890,7 +890,7 @@ export default function WorkforceIntelligence() {
                                     <div className="flex items-center gap-2">
                                       <div className="flex-1 h-2 bg-muted-foreground/30 rounded-full overflow-hidden min-w-0">
                                         <div 
-                                          className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full"
+                                          className="h-full bg-gradient-to-r from-amber-500 to-teal-600 rounded-full"
                                           style={{ width: `${(skill.avgProficiency / 8) * 100}%` }}
                                         />
                                       </div>
@@ -1022,7 +1022,7 @@ export default function WorkforceIntelligence() {
                                           key={level}
                                           className={`h-3 flex-1 rounded-sm ${
                                             level <= es.proficiencyLevel 
-                                              ? 'bg-gradient-to-r from-amber-500 to-orange-500' 
+                                              ? 'bg-gradient-to-r from-amber-500 to-teal-600' 
                                               : 'bg-muted-foreground/30'
                                           }`}
                                         />
@@ -1059,7 +1059,7 @@ export default function WorkforceIntelligence() {
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                        <Target className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                        <Target className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                         Career Ambitions
                       </CardTitle>
                       <CardDescription className="text-muted-foreground">
@@ -1068,7 +1068,7 @@ export default function WorkforceIntelligence() {
                     </div>
                     <Button 
                       onClick={() => setShowAmbitionForm(true)}
-                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                      className="bg-gradient-to-r from-blue-500 to-pink-500 hover:from-blue-600 hover:to-pink-600"
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Add Ambition
@@ -1117,7 +1117,7 @@ export default function WorkforceIntelligence() {
                               }
                             }}
                             disabled={!newAmbitionEmployee || !newAmbitionTitle || createAmbitionMutation.isPending}
-                            className="bg-purple-500 hover:bg-purple-600"
+                            className="bg-blue-500 hover:bg-blue-600"
                           >
                             {createAmbitionMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Ambition'}
                           </Button>
@@ -1137,7 +1137,7 @@ export default function WorkforceIntelligence() {
                       <Button 
                         onClick={() => setShowAmbitionForm(true)}
                         variant="outline" 
-                        className="border-purple-500/50 bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400"
+                        className="border-blue-500/50 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400"
                       >
                         <Plus className="h-4 w-4 mr-2" />
                         Create First Ambition
@@ -1148,11 +1148,11 @@ export default function WorkforceIntelligence() {
                       {ambitions.map(ambition => {
                         const emp = employeesWithSkills.find(e => e.id === ambition.employeeId);
                         return (
-                          <Card key={ambition.id} className="bg-muted border-border hover:border-purple-500/50 transition-colors">
+                          <Card key={ambition.id} className="bg-muted border-border hover:border-blue-500/50 transition-colors">
                             <CardContent className="p-4">
                               <div className="flex items-start gap-3 mb-3">
                                 <Avatar className="h-10 w-10">
-                                  <AvatarFallback className="bg-purple-500/20 text-purple-600 dark:text-purple-400">
+                                  <AvatarFallback className="bg-blue-500/20 text-blue-600 dark:text-blue-400">
                                     {emp ? getInitials(emp.fullName) : '?'}
                                   </AvatarFallback>
                                 </Avatar>
@@ -1163,7 +1163,7 @@ export default function WorkforceIntelligence() {
                               </div>
                               <div className="space-y-2">
                                 <div className="flex items-center gap-2">
-                                  <Compass className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                                  <Compass className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                                   <span className="text-sm text-foreground">Target: <span className="font-medium text-foreground">{ambition.targetJobTitle}</span></span>
                                 </div>
                                 {ambition.targetDepartment && (
@@ -1379,13 +1379,13 @@ export default function WorkforceIntelligence() {
                         const emp = employeesWithSkills.find(e => e.id === area.employeeId);
                         const priorityColors = {
                           critical: 'border-red-500/50 bg-red-500/10',
-                          high: 'border-orange-500/50 bg-orange-500/10',
+                          high: 'border-teal-600/50 bg-teal-600/10',
                           medium: 'border-yellow-500/50 bg-yellow-500/10',
                           low: 'border-green-500/50 bg-green-500/10'
                         };
                         const priorityBadgeColors = {
                           critical: 'bg-red-500/20 text-red-600 dark:text-red-400',
-                          high: 'bg-orange-500/20 text-orange-600 dark:text-orange-400',
+                          high: 'bg-teal-600/20 text-teal-700 dark:text-teal-400',
                           medium: 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400',
                           low: 'bg-green-500/20 text-green-600 dark:text-green-400'
                         };
@@ -1520,7 +1520,7 @@ export default function WorkforceIntelligence() {
                             <Award className="h-4 w-4 mr-2" />
                             Select Skills
                             {selectedMatchingSkills.length > 0 && (
-                              <Badge className="ml-2 bg-purple-500/20 text-purple-600 dark:text-purple-400 border-0">
+                              <Badge className="ml-2 bg-blue-500/20 text-blue-600 dark:text-blue-400 border-0">
                                 {selectedMatchingSkills.length}
                               </Badge>
                             )}
@@ -1671,7 +1671,7 @@ export default function WorkforceIntelligence() {
                                     if (s === null) return "bg-muted";
                                     if (s >= 80) return "bg-green-500/20";
                                     if (s >= 60) return "bg-yellow-500/20";
-                                    if (s >= 40) return "bg-orange-500/20";
+                                    if (s >= 40) return "bg-teal-600/20";
                                     return "bg-red-500/20";
                                   };
                                   const getScoreIcon = (s: number | null) => {
@@ -1778,7 +1778,7 @@ export default function WorkforceIntelligence() {
                           {seedDemoMutation.isPending ? "Loading..." : "Load Demo Data"}
                         </Button>
                       )}
-                      <Button className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-foreground">
+                      <Button className="bg-gradient-to-r from-amber-500 to-teal-600 hover:from-amber-600 hover:to-teal-700 text-foreground">
                         <Plus className="h-4 w-4 mr-2" />
                         Add Person
                       </Button>
@@ -1798,7 +1798,7 @@ export default function WorkforceIntelligence() {
                       <p className="text-muted-foreground mb-4">
                         Upload CVs or add employees to build your workforce intelligence
                       </p>
-                      <Button className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-foreground">
+                      <Button className="bg-gradient-to-r from-amber-500 to-teal-600 hover:from-amber-600 hover:to-teal-700 text-foreground">
                         <Plus className="h-4 w-4 mr-2" />
                         Add Your First Person
                       </Button>

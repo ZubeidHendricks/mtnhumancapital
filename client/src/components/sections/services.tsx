@@ -19,7 +19,7 @@ const services = [
     icon: Briefcase,
     title: "Operations & Projects",
     description: "Automated contract management, KPI tracking, and fleet management for seamless execution.",
-    color: "text-purple-500 dark:text-purple-400"
+    color: "text-blue-500 dark:text-blue-400"
   },
   {
     icon: Users,
@@ -59,7 +59,7 @@ export function Services() {
       <div className="container mx-auto px-6">
         <div className="mb-16 md:text-center max-w-3xl mx-auto">
           <h2 className="text-3xl md:text-5xl font-bold mb-6 text-foreground">
-            Comprehensive <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-orange-600">Business Intelligence</span>
+            Comprehensive <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-teal-700">Business Intelligence</span>
           </h2>
           <p className="text-muted-foreground text-lg">
             Our suite of advisory services leverages cutting-edge automation and AI to optimize every facet of your organization.

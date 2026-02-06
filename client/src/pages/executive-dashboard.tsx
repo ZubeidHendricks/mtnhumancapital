@@ -122,7 +122,7 @@ export default function ExecutiveDashboard() {
                   <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                   Live: DigitalOcean
                </Badge>
-               <Badge variant="outline" className="bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30 text-xs">
+               <Badge variant="outline" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30 text-xs">
                   Groq LLaMA 3.1 70B
                </Badge>
             </div>
@@ -167,7 +167,7 @@ export default function ExecutiveDashboard() {
             trend={`${recruitmentData.find(d => d.name === "Shortlisted")?.value || 0} shortlisted`} 
             trendUp={true} 
             icon={Users} 
-            color="text-purple-600 dark:text-purple-400" 
+            color="text-blue-600 dark:text-blue-400" 
             chartData={[0, 0, 0, 0, 0, 0, candidates?.length || 0]}
           />
           <StatsCard 
