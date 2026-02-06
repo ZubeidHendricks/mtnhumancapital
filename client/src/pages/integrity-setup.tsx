@@ -56,7 +56,7 @@ export default function IntegritySetup() {
   const [localChecks, setLocalChecks] = useState<IntegrityCheck[]>([]);
 
   const { data: checks = [], isLoading: checksLoading } = useQuery<IntegrityCheck[]>({
-    queryKey: ['integrity-checks'],
+    queryKey: ['integrity-setup-checks'],
     queryFn: async () => {
       const response = await api.get("/integrity/checks");
       return response.data;
@@ -85,7 +85,7 @@ export default function IntegritySetup() {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['integrity-checks'] });
+      queryClient.invalidateQueries({ queryKey: ['integrity-setup-checks'] });
       toast({
         title: "Settings Saved",
         description: "Integrity check preferences have been updated.",
@@ -216,18 +216,18 @@ export default function IntegritySetup() {
             {displayChecks.map((check) => (
               <div 
                 key={check.id} 
-                className="flex items-center justify-between p-4 rounded-lg bg-gray-200 dark:bg-zinc-800/50 border border-gray-300 dark:border-zinc-700/50"
+                className="flex items-center justify-between p-4 rounded-lg bg-gray-50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700/50"
                 data-testid={`check-item-${check.id}`}
               >
                 <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${check.enabled ? 'bg-green-500/20 text-green-600 dark:text-green-400' : 'bg-gray-200 dark:bg-zinc-700 text-gray-400 dark:text-zinc-400'}`}>
+                  <div className={`p-2 rounded-lg ${check.enabled ? 'bg-green-500/20 text-green-600 dark:text-green-400' : 'bg-gray-100 dark:bg-zinc-700 text-gray-400 dark:text-zinc-400'}`}>
                     {CHECK_ICONS[check.id]}
                   </div>
                   <div>
-                    <h4 className="font-medium text-foreground">{check.name}</h4>
-                    <p className="text-sm text-muted-foreground">{check.description}</p>
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100">{check.name}</h4>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{check.description}</p>
                     {check.cost && (
-                      <Badge variant="outline" className="mt-1 text-xs border-border">
+                      <Badge variant="outline" className="mt-1 text-xs text-gray-600 dark:text-gray-300 border-gray-300 dark:border-zinc-600">
                         Est. cost: {check.cost}
                       </Badge>
                     )}
@@ -278,7 +278,7 @@ export default function IntegritySetup() {
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <h4 className="font-medium text-foreground">{provider.name}</h4>
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100">{provider.name}</h4>
                     {provider.connected && (
                       <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30">
                         Connected
@@ -314,7 +314,7 @@ export default function IntegritySetup() {
                     </Button>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Supports: {provider.checks.map(c => getCheckName(c)).join(", ")}
                 </p>
 
