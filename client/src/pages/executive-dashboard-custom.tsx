@@ -497,7 +497,6 @@ export default function ExecutiveDashboardCustom() {
                 ))}
               </Pie>
               <Tooltip />
-              <Legend />
             </PieChart>
           </ResponsiveContainer>
         );

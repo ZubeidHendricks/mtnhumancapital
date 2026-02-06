@@ -307,7 +307,6 @@ export function CustomizableDashboard({
                 ))}
               </Pie>
               <Tooltip />
-              <Legend />
             </PieChart>
           </ResponsiveContainer>
         );

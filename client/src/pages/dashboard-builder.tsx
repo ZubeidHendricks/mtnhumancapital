@@ -259,7 +259,6 @@ export default function DashboardBuilder() {
                 ))}
               </Pie>
               <Tooltip />
-              <Legend />
             </RPieChart>
           </ResponsiveContainer>
         );

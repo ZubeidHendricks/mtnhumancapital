@@ -530,12 +530,6 @@ export default function RecruitmentDashboard() {
                   <Tooltip 
                     contentStyle={{ backgroundColor: "#111", border: "1px solid #333", borderRadius: "8px" }}
                   />
-                  <Legend 
-                    layout="vertical" 
-                    align="right" 
-                    verticalAlign="middle"
-                    wrapperStyle={{ fontSize: "10px", maxHeight: "350px", overflowY: "auto" }}
-                  />
                 </PieChart>
               </ResponsiveContainer>
             </CardContent>
