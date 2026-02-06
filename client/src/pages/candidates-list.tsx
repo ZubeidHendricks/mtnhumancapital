@@ -338,17 +338,17 @@ AHC Recruiting Team`;
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-foreground flex flex-col">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
       
       <div className="flex-1 flex overflow-hidden pt-16">
         {/* LEFT PANEL: JOB CONFIGURATION */}
-        <div className="w-[400px] border-r border-border dark:border-white/10 bg-[#0a0a0a] flex flex-col h-full overflow-hidden">
+        <div className="w-[400px] border-r border-border bg-background flex flex-col h-full overflow-hidden">
           <div className="p-6 space-y-6 overflow-y-auto flex-1">
             
             {/* Header */}
             <div className="flex items-center gap-4">
                 <Link href="/hr-dashboard">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 -ml-2 text-muted-foreground hover:text-white" data-testid="button-back-dashboard">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 -ml-2 text-muted-foreground hover:text-foreground" data-testid="button-back-dashboard">
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
                 </Link>
@@ -356,7 +356,7 @@ AHC Recruiting Team`;
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 ) : currentJob ? (
                   <>
-                    <div className="h-10 w-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+                    <div className="h-10 w-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
                         {currentJob.title.charAt(0).toUpperCase()}
                     </div>
                     <div>
@@ -366,7 +366,7 @@ AHC Recruiting Team`;
                   </>
                 ) : (
                   <>
-                    <div className="h-10 w-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+                    <div className="h-10 w-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
                         A
                     </div>
                     <h1 className="text-xl font-bold text-foreground">All Candidates</h1>
@@ -382,7 +382,7 @@ AHC Recruiting Team`;
                     <div className="flex justify-between items-center text-sm">
                         <span className="text-yellow-600 dark:text-yellow-400 font-medium">Feasible to hire</span>
                     </div>
-                    <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
                         <div className="h-full bg-yellow-400 w-3/4 rounded-full"></div>
                     </div>
                     <div className="flex justify-between text-xs text-muted-foreground">
@@ -420,13 +420,13 @@ AHC Recruiting Team`;
                 <div className="text-xs font-bold text-muted-foreground tracking-wider">LOCATION FILTER</div>
                 <div className="space-y-2">
                     {locationFilter && (
-                      <div className="flex items-center justify-between text-sm text-gray-300">
+                      <div className="flex items-center justify-between text-sm text-foreground">
                           <div className="flex items-center gap-2">
                               <MapPin className="w-4 h-4 text-primary" />
                               {locationFilter}
                           </div>
                           <X 
-                            className="h-3 w-3 text-muted-foreground cursor-pointer hover:text-white" 
+                            className="h-3 w-3 text-muted-foreground cursor-pointer hover:text-foreground" 
                             onClick={() => setLocationFilter(null)}
                             data-testid="button-clear-location"
                           />
@@ -435,7 +435,7 @@ AHC Recruiting Team`;
                     
                     {/* Location Selector */}
                     <div className="relative group">
-                        <div className="flex items-center justify-between text-sm text-muted-foreground hover:text-white cursor-pointer border border-dashed border-border dark:border-white/10 rounded px-2 py-1 hover:border-border hover:dark:border-white/30">
+                        <div className="flex items-center justify-between text-sm text-muted-foreground hover:text-foreground cursor-pointer border border-dashed border-border rounded px-2 py-1 hover:border-foreground/30">
                             <div className="flex items-center gap-2">
                                 <Search className="h-3 w-3" />
                                 {locationFilter ? 'Change location...' : 'Filter by location...'}
@@ -444,14 +444,14 @@ AHC Recruiting Team`;
                         </div>
                         
                         {/* Dropdown */}
-                        <div className="hidden group-hover:block absolute top-full left-0 w-full mt-1 bg-[#1a1a1a] border border-border dark:border-white/10 rounded shadow-xl z-10 max-h-40 overflow-y-auto">
+                        <div className="hidden group-hover:block absolute top-full left-0 w-full mt-1 bg-card border border-border rounded shadow-xl z-10 max-h-40 overflow-y-auto">
                             {allLocations.length === 0 ? (
-                              <div className="px-3 py-2 text-xs text-gray-500">No locations found</div>
+                              <div className="px-3 py-2 text-xs text-muted-foreground">No locations found</div>
                             ) : (
                               allLocations.filter(l => l !== locationFilter).map(loc => (
                                   <div 
                                       key={loc} 
-                                      className="px-3 py-2 text-xs text-gray-400 hover:bg-white/10 hover:text-white cursor-pointer"
+                                      className="px-3 py-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
                                       onClick={() => setLocationFilter(loc)}
                                       data-testid={`location-option-${loc}`}
                                   >
@@ -470,7 +470,7 @@ AHC Recruiting Team`;
                 )}
             </div>
 
-            <Separator className="bg-white/10" />
+            <Separator />
 
             {/* Criteria */}
             <div className="space-y-4">
@@ -493,9 +493,9 @@ AHC Recruiting Team`;
                       activeCriteria.map((criteria, i) => (
                           <div key={i} className="flex items-start gap-2 group" data-testid={`skill-filter-${i}`}>
                               <Check className="mt-0.5 w-3 h-3 text-primary" />
-                              <span className="text-sm text-gray-300 flex-1 leading-tight">{criteria}</span>
+                              <span className="text-sm text-foreground flex-1 leading-tight">{criteria}</span>
                               <X 
-                                  className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 cursor-pointer hover:text-white" 
+                                  className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 cursor-pointer hover:text-foreground" 
                                   onClick={() => removeCriteria(i)}
                                   data-testid={`button-remove-skill-${i}`}
                               />
@@ -513,11 +513,11 @@ AHC Recruiting Team`;
                             <Badge 
                               key={i}
                               variant="secondary" 
-                              className="bg-white/5 hover:bg-white/10 text-gray-400 text-xs font-normal cursor-pointer border-border dark:border-white/10"
+                              className="bg-muted hover:bg-muted/80 text-muted-foreground text-xs font-normal cursor-pointer border-border"
                               onClick={() => setActiveCriteria(prev => [...prev, skill])}
                               data-testid={`button-add-skill-${i}`}
                             >
-                                {skill} <Plus className="h-3 w-3 ml-1 text-indigo-600 dark:text-indigo-400" />
+                                {skill} <Plus className="h-3 w-3 ml-1 text-blue-600 dark:text-blue-400" />
                             </Badge>
                           ))}
                      </div>
@@ -529,24 +529,24 @@ AHC Recruiting Team`;
         </div>
 
         {/* RIGHT PANEL: CANDIDATES LIST */}
-        <div className="flex-1 bg-[#0F0F0F] flex flex-col h-full overflow-hidden">
+        <div className="flex-1 bg-muted/30 flex flex-col h-full overflow-hidden">
             
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-              <div className="border-b border-border dark:border-white/10 px-6 bg-[#0a0a0a]">
+              <div className="border-b border-border px-6 bg-background">
                 <TabsList className="h-14 bg-transparent border-0 p-0 gap-8">
                   <TabsTrigger 
                     value="candidates" 
-                    className="h-14 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 text-sm font-medium text-muted-foreground data-[state=active]:text-white data-[state=active]:shadow-none"
+                    className="h-14 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 text-sm font-medium text-muted-foreground data-[state=active]:text-foreground data-[state=active]:shadow-none"
                   >
                     Candidates
-                    <span className="ml-2 text-xs bg-white/10 px-1.5 py-0.5 rounded-full">
+                    <span className="ml-2 text-xs bg-muted px-1.5 py-0.5 rounded-full">
                       {loadingCandidates ? '...' : regularCandidates.length}
                     </span>
                   </TabsTrigger>
                   <TabsTrigger 
                     value="shortlisted" 
-                    className="h-14 rounded-none border-b-2 border-transparent data-[state=active]:border-yellow-400 data-[state=active]:bg-transparent px-2 text-sm font-medium text-muted-foreground data-[state=active]:text-white data-[state=active]:shadow-none"
+                    className="h-14 rounded-none border-b-2 border-transparent data-[state=active]:border-yellow-400 data-[state=active]:bg-transparent px-2 text-sm font-medium text-muted-foreground data-[state=active]:text-foreground data-[state=active]:shadow-none"
                   >
                     Shortlisted
                     <span className="ml-2 text-xs bg-yellow-400/20 px-1.5 py-0.5 rounded-full text-yellow-600 dark:text-yellow-400">
@@ -577,7 +577,8 @@ AHC Recruiting Team`;
                   {displayList.length > 0 && (
                       <Button 
                           size="sm" 
-                          className="bg-white text-black hover:bg-gray-200 gap-2 font-medium"
+                          variant="outline"
+                          className="gap-2 font-medium"
                           onClick={() => toast.success("AI Agent will interview all candidates")}
                       >
                           <Bot className="h-4 w-4" />
@@ -601,17 +602,17 @@ AHC Recruiting Team`;
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, x: -20 }}
-                            className="group flex items-center justify-between py-3 px-4 hover:bg-white/5 rounded-lg transition-colors border border-transparent hover:border-border hover:dark:border-white/5"
+                            className="group flex items-center justify-between py-3 px-4 hover:bg-muted/50 rounded-lg transition-colors border border-transparent hover:border-border"
                         >
                             {/* Candidate Info */}
                             <Link href={`/candidates/${candidate.id}`} className="flex items-center gap-4 w-[30%] cursor-pointer">
-                                <Avatar className="h-10 w-10 border border-border dark:border-white/10">
-                                    <AvatarFallback className="bg-indigo-500 text-white text-xs">
+                                <Avatar className="h-10 w-10 border border-border">
+                                    <AvatarFallback className="bg-blue-600 text-white text-xs">
                                         {candidate.fullName?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || 'NA'}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div className="min-w-0">
-                                    <h3 className="text-sm font-bold text-white truncate hover:underline">{candidate.fullName || 'Unknown'}</h3>
+                                    <h3 className="text-sm font-bold text-foreground truncate hover:underline">{candidate.fullName || 'Unknown'}</h3>
                                     <p className="text-xs text-muted-foreground truncate">{candidate.role || 'No role specified'}</p>
                                 </div>
                             </Link>
@@ -630,9 +631,9 @@ AHC Recruiting Team`;
 
                                 {/* Contact Icons */}
                                 <div className="flex items-center gap-3 opacity-40 group-hover:opacity-100 transition-opacity">
-                                    <Mail className="h-3.5 w-3.5 text-white cursor-pointer hover:text-primary" />
-                                    <Phone className="h-3.5 w-3.5 text-white cursor-pointer hover:text-primary" />
-                                    <Linkedin className="h-3.5 w-3.5 text-white cursor-pointer hover:text-primary" />
+                                    <Mail className="h-3.5 w-3.5 text-muted-foreground cursor-pointer hover:text-primary" />
+                                    <Phone className="h-3.5 w-3.5 text-muted-foreground cursor-pointer hover:text-primary" />
+                                    <Linkedin className="h-3.5 w-3.5 text-muted-foreground cursor-pointer hover:text-primary" />
                                 </div>
                             </div>
 
@@ -640,7 +641,8 @@ AHC Recruiting Team`;
                             <div className="flex items-center gap-2">
                                 <Button 
                                     size="sm" 
-                                    className="h-8 bg-white text-black hover:bg-gray-200 border-0 gap-1.5 font-medium text-xs px-3"
+                                    variant="outline"
+                                    className="h-8 gap-1.5 font-medium text-xs px-3"
                                     onClick={() => handleAIContact(candidate)}
                                 >
                                     <Bot className="h-3 w-3" />
@@ -648,7 +650,7 @@ AHC Recruiting Team`;
                                 </Button>
                                 <Button 
                                     size="sm" 
-                                    className="h-8 bg-indigo-600 hover:bg-indigo-500 text-white border-0 gap-1.5 font-medium text-xs px-3"
+                                    className="h-8 bg-blue-600 hover:bg-blue-500 text-white border-0 gap-1.5 font-medium text-xs px-3"
                                     onClick={() => handleShortlist(candidate.id)}
                                 >
                                     <ThumbsUp className="h-3 w-3" />
@@ -700,7 +702,8 @@ AHC Recruiting Team`;
                     {displayList.length > 0 && (
                         <Button 
                             size="sm" 
-                            className="bg-white text-black hover:bg-gray-200 gap-2 font-medium"
+                            variant="outline"
+                            className="gap-2 font-medium"
                             onClick={() => toast.success("AI Agent will interview all shortlisted candidates")}
                         >
                             <Bot className="h-4 w-4" />
@@ -724,12 +727,12 @@ AHC Recruiting Team`;
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, x: -20 }}
-                              className="group flex items-center justify-between py-3 px-4 hover:bg-white/5 rounded-lg transition-colors border border-transparent hover:border-border hover:dark:border-white/5"
+                              className="group flex items-center justify-between py-3 px-4 hover:bg-muted/50 rounded-lg transition-colors border border-transparent hover:border-border"
                           >
                               {/* Candidate Info */}
                               <Link href={`/candidates/${candidate.id}`} className="flex items-center gap-4 w-[30%] cursor-pointer">
-                                  <Avatar className="h-10 w-10 border border-border dark:border-white/10">
-                                      <AvatarFallback className="bg-indigo-500 text-white text-xs">
+                                  <Avatar className="h-10 w-10 border border-border">
+                                      <AvatarFallback className="bg-blue-600 text-white text-xs">
                                           {candidate.fullName?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || 'NA'}
                                       </AvatarFallback>
                                   </Avatar>
@@ -753,9 +756,9 @@ AHC Recruiting Team`;
 
                                   {/* Contact Icons */}
                                   <div className="flex items-center gap-3 opacity-40 group-hover:opacity-100 transition-opacity">
-                                      <Mail className="h-3.5 w-3.5 text-white cursor-pointer hover:text-primary" />
-                                      <Phone className="h-3.5 w-3.5 text-white cursor-pointer hover:text-primary" />
-                                      <Linkedin className="h-3.5 w-3.5 text-white cursor-pointer hover:text-primary" />
+                                      <Mail className="h-3.5 w-3.5 text-muted-foreground cursor-pointer hover:text-primary" />
+                                      <Phone className="h-3.5 w-3.5 text-muted-foreground cursor-pointer hover:text-primary" />
+                                      <Linkedin className="h-3.5 w-3.5 text-muted-foreground cursor-pointer hover:text-primary" />
                                   </div>
                               </div>
 
@@ -763,7 +766,8 @@ AHC Recruiting Team`;
                               <div className="flex items-center gap-2">
                                   <Button 
                                       size="sm" 
-                                      className="h-8 bg-white text-black hover:bg-gray-200 border-0 gap-1.5 font-medium text-xs px-3"
+                                      variant="outline"
+                                      className="h-8 gap-1.5 font-medium text-xs px-3"
                                       onClick={() => handleAIContact(candidate)}
                                   >
                                       <Bot className="h-3 w-3" />
@@ -772,7 +776,7 @@ AHC Recruiting Team`;
                                   <Button 
                                       size="sm" 
                                       variant="ghost"
-                                      className="h-8 border-0 gap-1.5 font-medium text-xs px-3 text-muted-foreground hover:text-white"
+                                      className="h-8 border-0 gap-1.5 font-medium text-xs px-3 text-muted-foreground hover:text-foreground"
                                       onClick={() => handleRemoveCandidate(candidate.id)}
                                   >
                                       <X className="h-3 w-3" />
@@ -802,22 +806,22 @@ AHC Recruiting Team`;
 
       {/* Interview Invitation Dialog */}
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-        <DialogContent className="bg-[#1a1a1a] border-border dark:border-white/10 text-white sm:max-w-[500px]">
+        <DialogContent className="bg-card border-border sm:max-w-[500px]">
             <DialogHeader>
                 <DialogTitle>Invite to Voice Interview</DialogTitle>
-                <DialogDescription className="text-gray-400">
+                <DialogDescription>
                     Send an interview invitation to {selectedCandidate?.fullName || 'candidate'}.
                 </DialogDescription>
             </DialogHeader>
             
             {/* Channel Selection */}
-            <div className="flex gap-2 p-1 bg-black/30 rounded-lg" data-testid="container-invite-channel">
+            <div className="flex gap-2 p-1 bg-muted rounded-lg" data-testid="container-invite-channel">
               <button
                 onClick={() => setInviteChannel("email")}
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   inviteChannel === "email" 
-                    ? "bg-indigo-600 text-white" 
-                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                    ? "bg-blue-600 text-white" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
                 }`}
                 data-testid="button-channel-email"
               >
@@ -829,7 +833,7 @@ AHC Recruiting Team`;
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   inviteChannel === "whatsapp" 
                     ? "bg-green-600 text-white" 
-                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
                 }`}
                 data-testid="button-channel-whatsapp"
               >
@@ -846,7 +850,7 @@ AHC Recruiting Team`;
                         <Input 
                           value={selectedCandidate?.email || ""} 
                           disabled 
-                          className="bg-black/50 border-border dark:border-white/10" 
+                          className="bg-muted border-border" 
                           placeholder={!selectedCandidate?.email ? "No email on file" : undefined}
                         />
                         {!selectedCandidate?.email && (
@@ -856,7 +860,7 @@ AHC Recruiting Team`;
                     
                     <div className="grid gap-2">
                         <Label>Subject</Label>
-                        <Input defaultValue={`Interview Invitation: ${currentJob?.title || 'Position'}`} className="bg-black/50 border-border dark:border-white/10" />
+                        <Input defaultValue={`Interview Invitation: ${currentJob?.title || 'Position'}`} className="bg-muted border-border" />
                     </div>
                   </>
                 ) : (
@@ -865,7 +869,7 @@ AHC Recruiting Team`;
                       <Input 
                         value={selectedCandidate?.phone || (selectedCandidate?.metadata as any)?.phone || ""} 
                         disabled 
-                        className="bg-black/50 border-border dark:border-white/10" 
+                        className="bg-muted border-border" 
                         placeholder={!(selectedCandidate?.phone || (selectedCandidate?.metadata as any)?.phone) ? "No phone on file" : undefined}
                       />
                       {!(selectedCandidate?.phone || (selectedCandidate?.metadata as any)?.phone) && (
@@ -877,7 +881,7 @@ AHC Recruiting Team`;
                 <div className="grid gap-2">
                     <Label>Message</Label>
                     <Textarea 
-                        className="min-h-[150px] bg-black/50 border-border dark:border-white/10 font-sans" 
+                        className="min-h-[150px] bg-muted border-border font-sans" 
                         defaultValue={`Dear ${selectedCandidate?.fullName || 'Candidate'},
 
 We are impressed with your profile and would like to invite you to an initial voice interview with our AI interview system.
@@ -893,11 +897,11 @@ AHC Recruiting Team`}
             </div>
 
             <DialogFooter>
-                <Button variant="outline" onClick={() => setInviteOpen(false)} className="border-border dark:border-white/10 hover:bg-white/5">Cancel</Button>
+                <Button variant="outline" onClick={() => setInviteOpen(false)}>Cancel</Button>
                 <Button 
                   onClick={handleSendInvite} 
                   disabled={sendingInvite || (inviteChannel === "email" && !selectedCandidate?.email) || (inviteChannel === "whatsapp" && !(selectedCandidate?.phone || (selectedCandidate?.metadata as any)?.phone))}
-                  className={`gap-2 ${inviteChannel === "whatsapp" ? "bg-green-600 hover:bg-green-500" : "bg-indigo-600 hover:bg-indigo-500"}`}
+                  className={`gap-2 ${inviteChannel === "whatsapp" ? "bg-green-600 hover:bg-green-500" : "bg-blue-600 hover:bg-blue-500"} text-white`}
                 >
                     {sendingInvite ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -914,17 +918,17 @@ AHC Recruiting Team`}
 
       {/* Candidate Profile Dialog */}
       <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden bg-[#0a0a0a] border-zinc-800 text-white" data-testid="dialog-candidate-profile">
-          <DialogHeader className="border-b border-zinc-800 pb-4">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden bg-card border-border" data-testid="dialog-candidate-profile">
+          <DialogHeader className="border-b border-border pb-4">
             <DialogTitle className="text-xl flex items-center gap-3">
-              <Avatar className="h-12 w-12 bg-gradient-to-br from-blue-500 to-blue-500">
+              <Avatar className="h-12 w-12 bg-gradient-to-br from-blue-500 to-blue-600">
                 <AvatarFallback className="text-white text-lg font-bold bg-transparent">
                   {profileCandidate?.fullName?.split(' ').map((n: string) => n[0]).join('') || '?'}
                 </AvatarFallback>
               </Avatar>
               <div>
                 <span data-testid="text-profile-name">{profileCandidate?.fullName || 'Candidate'}</span>
-                <p className="text-sm text-zinc-400 font-normal" data-testid="text-profile-role">{profileCandidate?.role || 'No role specified'}</p>
+                <p className="text-sm text-muted-foreground font-normal" data-testid="text-profile-role">{profileCandidate?.role || 'No role specified'}</p>
               </div>
             </DialogTitle>
           </DialogHeader>
@@ -938,42 +942,42 @@ AHC Recruiting Team`}
                     {profileCandidate.match}%
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-blue-300">AI Match Score</p>
-                    <p className="text-xs text-zinc-400">Based on job requirements and skill matching</p>
+                    <p className="text-sm font-medium text-blue-600 dark:text-blue-400">AI Match Score</p>
+                    <p className="text-xs text-muted-foreground">Based on job requirements and skill matching</p>
                   </div>
                 </div>
               )}
 
               {/* Contact Information */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 rounded-lg bg-gray-100 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800">
-                  <p className="text-xs text-zinc-500 mb-1">Email</p>
-                  <p className="text-sm flex items-center gap-2" data-testid="text-profile-email">
-                    <Mail className="h-4 w-4 text-zinc-400" />
+                <div className="p-4 rounded-lg bg-muted border border-border">
+                  <p className="text-xs text-muted-foreground mb-1">Email</p>
+                  <p className="text-sm flex items-center gap-2 text-foreground" data-testid="text-profile-email">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
                     {profileCandidate?.email || 'Not provided'}
                   </p>
                 </div>
-                <div className="p-4 rounded-lg bg-gray-100 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800">
-                  <p className="text-xs text-zinc-500 mb-1">Phone</p>
-                  <p className="text-sm flex items-center gap-2" data-testid="text-profile-phone">
-                    <Phone className="h-4 w-4 text-zinc-400" />
+                <div className="p-4 rounded-lg bg-muted border border-border">
+                  <p className="text-xs text-muted-foreground mb-1">Phone</p>
+                  <p className="text-sm flex items-center gap-2 text-foreground" data-testid="text-profile-phone">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
                     {profileCandidate?.phone || (profileCandidate?.metadata as any)?.phone || 'Not provided'}
                   </p>
                 </div>
-                <div className="p-4 rounded-lg bg-gray-100 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800">
-                  <p className="text-xs text-zinc-500 mb-1">Location</p>
-                  <p className="text-sm flex items-center gap-2" data-testid="text-profile-location">
-                    <MapPin className="h-4 w-4 text-zinc-400" />
+                <div className="p-4 rounded-lg bg-muted border border-border">
+                  <p className="text-xs text-muted-foreground mb-1">Location</p>
+                  <p className="text-sm flex items-center gap-2 text-foreground" data-testid="text-profile-location">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
                     {profileCandidate?.location || (profileCandidate?.metadata as any)?.location || 'Not specified'}
                   </p>
                 </div>
-                <div className="p-4 rounded-lg bg-gray-100 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800">
-                  <p className="text-xs text-zinc-500 mb-1">Stage</p>
+                <div className="p-4 rounded-lg bg-muted border border-border">
+                  <p className="text-xs text-muted-foreground mb-1">Stage</p>
                   <p className="text-sm" data-testid="text-profile-stage">
                     <Badge className={
                       profileCandidate?.stage === 'Shortlisted' ? 'bg-green-500/20 text-green-600 dark:text-green-400' :
                       profileCandidate?.stage === 'Interview' ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400' :
-                      'bg-zinc-500/20 text-zinc-400'
+                      'bg-gray-500/20 text-gray-600 dark:text-gray-400'
                     }>
                       {profileCandidate?.stage || 'New'}
                     </Badge>
@@ -983,11 +987,11 @@ AHC Recruiting Team`}
 
               {/* Skills */}
               {profileCandidate?.skills && (profileCandidate.skills as string[]).length > 0 && (
-                <div className="p-4 rounded-lg bg-gray-100 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800">
-                  <p className="text-xs text-zinc-500 mb-3">Skills</p>
+                <div className="p-4 rounded-lg bg-muted border border-border">
+                  <p className="text-xs text-muted-foreground mb-3">Skills</p>
                   <div className="flex flex-wrap gap-2" data-testid="container-profile-skills">
                     {(profileCandidate.skills as string[]).map((skill: string, i: number) => (
-                      <Badge key={i} variant="outline" className="bg-gray-200 dark:bg-zinc-800 border-gray-300 dark:border-zinc-700">
+                      <Badge key={i} variant="outline" className="bg-background border-border">
                         {skill}
                       </Badge>
                     ))}
@@ -997,9 +1001,9 @@ AHC Recruiting Team`}
 
               {/* Experience */}
               {(profileCandidate?.metadata as any)?.experience && (
-                <div className="p-4 rounded-lg bg-gray-100 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800">
-                  <p className="text-xs text-zinc-500 mb-2">Experience</p>
-                  <p className="text-sm text-zinc-300" data-testid="text-profile-experience">
+                <div className="p-4 rounded-lg bg-muted border border-border">
+                  <p className="text-xs text-muted-foreground mb-2">Experience</p>
+                  <p className="text-sm text-foreground" data-testid="text-profile-experience">
                     {(profileCandidate.metadata as any).experience}
                   </p>
                 </div>
@@ -1009,7 +1013,7 @@ AHC Recruiting Team`}
               {(profileCandidate?.metadata as any)?.aiReasoning && (
                 <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
                   <p className="text-xs text-blue-600 dark:text-blue-400 mb-2">AI Analysis</p>
-                  <p className="text-sm text-zinc-300" data-testid="text-profile-ai-reasoning">
+                  <p className="text-sm text-foreground" data-testid="text-profile-ai-reasoning">
                     {(profileCandidate.metadata as any).aiReasoning}
                   </p>
                 </div>
@@ -1017,7 +1021,7 @@ AHC Recruiting Team`}
 
               {/* Source */}
               {profileCandidate?.source && (
-                <div className="flex items-center gap-2 text-sm text-zinc-400">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <span>Source:</span>
                   <Badge className={getSourceColor(profileCandidate.source)} data-testid="badge-profile-source">
                     {profileCandidate.source}
@@ -1027,8 +1031,8 @@ AHC Recruiting Team`}
             </div>
           </ScrollArea>
 
-          <DialogFooter className="border-t border-gray-200 dark:border-zinc-800 pt-4">
-            <Button variant="outline" onClick={() => setProfileOpen(false)} className="border-gray-300 dark:border-zinc-700 hover:bg-gray-100 dark:hover:bg-zinc-800">
+          <DialogFooter className="border-t border-border pt-4">
+            <Button variant="outline" onClick={() => setProfileOpen(false)}>
               Close
             </Button>
             <Button 
@@ -1036,7 +1040,7 @@ AHC Recruiting Team`}
                 handleAIContact(profileCandidate);
                 setProfileOpen(false);
               }} 
-              className="bg-indigo-600 hover:bg-indigo-500 gap-2"
+              className="bg-blue-600 hover:bg-blue-500 text-white gap-2"
             >
               <Bot className="h-4 w-4" /> Invite to Interview
             </Button>
