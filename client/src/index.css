@@ -550,9 +550,11 @@
   label {
     font-size: 0.875rem;
     font-weight: 600;
-    color: var(--mtn-navy);
     text-transform: uppercase;
     letter-spacing: 0.3px;
+  }
+  .light label {
+    color: var(--mtn-navy);
   }
 }
 

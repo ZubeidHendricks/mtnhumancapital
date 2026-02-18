@@ -36,9 +36,9 @@ export function Navbar() {
         {/* Logo - Brand guideline: 20mm minimum height with clearspace = height/2 */}
         <Link href="/">
           <div className="flex items-center group cursor-pointer">
-            <img 
-              src="/logos/light-logo.png" 
-              alt="MTN - Human Capital" 
+            <img
+              src="/logos/mtn-new-logo.svg"
+              alt="MTN - Human Capital"
               className="h-10 md:h-16 w-auto object-contain"
             />
           </div>

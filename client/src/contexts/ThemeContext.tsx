@@ -16,7 +16,7 @@ const ThemeContext = createContext<ThemeContextType>({
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
-    const stored = localStorage.getItem("ahc-theme") as Theme;
+    const stored = localStorage.getItem("mtn-theme") as Theme;
     return stored || "dark";
   });
 
@@ -39,7 +39,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
     root.classList.add(resolvedTheme);
     setActualTheme(resolvedTheme);
-    localStorage.setItem("ahc-theme", theme);
+    localStorage.setItem("mtn-theme", theme);
   }, [theme]);
 
   // Listen for system theme changes
