@@ -4,10 +4,12 @@ import { createRequire } from "module";
 import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
+import { pathToFileURL } from "url";
 
-const require = createRequire(import.meta.url);
-const pdfParse = require('pdf-parse');
-const { PDFParse } = require('pdf-parse');
+const requireFn = typeof __filename !== "undefined"
+  ? createRequire(__filename)
+  : createRequire(import.meta.url);
+const pdfParse = requireFn('pdf-parse');
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,

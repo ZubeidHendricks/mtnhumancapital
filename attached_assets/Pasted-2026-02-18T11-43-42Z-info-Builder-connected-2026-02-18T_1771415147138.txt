@@ -1,0 +1,130 @@
+2026-02-18T11:43:42Z info: Builder connected
+2026-02-18T11:43:43Z info: Installing packages
+--> npm install
+
+
+up to date, audited 600 packages in 3s
+
+  run `npm fund` for details
+
+
+8 vulnerabilities (1 low, 5 moderate, 2 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues possible (including breaking changes), run:
+  npm audit fix --force
+
+Some issues need review, and may require choosing
+a different dependency.
+
+Run `npm audit` for details.
+
+npm notice
+npm notice New major version of npm available! 10.8.2 -> 11.10.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.10.0
+npm notice To update run: npm install -g npm@11.10.0
+npm notice
+
+2026-02-18T11:43:46Z info: Starting Build
+npm warn config production Use `--omit=dev` instead.
+
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=cjs --outfile=dist/index.cjs --external:./vite --external:../vite.config.js
+
+
+vite v7.3.1 building client environment for production...
+
+
+/node_modules/react-grid-layout/css/styles.css doesn't exist at build time, it will remain unchanged to be resolved at runtime
+
+
+/node_modules/react-resizable/css/styles.css doesn't exist at build time, it will remain unchanged to be resolved at runtime
+
+transforming...
+
+✓ 3360 modules transformed.
+
+rendering chunks...
+
+computing gzip size...
+
+../dist/public/index.html                                                        1.84 kB │ gzip:   0.62 kB
+
+✓ built in 10.59s
+
+▲ [WARNING] "import.meta" is not available with the "cjs" output format and will be empty [empty-import-meta]
+
+    server/index.ts:283:53:
+      283 │ ...peof __dirname !== "undefined" ? __dirname : import.meta.dirname,
+          ╵                                                 ~~~~~~~~~~~
+
+  You need to set the output format to "esm" for "import.meta" to work correctly.
+
+
+▲ [WARNING] "import.meta" is not available with the "cjs" output format and will be empty [empty-import-meta]
+
+    server/vite.ts:72:32:
+      72 │   const distPath = path.resolve(import.meta.dirname, "public");
+         ╵                                 ~~~~~~~~~~~
+
+  You need to set the output format to "esm" for "import.meta" to work correctly.
+
+
+▲ [WARNING] Duplicate member "getAllTenants" in class body [duplicate-class-member]
+
+    server/storage.ts:3231:8:
+      3231 │   async getAllTenants() {
+           ╵         ~~~~~~~~~~~~~
+
+  The original member "getAllTenants" is here:
+
+    server/storage.ts:2823:8:
+      2823 │   async getAllTenants(): Promise<TenantConfig[]> {
+           ╵         ~~~~~~~~~~~~~
+
+
+
+  dist/index.cjs  1.1mb ⚠️
+
+⚡ Done in 63ms
+
+2026-02-18T11:43:59Z info: Pushing pid1 binary layer...
+2026-02-18T11:44:01Z info: Created pid1 binary layer
+2026-02-18T11:44:04Z info: Pushing Repl layer...
+2026-02-18T11:44:04Z info: Retrieved cached nix layer
+2026-02-18T11:44:05Z info: Created hosting layer
+2026-02-18T11:44:25Z info: Created Repl layer
+2026-02-18T11:44:25Z info: Pushing Repl (cache) layer...
+2026-02-18T11:44:26Z info: Created Repl (cache) layer
+2026-02-18T11:44:28Z info: Pushed image manifest
+2026-02-18T11:44:30Z info: Pushed soci index manifest
+2026-02-18T11:44:33Z info: Creating Autoscale service
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+command finished with error [node ./dist/index.cjs]: exit status 1
+
+TypeError [ERR_INVALID_ARG_VALUE]: The argument 'filename' must be a file URL object, file URL string, or absolute path string. Received undefined
+}
+TypeError [ERR_INVALID_ARG_VALUE]: The argument 'filename' must be a file URL object, file URL string, or absolute path string. Received undefined
+TypeError [ERR_INVALID_ARG_VALUE]: The argument 'filename' must be a file URL object, file URL string, or absolute path string. Received undefined
+
+
+    ^
+command finished with error [node ./dist/index.cjs]: exit status 1
+    at node:internal/main/run_main_module:28:49 {
+    ^
+    at createRequire (node:internal/modules/cjs/loader:1706:11)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+    throw new ERR_INVALID_ARG_VALUE('filename', filename, createRequireError);
+
+}
+command finished with error [node ./dist/index.cjs]: exit status 1
+
+  code: 'ERR_INVALID_ARG_VALUE'
+    at createRequire (node:internal/modules/cjs/loader:1706:11)
+    at Object.<anonymous> (/home/runner/workspace/dist/index.cjs:12635:48)
+
+  code: 'ERR_INVALID_ARG_VALUE'
+crash loop detected

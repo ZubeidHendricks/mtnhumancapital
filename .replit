@@ -54,3 +54,9 @@ expertMode = true
 [userenv.shared]
 CALENDLY_URL = "https://calendly.com/zubeidhendricks/new-meeting"
 NPM_CONFIG_PRODUCTION = "false"
+
+[userenv.production]
+NODE_ENV = "production"
+
+[userenv.development]
+NODE_ENV = "development"
