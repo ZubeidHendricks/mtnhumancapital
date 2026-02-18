@@ -20,7 +20,7 @@ export async function seedDefaultTenant() {
 
     // Create default tenant
     const [defaultTenant] = await db.insert(tenantConfig).values({
-      companyName: 'Avatar Human Capital',
+      companyName: 'MTN - Human Capital',
       subdomain: 'company',
       primaryColor: '#0ea5e9',
       logoUrl: null,

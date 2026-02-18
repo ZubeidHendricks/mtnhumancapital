@@ -54,6 +54,7 @@ export function Sidebar() {
     {
       title: "INTELLIGENCE",
       items: [
+        { name: "MTN-GPT", href: "/ai-support", icon: Bot },
         { name: "Workforce Intelligence", href: "/workforce-intelligence", icon: TrendingUp },
         { name: "AI Recommendations", href: "/recommendations", icon: Sparkles },
       ]
@@ -63,10 +64,10 @@ export function Sidebar() {
       items: [
         { name: "HR Command", href: "/hr-dashboard", icon: Users, module: "hr_management" },
         { name: "Executive Dashboard", href: "/executive-dashboard-custom", icon: TrendingUp },
-        { name: "Recruitment Setup", href: "/recruitment-setup", icon: Settings },
-        { name: "Integrity Setup", href: "/integrity-setup", icon: Shield, module: "integrity" },
-        { name: "Offer Setup", href: "/offer-setup", icon: FileText },
-        { name: "Employee Onboarding Setup", href: "/onboarding-setup", icon: Building2, module: "onboarding" },
+        { name: "Face to Face Interview", href: "/interview/face-to-face", icon: Users },
+        { name: "Voice Interview", href: "/interview/voice", icon: Mic },
+        { name: "Video Interview", href: "/interview/video", icon: Video },
+        { name: "Interview Console", href: "/interview-console", icon: ClipboardList },
       ]
     },
     {
@@ -75,65 +76,34 @@ export function Sidebar() {
         { name: "Recruitment Dashboard", href: "/recruitment-dashboard", icon: TrendingUp },
         { name: "AI Recruitment", href: "/recruitment-agent", icon: UserSearch, module: "recruitment" },
         { name: "Pipeline Board", href: "/pipeline-board", icon: LayoutGrid },
-        { name: "Interview Console", href: "/interview-console", icon: ClipboardList },
       ]
     },
     {
-      title: "INTERVIEWS",
-      items: [
-        { name: "Face to Face Interview", href: "/interview/face-to-face", icon: Users },
-        { name: "Voice Interview", href: "/interview/voice", icon: Mic },
-        { name: "Video Interview", href: "/interview/video", icon: Video },
-      ]
-    },
-    {
-      title: "PERFORMANCE MANAGEMENT",
-      items: [
-        { name: "HR Performance", href: "/kpi-hr-dashboard", icon: BarChart3 },
-        { name: "KPI Management", href: "/kpi-management", icon: Target },
-        { name: "My KPI Review", href: "/kpi-review", icon: Star },
-        { name: "Manager Review", href: "/kpi-manager-review", icon: UserCheck },
-        { name: "Time & Attendance", href: "https://carta-ta-ji5og.ondigitalocean.app/", icon: Cpu, external: true },
-      ]
-    },
-    {
-      title: "DOCUMENTS",
-      items: [
-        { name: "Document Automation", href: "/document-automation", icon: FileText },
-        { name: "Document Library", href: "/document-library", icon: ClipboardList },
-        { name: "Templates", href: "/cv-templates", icon: FileText },
-      ]
-    },
-    {
-      title: "COMMUNICATIONS",
+      title: "REPORTS",
       items: [
         { name: "WhatsApp Monitor", href: "/whatsapp-monitor", icon: MessageCircle },
         { name: "Conversations", href: "/hr-conversations", icon: MessageCircle },
       ]
     },
     {
-      title: "SUPPORT",
+      title: "SETUP",
       items: [
-        { name: "AI Support", href: "/ai-support", icon: Bot },
-      ]
-    },
-    {
-      title: "TRAINING",
-      items: [
-        { name: "LMS Dashboard", href: "http://165.227.113.197/", icon: BookOpen, external: true },
-        { name: "Attendance", href: "http://208.68.39.111/", icon: ClipboardList, external: true },
+        { name: "Recruitment Setup", href: "/recruitment-setup", icon: Settings },
+        { name: "Integrity Setup", href: "/integrity-setup", icon: Shield, module: "integrity" },
+        { name: "Offer Setup", href: "/offer-setup", icon: FileText },
+        { name: "Employee Onboarding Setup", href: "/onboarding-setup", icon: Building2, module: "onboarding" },
+        { name: "Document Automation", href: "/document-automation", icon: FileText },
+        { name: "Document Library", href: "/document-library", icon: ClipboardList },
+        { name: "Templates", href: "/cv-templates", icon: FileText },
       ]
     },
     {
       title: "ADMIN",
       items: [
         { name: "System Admin", href: "/admin-dashboard", icon: Settings },
-        { name: "Tenant Management", href: "/tenant-management", icon: Building2 },
-        { name: "Tenant Requests", href: "/tenant-requests", icon: FileText },
         { name: "Customer Onboarding", href: "/onboarding", icon: UserPlus },
         { name: "Persona Management", href: "/persona-management", icon: Users },
         { name: "Platform Docs", href: "/platform-docs", icon: BookOpen },
-        { name: "Product Demo", href: "/demo", icon: Sparkles },
       ]
     },
   ];
@@ -153,9 +123,9 @@ export function Sidebar() {
         {!collapsed && (
           <Link href="/">
             <div className="bg-gray-100 dark:bg-zinc-900 rounded-lg px-3 py-1.5">
-              <img 
-                src="/logos/light-logo.png" 
-                alt="AHC" 
+              <img
+                src="/logos/mtn-new-logo.svg"
+                alt="MTN"
                 className="h-8 w-auto object-contain"
               />
             </div>

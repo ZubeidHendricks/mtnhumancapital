@@ -51,7 +51,7 @@ async function seedDatabase() {
 
     console.log("Creating default tenant...");
     const [tenant] = await db.insert(tenantConfig).values({
-      companyName: "Avatar Human Capital",
+      companyName: "MTN - Human Capital",
       subdomain: "company",
       logoUrl: "/logo.png",
       primaryColor: "#6366f1",
@@ -409,7 +409,7 @@ async function seedDatabase() {
         waMessageId: "wamid_" + Date.now() + "_1",
         direction: "outbound",
         senderType: "ai",
-        body: "Hello Sipho! Thank you for your interest in the Senior Backend Developer position at Avatar Human Capital. We were impressed by your profile. Would you be interested in scheduling an interview?",
+        body: "Hello Sipho! Thank you for your interest in the Senior Backend Developer position at MTN - Human Capital. We were impressed by your profile. Would you be interested in scheduling an interview?",
         status: "delivered",
         sentAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2)
       },
@@ -449,7 +449,7 @@ async function seedDatabase() {
         waMessageId: "wamid_" + Date.now() + "_5",
         direction: "outbound",
         senderType: "human",
-        body: "Hi Lerato, this is the HR team at Avatar Human Capital. We need a few documents for your background check. Could you please send your proof of address?",
+        body: "Hi Lerato, this is the HR team at MTN - Human Capital. We need a few documents for your background check. Could you please send your proof of address?",
         status: "delivered",
         sentAt: new Date(Date.now() - 1000 * 60 * 60 * 24)
       },

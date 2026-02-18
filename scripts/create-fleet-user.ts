@@ -3,7 +3,7 @@ import Database from "better-sqlite3";
 import { users } from "../db/schema";
 import bcrypt from "bcryptjs";
 
-const sqlite = new Database("avatarhc.db");
+const sqlite = new Database("mtnhc.db");
 const db = drizzle(sqlite);
 
 async function createFleetUser() {

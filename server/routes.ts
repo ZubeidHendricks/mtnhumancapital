@@ -4496,7 +4496,7 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
         skills: skills.map(s => ({ name: s.name, category: s.category })),
       };
 
-      const systemPrompt = `You are an AI Workforce Intelligence Assistant for Avatar Human Capital. You help HR managers and executives understand their workforce data and make strategic decisions.
+      const systemPrompt = `You are an AI Workforce Intelligence Assistant for MTN - Human Capital. You help HR managers and executives understand their workforce data and make strategic decisions.
 
 You have access to the following workforce data:
 ${JSON.stringify(workforceContext, null, 2)}

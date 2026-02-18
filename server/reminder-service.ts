@@ -115,7 +115,7 @@ ${docList}
 Please submit these documents via WhatsApp by replying to this message with each document.
 
 Thank you,
-Avatar Human Capital Team`;
+MTN - Human Capital Team`;
 
     // Send via WhatsApp if available
     if (candidate.phone && process.env.WHATSAPP_API_TOKEN) {
@@ -231,7 +231,7 @@ ${missingDocuments.map((doc, idx) => `${idx + 1}. ${doc}`).join('\n')}
 Please submit these documents as soon as possible to continue with your application process.
 
 Thank you,
-Avatar Human Capital Team`;
+MTN - Human Capital Team`;
   }
 
   private buildHRMessage(candidate: any, missingDocuments: string[], check: any): string {

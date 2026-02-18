@@ -294,7 +294,7 @@ export default function AISupport() {
           AI Support Assistant
         </h1>
         <p className="text-muted-foreground mt-2">
-          Ask me anything about how to use the Avatar Human Capital platform. I'll guide you step-by-step with highlighted navigation!
+          Ask me anything about how to use the MTN - Human Capital platform. I'll guide you step-by-step with highlighted navigation!
         </p>
       </div>
 

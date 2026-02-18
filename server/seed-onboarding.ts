@@ -19,7 +19,7 @@ async function seedOnboardingData() {
     console.log("Default tenant not found, creating...");
     await db.insert(tenantConfig).values({
       id: DEFAULT_TENANT_ID,
-      companyName: "Avatar Human Capital",
+      companyName: "MTN - Human Capital",
       subdomain: "ahc",
       primaryColor: "#2563eb",
     });
@@ -134,7 +134,7 @@ async function seedOnboardingData() {
         status: "success",
         details: { channel: "whatsapp", messageId: `msg_${Date.now()}` },
         communicationChannel: "whatsapp",
-        messageContent: `Welcome to Avatar Human Capital, ${candidate.fullName}! We're excited to have you join our team.`,
+        messageContent: `Welcome to MTN - Human Capital, ${candidate.fullName}! We're excited to have you join our team.`,
         createdAt: new Date(startDate.getTime() + 1000 * 60 * 5),
       },
       {

@@ -66,7 +66,7 @@ export default function Login() {
             <Cpu className="w-8 h-8 text-primary" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight">Welcome Back</h1>
-          <p className="text-muted-foreground mt-2">Sign in to your Avatar Human Capital workspace</p>
+          <p className="text-muted-foreground mt-2">Sign in to your MTN - Human Capital workspace</p>
         </div>
 
         <Card className="border-border dark:border-white/10 bg-card/50 backdrop-blur-xl">

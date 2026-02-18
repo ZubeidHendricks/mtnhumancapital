@@ -5,10 +5,10 @@ const groq = new Groq({
 });
 
 const PLATFORM_KNOWLEDGE_BASE = `
-# Avatar Human Capital (AHC) Platform Documentation
+# MTN - Human Capital (MTNHC) Platform Documentation
 
 ## Overview
-Avatar Human Capital is an AI-powered HR Management platform that automates the entire employee lifecycle from recruitment to ongoing HR management.
+MTN - Human Capital is an AI-powered HR Management platform that automates the entire employee lifecycle from recruitment to ongoing HR management.
 
 ## Main Sections and Features
 
@@ -201,7 +201,7 @@ export class RAGSupportService {
       const messages = [
         {
           role: "system" as const,
-          content: `You are an AI support assistant for Avatar Human Capital (AHC), an AI-powered HR Management platform. 
+          content: `You are an AI support assistant for MTN - Human Capital (MTNHC), an AI-powered HR Management platform. 
           
 Your job is to help users understand how to use the platform, navigate to features, and accomplish tasks.
 

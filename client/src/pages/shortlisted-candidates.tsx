@@ -330,7 +330,7 @@ This allows us to get to know you better at your convenience. Please click the l
 ${inviteLink}
 
 Best regards,
-Avatar Human Capital Team`}
+MTN - Human Capital Team`}
               />
             </div>
 

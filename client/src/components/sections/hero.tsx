@@ -33,7 +33,7 @@ export function Hero() {
           >
             <img 
               src="/logos/main-logo.png" 
-              alt="Avatar Human Capital" 
+              alt="MTN - Human Capital" 
               className="h-24 sm:h-32 md:h-40 lg:h-48 w-auto object-contain mb-8"
             />
             <span className="inline-block py-1.5 px-4 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium tracking-wide mb-6">

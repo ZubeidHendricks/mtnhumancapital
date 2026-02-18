@@ -391,7 +391,7 @@ export class SocialScreeningOrchestrator {
   private async sendConsentRequest(tenantId: string, candidateId: string, candidate: any): Promise<void> {
     const consentMessage = `Hi ${candidate.fullName?.split(' ')[0] || 'there'}! 👋
 
-As part of our hiring process at Avatar Human Capital, we'd like to conduct a social media screening to assess culture fit.
+As part of our hiring process at MTN - Human Capital, we'd like to conduct a social media screening to assess culture fit.
 
 This screening will:
 • Review publicly available information on Facebook and X (Twitter)

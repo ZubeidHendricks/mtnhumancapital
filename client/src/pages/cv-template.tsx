@@ -341,7 +341,7 @@ export default function CVTemplatePage() {
             CV Template Generator
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Convert CVs to the Avatar Human Capital standardized format
+            Convert CVs to the MTN - Human Capital standardized format
           </p>
         </div>
 
@@ -728,7 +728,7 @@ export default function CVTemplatePage() {
 
         <Card className="mt-8">
           <CardHeader>
-            <CardTitle>About Avatar Human Capital CV Template</CardTitle>
+            <CardTitle>About MTN - Human Capital CV Template</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

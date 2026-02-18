@@ -50,7 +50,7 @@ export class PNetJobPostingAgent {
   private applicationEmailDomain: string;
 
   constructor() {
-    this.applicationEmailDomain = process.env.APPLICATION_EMAIL_DOMAIN || 'applications@avatarhc.com';
+    this.applicationEmailDomain = process.env.APPLICATION_EMAIL_DOMAIN || 'applications@mtnhc.com';
   }
 
   /**

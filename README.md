@@ -1,4 +1,4 @@
-# 🚀 Avatar Human Capital (AHC)
+# 🚀 MTN - Human Capital (MTNHC)
 
 > **AI-Powered Human Resources Management Platform for the Modern Workplace**
 
@@ -28,7 +28,7 @@
 
 ## 🎯 Overview
 
-**Avatar Human Capital** is a comprehensive, multi-tenant SaaS platform that revolutionizes the entire employee lifecycle management. Built for the South African market, AHC combines cutting-edge AI technology with practical HR workflows to deliver:
+**MTN - Human Capital** is a comprehensive, multi-tenant SaaS platform that revolutionizes the entire employee lifecycle management. Built for the South African market, AHC combines cutting-edge AI technology with practical HR workflows to deliver:
 
 - 🤖 **AI-Powered Recruitment** - Automated candidate sourcing, screening, and ranking
 - 🎤 **Voice & Video Interviews** - Dual-stage AI assessment with emotion analysis
@@ -178,8 +178,8 @@
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/ZubeidHendricks/AvatarHumanCapital.git
-cd AvatarHumanCapital
+git clone https://github.com/ZubeidHendricks/mtnhumancapital.git
+cd mtnhumancapital
 
 # 2. Install dependencies
 npm install
@@ -352,7 +352,7 @@ npm run check
 ## 📁 Project Structure
 
 ```
-AvatarHumanCapital/
+mtnhumancapital/
 ├── client/                    # React frontend
 │   ├── src/
 │   │   ├── pages/            # 37 route components
@@ -680,11 +680,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👥 Team
 
-**Avatar Human Capital**  
+**MTN - Human Capital**  
 Building the future of HR technology in South Africa
 
 - **Website**: [Coming Soon]
-- **Email**: info@avatarhc.ai
+- **Email**: info@mtnhc.ai
 - **LinkedIn**: [Coming Soon]
 
 ---
@@ -714,6 +714,6 @@ Building the future of HR technology in South Africa
 
 **Built with ❤️ for the future of work**
 
-[⬆ Back to Top](#-avatar-human-capital-ahc)
+[⬆ Back to Top](#-mtn-human-capital-ahc)
 
 </div>

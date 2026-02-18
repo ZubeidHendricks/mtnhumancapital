@@ -84,7 +84,7 @@ export class CVTemplateGenerator {
       processedText += "\n\n[CV truncated due to length - extract what information is available]";
     }
 
-    const prompt = `Extract information from this CV/Resume to fill the Avatar Human Capital CV template. Return ONLY valid JSON matching this exact structure:
+    const prompt = `Extract information from this CV/Resume to fill the MTN - Human Capital CV template. Return ONLY valid JSON matching this exact structure:
 
 {
   "personalProfile": {

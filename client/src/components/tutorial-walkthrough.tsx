@@ -32,7 +32,7 @@ interface TutorialStep {
 const tutorialSteps: TutorialStep[] = [
   {
     id: "welcome",
-    title: "Welcome to Avatar Human Capital",
+    title: "Welcome to MTN - Human Capital",
     description: "Your AI-powered HR management platform. This quick tutorial will guide you through the key features to help you get started.",
     icon: <Sparkles className="h-8 w-8 text-blue-600 dark:text-blue-400" />,
     tips: [

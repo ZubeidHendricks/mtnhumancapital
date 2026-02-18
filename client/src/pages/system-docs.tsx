@@ -32,7 +32,7 @@ export default function SystemDocs() {
               System Documentation
             </h1>
             <p className="text-muted-foreground mt-2">
-              Complete guide to the Avatar Human Capital platform and its features
+              Complete guide to the MTN - Human Capital platform and its features
             </p>
           </div>
 
@@ -51,7 +51,7 @@ export default function SystemDocs() {
                 <CardHeader>
                   <CardTitle>Platform Overview</CardTitle>
                   <CardDescription>
-                    Avatar Human Capital is a comprehensive HR management platform with AI-powered features
+                    MTN - Human Capital is a comprehensive HR management platform with AI-powered features
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">

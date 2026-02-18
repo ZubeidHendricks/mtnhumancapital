@@ -38,7 +38,7 @@ export function Navbar() {
           <div className="flex items-center group cursor-pointer">
             <img 
               src="/logos/light-logo.png" 
-              alt="Avatar Human Capital" 
+              alt="MTN - Human Capital" 
               className="h-10 md:h-16 w-auto object-contain"
             />
           </div>

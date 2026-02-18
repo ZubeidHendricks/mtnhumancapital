@@ -239,7 +239,7 @@ export default function HRDashboard() {
     }
     setSelectedCandidate(candidate);
     setEmailSubject(`Regarding Your Application - ${candidate.role || 'Position'}`);
-    setEmailMessage(`Dear ${candidate.fullName || candidate.name},\n\nThank you for your interest in the ${candidate.role || 'position'} role at Avatar Human Capital.\n\nBest regards,\nHR Team`);
+    setEmailMessage(`Dear ${candidate.fullName || candidate.name},\n\nThank you for your interest in the ${candidate.role || 'position'} role at MTN - Human Capital.\n\nBest regards,\nHR Team`);
     setIsEmailOpen(true);
   };
 

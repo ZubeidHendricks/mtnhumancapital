@@ -85,7 +85,7 @@ export default function Home() {
           <div className="container mx-auto px-6 text-center">
             <h2 className="text-4xl font-bold mb-6 text-foreground">Ready to Transform Your Operations?</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto mb-10 text-lg">
-              Join the future of human capital and operational management with Avatar Human Capital's intelligent advisory solutions.
+              Join the future of human capital and operational management with MTN - Human Capital's intelligent advisory solutions.
             </p>
             <form className="max-w-md mx-auto flex gap-2">
               <input 
@@ -109,12 +109,12 @@ export default function Home() {
               <div className="flex items-center mb-6 py-6 px-6">
                 <img 
                   src="/logos/light-logo.png" 
-                  alt="Avatar Human Capital" 
+                  alt="MTN - Human Capital" 
                   className="h-16 w-auto object-contain"
                 />
               </div>
               <p className="text-gray-400 max-w-xs">
-                Avatar Human Capital. <br/>
+                MTN - Human Capital. <br/>
                 Pioneering the intersection of human potential and artificial intelligence.
               </p>
             </div>
@@ -140,7 +140,7 @@ export default function Home() {
           </div>
           
           <div className="border-t border-gray-200 dark:border-zinc-800 mt-12 pt-8 text-center text-sm text-gray-500">
-            © {new Date().getFullYear()} Avatar Human Capital. All rights reserved.
+            © {new Date().getFullYear()} MTN - Human Capital. All rights reserved.
           </div>
         </div>
       </footer>
