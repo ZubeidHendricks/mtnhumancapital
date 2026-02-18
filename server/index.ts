@@ -279,7 +279,10 @@ app.use((req, res, next) => {
     await setupVite(app, server);
   } else {
     // Serve static files in production
-    const distPath = path.resolve(import.meta.dirname, "public");
+    const distPath = path.resolve(
+      typeof __dirname !== "undefined" ? __dirname : import.meta.dirname,
+      "public"
+    );
 
     if (!fs.existsSync(distPath)) {
       throw new Error(
