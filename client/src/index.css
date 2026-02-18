@@ -43,293 +43,330 @@
   --color-chart-4: hsl(var(--chart-4));
   --color-chart-5: hsl(var(--chart-5));
 
-  --font-sans: 'Aptos', 'Segoe UI', system-ui, -apple-system, sans-serif;
-  --font-display: 'Aptos', 'Segoe UI', system-ui, -apple-system, sans-serif;
-  
-  --radius: 0.5rem;
+  --font-sans: 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'Helvetica Neue', Arial, sans-serif;
+
+  --radius: 4px;
 }
 
+/* ─── MTN Brand constants (never change between themes) ─── */
 :root {
-  /* Dark Theme Default - Teal & Blue Professional Brand */
-  --background: 222 47% 8%; /* Dark Blue-Gray */
-  --foreground: 210 40% 98%;
+  --mtn-yellow:       #FFCB00;
+  --mtn-navy:         #002868;
+  --mtn-navy-dark:    #001844;
+  --mtn-yellow-hover: #E6B800;
+  --mtn-black:        #000000;
+  --mtn-white:        #FFFFFF;
+  --mtn-charcoal:     #1A1A1A;
+  --mtn-grey-light:   #F5F5F5;
+  --mtn-grey-mid:     #CCCCCC;
+  --mtn-grey-text:    #666666;
+  --mtn-error:        #D0021B;
+  --mtn-success:      #2D9C45;
 
-  --card: 222 47% 11%; /* Slightly lighter dark */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+
+  --shadow-sm:  0 1px 4px rgba(0,0,0,0.08);
+  --shadow-md:  0 2px 12px rgba(0,0,0,0.10);
+  --shadow-lg:  0 6px 24px rgba(0,0,0,0.14);
+  --shadow-xl:  0 12px 40px rgba(0,0,0,0.18);
+}
+
+/* ─── DARK MODE (default) ─── */
+:root {
+  --background: 220 20% 7%;       /* #0D1117 */
+  --foreground: 210 40% 98%;      /* #F0F6FC */
+
+  --card: 220 18% 13%;            /* #161B22 */
   --card-foreground: 210 40% 98%;
 
-  --popover: 222 47% 11%;
+  --popover: 220 18% 13%;
   --popover-foreground: 210 40% 98%;
 
-  --primary: 174 84% 32%; /* Teal - Professional Brand Color */
-  --primary-foreground: 0 0% 100%;
+  --primary: 48 100% 50%;         /* #FFCB00 MTN Yellow */
+  --primary-foreground: 0 0% 0%;  /* Black text on yellow */
 
-  --secondary: 210 100% 30%; /* Dark Blue */
-  --secondary-foreground: 210 40% 98%;
+  --secondary: 214 100% 20%;      /* #002868 MTN Navy */
+  --secondary-foreground: 0 0% 100%;
 
-  --muted: 222 47% 15%;
-  --muted-foreground: 215 20% 65%;
+  --muted: 220 14% 16%;           /* #21262D */
+  --muted-foreground: 215 14% 55%; /* #8B949E */
 
-  --accent: 174 84% 32%; /* Teal */
-  --accent-foreground: 0 0% 100%;
+  --accent: 48 100% 50%;          /* MTN Yellow */
+  --accent-foreground: 0 0% 0%;
 
-  --destructive: 0 62% 50%;
-  --destructive-foreground: 210 40% 98%;
-
-  --border: 222 47% 18%;
-  --input: 222 47% 18%;
-  --ring: 174 84% 32%; /* Teal Ring */
-  
-  --button-outline: hsl(0 0% 100% / 0.2); /* White border for dark theme */
-
-  --radius: 0.5rem;
-  
-  /* Chart Colors using Teal/Blue Palette */
-  --chart-1: 174 84% 32%; /* Teal */
-  --chart-2: 210 100% 50%; /* Blue */
-  --chart-3: 45 100% 51%; /* Amber */
-  --chart-4: 0 0% 92%;
-  --chart-5: 160 84% 39%; /* Green */
-}
-
-.light {
-  /* Light Theme - Clean Professional Dashboard Style (matching reference) */
-  --background: 210 20% 98%; /* Very light grey background */
-  --foreground: 222 47% 11%; /* Dark navy text */
-
-  --card: 0 0% 100%; /* Pure white cards */
-  --card-foreground: 222 47% 11%;
-
-  --popover: 0 0% 100%; /* White popovers */
-  --popover-foreground: 222 47% 11%;
-
-  --primary: 199 89% 48%; /* Cyan/Teal - matching reference */
-  --primary-foreground: 0 0% 100%;
-
-  --secondary: 210 20% 96%; /* Light grey */
-  --secondary-foreground: 222 47% 11%;
-
-  --muted: 210 20% 96%; /* Light grey background */
-  --muted-foreground: 215 16% 47%; /* Medium grey text */
-
-  --accent: 199 89% 48%; /* Teal accent */
-  --accent-foreground: 0 0% 100%;
-
-  --destructive: 0 84% 60%;
+  --destructive: 354 95% 41%;     /* #D0021B MTN Error Red */
   --destructive-foreground: 0 0% 100%;
 
-  --border: 214 32% 91%; /* Light grey border */
-  --input: 0 0% 100%; /* White input */
-  --ring: 199 89% 48%; /* Teal focus ring */
-  
-  --button-outline: hsl(214 32% 85%);
+  --border: 215 14% 21%;          /* #30363D */
+  --input: 215 14% 21%;
+  --ring: 48 100% 50%;            /* MTN Yellow focus ring */
 
-  /* Sidebar colors for light theme */
-  --sidebar-background: 222 47% 11%; /* Dark navy sidebar */
-  --sidebar-foreground: 210 40% 98%; /* Light text */
-  --sidebar-muted: 222 47% 18%;
-  --sidebar-accent: 199 89% 48%;
+  --button-outline: hsl(0 0% 100% / 0.2);
+  --radius: 4px;
 
-  /* Chart Colors for Light Mode */
-  --chart-1: 199 89% 48%; /* Teal */
-  --chart-2: 210 70% 50%; /* Blue */
-  --chart-3: 160 60% 45%; /* Green */
-  --chart-4: 45 90% 48%; /* Amber */
-  --chart-5: 210 70% 55%; /* Steel Blue */
+  /* Chart Colors - MTN palette */
+  --chart-1: 48 100% 50%;         /* MTN Yellow */
+  --chart-2: 214 100% 50%;        /* Blue */
+  --chart-3: 140 62% 39%;         /* MTN Success Green */
+  --chart-4: 0 0% 92%;            /* Light grey */
+  --chart-5: 199 89% 48%;         /* Cyan */
 }
 
-/* Dark sidebar styling for light theme - matching reference image */
-.light .sidebar-nav {
-  background: hsl(222 47% 11%) !important;
-  color: hsl(210 40% 98%) !important;
+/* ─── LIGHT MODE ─── */
+.light {
+  --background: 220 14% 96%;      /* #F0F2F5 */
+  --foreground: 220 20% 7%;       /* #0D1117 */
+
+  --card: 0 0% 100%;              /* White cards */
+  --card-foreground: 220 20% 7%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 20% 7%;
+
+  --primary: 48 100% 50%;         /* #FFCB00 MTN Yellow */
+  --primary-foreground: 0 0% 0%;  /* Black text on yellow */
+
+  --secondary: 214 100% 20%;      /* #002868 MTN Navy */
+  --secondary-foreground: 0 0% 100%;
+
+  --muted: 220 14% 96%;           /* #F5F6F8 */
+  --muted-foreground: 215 14% 34%; /* #4B5563 */
+
+  --accent: 48 100% 50%;          /* MTN Yellow */
+  --accent-foreground: 0 0% 0%;
+
+  --destructive: 354 95% 41%;     /* MTN Error Red */
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 216 12% 90%;          /* #E5E7EB */
+  --input: 0 0% 100%;
+  --ring: 48 100% 50%;            /* MTN Yellow */
+
+  --button-outline: hsl(214 32% 85%);
+
+  /* Chart Colors for Light Mode */
+  --chart-1: 48 100% 50%;         /* MTN Yellow */
+  --chart-2: 214 100% 40%;        /* Navy-ish blue */
+  --chart-3: 140 62% 39%;         /* MTN Green */
+  --chart-4: 45 90% 48%;          /* Amber */
+  --chart-5: 199 70% 45%;         /* Teal */
+}
+
+/* ══════════════════════════════════════════════════════════
+   SIDEBAR — always MTN Navy regardless of theme
+   ══════════════════════════════════════════════════════════ */
+
+.sidebar-nav {
+  background-color: var(--mtn-navy) !important;
+  color: #FFFFFF !important;
   border-right: none !important;
 }
 
-.light .sidebar-nav * {
-  border-color: hsl(222 47% 18%) !important;
+.sidebar-nav * {
+  border-color: rgba(255,255,255,0.08) !important;
 }
 
-.light .sidebar-nav h3,
-.light .sidebar-nav .text-foreground\/60 {
-  color: hsl(210 40% 70%) !important;
+/* Section labels */
+.sidebar-nav h3,
+.sidebar-nav .text-foreground\/60 {
+  color: rgba(255,255,255,0.35) !important;
+  font-size: 0.62rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 1.2px !important;
+  text-transform: uppercase !important;
 }
 
-.light .sidebar-nav span,
-.light .sidebar-nav .text-muted-foreground {
-  color: hsl(210 40% 80%) !important;
+/* Nav item text */
+.sidebar-nav span,
+.sidebar-nav .text-muted-foreground {
+  color: rgba(255,255,255,0.65) !important;
+  font-size: 0.85rem !important;
+  font-weight: 400 !important;
 }
 
-.light .sidebar-nav svg {
-  color: hsl(210 40% 70%) !important;
+/* Nav item icons */
+.sidebar-nav svg {
+  color: rgba(255,255,255,0.5) !important;
 }
 
-.light .sidebar-nav a:hover span,
-.light .sidebar-nav a:hover svg,
-.light .sidebar-nav .hover\:text-foreground:hover {
-  color: hsl(0 0% 100%) !important;
+/* Hover state */
+.sidebar-nav a:hover span,
+.sidebar-nav a:hover svg,
+.sidebar-nav .hover\:text-foreground:hover {
+  color: #FFFFFF !important;
 }
 
-.light .sidebar-nav .bg-primary\/10 {
-  background: hsl(199 89% 48% / 0.15) !important;
+.sidebar-nav .hover\:bg-accent:hover,
+.sidebar-nav a div:hover {
+  background-color: rgba(255,255,255,0.07) !important;
 }
 
-.light .sidebar-nav .text-primary {
-  color: hsl(199 89% 55%) !important;
+/* Active state — MTN Yellow accent */
+.sidebar-nav .bg-primary\/10 {
+  background-color: rgba(255, 203, 0, 0.10) !important;
+  border-left: 3px solid var(--mtn-yellow) !important;
+  border-radius: 6px !important;
 }
 
-.light .sidebar-nav .hover\:bg-accent:hover {
-  background: hsl(222 47% 18%) !important;
+.sidebar-nav .text-primary {
+  color: var(--mtn-yellow) !important;
 }
 
-.light .sidebar-nav button {
-  color: hsl(210 40% 80%) !important;
+.sidebar-nav .text-primary svg,
+.sidebar-nav .bg-primary\/10 svg {
+  color: var(--mtn-yellow) !important;
 }
 
-.light .sidebar-nav button:hover {
-  background: hsl(222 47% 18%) !important;
-  color: hsl(0 0% 100%) !important;
+/* Active indicator bar — yellow */
+.sidebar-nav .bg-primary {
+  background-color: var(--mtn-yellow) !important;
 }
+
+/* Sidebar buttons (collapse toggle, theme toggle) */
+.sidebar-nav button {
+  color: rgba(255,255,255,0.65) !important;
+}
+
+.sidebar-nav button:hover {
+  background-color: rgba(255,255,255,0.07) !important;
+  color: #FFFFFF !important;
+}
+
+/* Logo area */
+.sidebar-nav .bg-gray-100,
+.sidebar-nav .dark\:bg-zinc-900 {
+  background-color: transparent !important;
+}
+
+/* ══════════════════════════════════════════════════════════
+   LIGHT THEME OVERRIDES
+   ══════════════════════════════════════════════════════════ */
 
 /* Cards in light theme */
 .light .bg-card {
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  box-shadow: var(--shadow-sm);
 }
 
-/* Table styling for light theme - matching reference */
+/* Table styling for light theme */
 .light table {
   background: hsl(0 0% 100%);
-  border-radius: 0.5rem;
+  border-radius: 8px;
   overflow: hidden;
 }
 
 .light thead {
-  background: hsl(210 20% 98%);
+  background: hsl(220 14% 96%);
 }
 
 .light th {
   background: transparent;
-  color: hsl(215 16% 47%);
-  font-weight: 500;
+  color: hsl(215 14% 34%);
+  font-weight: 600;
   font-size: 0.75rem;
   letter-spacing: 0.02em;
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid hsl(214 32% 91%);
+  border-bottom: 1px solid hsl(216 12% 90%);
 }
 
 .light td {
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid hsl(214 32% 93%);
-  color: hsl(222 47% 20%);
+  border-bottom: 1px solid hsl(216 12% 93%);
+  color: hsl(220 20% 15%);
 }
 
 .light tbody tr:hover td {
-  background: hsl(210 20% 98%);
+  background: hsl(220 14% 96%);
 }
 
 .light tbody tr:last-child td {
   border-bottom: none;
 }
 
-/* Status badges in light theme */
+/* Primary button — MTN Yellow bg, black text */
+.light .bg-primary {
+  background: var(--mtn-yellow) !important;
+  color: var(--mtn-black) !important;
+}
+
+.light .bg-primary:hover {
+  background: var(--mtn-yellow-hover) !important;
+}
+
+/* Badge styling */
+.light .bg-primary\/10 {
+  background: rgba(255, 203, 0, 0.12) !important;
+}
+
+.light .text-primary {
+  color: var(--mtn-navy) !important;
+}
+
+/* Status badges - Success */
 .light .bg-green-500\/10,
 .light .bg-emerald-500\/10 {
-  background: hsl(160 84% 39% / 0.15) !important;
+  background: rgba(45, 156, 69, 0.15) !important;
 }
 
 .light .text-green-400,
 .light .text-emerald-400 {
-  color: hsl(160 84% 35%) !important;
+  color: var(--mtn-success) !important;
 }
 
-/* Form input styling for light theme */
-.light input:not([type="checkbox"]):not([type="radio"]) {
-  background: hsl(0 0% 100%);
-  border-color: hsl(214 32% 91%);
-}
-
-.light input:focus:not([type="checkbox"]):not([type="radio"]) {
-  border-color: hsl(199 89% 48%);
-  box-shadow: 0 0 0 3px hsl(199 89% 48% / 0.1);
-}
-
-/* Button styling for light theme */
-.light .bg-primary {
-  background: hsl(199 89% 48%) !important;
-}
-
-.light .bg-primary:hover {
-  background: hsl(199 89% 42%) !important;
-}
-
-/* Badge styling for light theme */
-.light .bg-primary\/10 {
-  background: hsl(199 89% 48% / 0.12) !important;
-}
-
-.light .text-primary {
-  color: hsl(199 89% 40%) !important;
-}
-
-/* Status badge background overrides - specific classes only */
-.light .bg-green-500\/10,
-.light .bg-emerald-500\/10 {
-  background: hsl(160 84% 39% / 0.15) !important;
-}
-
-/* Status text colors for light theme readability */
-.light .text-green-400 {
-  color: hsl(160 84% 32%) !important;
-}
-
-.light .text-emerald-400 {
-  color: hsl(160 84% 32%) !important;
-}
-
-/* Warning badges */
+/* Status badges - Warning */
 .light .bg-yellow-500\/10,
 .light .bg-amber-500\/10,
 .light .bg-yellow-100 {
-  background: hsl(45 93% 47% / 0.15) !important;
+  background: rgba(255, 203, 0, 0.15) !important;
 }
 
 .light .text-yellow-500,
 .light .text-yellow-400,
 .light .text-amber-500 {
-  color: hsl(45 93% 35%) !important;
+  color: #7A6000 !important;
 }
 
-/* Error/danger badges */
+/* Status badges - Error */
 .light .bg-red-500\/10,
 .light .bg-red-100 {
-  background: hsl(0 84% 60% / 0.12) !important;
+  background: rgba(208, 2, 27, 0.12) !important;
 }
 
 .light .text-red-500,
 .light .text-red-400 {
-  color: hsl(0 84% 45%) !important;
+  color: var(--mtn-error) !important;
 }
 
-/* Blue info badges */
+/* Status badges - Info */
 .light .bg-blue-500\/10,
 .light .bg-blue-100 {
-  background: hsl(210 100% 50% / 0.12) !important;
+  background: rgba(0, 40, 104, 0.10) !important;
 }
 
 .light .text-blue-500,
 .light .text-blue-400 {
-  color: hsl(210 100% 40%) !important;
+  color: var(--mtn-navy) !important;
 }
 
 /* Muted text styling */
 .light .text-muted-foreground {
-  color: hsl(215 16% 47%) !important;
+  color: hsl(215 14% 34%) !important;
 }
 
 /* Card header titles */
 .light .text-card-foreground {
-  color: hsl(222 47% 15%) !important;
+  color: var(--mtn-navy) !important;
 }
 
-/* Scroll area styling */
+/* Scroll area */
 .light [data-radix-scroll-area-viewport] {
   background: transparent;
 }
@@ -337,127 +374,152 @@
 /* Dropdown menus */
 .light [role="menu"] {
   background: hsl(0 0% 100%) !important;
-  border: 1px solid hsl(214 32% 91%) !important;
-  box-shadow: 0 10px 38px -10px rgba(22, 23, 24, 0.15), 0 10px 20px -15px rgba(22, 23, 24, 0.1) !important;
+  border: 1px solid hsl(216 12% 90%) !important;
+  box-shadow: var(--shadow-lg) !important;
 }
 
 .light [role="menuitem"] {
-  color: hsl(222 47% 15%) !important;
+  color: var(--mtn-navy) !important;
 }
 
 .light [role="menuitem"]:hover,
 .light [role="menuitem"]:focus {
-  background: hsl(210 20% 96%) !important;
+  background: hsl(220 14% 96%) !important;
 }
 
 /* Dialog/Modal styling */
 .light [role="dialog"] {
   background: hsl(0 0% 100%) !important;
-  border: 1px solid hsl(214 32% 91%) !important;
+  border: 1px solid hsl(216 12% 90%) !important;
 }
 
-/* Tabs styling for light theme */
+/* Tabs styling */
 .light [role="tablist"] {
-  background: hsl(210 20% 96%);
-  border-radius: 0.5rem;
+  background: hsl(220 14% 96%);
+  border-radius: 4px;
 }
 
 .light [role="tab"] {
-  color: hsl(215 16% 47%);
+  color: var(--mtn-grey-text);
 }
 
 .light [role="tab"][data-state="active"] {
   background: hsl(0 0% 100%);
-  color: hsl(222 47% 15%);
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  color: var(--mtn-navy);
+  box-shadow: var(--shadow-sm);
 }
 
-/* Avatar styling */
+/* Avatar/muted backgrounds */
 .light .bg-muted {
-  background: hsl(210 20% 96%) !important;
+  background: hsl(220 14% 96%) !important;
 }
 
-/* Progress bars - using data attribute for specificity */
+/* Progress bars */
 .light [data-radix-progress-root] {
-  background: hsl(210 20% 90%);
+  background: hsl(220 14% 90%);
 }
 
 .light [data-radix-progress-indicator] {
-  background: hsl(199 89% 48%);
+  background: var(--mtn-yellow);
 }
 
 /* Separator lines */
 .light [data-orientation="horizontal"] {
-  background: hsl(214 32% 91%);
+  background: hsl(216 12% 90%);
 }
 
 /* Tooltips */
 .light [role="tooltip"] {
-  background: hsl(222 47% 11%) !important;
+  background: var(--mtn-navy) !important;
   color: hsl(0 0% 100%) !important;
 }
 
-/* Charts - ensure readable in light mode */
+/* Charts */
 .light .recharts-cartesian-grid-horizontal line,
 .light .recharts-cartesian-grid-vertical line {
-  stroke: hsl(214 32% 91%);
+  stroke: hsl(216 12% 90%);
 }
 
 .light .recharts-text {
-  fill: hsl(215 16% 47%);
+  fill: var(--mtn-grey-text);
 }
 
 .light .recharts-tooltip-wrapper .recharts-default-tooltip {
   background: hsl(0 0% 100%) !important;
-  border: 1px solid hsl(214 32% 91%) !important;
+  border: 1px solid hsl(216 12% 90%) !important;
 }
 
-/* Stat cards with icons */
+/* Stat card icons */
 .light .rounded-full.bg-primary\/10 {
-  background: hsl(199 89% 48% / 0.12) !important;
+  background: rgba(255, 203, 0, 0.12) !important;
+}
+
+/* Form inputs */
+.light input:not([type="checkbox"]):not([type="radio"]) {
+  background: hsl(0 0% 100%);
+  border-color: hsl(216 12% 90%);
+}
+
+.light input:focus:not([type="checkbox"]):not([type="radio"]) {
+  border-color: var(--mtn-yellow);
+  box-shadow: 0 0 0 3px rgba(255, 203, 0, 0.25);
+}
+
+.light input[type="checkbox"],
+.light input[type="radio"] {
+  accent-color: var(--mtn-yellow);
 }
 
 /* Search input */
 .light input[type="search"],
 .light input[placeholder*="Search"] {
   background: hsl(0 0% 100%);
-  border: 1px solid hsl(214 32% 91%);
+  border: 1px solid hsl(216 12% 90%);
 }
 
 /* Select dropdowns */
 .light select,
 .light [role="combobox"] {
   background: hsl(0 0% 100%);
-  border: 1px solid hsl(214 32% 91%);
-  color: hsl(222 47% 15%);
+  border: 1px solid hsl(216 12% 90%);
+  color: var(--mtn-navy);
 }
 
 /* Textarea */
 .light textarea {
   background: hsl(0 0% 100%);
-  border: 1px solid hsl(214 32% 91%);
-  color: hsl(222 47% 15%);
+  border: 1px solid hsl(216 12% 90%);
+  color: var(--mtn-navy);
 }
 
 /* Ghost/outline buttons */
 .light .bg-transparent {
-  color: hsl(222 47% 15%);
+  color: var(--mtn-navy);
 }
 
 .light button[class*="ghost"]:hover,
 .light .hover\:bg-accent:hover {
-  background: hsl(210 20% 96%) !important;
+  background: hsl(220 14% 96%) !important;
 }
 
 /* Icon colors in light mode */
 .light svg.text-muted-foreground {
-  color: hsl(215 16% 55%) !important;
+  color: hsl(215 14% 45%) !important;
 }
 
-/* Make sure sidebar text stays light in light theme */
-.light .sidebar-nav .text-primary {
-  color: hsl(199 89% 55%) !important;
+/* ══════════════════════════════════════════════════════════
+   TOP BAR — follows theme
+   ══════════════════════════════════════════════════════════ */
+
+/* Yellow accent bar under top header */
+.light header,
+.light .top-header {
+  border-bottom-color: hsl(216 12% 90%) !important;
 }
+
+/* ══════════════════════════════════════════════════════════
+   BASE STYLES
+   ══════════════════════════════════════════════════════════ */
 
 @layer base {
   * {
@@ -465,49 +527,72 @@
   }
   body {
     @apply font-sans antialiased bg-background text-foreground;
-    font-weight: 500; /* Medium weight for better readability */
+    font-weight: 400;
+    line-height: 1.6;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-display tracking-tight;
-    font-weight: 700; /* Bold headings */
+    font-weight: 700;
+    color: hsl(var(--foreground));
+  }
+  .light h1, .light h2, .light h3, .light h4, .light h5, .light h6 {
+    color: var(--mtn-navy);
   }
   strong, b {
     font-weight: 700;
   }
-  /* Ensure table text is readable */
   table {
     @apply text-foreground;
   }
   th {
     font-weight: 600;
   }
+  label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--mtn-navy);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
 }
 
-/* Custom Utility Classes for Glassmorphism & Glow */
+/* ══════════════════════════════════════════════════════════
+   UTILITY CLASSES
+   ══════════════════════════════════════════════════════════ */
+
 @layer utilities {
   .glass-panel {
     @apply bg-muted/50 dark:bg-white/5 backdrop-blur-md border border-border dark:border-white/10;
   }
-  
+
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-linear-to-r from-primary to-teal-600;
+    @apply bg-clip-text text-transparent bg-linear-to-r;
+    background-image: linear-gradient(to right, var(--mtn-yellow), #E6B800);
   }
 
   .glow-effect {
-    box-shadow: 0 0 20px -5px hsl(var(--primary) / 0.5);
+    box-shadow: 0 0 20px -5px rgba(255, 203, 0, 0.5);
+  }
+
+  /* MTN card accent — yellow top border */
+  .card-accent {
+    border-top: 4px solid var(--mtn-yellow);
   }
 }
 
-/* Highlight Pulse Animation for AI Support Guidance */
+/* ══════════════════════════════════════════════════════════
+   HIGHLIGHT ANIMATION (AI Support Guidance)
+   ══════════════════════════════════════════════════════════ */
+
 @keyframes highlight-pulse {
   0%, 100% {
-    box-shadow: 0 0 0 4px hsl(var(--primary) / 0.3), 0 0 20px 8px hsl(var(--primary) / 0.2);
-    outline: 3px solid hsl(var(--primary));
+    box-shadow: 0 0 0 4px rgba(255, 203, 0, 0.3), 0 0 20px 8px rgba(255, 203, 0, 0.2);
+    outline: 3px solid var(--mtn-yellow);
     outline-offset: 2px;
   }
   50% {
-    box-shadow: 0 0 0 8px hsl(var(--primary) / 0.1), 0 0 30px 12px hsl(var(--primary) / 0.3);
-    outline: 3px solid hsl(var(--primary) / 0.7);
+    box-shadow: 0 0 0 8px rgba(255, 203, 0, 0.1), 0 0 30px 12px rgba(255, 203, 0, 0.3);
+    outline: 3px solid rgba(255, 203, 0, 0.7);
     outline-offset: 4px;
   }
 }
@@ -516,5 +601,5 @@
   animation: highlight-pulse 1.5s ease-in-out infinite;
   position: relative;
   z-index: 100;
-  border-radius: 8px;
+  border-radius: 4px;
 }
