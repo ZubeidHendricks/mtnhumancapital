@@ -108,7 +108,7 @@ export default function Home() {
             <div className="md:col-span-2">
               <div className="flex items-center mb-6 py-6 px-6">
                 <img 
-                  src="/logos/light-logo.png" 
+                  src="/logos/mtn-new-logo.svg" 
                   alt="MTN - Human Capital" 
                   className="h-16 w-auto object-contain"
                 />

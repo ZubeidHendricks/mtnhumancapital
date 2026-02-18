@@ -32,7 +32,7 @@ export function Hero() {
             className="flex flex-col items-center"
           >
             <img 
-              src="/logos/main-logo.png" 
+              src="/logos/mtn-new-logo.svg" 
               alt="MTN - Human Capital" 
               className="h-24 sm:h-32 md:h-40 lg:h-48 w-auto object-contain mb-8"
             />
