@@ -68,14 +68,14 @@ export function Hero() {
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
             <Link href="/login">
-              <Button size="lg" className="h-12 px-8 text-base bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/25 transition-all hover:scale-105">
+              <Button size="lg" className="h-12 px-8 text-base shadow-lg shadow-primary/25" style={{ backgroundColor: '#FFCB00', color: '#000000' }}>
                 Start Transformation <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </Link>
             <Button 
               size="lg" 
               variant="outline" 
-              className="h-12 px-8 text-base border-border hover:bg-accent"
+              className="h-12 px-8 text-base border-border text-foreground"
               onClick={() => setShowDemo(true)}
               data-testid="button-watch-demo"
             >
