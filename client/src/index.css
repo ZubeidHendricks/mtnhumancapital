@@ -383,8 +383,18 @@
 }
 
 .light [role="menuitem"]:hover,
-.light [role="menuitem"]:focus {
-  background: hsl(220 14% 96%) !important;
+.light [role="menuitem"]:focus,
+.light [role="menuitem"][data-highlighted] {
+  background: hsl(220 14% 93%) !important;
+  color: var(--mtn-navy) !important;
+}
+
+/* Dark mode menu items */
+[role="menuitem"]:hover,
+[role="menuitem"]:focus,
+[role="menuitem"][data-highlighted] {
+  background: hsl(220 14% 20%) !important;
+  color: hsl(210 40% 98%) !important;
 }
 
 /* Dialog/Modal styling */
@@ -497,9 +507,8 @@
   color: var(--mtn-navy);
 }
 
-.light button[class*="ghost"]:hover,
-.light .hover\:bg-accent:hover {
-  background: hsl(220 14% 96%) !important;
+.light button[class*="ghost"]:hover {
+  background: hsl(220 14% 93%) !important;
 }
 
 /* Icon colors in light mode */
