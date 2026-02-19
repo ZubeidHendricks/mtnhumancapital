@@ -100,10 +100,10 @@ export default function HRConversations() {
         setConversations(convList);
         
         // Fetch candidate details for linked conversations
-        const candidateIds = Array.from(new Set(data.filter((c: WhatsappConversation) => c.candidateId).map((c: WhatsappConversation) => c.candidateId))) as string[];
+        const candidateIds = Array.from(new Set(convList.filter((c: WhatsappConversation) => c.candidateId).map((c: WhatsappConversation) => c.candidateId))) as string[];
         const candidateMap: Record<string, Candidate> = {};
-        
-        for (const id of candidateIds) {
+
+        await Promise.all(candidateIds.map(async (id) => {
           try {
             const candResponse = await fetch(`/api/candidates/${id}`);
             if (candResponse.ok) {
@@ -113,8 +113,8 @@ export default function HRConversations() {
           } catch (e) {
             console.error("Failed to fetch candidate:", id);
           }
-        }
-        
+        }));
+
         setCandidates(candidateMap);
       }
     } catch (error) {

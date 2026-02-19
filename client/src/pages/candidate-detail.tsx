@@ -192,7 +192,7 @@ export default function CandidateDetail() {
       const response = await fetch(`/api/candidate-documents?candidateId=${candidateId}`);
       if (response.ok) {
         const data = await response.json();
-        setCollectedDocuments(data);
+        setCollectedDocuments(Array.isArray(data) ? data : (data.data || []));
       }
     } catch (error) {
       console.error("Failed to fetch collected documents:", error);

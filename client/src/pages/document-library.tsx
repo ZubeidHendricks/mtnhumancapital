@@ -134,19 +134,20 @@ export default function DocumentLibrary() {
   const [selectedDocument, setSelectedDocument] = useState<CandidateDocument | null>(null);
   const [showPreview, setShowPreview] = useState(false);
 
-  const { data: documents = [], isLoading, refetch } = useQuery<CandidateDocument[]>({
+  const { data: documentsResponse, isLoading, refetch } = useQuery<{ data: CandidateDocument[]; total: number } | CandidateDocument[]>({
     queryKey: ["/api/candidate-documents", searchQuery, documentTypeFilter, statusFilter],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (searchQuery) params.set("search", searchQuery);
       if (documentTypeFilter !== "all") params.set("documentType", documentTypeFilter);
       if (statusFilter !== "all") params.set("status", statusFilter);
-      
+
       const response = await fetch(`/api/candidate-documents?${params.toString()}`);
       if (!response.ok) throw new Error("Failed to fetch documents");
       return response.json();
     },
   });
+  const documents: CandidateDocument[] = Array.isArray(documentsResponse) ? documentsResponse : (documentsResponse?.data || []);
 
   const verifyMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {

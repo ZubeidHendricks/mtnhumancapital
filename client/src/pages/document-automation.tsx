@@ -88,7 +88,7 @@ export default function DocumentAutomation() {
   const [dragOver, setDragOver] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-  const { data: allDocuments = [], isLoading: documentsLoading } = useQuery<Document[]>({
+  const { data: allDocumentsResponse, isLoading: documentsLoading } = useQuery<{ data: Document[]; total: number } | Document[]>({
     queryKey: documentsKey,
     queryFn: async () => {
       const res = await fetch("/api/documents");
@@ -96,6 +96,7 @@ export default function DocumentAutomation() {
       return res.json();
     },
   });
+  const allDocuments: Document[] = Array.isArray(allDocumentsResponse) ? allDocumentsResponse : (allDocumentsResponse?.data || []);
 
   const { data: cvDocuments = [] } = useQuery<Document[]>({
     queryKey: cvsKey,
