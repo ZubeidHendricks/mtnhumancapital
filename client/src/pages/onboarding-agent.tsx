@@ -77,7 +77,8 @@ export default function OnboardingAgent() {
     queryKey: candidatesKey,
     queryFn: async () => {
       const response = await api.get("/candidates");
-      return response.data;
+      const body = response.data;
+      return Array.isArray(body) ? body : body.data ?? [];
     },
   });
 

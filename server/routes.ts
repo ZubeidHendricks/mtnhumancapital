@@ -62,7 +62,10 @@ function inferDepartmentFromTitle(title: string): string {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  
+
+  const { EmailService } = await import("./email-service");
+  const emailService = new EmailService(storage);
+
   // ============= AUTHENTICATION =============
   app.post("/api/auth/login", async (req, res) => {
     try {
@@ -2360,6 +2363,33 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     } catch (error) {
       console.error("Error creating interview session:", error);
       res.status(500).json({ message: "Failed to create interview session" });
+    }
+  });
+
+  // Send interview invitation via email
+  app.post("/api/interview-sessions/send-email-invite", async (req, res) => {
+    try {
+      const { to, candidateName, jobTitle, interviewUrl } = req.body;
+
+      if (!to || !interviewUrl) {
+        return res.status(400).json({ message: "Recipient email and interview URL are required" });
+      }
+
+      const result = await emailService.sendInterviewInvitation({
+        to,
+        candidateName: candidateName || "Candidate",
+        jobTitle: jobTitle || "Open Position",
+        interviewUrl,
+      });
+
+      if (result) {
+        res.json({ success: true, message: `Interview invitation sent to ${process.env.DEV_TEST_EMAIL || to}` });
+      } else {
+        res.status(500).json({ success: false, message: "Failed to send email" });
+      }
+    } catch (error) {
+      console.error("Error sending email invite:", error);
+      res.status(500).json({ message: "Failed to send email invitation" });
     }
   });
 
@@ -6167,14 +6197,20 @@ Format your response as JSON:
         return res.status(404).json({ message: "Conversation not found" });
       }
       
+      // Apply DEV_TEST_PHONE override: message stored with candidate's phone, but API sends to test number
+      const actualPhone = process.env.DEV_TEST_PHONE || conversation.phone;
+      if (process.env.DEV_TEST_PHONE && process.env.DEV_TEST_PHONE !== conversation.phone) {
+        console.log(`[WhatsApp] DEV_TEST_PHONE override: ${conversation.phone} -> ${actualPhone}`);
+      }
+
       const message = await whatsappService.sendTextMessage(
         req.tenant.id,
         req.params.id,
-        conversation.phone,
+        actualPhone,
         body,
         senderType || "human"
       );
-      
+
       // Message is always stored locally, even if WhatsApp API fails
       res.status(201).json(message);
     } catch (error: any) {

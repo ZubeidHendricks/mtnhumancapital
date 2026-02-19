@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { candidateService, jobsService } from "@/lib/api";
+import { api, candidateService, jobsService } from "@/lib/api";
 import { useTenantQueryKey } from "@/hooks/useTenant";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +15,8 @@ import {
   Check, 
   MoreHorizontal, 
   Filter, 
-  ChevronDown, 
+  ChevronDown,
+  ChevronUp,
   Mail, 
   Phone, 
   Linkedin, 
@@ -27,7 +28,8 @@ import {
   Copy,
   Loader2,
   Briefcase,
-  MessageSquare
+  MessageSquare,
+  CheckCircle
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link, useLocation } from "wouter";
@@ -63,7 +65,7 @@ function extractUniqueLocations(candidates: any[]): string[] {
 }
 
 export default function CandidatesList() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const urlParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
   const jobIdFromUrl = urlParams.get('jobId');
   const candidateIdFromUrl = urlParams.get('candidateId');
@@ -78,6 +80,10 @@ export default function CandidatesList() {
   const [inviteLink, setInviteLink] = useState("");
   const [inviteChannel, setInviteChannel] = useState<"email" | "whatsapp">("email");
   const [sendingInvite, setSendingInvite] = useState(false);
+  const [interviewPrompt, setInterviewPrompt] = useState("");
+  const [showPromptEditor, setShowPromptEditor] = useState(false);
+  const [inviteSent, setInviteSent] = useState(false);
+  const [sentRecipient, setSentRecipient] = useState("");
   
   // Profile Dialog State
   const [profileOpen, setProfileOpen] = useState(false);
@@ -106,6 +112,7 @@ export default function CandidatesList() {
   const queryClient = useQueryClient();
   const candidatesKey = useTenantQueryKey(['candidates']);
   const jobsKey = useTenantQueryKey(['jobs']);
+  const whatsappConversationsKey = useTenantQueryKey(['whatsapp', 'conversations']);
 
   // Fetch candidates and jobs from API
   const { data: candidates, isLoading: loadingCandidates } = useQuery({
@@ -249,9 +256,61 @@ export default function CandidatesList() {
     }
   };
 
+  const generateInterviewPrompt = (candidate: any, job: any) => {
+    const jobTitle = job?.title || candidate.role || 'the open position';
+    const department = job?.department || '';
+    const description = job?.description || '';
+    const candidateSkills = Array.isArray(candidate.skills) ? candidate.skills.join(', ') : '';
+
+    let prompt = `You are an HR interviewer for AHC (Avatar Human Capital) conducting a screening interview for the ${jobTitle} position${department ? ` in the ${department} department` : ''}.
+
+INTERVIEW GUIDELINES:
+- Ask ONE question at a time
+- Wait for the candidate to fully finish speaking before responding
+- Do not interrupt the candidate
+- Ask relevant follow-up questions based on their answers
+- Keep the interview to about 5-7 questions
+- Start by introducing yourself and asking the candidate to tell you about themselves
+
+QUESTIONS TO ASK:
+1. "Tell me about yourself and your experience relevant to this role."
+   - Ideal: Clear summary of relevant experience, specific achievements, and motivation for applying.
+
+2. "What experience do you have with ${candidateSkills || 'the key skills required for this role'}?"
+   - Ideal: Specific examples of projects or tasks using these skills, with measurable outcomes.
+
+3. "Describe a challenging situation you faced at work and how you resolved it."
+   - Ideal: Uses STAR method (Situation, Task, Action, Result), shows problem-solving and resilience.
+
+4. "Why are you interested in this ${jobTitle} role?"
+   - Ideal: Shows research about the company/role, genuine enthusiasm, and alignment with career goals.
+
+5. "Where do you see yourself in the next 2-3 years?"
+   - Ideal: Shows ambition while being realistic, aligns with the role's growth path.`;
+
+    if (description) {
+      prompt += `\n\nJOB CONTEXT:\n${description}`;
+    }
+
+    prompt += `\n\nEVALUATION CRITERIA:
+- Communication skills
+- Relevant experience
+- Problem-solving ability
+- Cultural fit
+- Self-awareness
+
+At the end of the interview, thank the candidate and let them know the team will be in touch.`;
+
+    return prompt;
+  };
+
   const handleAIContact = (candidate: any) => {
     setSelectedCandidate(candidate);
-    setInviteLink(`${window.location.origin}/interview/voice?candidate=${encodeURIComponent(candidate.fullName || 'candidate')}`);
+    setInviteLink(""); // Link generated at send time
+    setInterviewPrompt(generateInterviewPrompt(candidate, currentJob));
+    setShowPromptEditor(false);
+    setInviteSent(false);
+    setSentRecipient("");
     // Default to WhatsApp if phone available, otherwise email
     if (candidate.phone || (candidate.metadata as any)?.phone) {
       setInviteChannel("whatsapp");
@@ -262,60 +321,92 @@ export default function CandidatesList() {
   };
 
   const handleSendInvite = async () => {
+    if (!selectedCandidate) return;
+
+    const candidateName = selectedCandidate.fullName || 'Candidate';
+    const jobTitle = currentJob?.title || selectedCandidate.role || 'Open Position';
+
     if (inviteChannel === "email") {
-      if (!selectedCandidate?.email) {
-        toast.error(`Cannot send invitation: No email address on file for ${selectedCandidate?.fullName || 'this candidate'}`);
+      if (!selectedCandidate.email) {
+        toast.error(`Cannot send invitation: No email address on file for ${candidateName}`);
         return;
       }
-      setInviteOpen(false);
-      toast.success(`Interview invitation sent to ${selectedCandidate.email}`);
-    } else {
-      // WhatsApp
-      const phone = selectedCandidate?.phone || (selectedCandidate?.metadata as any)?.phone;
-      if (!phone) {
-        toast.error(`Cannot send invitation: No phone number on file for ${selectedCandidate?.fullName || 'this candidate'}`);
-        return;
-      }
-      
+
       setSendingInvite(true);
       try {
-        // Create or get conversation for candidate
-        const convResponse = await fetch(`/api/whatsapp/candidates/${selectedCandidate.id}/conversation`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            phone: phone.replace(/\D/g, ''),
-            name: selectedCandidate.fullName 
-          })
+        // 1. Create interview session with prompt
+        const sessionRes = await api.post('/interview-sessions', {
+          candidateId: selectedCandidate.id,
+          candidateName,
+          jobTitle,
+          prompt: interviewPrompt,
         });
-        
-        if (!convResponse.ok) throw new Error('Failed to create conversation');
-        const conversation = await convResponse.json();
-        
-        // Send the message
-        const message = `Dear ${selectedCandidate.fullName || 'Candidate'},
+        const interviewUrl = `${window.location.origin}/interview/invite/${sessionRes.data.token}`;
+
+        // 2. Send email via backend
+        await api.post('/interview-sessions/send-email-invite', {
+          to: selectedCandidate.email,
+          candidateName,
+          jobTitle,
+          interviewUrl,
+        });
+
+        setSentRecipient(selectedCandidate.email);
+        setInviteSent(true);
+      } catch (error: any) {
+        console.error('Email invite error:', error);
+        toast.error(error.response?.data?.message || 'Failed to send email invitation.');
+      } finally {
+        setSendingInvite(false);
+      }
+    } else {
+      // WhatsApp
+      const phone = selectedCandidate.phone || (selectedCandidate.metadata as any)?.phone;
+      if (!phone) {
+        toast.error(`Cannot send invitation: No phone number on file for ${candidateName}`);
+        return;
+      }
+
+      setSendingInvite(true);
+      try {
+        // 1. Create interview session with prompt
+        const sessionRes = await api.post('/interview-sessions', {
+          candidateId: selectedCandidate.id,
+          candidateName,
+          candidatePhone: phone,
+          jobTitle,
+          prompt: interviewPrompt,
+        });
+        const interviewUrl = `${window.location.origin}/interview/invite/${sessionRes.data.token}`;
+
+        // 2. Create or get conversation for candidate
+        const convRes = await api.post(`/whatsapp/candidates/${selectedCandidate.id}/conversation`);
+        const conversation = convRes.data;
+
+        // 3. Send the message with the real interview link
+        const message = `Dear ${candidateName},
 
 We are impressed with your profile and would like to invite you to an initial voice interview with our AI interview system.
 
 Please click the link below to start the session:
-${inviteLink}
+${interviewUrl}
+
+This link expires in 7 days. Please ensure you have a quiet environment and allow microphone access.
 
 Best regards,
 AHC Recruiting Team`;
 
-        const msgResponse = await fetch(`/api/whatsapp/conversations/${conversation.id}/messages`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ body: message })
+        await api.post(`/whatsapp/conversations/${conversation.id}/messages`, {
+          body: message,
+          senderType: 'human',
         });
-        
-        if (!msgResponse.ok) throw new Error('Failed to send message');
-        
-        setInviteOpen(false);
-        toast.success(`Interview invitation sent via WhatsApp to ${phone}`);
+
+        setSentRecipient(phone);
+        setInviteSent(true);
+        queryClient.invalidateQueries({ queryKey: whatsappConversationsKey });
       } catch (error: any) {
         console.error('WhatsApp invite error:', error);
-        toast.error('Failed to send WhatsApp invitation. Please try again.');
+        toast.error(error.response?.data?.message || 'Failed to send WhatsApp invitation.');
       } finally {
         setSendingInvite(false);
       }
@@ -807,20 +898,55 @@ AHC Recruiting Team`;
       {/* Interview Invitation Dialog */}
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
         <DialogContent className="bg-card border-border sm:max-w-[500px]">
+          {inviteSent ? (
+            <>
+              <DialogHeader className="sr-only">
+                <DialogTitle>Invitation Sent</DialogTitle>
+              </DialogHeader>
+              <div className="flex flex-col items-center justify-center py-8 gap-4 text-center">
+                <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center">
+                  <CheckCircle className="h-10 w-10 text-green-500" />
+                </div>
+                <h2 className="text-xl font-bold text-foreground">Invitation Sent!</h2>
+                <p className="text-sm text-muted-foreground">
+                  Interview invitation sent via{" "}
+                  <span className="font-medium text-foreground">{inviteChannel === "whatsapp" ? "WhatsApp" : "Email"}</span> to{" "}
+                  <span className="font-medium text-foreground">{sentRecipient}</span>
+                </p>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                {inviteChannel === "whatsapp" && (
+                  <Button
+                    variant="outline"
+                    className="gap-2"
+                    onClick={() => {
+                      setInviteOpen(false);
+                      setLocation("/whatsapp-monitor");
+                    }}
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    View in WhatsApp Monitor
+                  </Button>
+                )}
+                <Button onClick={() => setInviteOpen(false)}>Close</Button>
+              </div>
+            </>
+          ) : (
+            <>
             <DialogHeader>
                 <DialogTitle>Invite to Voice Interview</DialogTitle>
                 <DialogDescription>
                     Send an interview invitation to {selectedCandidate?.fullName || 'candidate'}.
                 </DialogDescription>
             </DialogHeader>
-            
+
             {/* Channel Selection */}
             <div className="flex gap-2 p-1 bg-muted rounded-lg" data-testid="container-invite-channel">
               <button
                 onClick={() => setInviteChannel("email")}
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  inviteChannel === "email" 
-                    ? "bg-blue-600 text-white" 
+                  inviteChannel === "email"
+                    ? "bg-blue-600 text-white"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
                 }`}
                 data-testid="button-channel-email"
@@ -831,8 +957,8 @@ AHC Recruiting Team`;
               <button
                 onClick={() => setInviteChannel("whatsapp")}
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  inviteChannel === "whatsapp" 
-                    ? "bg-green-600 text-white" 
+                  inviteChannel === "whatsapp"
+                    ? "bg-green-600 text-white"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
                 }`}
                 data-testid="button-channel-whatsapp"
@@ -841,23 +967,23 @@ AHC Recruiting Team`;
                 WhatsApp
               </button>
             </div>
-            
+
             <div className="grid gap-4 py-4">
                 {inviteChannel === "email" ? (
                   <>
                     <div className="grid gap-2">
                         <Label>Recipient Email</Label>
-                        <Input 
-                          value={selectedCandidate?.email || ""} 
-                          disabled 
-                          className="bg-muted border-border" 
+                        <Input
+                          value={selectedCandidate?.email || ""}
+                          disabled
+                          className="bg-muted border-border"
                           placeholder={!selectedCandidate?.email ? "No email on file" : undefined}
                         />
                         {!selectedCandidate?.email && (
                           <p className="text-xs text-yellow-600 dark:text-yellow-400">This candidate has no email address on file.</p>
                         )}
                     </div>
-                    
+
                     <div className="grid gap-2">
                         <Label>Subject</Label>
                         <Input defaultValue={`Interview Invitation: ${currentJob?.title || 'Position'}`} className="bg-muted border-border" />
@@ -866,10 +992,10 @@ AHC Recruiting Team`;
                 ) : (
                   <div className="grid gap-2">
                       <Label>Phone Number</Label>
-                      <Input 
-                        value={selectedCandidate?.phone || (selectedCandidate?.metadata as any)?.phone || ""} 
-                        disabled 
-                        className="bg-muted border-border" 
+                      <Input
+                        value={selectedCandidate?.phone || (selectedCandidate?.metadata as any)?.phone || ""}
+                        disabled
+                        className="bg-muted border-border"
                         placeholder={!(selectedCandidate?.phone || (selectedCandidate?.metadata as any)?.phone) ? "No phone on file" : undefined}
                       />
                       {!(selectedCandidate?.phone || (selectedCandidate?.metadata as any)?.phone) && (
@@ -880,26 +1006,54 @@ AHC Recruiting Team`;
 
                 <div className="grid gap-2">
                     <Label>Message</Label>
-                    <Textarea 
-                        className="min-h-[150px] bg-muted border-border font-sans" 
-                        defaultValue={`Dear ${selectedCandidate?.fullName || 'Candidate'},
+                    <Textarea
+                        className="min-h-[150px] bg-muted border-border font-sans"
+                        readOnly
+                        value={`Dear ${selectedCandidate?.fullName || 'Candidate'},
 
 We are impressed with your profile and would like to invite you to an initial voice interview with our AI interview system.
 
 ${inviteChannel === "email" ? "This allows us to get to know you better at your convenience. " : ""}Please click the link below to start the session:
 
-${inviteLink}
+[Interview link will be generated on send]
 
 Best regards,
 AHC Recruiting Team`}
                     />
                 </div>
+
+                {/* Collapsible Interview Prompt Editor */}
+                <div className="border border-border rounded-lg overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setShowPromptEditor(!showPromptEditor)}
+                    className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Bot className="h-4 w-4" />
+                      Interview Questions & Evaluation
+                    </span>
+                    {showPromptEditor ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </button>
+                  {showPromptEditor && (
+                    <div className="px-3 pb-3">
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Edit the AI interviewer's questions, ideal answers, and evaluation criteria below.
+                      </p>
+                      <Textarea
+                        className="min-h-[250px] bg-muted border-border font-mono text-xs"
+                        value={interviewPrompt}
+                        onChange={(e) => setInterviewPrompt(e.target.value)}
+                      />
+                    </div>
+                  )}
+                </div>
             </div>
 
             <DialogFooter>
                 <Button variant="outline" onClick={() => setInviteOpen(false)}>Cancel</Button>
-                <Button 
-                  onClick={handleSendInvite} 
+                <Button
+                  onClick={handleSendInvite}
                   disabled={sendingInvite || (inviteChannel === "email" && !selectedCandidate?.email) || (inviteChannel === "whatsapp" && !(selectedCandidate?.phone || (selectedCandidate?.metadata as any)?.phone))}
                   className={`gap-2 ${inviteChannel === "whatsapp" ? "bg-green-600 hover:bg-green-500" : "bg-blue-600 hover:bg-blue-500"} text-white`}
                 >
@@ -913,6 +1067,8 @@ AHC Recruiting Team`}
                     {sendingInvite ? "Sending..." : `Send via ${inviteChannel === "whatsapp" ? "WhatsApp" : "Email"}`}
                 </Button>
             </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 

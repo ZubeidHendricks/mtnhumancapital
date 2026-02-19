@@ -388,10 +388,10 @@ BENEFITS:
   };
 
   // Fetch real data from backend
-  const { 
-    data: jobs, 
-    isLoading: loadingJobs, 
-    isError: jobsError 
+  const {
+    data: jobs,
+    isLoading: loadingJobs,
+    isError: jobsError
   } = useQuery({
     queryKey: jobsKey,
     queryFn: async () => {
@@ -403,7 +403,6 @@ BENEFITS:
       }
     },
     retry: 1,
-    placeholderData: [] 
   });
 
   const archivedJobsKey = useTenantQueryKey("archivedJobs");
@@ -1469,7 +1468,7 @@ BENEFITS:
                 </div>
               </CardHeader>
               <CardContent>
-                {loadingJobs && loadingJobSpecs ? (
+                {loadingJobs || loadingJobSpecs ? (
                   <div className="text-center py-12">
                     <Loader2 className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400 mx-auto" />
                   </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -23,6 +23,10 @@ type InterviewSession = {
   candidateId?: string;
 };
 
+// Hume EVI audio constants
+const INPUT_SAMPLE_RATE = 16000;
+const OUTPUT_SAMPLE_RATE = 24000;
+
 export default function InterviewInvite() {
   const { token } = useParams<{ token: string }>();
   const [session, setSession] = useState<InterviewSession | null>(null);
@@ -33,10 +37,22 @@ export default function InterviewInvite() {
   const [currentEmotion, setCurrentEmotion] = useState<string>("Neutral");
   const [isConnected, setIsConnected] = useState(false);
   const [duration, setDuration] = useState(0);
+
   const socketRef = useRef<WebSocket | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
+  const captureContextRef = useRef<AudioContext | null>(null);
+  const playbackContextRef = useRef<AudioContext | null>(null);
+  const processorRef = useRef<ScriptProcessorNode | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const startTimeRef = useRef<number | null>(null);
+  const stateRef = useRef(state);
+  const audioQueueRef = useRef<Float32Array[]>([]);
+  const isPlayingRef = useRef(false);
+  const endedRef = useRef(false);
+
+  // Keep stateRef in sync
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -73,38 +89,116 @@ export default function InterviewInvite() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Convert Float32 PCM samples to base64-encoded Int16 PCM
+  const float32ToBase64PCM = (float32Data: Float32Array): string => {
+    const int16Data = new Int16Array(float32Data.length);
+    for (let i = 0; i < float32Data.length; i++) {
+      const s = Math.max(-1, Math.min(1, float32Data[i]));
+      int16Data[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    }
+    const uint8Data = new Uint8Array(int16Data.buffer);
+    let binaryStr = '';
+    for (let i = 0; i < uint8Data.length; i++) {
+      binaryStr += String.fromCharCode(uint8Data[i]);
+    }
+    return btoa(binaryStr);
+  };
+
+  // Play next audio chunk from queue
+  const playNextInQueue = useCallback(() => {
+    if (audioQueueRef.current.length === 0) {
+      isPlayingRef.current = false;
+      if (stateRef.current !== "completed" && stateRef.current !== "error") {
+        setState("listening");
+      }
+      return;
+    }
+
+    isPlayingRef.current = true;
+    const float32Data = audioQueueRef.current.shift()!;
+
+    if (!playbackContextRef.current || playbackContextRef.current.state === "closed") {
+      playbackContextRef.current = new AudioContext();
+    }
+    const ctx = playbackContextRef.current;
+
+    const audioBuffer = ctx.createBuffer(1, float32Data.length, OUTPUT_SAMPLE_RATE);
+    audioBuffer.getChannelData(0).set(float32Data);
+
+    const source = ctx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(ctx.destination);
+    source.onended = () => playNextInQueue();
+    source.start();
+  }, []);
+
+  // Decode base64 PCM Int16 and queue for playback
+  const playAudio = useCallback((base64Audio: string) => {
+    try {
+      const binaryString = atob(base64Audio);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
+      // Convert Int16 PCM to Float32
+      const int16 = new Int16Array(bytes.buffer);
+      const float32 = new Float32Array(int16.length);
+      for (let i = 0; i < int16.length; i++) {
+        float32[i] = int16[i] / 32768.0;
+      }
+
+      // Queue and play
+      audioQueueRef.current.push(float32);
+      if (!isPlayingRef.current) {
+        playNextInQueue();
+      }
+    } catch (error) {
+      console.error("Error decoding audio:", error);
+    }
+  }, [playNextInQueue]);
+
   const startInterview = async () => {
     try {
       setState("loading");
-      
+      endedRef.current = false;
+      audioQueueRef.current = [];
+      isPlayingRef.current = false;
+
       const configResponse = await axios.get(`/api/public/interview-session/${token}/config`);
       const { accessToken, prompt } = configResponse.data;
-      
+
       const wsUrl = `wss://api.hume.ai/v0/evi/chat?access_token=${accessToken}`;
-      
       const ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
         setIsConnected(true);
         startTimeRef.current = Date.now();
-        setState("listening");
-        
+        setState("processing"); // AI is preparing to speak
+
+        // Send session settings with system prompt and audio config
         const sessionSettings = {
           type: "session_settings",
-          prompt: {
-            text: prompt || `You are a professional HR interviewer conducting a screening interview. Be warm, professional, and thorough. Ask questions one at a time and wait for responses. Start by introducing yourself and asking the candidate to tell you about themselves.`
+          system_prompt: prompt || `You are an HR interviewer conducting a screening interview. Ask questions one at a time. Wait for the candidate to fully finish speaking before responding. Do not interrupt. Start by introducing yourself and asking the candidate to tell you about themselves.`,
+          audio: {
+            channels: 1,
+            encoding: "linear16",
+            sample_rate: INPUT_SAMPLE_RATE,
           },
           custom_session_id: `interview-${token}`
         };
-        
         ws.send(JSON.stringify(sessionSettings));
-        toast.success("Connected! The interview will begin shortly.");
+
+        // Start microphone to begin streaming audio
+        startMicrophone(ws);
+
+        toast.success("Connected! The interviewer will begin shortly.");
       };
 
       ws.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data);
-          
+
           if (message.type === "assistant_message") {
             setState("speaking");
             if (message.message?.content) {
@@ -125,35 +219,44 @@ export default function InterviewInvite() {
             setState("processing");
           } else if (message.type === "audio_output") {
             if (message.data) {
+              setState("speaking");
               playAudio(message.data);
+            }
+          } else if (message.type === "assistant_end") {
+            // AI finished speaking — switch to listening after audio queue drains
+            if (!isPlayingRef.current) {
+              setState("listening");
             }
           } else if (message.type === "error") {
             console.error("Hume AI error:", message);
-            toast.error(`Error: ${message.message || 'Unknown error'}`);
+            toast.error(`Interview error: ${message.message || 'Unknown error'}`);
           }
         } catch (err) {
           console.error("Error parsing message:", err);
         }
       };
 
-      ws.onclose = () => {
+      ws.onclose = (event) => {
+        console.log("WebSocket closed:", event.code, event.reason);
         setIsConnected(false);
-        if (state !== "completed" && state !== "error") {
+        // Only go back to "ready" if not intentionally ended or errored
+        if (!endedRef.current && stateRef.current !== "completed" && stateRef.current !== "error") {
           setState("ready");
+          toast.info("Connection ended. Click Start Interview to reconnect.");
         }
       };
 
       ws.onerror = (error) => {
         console.error("WebSocket error:", error);
-        toast.error("Connection error. Please try again.");
-        setState("error");
-        setErrorMessage("Failed to connect to voice service");
+        if (!endedRef.current) {
+          toast.error("Connection error. Please try again.");
+          setState("error");
+          setErrorMessage("Failed to connect to voice service");
+        }
       };
 
       socketRef.current = ws;
-      
-      await startMicrophone();
-      
+
     } catch (error: any) {
       console.error("Error starting interview:", error);
       setErrorMessage(error.response?.data?.message || "Failed to start interview");
@@ -161,38 +264,43 @@ export default function InterviewInvite() {
     }
   };
 
-  const startMicrophone = async () => {
+  const startMicrophone = async (ws: WebSocket) => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true
-        } 
-      });
-      
-      audioContextRef.current = new AudioContext({ sampleRate: 16000 });
-      
-      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-      mediaRecorderRef.current = mediaRecorder;
-      
-      mediaRecorder.ondataavailable = async (event) => {
-        if (event.data.size > 0 && socketRef.current?.readyState === WebSocket.OPEN) {
-          const arrayBuffer = await event.data.arrayBuffer();
-          const uint8Array = new Uint8Array(arrayBuffer);
-          let binaryStr = '';
-          for (let i = 0; i < uint8Array.length; i++) {
-            binaryStr += String.fromCharCode(uint8Array[i]);
-          }
-          const base64Audio = btoa(binaryStr);
-          socketRef.current.send(JSON.stringify({
-            type: "audio_input",
-            data: base64Audio
-          }));
+          autoGainControl: true,
         }
+      });
+      streamRef.current = stream;
+
+      const audioContext = new AudioContext({ sampleRate: INPUT_SAMPLE_RATE });
+      captureContextRef.current = audioContext;
+
+      // Resume context if suspended (browser autoplay policy)
+      if (audioContext.state === "suspended") {
+        await audioContext.resume();
+      }
+
+      const source = audioContext.createMediaStreamSource(stream);
+      const processor = audioContext.createScriptProcessor(4096, 1, 1);
+      processorRef.current = processor;
+
+      source.connect(processor);
+      processor.connect(audioContext.destination);
+
+      processor.onaudioprocess = (event) => {
+        if (ws.readyState !== WebSocket.OPEN) return;
+
+        const float32Data = event.inputBuffer.getChannelData(0);
+        const base64Audio = float32ToBase64PCM(float32Data);
+
+        ws.send(JSON.stringify({
+          type: "audio_input",
+          data: base64Audio,
+        }));
       };
-      
-      mediaRecorder.start(100);
     } catch (error) {
       console.error("Error accessing microphone:", error);
       toast.error("Please allow microphone access to continue");
@@ -201,41 +309,38 @@ export default function InterviewInvite() {
     }
   };
 
-  const playAudio = async (base64Audio: string) => {
-    try {
-      const binaryString = atob(base64Audio);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-      const audioContext = audioContextRef.current || new AudioContext();
-      const audioBuffer = await audioContext.decodeAudioData(bytes.buffer);
-      const source = audioContext.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(audioContext.destination);
-      source.onended = () => {
-        setState("listening");
-      };
-      source.start();
-    } catch (error) {
-      console.error("Error playing audio:", error);
-      setState("listening");
+  const cleanup = () => {
+    // Stop microphone
+    if (processorRef.current) {
+      processorRef.current.disconnect();
+      processorRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (captureContextRef.current && captureContextRef.current.state !== "closed") {
+      captureContextRef.current.close().catch(() => {});
+      captureContextRef.current = null;
+    }
+
+    // Clear audio queue
+    audioQueueRef.current = [];
+    isPlayingRef.current = false;
+
+    // Close WebSocket
+    if (socketRef.current) {
+      socketRef.current.close();
+      socketRef.current = null;
     }
   };
 
   const endInterview = async () => {
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-    }
-    
-    if (socketRef.current) {
-      socketRef.current.close();
-    }
-    
+    endedRef.current = true;
+    cleanup();
     setIsConnected(false);
     setState("completed");
-    
+
     try {
       await axios.post(`/api/public/interview-session/${token}/complete`, {
         transcripts,
@@ -247,6 +352,14 @@ export default function InterviewInvite() {
       console.error("Error saving interview:", error);
     }
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      endedRef.current = true;
+      cleanup();
+    };
+  }, []);
 
   if (state === "loading" && !session) {
     return (
@@ -268,7 +381,13 @@ export default function InterviewInvite() {
           <CardContent className="flex flex-col items-center justify-center py-12">
             <AlertCircle className="h-12 w-12 text-red-600 dark:text-red-400 mb-4" />
             <h2 className="text-xl font-bold text-foreground mb-2">Unable to Load Interview</h2>
-            <p className="text-muted-foreground text-center">{errorMessage}</p>
+            <p className="text-muted-foreground text-center mb-4">{errorMessage}</p>
+            <Button
+              variant="outline"
+              onClick={() => { setState("ready"); setErrorMessage(""); }}
+            >
+              Try Again
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -333,8 +452,8 @@ export default function InterviewInvite() {
                 <p>Make sure you're in a quiet environment</p>
                 <p>Allow microphone access when prompted</p>
               </div>
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 onClick={startInterview}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-8"
                 data-testid="btn-start-interview"
@@ -382,7 +501,9 @@ export default function InterviewInvite() {
                         </motion.div>
                       )}
                     </AnimatePresence>
-                    <span className="text-sm text-muted-foreground capitalize">{state}</span>
+                    <span className="text-sm text-muted-foreground capitalize">
+                      {state === "processing" ? "AI is thinking..." : state === "speaking" ? "AI is speaking" : "Listening"}
+                    </span>
                   </div>
                   <Badge variant="outline" className="text-xs">
                     {currentEmotion}
@@ -392,6 +513,14 @@ export default function InterviewInvite() {
               <CardContent className="flex-1 overflow-hidden p-0">
                 <ScrollArea className="h-full p-4">
                   <div className="space-y-4">
+                    {transcripts.length === 0 && (state === "processing" || state === "loading") && (
+                      <div className="flex justify-center py-8">
+                        <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          The interviewer is preparing to greet you...
+                        </div>
+                      </div>
+                    )}
                     {transcripts.map((transcript, i) => (
                       <motion.div
                         key={i}

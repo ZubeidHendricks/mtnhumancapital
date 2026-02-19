@@ -51,10 +51,17 @@ api.interceptors.request.use(
   }
 );
 
+// Helper: unwrap paginated { data, total, page, limit } responses into plain arrays
+function unwrapArray<T>(body: any): T[] {
+  if (Array.isArray(body)) return body;
+  if (body && Array.isArray(body.data)) return body.data;
+  return [];
+}
+
 export const jobsService = {
   getAll: async (): Promise<Job[]> => {
     const response = await api.get("/jobs");
-    return response.data;
+    return unwrapArray<Job>(response.data);
   },
   getArchived: async (): Promise<Job[]> => {
     const response = await api.get("/jobs/archived");
@@ -88,7 +95,7 @@ export const jobsService = {
 export const candidateService = {
   getAll: async (): Promise<Candidate[]> => {
     const response = await api.get("/candidates");
-    return response.data;
+    return unwrapArray<Candidate>(response.data);
   },
   getById: async (id: string): Promise<Candidate> => {
     const response = await api.get(`/candidates/${id}`);

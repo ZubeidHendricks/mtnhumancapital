@@ -230,7 +230,8 @@ export default function RecruitmentAgent() {
     queryKey: jobsKey,
     queryFn: async () => {
       const response = await api.get("/jobs");
-      return response.data;
+      const body = response.data;
+      return Array.isArray(body) ? body : body.data ?? [];
     },
   });
 
@@ -247,7 +248,8 @@ export default function RecruitmentAgent() {
     queryKey: candidatesKey,
     queryFn: async () => {
       const response = await api.get("/candidates");
-      return response.data;
+      const body = response.data;
+      return Array.isArray(body) ? body : body.data ?? [];
     },
   });
 

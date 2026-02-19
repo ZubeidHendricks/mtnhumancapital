@@ -303,7 +303,8 @@ export default function WhatsAppMonitor() {
     queryKey: conversationsKey,
     queryFn: async () => {
       const response = await api.get('/whatsapp/conversations');
-      return response.data;
+      const body = response.data;
+      return Array.isArray(body) ? body : body.data ?? [];
     },
     refetchInterval: 10000,
   });
@@ -322,7 +323,8 @@ export default function WhatsAppMonitor() {
     queryKey: useTenantQueryKey(['candidates']),
     queryFn: async () => {
       const response = await api.get('/candidates');
-      return response.data;
+      const body = response.data;
+      return Array.isArray(body) ? body : body.data ?? [];
     },
   });
 
