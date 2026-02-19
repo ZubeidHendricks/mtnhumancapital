@@ -96,9 +96,10 @@ export default function InterviewConsole() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: sessions = [], isLoading: loadingSessions, refetch: refetchSessions } = useQuery<InterviewSession[]>({
+  const { data: sessionsResponse, isLoading: loadingSessions, refetch: refetchSessions } = useQuery<{ data: InterviewSession[]; total: number } | InterviewSession[]>({
     queryKey: ["/api/interviews"],
   });
+  const sessions: InterviewSession[] = Array.isArray(sessionsResponse) ? sessionsResponse : (sessionsResponse?.data || []);
 
   const { data: details, isLoading: loadingDetails } = useQuery<InterviewDetails>({
     queryKey: ["/api/interviews", selectedSession],

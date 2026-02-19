@@ -96,7 +96,8 @@ export default function HRConversations() {
       const response = await fetch("/api/whatsapp/conversations");
       if (response.ok) {
         const data = await response.json();
-        setConversations(data);
+        const convList = Array.isArray(data) ? data : (data.data || []);
+        setConversations(convList);
         
         // Fetch candidate details for linked conversations
         const candidateIds = Array.from(new Set(data.filter((c: WhatsappConversation) => c.candidateId).map((c: WhatsappConversation) => c.candidateId))) as string[];
