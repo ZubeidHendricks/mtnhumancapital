@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTenantQueryKey } from "@/hooks/useTenant";
 import { Link, useSearch } from "wouter";
@@ -19,7 +19,8 @@ import {
   ChevronRight, Star, Briefcase, MapPin, Award, Activity, X, Building2, GraduationCap,
   Mail, Phone, Linkedin, FileText, ThumbsUp, Eye
 } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, candidateService } from "@/lib/api";
+import { toast } from "sonner";
 import type { Job, RecruitmentSession, Candidate } from "@shared/schema";
 
 const AGENT_STEPS = [
@@ -252,6 +253,27 @@ export default function RecruitmentAgent() {
       return Array.isArray(body) ? body : body.data ?? [];
     },
   });
+
+  const updateCandidateMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: any }) =>
+      candidateService.update(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: candidatesKey });
+    },
+  });
+
+  const handleShortlist = async (candidate: Candidate, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    try {
+      await updateCandidateMutation.mutateAsync({
+        id: String(candidate.id),
+        updates: { stage: "Shortlisted" },
+      });
+      toast.success(`${candidate.fullName} moved to shortlisted`);
+    } catch {
+      toast.error("Failed to shortlist candidate");
+    }
+  };
 
   // Fetch enabled recruitment platforms from configuration
   const { data: platformConfigs } = useQuery<Array<{ id: string; enabled: boolean; connected: boolean }>>({
@@ -714,9 +736,15 @@ export default function RecruitmentAgent() {
                               Profile
                             </Button>
                           </Link>
-                          <Button size="sm" variant="outline" className="border-border hover:bg-muted text-xs h-7" onClick={(e: any) => e.stopPropagation()}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className={`border-border hover:bg-muted text-xs h-7 ${candidate.stage === 'Shortlisted' ? 'bg-green-500/20 text-green-600 border-green-500/30' : ''}`}
+                            onClick={(e: any) => { e.stopPropagation(); handleShortlist(candidate, e); }}
+                            disabled={candidate.stage === 'Shortlisted'}
+                          >
                             <ThumbsUp className="h-3 w-3 mr-1" />
-                            Shortlist
+                            {candidate.stage === 'Shortlisted' ? 'Shortlisted' : 'Shortlist'}
                           </Button>
                         </div>
                       </div>
@@ -946,9 +974,14 @@ export default function RecruitmentAgent() {
                 return (
                   <div
                     key={candidate.id}
+                    ref={(el) => {
+                      if (el && selectedCandidate?.id === candidate.id) {
+                        requestAnimationFrame(() => el.scrollIntoView({ behavior: 'instant', block: 'center' }));
+                      }
+                    }}
                     className={`p-4 rounded-lg border transition-all ${
-                      selectedCandidate?.id === candidate.id 
-                        ? 'bg-blue-500/10 border-blue-500/50' 
+                      selectedCandidate?.id === candidate.id
+                        ? 'bg-blue-500/10 border-blue-500/50'
                         : 'bg-muted/50 border-border hover:border-border'
                     }`}
                   >
@@ -1055,9 +1088,15 @@ export default function RecruitmentAgent() {
                               View Full Profile
                             </Button>
                           </Link>
-                          <Button size="sm" variant="outline" className="border-border hover:bg-muted">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className={`border-border hover:bg-muted ${candidate.stage === 'Shortlisted' ? 'bg-green-500/20 text-green-600 border-green-500/30' : ''}`}
+                            onClick={() => handleShortlist(candidate)}
+                            disabled={candidate.stage === 'Shortlisted'}
+                          >
                             <ThumbsUp className="h-4 w-4 mr-1" />
-                            Shortlist
+                            {candidate.stage === 'Shortlisted' ? 'Shortlisted' : 'Shortlist'}
                           </Button>
                         </div>
                       </div>
