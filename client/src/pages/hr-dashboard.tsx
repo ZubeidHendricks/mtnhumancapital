@@ -1454,7 +1454,7 @@ BENEFITS:
                           Create New Job
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-[700px] max-h-[90vh] bg-card border-border p-0">
+                      <DialogContent className="sm:max-w-[95vw] w-[95vw] max-h-[90vh] bg-card border-border p-0">
                         <JobCreationChat 
                           onJobCreated={() => {
                             setIsCreateJobOpen(false);

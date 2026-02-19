@@ -360,8 +360,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/candidates", async (req, res) => {
     try {
-      const candidates = await storage.getAllCandidates(req.tenant.id);
-      res.json(candidates);
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
+      const { data, total } = await storage.getCandidatesPaginated(req.tenant.id, page, limit);
+      res.json({ data, total, page, limit });
     } catch (error) {
       console.error("Error fetching candidates:", error);
       res.status(500).json({ message: "Failed to fetch candidates" });
@@ -381,12 +383,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Applications endpoint for dashboard (uses candidates data)
+  // Applications endpoint for dashboard (uses candidates data with pagination)
   app.get("/api/applications", async (req, res) => {
     try {
-      const candidates = await storage.getAllCandidates(req.tenant.id);
-      // Return candidates as applications with relevant fields
-      const applications = candidates.map(candidate => ({
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
+      const { data: candidatesData, total } = await storage.getCandidatesPaginated(req.tenant.id, page, limit);
+      const applications = candidatesData.map(candidate => ({
         id: candidate.id,
         candidateId: candidate.id,
         candidateName: candidate.name,
@@ -397,7 +400,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdAt: candidate.createdAt,
         updatedAt: candidate.updatedAt
       }));
-      res.json(applications);
+      res.json({ data: applications, total, page, limit });
     } catch (error) {
       console.error("Error fetching applications:", error);
       res.status(500).json({ message: "Failed to fetch applications" });
@@ -1502,8 +1505,10 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
 
   app.get("/api/jobs", async (req, res) => {
     try {
-      const jobs = await storage.getAllJobs(req.tenant.id);
-      res.json(jobs);
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
+      const { data, total } = await storage.getJobsPaginated(req.tenant.id, page, limit);
+      res.json({ data, total, page, limit });
     } catch (error) {
       console.error("Error fetching jobs:", error);
       res.status(500).json({ message: "Failed to fetch jobs" });
@@ -2194,10 +2199,12 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
   // Interview routes - enhanced with candidate info
   app.get("/api/interviews", async (req, res) => {
     try {
-      const interviews = await storage.getAllInterviews(req.tenant.id);
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
+      const { data: interviewsData, total } = await storage.getInterviewsPaginated(req.tenant.id, page, limit);
       // Enrich interviews with candidate names
       const enrichedInterviews = await Promise.all(
-        interviews.map(async (interview) => {
+        interviewsData.map(async (interview) => {
           let candidateName = null;
           if (interview.candidateId) {
             const candidate = await storage.getCandidate(req.tenant.id, interview.candidateId);
@@ -2211,7 +2218,7 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
           };
         })
       );
-      res.json(enrichedInterviews);
+      res.json({ data: enrichedInterviews, total, page, limit });
     } catch (error) {
       console.error("Error fetching interviews:", error);
       res.status(500).json({ message: "Failed to fetch interviews" });
@@ -2798,10 +2805,12 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
   app.get("/api/candidate-documents", async (req, res) => {
     try {
       const { documentType, status, candidateId, search } = req.query;
-      
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
+
       // Get all documents (passing undefined to get all)
       let documents = await storage.getCandidateDocuments(req.tenant.id, candidateId as string | undefined);
-      
+
       // Apply filters
       if (documentType && documentType !== 'all') {
         documents = documents.filter(doc => doc.documentType === documentType);
@@ -2811,15 +2820,19 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
       }
       if (search) {
         const searchLower = (search as string).toLowerCase();
-        documents = documents.filter(doc => 
+        documents = documents.filter(doc =>
           doc.fileName.toLowerCase().includes(searchLower) ||
           doc.referenceCode?.toLowerCase().includes(searchLower) ||
           doc.documentType.toLowerCase().includes(searchLower)
         );
       }
-      
+
+      // Paginate after filtering
+      const total = documents.length;
+      const paginatedDocs = documents.slice((page - 1) * limit, page * limit);
+
       // Get candidate info for each document
-      const documentsWithCandidates = await Promise.all(documents.map(async (doc) => {
+      const documentsWithCandidates = await Promise.all(paginatedDocs.map(async (doc) => {
         if (doc.candidateId) {
           const candidate = await storage.getCandidateById(req.tenant.id, doc.candidateId);
           return {
@@ -2830,8 +2843,8 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
         }
         return { ...doc, candidateName: 'Unknown', candidateEmail: '' };
       }));
-      
-      res.json(documentsWithCandidates);
+
+      res.json({ data: documentsWithCandidates, total, page, limit });
     } catch (error) {
       console.error("Error fetching all candidate documents:", error);
       res.status(500).json({ message: "Failed to fetch documents" });
@@ -5234,8 +5247,10 @@ Format your response as JSON:
   // Get all documents
   app.get("/api/documents", async (req, res) => {
     try {
-      const docs = await storage.getAllDocuments(req.tenant.id);
-      res.json(docs);
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
+      const { data, total } = await storage.getDocumentsPaginated(req.tenant.id, page, limit);
+      res.json({ data, total, page, limit });
     } catch (error) {
       console.error("Error fetching documents:", error);
       res.status(500).json({ message: "Failed to fetch documents" });
@@ -5988,16 +6003,22 @@ Format your response as JSON:
   app.get("/api/whatsapp/conversations", async (req, res) => {
     try {
       const { type, status } = req.query;
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
       let conversations = await storage.getAllWhatsappConversations(req.tenant.id);
-      
+
       if (type && typeof type === "string") {
         conversations = conversations.filter(c => c.type === type);
       }
       if (status && typeof status === "string") {
         conversations = conversations.filter(c => c.status === status);
       }
-      
-      res.json(conversations);
+
+      // Paginate after filtering
+      const total = conversations.length;
+      const data = conversations.slice((page - 1) * limit, page * limit);
+
+      res.json({ data, total, page, limit });
     } catch (error) {
       console.error("Error fetching WhatsApp conversations:", error);
       res.status(500).json({ message: "Failed to fetch conversations" });
