@@ -1,4 +1,48 @@
+import { Resend } from 'resend';
 import type { IStorage } from "./storage";
+
+// Resend integration - credentials managed by Replit connector
+let connectionSettings: any;
+
+async function getCredentials() {
+  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
+  const xReplitToken = process.env.REPL_IDENTITY
+    ? 'repl ' + process.env.REPL_IDENTITY
+    : process.env.WEB_REPL_RENEWAL
+    ? 'depl ' + process.env.WEB_REPL_RENEWAL
+    : null;
+
+  if (!xReplitToken) {
+    throw new Error('Resend connector token not available');
+  }
+
+  connectionSettings = await fetch(
+    'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=resend',
+    {
+      headers: {
+        'Accept': 'application/json',
+        'X_REPLIT_TOKEN': xReplitToken
+      }
+    }
+  ).then(res => res.json()).then(data => data.items?.[0]);
+
+  if (!connectionSettings || !connectionSettings.settings.api_key) {
+    throw new Error('Resend not connected');
+  }
+
+  return {
+    apiKey: connectionSettings.settings.api_key,
+    fromEmail: connectionSettings.settings.from_email
+  };
+}
+
+async function getResendClient() {
+  const { apiKey, fromEmail } = await getCredentials();
+  return {
+    client: new Resend(apiKey),
+    fromEmail
+  };
+}
 
 interface EmailOptions {
   to: string;
@@ -26,12 +70,22 @@ export class EmailService {
 
   async sendEmail(options: EmailOptions): Promise<boolean> {
     try {
-      console.log("\n=== EMAIL NOTIFICATION ===");
-      console.log(`To: ${options.to}`);
-      console.log(`Subject: ${options.subject}`);
-      console.log(`Body:\n${options.body}`);
-      console.log("========================\n");
+      const { client, fromEmail } = await getResendClient();
 
+      const result = await client.emails.send({
+        from: fromEmail || 'MTN Human Capital <onboarding@resend.dev>',
+        to: options.to,
+        subject: options.subject,
+        html: options.html || options.body.replace(/\n/g, '<br>'),
+        text: options.body,
+      });
+
+      if (result.error) {
+        console.error("Resend error:", result.error);
+        return false;
+      }
+
+      console.log(`Email sent successfully to ${options.to} (ID: ${result.data?.id})`);
       return true;
     } catch (error) {
       console.error("Error sending email:", error);
@@ -92,12 +146,12 @@ Employee Details:
 Workflow Status: In Progress
 
 Tasks Initiated:
-✓ Welcome package sent
-✓ Employee handbook distributed
-✓ Benefits summary provided
-⏳ Tax and banking forms pending
-⏳ IT provisioning in progress
-⏳ Orientation scheduling
+- Welcome package sent
+- Employee handbook distributed
+- Benefits summary provided
+- Tax and banking forms pending
+- IT provisioning in progress
+- Orientation scheduling
 
 You can monitor the onboarding progress in the AHC dashboard.
 
@@ -125,12 +179,12 @@ Employee Details:
 - Email: ${candidateEmail}
 
 Completed Tasks:
-✅ Welcome package sent
-✅ Employee handbook distributed
-✅ Benefits summary provided
-✅ Tax and banking forms processed
-✅ IT provisioning completed
-✅ Orientation scheduled for ${orientationDate}
+- Welcome package sent
+- Employee handbook distributed
+- Benefits summary provided
+- Tax and banking forms processed
+- IT provisioning completed
+- Orientation scheduled for ${orientationDate}
 
 The employee is ready for their first day. Please ensure all final preparations are in place.
 
