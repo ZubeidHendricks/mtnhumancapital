@@ -43,8 +43,8 @@
   --color-chart-4: hsl(var(--chart-4));
   --color-chart-5: hsl(var(--chart-5));
 
-  --font-sans: 'Helvetica Neue', Arial, sans-serif;
-  --font-display: 'Helvetica Neue', Arial, sans-serif;
+  --font-sans: Aptos, "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display: Aptos, "Segoe UI", system-ui, -apple-system, sans-serif;
 
   --radius: 4px;
 }

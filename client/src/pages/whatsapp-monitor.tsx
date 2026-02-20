@@ -751,12 +751,12 @@ export default function WhatsAppMonitor() {
                             data-testid={`message-${message.id}`}
                           >
                             <div
-                              className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+                              className={`max-w-[80%] rounded-2xl px-4 py-2 text-[#F8FAFC] ${
                                 message.direction === 'outbound'
                                   ? message.senderType === 'ai'
-                                    ? 'bg-blue-500/20 text-blue-200'
-                                    : 'bg-primary text-primary-foreground'
-                                  : 'bg-white/10 text-foreground'
+                                    ? 'bg-blue-500/20'
+                                    : 'bg-primary'
+                                  : 'bg-white/10'
                               }`}
                             >
                               {message.senderType === 'ai' && message.direction === 'outbound' && (
@@ -776,11 +776,7 @@ export default function WhatsAppMonitor() {
                                   </a>
                                 </div>
                               )}
-                              <div className={`flex items-center justify-end gap-1 mt-1 text-xs ${
-                                message.direction === 'outbound' && message.senderType !== 'ai'
-                                  ? 'text-blue-100'
-                                  : 'text-gray-500'
-                              }`}>
+                              <div className={`flex items-center justify-end gap-1 mt-1 text-xs text-[#F8FAFC]/60`}>
                                 <span>
                                   {format(new Date(message.createdAt), 'HH:mm')}
                                 </span>

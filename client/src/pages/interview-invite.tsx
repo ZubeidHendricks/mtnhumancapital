@@ -179,7 +179,7 @@ export default function InterviewInvite() {
         // Send session settings with system prompt and audio config
         const sessionSettings = {
           type: "session_settings",
-          system_prompt: prompt || `You are an HR interviewer conducting a screening interview. Ask questions one at a time. Wait for the candidate to fully finish speaking before responding. Do not interrupt. Start by introducing yourself and asking the candidate to tell you about themselves.`,
+          system_prompt: prompt || `You are an HR interviewer conducting a screening interview. The interview should last approximately 12 minutes, with a maximum of 15 minutes. Ask ONE question at a time. When you are speaking, do not process candidate input. Only listen when you have finished speaking. Wait for the candidate to fully finish speaking before responding. Do not interrupt the candidate unless necessary to stay on schedule. Encourage concise responses of 60–90 seconds. Maintain a friendly, professional, and conversational tone. Start by introducing yourself briefly and warmly, explain the interview will take about 12 minutes, then ask the candidate to tell you about themselves.`,
           audio: {
             channels: 1,
             encoding: "linear16",
