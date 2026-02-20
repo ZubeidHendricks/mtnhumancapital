@@ -1,6 +1,6 @@
 import { useState, useRef, lazy, Suspense } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { jobsService, candidateService, api } from "@/lib/api";
+import { jobsService, candidateService, integrityChecksService, api } from "@/lib/api";
 import { useTenantQueryKey } from "@/hooks/useTenant";
 import { CustomizableDashboard, DataSourceConfig } from "@/components/customizable-dashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -158,6 +158,25 @@ export default function HRDashboard() {
       toast.error("Failed to update candidate");
     }
   });
+
+  const [verifyingCheckId, setVerifyingCheckId] = useState<string | null>(null);
+
+  const verifyIntegrityCheck = async (checkId: string, candidateId: string) => {
+    setVerifyingCheckId(checkId);
+    try {
+      // Mark the check as Completed/Clear
+      await integrityChecksService.update(checkId, { status: "Completed" as any, result: "Clear" as any });
+      // Auto-advance pipeline if all checks are done
+      await api.post(`/pipeline/candidates/${candidateId}/check-integrity`);
+      queryClient.invalidateQueries({ queryKey: integrityChecksKey });
+      queryClient.invalidateQueries({ queryKey: candidatesKey });
+      toast.success("Verification marked as clear");
+    } catch {
+      toast.error("Failed to verify check");
+    } finally {
+      setVerifyingCheckId(null);
+    }
+  };
 
   const PIPELINE_STAGES = [
     { key: "sourcing", name: "Sourcing" },
@@ -1840,9 +1859,27 @@ BENEFITS:
                                     <p className="text-xs text-foreground font-semibold">{check.checkType || check.type || "Verification"}</p>
                                   </div>
                                 </div>
-                                <Badge variant={check.status === "Clear" || check.status === "completed" ? "default" : "secondary"} className={check.status === "Clear" || check.status === "completed" || check.status === "Completed" ? "bg-green-500/20 text-green-600 dark:text-green-400" : "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"}>
-                                  {check.status}
-                                </Badge>
+                                <div className="flex items-center gap-2">
+                                  {check.status === "Pending" || check.status === "In Progress" ? (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-7 text-xs gap-1 border-green-300 dark:border-green-700 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950"
+                                      disabled={verifyingCheckId === check.id}
+                                      onClick={() => verifyIntegrityCheck(check.id, check.candidateId)}
+                                    >
+                                      {verifyingCheckId === check.id ? (
+                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                      ) : (
+                                        <CheckCircle2 className="h-3 w-3" />
+                                      )}
+                                      Verify
+                                    </Button>
+                                  ) : null}
+                                  <Badge variant={check.status === "Clear" || check.status === "completed" || check.status === "Completed" ? "default" : "secondary"} className={check.status === "Clear" || check.status === "completed" || check.status === "Completed" ? "bg-green-500/20 text-green-600 dark:text-green-400" : "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"}>
+                                    {check.status}
+                                  </Badge>
+                                </div>
                               </div>
                             );
                           })

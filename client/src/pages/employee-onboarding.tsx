@@ -183,11 +183,16 @@ export default function EmployeeOnboarding() {
     retry: 1,
   });
 
-  // Candidates eligible for onboarding: stage contains "onboard" or they have an existing workflow
-  const workflowCandidateIds = new Set(workflows.map((w: OnboardingWorkflow) => w.candidateId));
+  // Candidates eligible for onboarding: at a stage ready for onboarding, or have an active (non-completed) workflow
+  const workflowCandidateIds = new Set(
+    workflows
+      .filter((w: OnboardingWorkflow) => w.status !== "Completed")
+      .map((w: OnboardingWorkflow) => w.candidateId)
+  );
+  const onboardingEligibleStages = ["onboarding", "integrity_passed", "integrity passed", "hired"];
   const onboardingCandidates = candidates.filter((c: Candidate) => {
     const stage = ((c as any).stage || "").toLowerCase();
-    return stage.includes("onboard") || workflowCandidateIds.has(c.id.toString());
+    return onboardingEligibleStages.some(s => stage === s || stage.includes("onboard")) || workflowCandidateIds.has(c.id.toString());
   });
 
   // Trigger onboarding mutation
@@ -384,14 +389,9 @@ export default function EmployeeOnboarding() {
                       </SelectItem>
                     ))
                   ) : (
-                    candidates.slice(0, 20).map((candidate: Candidate) => (
-                      <SelectItem key={candidate.id} value={candidate.id.toString()}>
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4" />
-                          {(candidate as any).fullName || (candidate as any).name} - {(candidate as any).role || (candidate as any).position || "Candidate"}
-                        </div>
-                      </SelectItem>
-                    ))
+                    <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                      No candidates ready for onboarding. Candidates must pass integrity checks first.
+                    </div>
                   )}
                 </SelectContent>
               </Select>
