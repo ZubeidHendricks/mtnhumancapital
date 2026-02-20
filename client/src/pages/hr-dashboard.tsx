@@ -74,20 +74,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
-// Mock Data as fallback if API fails or for other tabs not yet connected
-const integrityChecks = [
-  { id: 1, candidate: "Sarah Jenkins", type: "Criminal Record", status: "Clear", date: "2024-05-10" },
-  { id: 2, candidate: "Sarah Jenkins", type: "Credit Check", status: "Clear", date: "2024-05-11" },
-  { id: 3, candidate: "Marcus Johnson", type: "Reference Check", status: "Pending", date: "2024-05-12" },
-];
-
-const onboardingTasks = [
-  { id: 1, task: "Send Welcome Letter", assignee: "AI Agent", status: "Completed" },
-  { id: 2, task: "Distribute Employee Handbook", assignee: "AI Agent", status: "Completed" },
-  { id: 3, task: "Procure Tax Forms", assignee: "AI Agent", status: "In Progress" },
-  { id: 4, task: "IT Equipment Setup", assignee: "IT Dept", status: "Pending" },
-];
-
 // Fallback data in case of API error
 const MOCK_CANDIDATES = [
   { id: 1, name: "Sarah Jenkins", role: "Senior Project Manager", status: "Interviewing", match: 94, stage: "Screening" },
@@ -97,7 +83,16 @@ const MOCK_CANDIDATES = [
 ];
 
 export default function HRDashboard() {
-  const [activeTab, setActiveTab] = useState("recruitment");
+  const [activeTab, setActiveTabState] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('tab') || "recruitment";
+  });
+  const setActiveTab = (tab: string) => {
+    setActiveTabState(tab);
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', tab);
+    window.history.replaceState({}, '', url.toString());
+  };
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isCreateJobOpen, setIsCreateJobOpen] = useState(false);
   const [showArchivedJobs, setShowArchivedJobs] = useState(false);
@@ -774,7 +769,7 @@ BENEFITS:
           </Alert>
         )}
 
-        <Tabs defaultValue="jobs" className="space-y-6" onValueChange={setActiveTab}>
+        <Tabs value={activeTab} className="space-y-6" onValueChange={setActiveTab}>
           <div className="flex items-center gap-3 flex-wrap">
             {/* Main 5 Tabs */}
             <TabsList className="grid grid-cols-2 md:grid-cols-5 lg:w-[600px] bg-white dark:bg-gray-800 border-2 border-teal-200 dark:border-teal-700">
@@ -1764,23 +1759,48 @@ BENEFITS:
               <Card className="border-border bg-card">
                 <CardHeader>
                   <CardTitle className="text-foreground font-bold flex items-center gap-2">
-                    <FileCheck className="w-5 h-5 text-primary" /> 
+                    <FileCheck className="w-5 h-5 text-primary" />
                     Pending Verifications
                   </CardTitle>
+                  <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Background check results and verification status</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {integrityChecks.map((check) => (
-                      <div key={check.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-border">
-                        <div>
-                          <p className="font-medium">{check.type}</p>
-                          <p className="text-sm text-foreground font-semibold">Candidate: {check.candidate}</p>
-                        </div>
-                        <Badge variant={check.status === "Clear" ? "default" : "secondary"} className={check.status === "Clear" ? "bg-green-500/20 text-green-600 dark:text-green-400" : "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"}>
-                          {check.status}
-                        </Badge>
+                  <div className="space-y-3">
+                    <p className="text-sm text-foreground font-semibold mb-3">Recent integrity checks across all candidates:</p>
+                    <ScrollArea className="h-[300px]">
+                      <div className="space-y-2">
+                        {allIntegrityChecks.length === 0 ? (
+                          <div className="text-center text-foreground font-semibold py-8">
+                            <FileCheck className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">No integrity checks pending</p>
+                            <p className="text-xs text-muted-foreground mt-1">Start a check from the button above</p>
+                          </div>
+                        ) : (
+                          allIntegrityChecks.map((check: any) => {
+                            const candidate = candidates?.find((c: any) => c.id?.toString() === check.candidateId?.toString());
+                            const candidateName = candidate ? (candidate.fullName || candidate.name || "Unknown") : "Unknown Candidate";
+                            return (
+                              <div key={check.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-border">
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarFallback className="bg-cyan-100 dark:bg-cyan-900 text-primary text-xs">
+                                      {candidateName.substring(0, 2).toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <p className="font-medium text-sm">{candidateName}</p>
+                                    <p className="text-xs text-foreground font-semibold">{check.checkType || check.type || "Verification"}</p>
+                                  </div>
+                                </div>
+                                <Badge variant={check.status === "Clear" || check.status === "completed" ? "default" : "secondary"} className={check.status === "Clear" || check.status === "completed" || check.status === "Completed" ? "bg-green-500/20 text-green-600 dark:text-green-400" : "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"}>
+                                  {check.status}
+                                </Badge>
+                              </div>
+                            );
+                          })
+                        )}
                       </div>
-                    ))}
+                    </ScrollArea>
                   </div>
                 </CardContent>
               </Card>
@@ -1797,9 +1817,9 @@ BENEFITS:
                   {!selectedRiskCandidate ? (
                     <div className="space-y-3">
                       <p className="text-sm text-foreground font-semibold mb-3">Select a candidate to view risk analysis:</p>
-                      <ScrollArea className="h-[180px]">
+                      <ScrollArea className="h-[300px]">
                         <div className="space-y-2">
-                          {candidates && candidates.length > 0 ? candidates.slice(0, 8).map((candidate: any) => {
+                          {candidates && candidates.length > 0 ? candidates.slice(0, 20).map((candidate: any) => {
                             const riskData = getCandidateRiskData(candidate.id);
                             return (
                               <div 
@@ -1878,7 +1898,7 @@ BENEFITS:
                               <p className="text-sm">No risk assessment data available</p>
                               <p className="text-xs mt-1">Run an integrity check or social screening first</p>
                               <div className="flex gap-2 justify-center mt-3">
-                                <Link href="/integrity-agent">
+                                <Link href={`/integrity-agent?candidateId=${selectedRiskCandidate.id}&autoStart=true`}>
                                   <Button size="sm" variant="outline">
                                     <ShieldCheck className="w-4 h-4 mr-1" /> Start Integrity Check
                                   </Button>

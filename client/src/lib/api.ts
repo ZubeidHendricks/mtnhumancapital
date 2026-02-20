@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { Candidate, InsertCandidate, Job, InsertJob, IntegrityCheck, InsertIntegrityCheck, Interview } from "@shared/schema";
+import type { Candidate, InsertCandidate, Job, InsertJob, IntegrityCheck, InsertIntegrityCheck, Interview, OnboardingWorkflow } from "@shared/schema";
 
 // Determine the API URL based on environment
 // In development (Replit), use relative URLs
@@ -201,4 +201,31 @@ export const integrityChecksService = {
     const response = await api.patch(`/integrity-checks/${id}/reminder-config`, config);
     return response.data;
   }
+};
+
+export const onboardingService = {
+  getWorkflows: async (): Promise<OnboardingWorkflow[]> => {
+    const response = await api.get("/onboarding/workflows");
+    return response.data;
+  },
+  getWorkflow: async (id: string): Promise<OnboardingWorkflow> => {
+    const response = await api.get(`/onboarding/workflows/${id}`);
+    return response.data;
+  },
+  triggerOnboarding: async (candidateId: string): Promise<{ message: string; workflow: OnboardingWorkflow }> => {
+    const response = await api.post(`/onboarding/trigger/${candidateId}`);
+    return response.data;
+  },
+  getStatus: async (candidateId: string): Promise<OnboardingWorkflow | null> => {
+    const response = await api.get(`/onboarding/status/${candidateId}`);
+    return response.data;
+  },
+  getDocumentRequests: async (workflowId: string) => {
+    const response = await api.get(`/onboarding/document-requests/${workflowId}`);
+    return response.data;
+  },
+  getAgentLogs: async (workflowId: string) => {
+    const response = await api.get(`/onboarding/agent-logs/${workflowId}`);
+    return response.data;
+  },
 };

@@ -141,12 +141,18 @@ export default function IntegrityAgent() {
   const candidatesKey = useTenantQueryKey(['candidates']);
   const integrityChecksKey = useTenantQueryKey(['integrity-checks']);
 
+  const [autoStartPending, setAutoStartPending] = useState(false);
+
   // Auto-select candidate from URL query parameter
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const candidateId = params.get('candidateId');
+    const autoStart = params.get('autoStart');
     if (candidateId && !selectedCandidateId) {
       setSelectedCandidateId(candidateId);
+      if (autoStart === 'true') {
+        setAutoStartPending(true);
+      }
     }
   }, []);
 
@@ -167,6 +173,18 @@ export default function IntegrityAgent() {
   });
 
   const selectedCandidate = candidates.find(c => c.id === selectedCandidateId);
+
+  // Auto-start evaluation once candidate data is loaded
+  useEffect(() => {
+    if (autoStartPending && selectedCandidateId && candidates.length > 0 && !isRunningEvaluation) {
+      setAutoStartPending(false);
+      // Small delay to let UI render the selected candidate
+      const timer = setTimeout(() => {
+        startIntegrityEvaluation();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [autoStartPending, selectedCandidateId, candidates]);
 
   const startIntegrityEvaluation = async () => {
     if (!selectedCandidateId) {
@@ -311,7 +329,7 @@ export default function IntegrityAgent() {
       
       <div className="flex-1 pt-20 container mx-auto px-4 py-6 h-[calc(100vh-80px)]">
         <div className="mb-6">
-          <BackButton fallbackPath="/hr-dashboard" className="mb-4" />
+          <BackButton fallbackPath="/hr-dashboard?tab=integrity" className="mb-4" />
           <h1 className="text-3xl font-bold flex items-center gap-3">
             <ShieldCheck className="w-8 h-8 text-primary" />
             Integrity Evaluation Agent
