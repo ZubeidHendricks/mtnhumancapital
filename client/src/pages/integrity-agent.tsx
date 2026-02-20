@@ -3,8 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTenantQueryKey } from "@/hooks/useTenant";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/ui/back-button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { 
   Select,
@@ -55,81 +55,7 @@ type WorkflowStep = {
   details?: string[];
   icon: any;
   checkId?: string;
-};
-
-const mockCheckResults = {
-  criminal: { 
-    status: "Completed", 
-    result: "Clear", 
-    riskScore: 0, 
-    findings: { 
-      recordStatus: "No criminal record found in national database", 
-      databases: ["SAPS Criminal Records", "National Prosecuting Authority"],
-      lastChecked: new Date().toISOString() 
-    } 
-  },
-  credit: { 
-    status: "Completed", 
-    result: "Flagged", 
-    riskScore: 25, 
-    findings: { 
-      score: 650, 
-      status: "Fair",
-      flags: ["Minor credit default - R2,500 in 2022 (resolved)"],
-      accounts: { current: 3, closed: 2 },
-      lastChecked: new Date().toISOString() 
-    } 
-  },
-  education: { 
-    status: "Completed", 
-    result: "Verified", 
-    riskScore: 0, 
-    findings: { 
-      degree: "BSc Computer Science", 
-      institution: "University of Cape Town", 
-      year: 2018,
-      verified: true,
-      registrationNumber: "UCT2014-12345"
-    } 
-  },
-  employment: { 
-    status: "Completed", 
-    result: "Verified", 
-    riskScore: 5, 
-    findings: { 
-      employersVerified: 3, 
-      employersUnverified: 1, 
-      totalPositions: 4,
-      discrepancies: "Minor date overlap between positions (2 weeks)",
-      yearsOfExperience: 6.5
-    } 
-  },
-  biometric: { 
-    status: "Completed", 
-    result: "Verified", 
-    riskScore: 0, 
-    findings: { 
-      fingerprintMatch: 99.9,
-      faceMatch: 98.7,
-      idVerified: true,
-      idNumber: "9012***********",
-      timestamp: new Date().toISOString() 
-    } 
-  },
-  reference: { 
-    status: "Completed", 
-    result: "Verified", 
-    riskScore: 10, 
-    findings: { 
-      referencesProvided: 3, 
-      referencesContacted: 3, 
-      positive: 2, 
-      neutral: 1,
-      negative: 0,
-      averageRating: 4.2,
-      notes: "One reference unavailable for comment"
-    } 
-  },
+  riskScore?: number | null;
 };
 
 export default function IntegrityAgent() {
@@ -236,13 +162,14 @@ export default function IntegrityAgent() {
               
               if (agentFindings) {
                 setCurrentStepIndex(i);
-                setWorkflowSteps(prev => prev.map((step, idx) => 
-                  idx === i ? { 
-                    ...step, 
+                setWorkflowSteps(prev => prev.map((step, idx) =>
+                  idx === i ? {
+                    ...step,
                     status: "completed" as const,
+                    riskScore: agentFindings.riskScore ?? null,
                     details: [
                       checkType.description,
-                      `✓ ${agentFindings.findings?.substring(0, 80) || 'Analysis complete'} - Risk: ${agentFindings.riskScore || 0}%`
+                      `✓ ${agentFindings.findings?.substring(0, 80) || 'Analysis complete'}`
                     ]
                   } : step
                 ));
@@ -314,9 +241,9 @@ export default function IntegrityAgent() {
 
   const getRiskScoreColor = (score: number | null) => {
     if (score === null || score === undefined) return "text-gray-500";
-    if (score === 0) return "text-green-500";
-    if (score < 30) return "text-yellow-500";
-    if (score < 70) return "text-teal-600";
+    if (score <= 10) return "text-green-500";
+    if (score <= 30) return "text-yellow-500";
+    if (score <= 60) return "text-orange-500";
     return "text-red-500";
   };
 
@@ -325,9 +252,9 @@ export default function IntegrityAgent() {
     : null;
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
-      
-      <div className="flex-1 pt-20 container mx-auto px-4 py-6 h-[calc(100vh-80px)]">
+    <div className="min-h-screen bg-background text-foreground">
+
+      <div className="pt-20 container mx-auto px-4 py-6">
         <div className="mb-6">
           <BackButton fallbackPath="/hr-dashboard?tab=integrity" className="mb-4" />
           <h1 className="text-3xl font-bold flex items-center gap-3">
@@ -339,10 +266,95 @@ export default function IntegrityAgent() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100%-100px)]">
+        {/* Horizontal AI Agent Workflow Pipeline */}
+        <Card className="bg-card/30 border-border dark:border-white/10 backdrop-blur-sm mb-6 sticky top-20 z-10" data-testid="card-workflow">
+          <CardContent className="py-4 px-6">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-primary" />
+                <span className="text-sm font-bold">AI Agent Workflow</span>
+              </div>
+              <span className="text-xs text-muted-foreground">Automated integrity verification pipeline</span>
+            </div>
+
+            {workflowSteps.length === 0 ? (
+              <div className="text-center py-4 text-muted-foreground text-sm" data-testid="text-workflow-waiting">
+                <p>Select a candidate and click "Start Integrity Evaluation" to begin the AI agent workflow</p>
+              </div>
+            ) : (
+              <TooltipProvider delayDuration={200}>
+                <div className="flex items-start justify-between">
+                  {workflowSteps.map((step, index) => {
+                    const Icon = step.icon;
+                    const hasDetails = step.details && step.details.length > 0 && step.status !== "pending";
+                    return (
+                      <div key={step.id} className="flex items-center flex-1" data-testid={`workflow-step-${step.id}`}>
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: index * 0.1 }}
+                          className="flex flex-col items-center gap-1.5 flex-1"
+                        >
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 bg-background transition-all cursor-pointer ${
+                                step.status === "completed" ? "border-green-500 text-green-500" :
+                                step.status === "processing" ? "border-primary text-primary animate-pulse" :
+                                step.status === "failed" ? "border-red-500 text-red-500" :
+                                "border-muted text-muted-foreground"
+                              }`}>
+                                {step.status === "completed" ? <CheckCircle2 className="w-5 h-5" /> :
+                                 step.status === "failed" ? <XCircle className="w-5 h-5" /> :
+                                 step.status === "processing" ? <Loader2 className="w-5 h-5 animate-spin" /> :
+                                 <Icon className="w-5 h-5" />}
+                              </div>
+                            </TooltipTrigger>
+                            {hasDetails && (
+                              <TooltipContent side="bottom" className="max-w-[280px] bg-popover text-popover-foreground border border-border p-3">
+                                <p className="font-semibold text-xs mb-1">{step.label}</p>
+                                {step.details!.map((detail, i) => (
+                                  <p key={i} className="text-[11px] text-muted-foreground leading-relaxed">{detail}</p>
+                                ))}
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                          <span className={`text-[11px] font-medium text-center transition-colors ${
+                            step.status === "processing" ? "text-primary" :
+                            step.status === "completed" ? "text-green-500" :
+                            step.status === "failed" ? "text-red-500" :
+                            "text-muted-foreground"
+                          }`}>
+                            {step.label}
+                          </span>
+                          {step.status === "completed" && step.riskScore !== null && step.riskScore !== undefined && (
+                            <motion.span
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              className={`text-[10px] font-semibold ${getRiskScoreColor(step.riskScore)}`}
+                            >
+                              Risk: {step.riskScore}%
+                            </motion.span>
+                          )}
+                        </motion.div>
+                        {index < workflowSteps.length - 1 && (
+                          <div className={`h-0.5 w-full max-w-[60px] mt-5 shrink-0 transition-colors ${
+                            step.status === "completed" ? "bg-green-500" : "bg-white/10"
+                          }`} />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </TooltipProvider>
+            )}
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           
           {/* LEFT: Candidate Selection & Controls */}
-          <div className="lg:col-span-3 space-y-6 overflow-y-auto">
+          <div className="lg:col-span-3">
+            <div className="lg:sticky lg:top-[220px] space-y-6">
             <Card className="bg-card/30 border-border dark:border-white/10 backdrop-blur-sm" data-testid="card-candidate-selection">
               <CardHeader>
                 <CardTitle className="text-sm font-bold flex items-center gap-2">
@@ -456,93 +468,12 @@ export default function IntegrityAgent() {
                 </div>
               </CardContent>
             </Card>
-          </div>
-
-          {/* MIDDLE: AI Agent Workflow Visualization */}
-          <div className="lg:col-span-5 flex flex-col overflow-hidden">
-            <Card className="flex-1 bg-card/30 border-border dark:border-white/10 backdrop-blur-sm flex flex-col overflow-hidden" data-testid="card-workflow">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-bold flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-primary" /> 
-                  AI Agent Workflow
-                </CardTitle>
-                <CardDescription>Automated integrity verification pipeline</CardDescription>
-              </CardHeader>
-              <CardContent className="flex-1 overflow-hidden">
-                <ScrollArea className="h-full pr-4">
-                  {workflowSteps.length === 0 ? (
-                    <div className="text-center py-16 text-muted-foreground" data-testid="text-workflow-waiting">
-                      <ShieldCheck className="w-16 h-16 mx-auto mb-4 opacity-20" />
-                      <p className="text-lg font-semibold mb-2">Select a Candidate</p>
-                      <p className="text-sm">Click "Start Integrity Evaluation" to begin the AI agent workflow</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-6 relative pb-4">
-                      <div className="absolute left-[19px] top-2 bottom-2 w-0.5 bg-white/5 z-0" />
-                      
-                      <AnimatePresence>
-                        {workflowSteps.map((step, index) => {
-                          const Icon = step.icon;
-                          return (
-                            <motion.div 
-                              key={step.id}
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: index * 0.1 }}
-                              className="relative z-10"
-                              data-testid={`workflow-step-${step.id}`}
-                            >
-                              <div className="flex items-start gap-3">
-                                <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 bg-background transition-all ${
-                                  step.status === "completed" ? "border-green-500 text-green-500" : 
-                                  step.status === "processing" ? "border-primary text-primary animate-pulse" : 
-                                  step.status === "failed" ? "border-red-500 text-red-500" :
-                                  "border-muted text-muted-foreground"
-                                }`}>
-                                  {step.status === "completed" ? <CheckCircle2 className="w-5 h-5" /> : 
-                                   step.status === "failed" ? <XCircle className="w-5 h-5" /> :
-                                   step.status === "processing" ? <Loader2 className="w-5 h-5 animate-spin" /> :
-                                   <Icon className="w-5 h-5" />}
-                                </div>
-                                <div className="flex-1 pt-1">
-                                  <h4 className={`text-sm font-bold transition-colors ${
-                                    step.status === "processing" ? "text-primary" : 
-                                    step.status === "completed" ? "text-green-500" :
-                                    step.status === "failed" ? "text-red-500" :
-                                    "text-foreground"
-                                  }`}>
-                                    {step.label}
-                                  </h4>
-                                  {step.details && (
-                                    <motion.ul 
-                                      initial={{ opacity: 0, height: 0 }}
-                                      animate={{ opacity: 1, height: "auto" }}
-                                      className="mt-2 space-y-1"
-                                    >
-                                      {step.details.map((detail, i) => (
-                                        <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
-                                          <div className="w-1 h-1 rounded-full bg-white/20 mt-1.5 shrink-0" />
-                                          <span>{detail}</span>
-                                        </li>
-                                      ))}
-                                    </motion.ul>
-                                  )}
-                                </div>
-                              </div>
-                            </motion.div>
-                          );
-                        })}
-                      </AnimatePresence>
-                    </div>
-                  )}
-                </ScrollArea>
-              </CardContent>
-            </Card>
+            </div>
           </div>
 
           {/* RIGHT: Results & Evidence */}
-          <div className="lg:col-span-4 flex flex-col overflow-hidden">
-            <Card className="flex-1 bg-card/30 border-border dark:border-white/10 backdrop-blur-sm flex flex-col overflow-hidden" data-testid="card-results">
+          <div className="lg:col-span-9">
+            <Card className="bg-card/30 border-border dark:border-white/10 backdrop-blur-sm" data-testid="card-results">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-bold flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -557,8 +488,7 @@ export default function IntegrityAgent() {
                 </CardTitle>
                 <CardDescription>Background check findings and evidence</CardDescription>
               </CardHeader>
-              <CardContent className="flex-1 overflow-hidden p-3">
-                <ScrollArea className="h-full pr-3">
+              <CardContent className="p-4">
                   {!selectedCandidateId ? (
                     <div className="text-center py-16 text-muted-foreground">
                       <Lock className="w-16 h-16 mx-auto mb-4 opacity-20" />
@@ -571,140 +501,130 @@ export default function IntegrityAgent() {
                       <p className="text-xs mt-2">Start an evaluation to see results</p>
                     </div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       <AnimatePresence>
-                        {candidateChecks.map((check, index) => {
-                          const checkTypeInfo = checkTypes.find(t => t.value === check.checkType);
-                          const Icon = checkTypeInfo?.icon || FileText;
-                          
-                          return (
-                            <motion.div
-                              key={check.id}
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: index * 0.05 }}
-                              data-testid={`result-card-${check.id}`}
-                              className="min-w-0"
-                            >
-                              <Card className={`bg-white/5 border transition-colors overflow-hidden ${
-                                check.result === "Flagged" ? "border-yellow-500/30" :
-                                check.result === "Clear" || check.result === "Verified" ? "border-green-500/30" :
-                                "border-border dark:border-white/10"
-                              }`}>
-                                <CardHeader className="pb-2">
-                                  <div className="flex items-start justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                                        <Icon className="w-4 h-4 text-primary" />
+                        {(() => {
+                          // Flatten comprehensive checks into individual finding cards
+                          const resultCards: { key: string; checkType: string; checkData: any; createdAt: string; index: number }[] = [];
+                          let cardIndex = 0;
+
+                          candidateChecks.forEach((check) => {
+                            let parsedFindings = check.findings;
+                            if (typeof check.findings === 'string') {
+                              try { parsedFindings = JSON.parse(check.findings); } catch { parsedFindings = check.findings; }
+                            }
+
+                            if (typeof parsedFindings === 'object' && !Array.isArray(parsedFindings)) {
+                              const findingsMap = parsedFindings as Record<string, any>;
+                              // Iterate in checkTypes order so criminal is first, credit second, etc.
+                              checkTypes.forEach((ct) => {
+                                const cd = findingsMap[ct.value];
+                                if (!cd || typeof cd !== 'object' || Array.isArray(cd)) return;
+                                resultCards.push({ key: `${check.id}-${ct.value}`, checkType: ct.value, checkData: cd, createdAt: check.createdAt, index: cardIndex++ });
+                              });
+                              // Include any extra keys not in checkTypes
+                              Object.entries(findingsMap).forEach(([key, cd]) => {
+                                if (key === '_progress' || !cd || typeof cd !== 'object' || Array.isArray(cd)) return;
+                                if (checkTypes.some(ct => ct.value === key)) return; // already added
+                                resultCards.push({ key: `${check.id}-${key}`, checkType: key, checkData: cd, createdAt: check.createdAt, index: cardIndex++ });
+                              });
+                            } else {
+                              // Legacy single-result check
+                              resultCards.push({ key: check.id, checkType: check.checkType, checkData: { findings: String(parsedFindings) }, createdAt: check.createdAt, index: cardIndex++ });
+                            }
+                          });
+
+                          return resultCards.map((card) => {
+                            const checkTypeInfo = checkTypes.find(t => t.value === card.checkType);
+                            const Icon = checkTypeInfo?.icon || FileText;
+                            const result = card.checkData.result || (card.checkData.riskScore === 0 ? "Clear" : card.checkData.riskScore > 30 ? "Flagged" : "Verified");
+
+                            return (
+                              <motion.div
+                                key={card.key}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: card.index * 0.05 }}
+                                data-testid={`result-card-${card.key}`}
+                                className="min-w-0"
+                              >
+                                <Card className={`bg-white/5 border transition-colors overflow-hidden h-full ${
+                                  result === "Flagged" ? "border-yellow-500/30" :
+                                  result === "Clear" || result === "Verified" ? "border-green-500/30" :
+                                  "border-border dark:border-white/10"
+                                }`}>
+                                  <CardHeader className="pb-2">
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                          <Icon className="w-4 h-4 text-primary" />
+                                        </div>
+                                        <div>
+                                          <CardTitle className="text-xs font-semibold">
+                                            {checkTypeInfo?.label || card.checkType}
+                                          </CardTitle>
+                                          <CardDescription className="text-[10px] mt-0.5">
+                                            {format(new Date(card.createdAt), "MMM dd, HH:mm")}
+                                          </CardDescription>
+                                        </div>
                                       </div>
-                                      <div>
-                                        <CardTitle className="text-xs font-semibold">
-                                          {checkTypeInfo?.label || check.checkType}
-                                        </CardTitle>
-                                        <CardDescription className="text-[10px] mt-0.5">
-                                          {format(new Date(check.createdAt), "MMM dd, HH:mm")}
-                                        </CardDescription>
+                                      <div className="flex items-center gap-1.5">
+                                        {getResultBadge(result)}
                                       </div>
                                     </div>
-                                    <div className="flex items-center gap-1.5">
-                                      {getResultBadge(check.result)}
+                                  </CardHeader>
+                                  <CardContent className="space-y-2">
+                                    {card.checkData.riskScore !== null && card.checkData.riskScore !== undefined && (
+                                      <div className="flex items-center justify-between text-xs">
+                                        <span className="text-muted-foreground">Risk Score:</span>
+                                        <span className={`font-bold ${getRiskScoreColor(card.checkData.riskScore)}`}>
+                                          {card.checkData.riskScore}%
+                                        </span>
+                                      </div>
+                                    )}
+
+                                    <div className="p-2.5 rounded bg-black/20 border border-border dark:border-white/5 w-full">
+                                      <div className="text-xs text-muted-foreground whitespace-pre-wrap" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                                        {card.checkData.findings || 'No findings available'}
+                                      </div>
                                     </div>
-                                  </div>
-                                </CardHeader>
-                                <CardContent className="space-y-2 overflow-hidden">
-                                  {check.riskScore !== null && check.riskScore !== undefined && (
-                                    <div className="flex items-center justify-between text-xs">
-                                      <span className="text-muted-foreground">Risk Score:</span>
-                                      <span className={`font-bold ${getRiskScoreColor(check.riskScore)}`}>
-                                        {check.riskScore}%
-                                      </span>
-                                    </div>
-                                  )}
 
-                                  {check.findings && (() => {
-                                    // Parse findings if it's a string (from database JSONB serialization)
-                                    let parsedFindings = check.findings;
-                                    if (typeof check.findings === 'string') {
-                                      try {
-                                        parsedFindings = JSON.parse(check.findings);
-                                      } catch {
-                                        // If parsing fails, keep as string for legacy display
-                                        parsedFindings = check.findings;
-                                      }
-                                    }
+                                    {/* Missing Documents Alert */}
+                                    {card.checkData.missingDocuments && card.checkData.missingDocuments.length > 0 && (
+                                      <div className="p-2 rounded bg-yellow-500/10 border border-yellow-500/30">
+                                        <div className="flex items-center gap-1 text-yellow-500 mb-1">
+                                          <FileWarning className="w-3 h-3 shrink-0" />
+                                          <span className="text-xs font-semibold">Missing Documents:</span>
+                                        </div>
+                                        <ul className="text-xs text-yellow-500/80 space-y-0.5 ml-4 break-words">
+                                          {card.checkData.missingDocuments.map((doc: string, idx: number) => (
+                                            <li key={idx} className="list-disc break-words">{doc}</li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    )}
 
-                                    return (
-                                      <>
-                                        {typeof parsedFindings === 'object' && !Array.isArray(parsedFindings) ? (
-                                          <>
-                                            {/* Show each check type's findings */}
-                                            {Object.entries(parsedFindings as Record<string, any>).map(([checkType, checkData]: [string, any]) => {
-                                              // Skip progress metadata and non-object entries
-                                              if (checkType === '_progress' || !checkData || typeof checkData !== 'object' || Array.isArray(checkData)) {
-                                                return null;
-                                              }
-
-                                              return (
-                                                <div key={checkType} className="space-y-2 w-full">
-                                                  <div className="p-2 rounded bg-black/20 border border-border dark:border-white/5 overflow-hidden w-full">
-                                                    <div className="text-[10px] font-semibold text-primary mb-1 uppercase">{checkType} Check:</div>
-                                                    <div className="text-[10px] text-muted-foreground whitespace-pre-wrap" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
-                                                      {checkData.findings || 'No findings available'}
-                                                    </div>
-                                                    
-                                                    {/* Missing Documents Alert */}
-                                                    {checkData.missingDocuments && checkData.missingDocuments.length > 0 && (
-                                                      <div className="mt-2 p-2 rounded bg-yellow-500/10 border border-yellow-500/30 overflow-hidden">
-                                                        <div className="flex items-center gap-1 text-yellow-500 mb-1">
-                                                          <FileWarning className="w-3 h-3 shrink-0" />
-                                                          <span className="text-[10px] font-semibold">Missing Documents:</span>
-                                                        </div>
-                                                        <ul className="text-[10px] text-yellow-500/80 space-y-0.5 ml-4 break-words">
-                                                          {checkData.missingDocuments.map((doc: string, idx: number) => (
-                                                            <li key={idx} className="list-disc break-words">{doc}</li>
-                                                          ))}
-                                                        </ul>
-                                                      </div>
-                                                    )}
-                                                    
-                                                    {/* Follow-Up Required Alert */}
-                                                    {checkData.requiresFollowUp && (
-                                                      <div className="mt-2 p-2 rounded bg-teal-600/10 border border-teal-600/30 overflow-hidden">
-                                                        <div className="flex items-center gap-1 text-teal-600 mb-1">
-                                                          <Bell className="w-3 h-3 shrink-0" />
-                                                          <span className="text-[10px] font-semibold">HR Follow-Up Required:</span>
-                                                        </div>
-                                                        <div className="text-[10px] text-teal-600/80" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
-                                                          {checkData.followUpReason || 'Manual verification needed'}
-                                                        </div>
-                                                      </div>
-                                                    )}
-                                                  </div>
-                                                </div>
-                                              );
-                                            })}
-                                          </>
-                                        ) : (
-                                          /* Fallback for string-based findings (legacy checks or in-progress status) */
-                                          <div className="p-2 rounded bg-black/20 border border-border dark:border-white/5 overflow-hidden w-full">
-                                            <div className="text-[10px] font-semibold text-primary mb-1">Findings:</div>
-                                            <div className="text-[10px] text-muted-foreground whitespace-pre-wrap" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
-                                              {String(parsedFindings)}
-                                            </div>
-                                          </div>
-                                        )}
-                                      </>
-                                    );
-                                  })()}
-                                </CardContent>
-                              </Card>
-                            </motion.div>
-                          );
-                        })}
+                                    {/* Follow-Up Required Alert */}
+                                    {card.checkData.requiresFollowUp && (
+                                      <div className="p-2 rounded bg-teal-600/10 border border-teal-600/30">
+                                        <div className="flex items-center gap-1 text-teal-600 mb-1">
+                                          <Bell className="w-3 h-3 shrink-0" />
+                                          <span className="text-xs font-semibold">HR Follow-Up Required:</span>
+                                        </div>
+                                        <div className="text-xs text-teal-600/80" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                                          {card.checkData.followUpReason || 'Manual verification needed'}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </CardContent>
+                                </Card>
+                              </motion.div>
+                            );
+                          });
+                        })()}
                       </AnimatePresence>
                     </div>
                   )}
-                </ScrollArea>
               </CardContent>
             </Card>
           </div>
