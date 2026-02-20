@@ -104,6 +104,7 @@ export default function CandidatePipeline() {
   const [openingWhatsApp, setOpeningWhatsApp] = useState<string | null>(null);
   const [advancingCandidate, setAdvancingCandidate] = useState<string | null>(null);
   const [candidateBlockers, setCandidateBlockers] = useState<Record<string, string[]>>({});
+  const [stageFilter, setStageFilter] = useState<string>("all");
   const candidatesKey = useTenantQueryKey(['candidates']);
 
   const { data: candidates, isLoading } = useQuery({
@@ -216,9 +217,24 @@ export default function CandidatePipeline() {
     }
   };
 
-  const pipelineCandidates = candidates?.filter(c => 
+  const pipelineCandidates = candidates?.filter(c =>
     PIPELINE_STAGES.some(s => s.key.toLowerCase() === (c.stage || '').toLowerCase() || s.name.toLowerCase() === (c.stage || '').toLowerCase())
   ) || [];
+
+  const filteredCandidates = stageFilter === "all"
+    ? pipelineCandidates
+    : pipelineCandidates.filter(c => {
+        const stage = (c.stage || '').toLowerCase();
+        return stage === stageFilter || PIPELINE_STAGES.find(s => s.key === stageFilter)?.name.toLowerCase() === stage;
+      });
+
+  const stageCounts = PIPELINE_STAGES.map(stage => ({
+    ...stage,
+    count: pipelineCandidates.filter(c => {
+      const s = (c.stage || '').toLowerCase();
+      return s === stage.key || s === stage.name.toLowerCase();
+    }).length,
+  }));
 
   const getDocumentStatus = (candidate: Candidate, docKey: string): DocumentStatus => {
     const metadata = candidate.metadata as CandidateMetadata | null;
@@ -363,20 +379,48 @@ export default function CandidatePipeline() {
           </Card>
         </div>
 
+        {/* Stage Filter */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          <Button
+            variant={stageFilter === "all" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setStageFilter("all")}
+            className="gap-1"
+          >
+            All ({pipelineCandidates.length})
+          </Button>
+          {stageCounts.filter(s => s.count > 0).map(stage => (
+            <Button
+              key={stage.key}
+              variant={stageFilter === stage.key ? "default" : "outline"}
+              size="sm"
+              onClick={() => setStageFilter(stageFilter === stage.key ? "all" : stage.key)}
+              className="gap-1"
+            >
+              <div className={`w-2 h-2 rounded-full ${stage.color}`} />
+              {stage.name} ({stage.count})
+            </Button>
+          ))}
+        </div>
+
         {/* Candidate Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {isLoading ? (
             <div className="col-span-2 text-center py-12 text-muted-foreground">
               Loading candidates...
             </div>
-          ) : pipelineCandidates.length === 0 ? (
+          ) : filteredCandidates.length === 0 ? (
             <div className="col-span-2 text-center py-12">
               <UserCheck className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-              <p className="text-lg font-medium text-muted-foreground">No shortlisted candidates yet</p>
-              <p className="text-sm text-muted-foreground mt-2">Shortlist candidates from the candidates page</p>
+              <p className="text-lg font-medium text-muted-foreground">
+                {stageFilter === "all" ? "No candidates in pipeline yet" : `No candidates at ${PIPELINE_STAGES.find(s => s.key === stageFilter)?.name || stageFilter} stage`}
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                {stageFilter === "all" ? "Shortlist candidates from the candidates page" : "Try a different filter or view all candidates"}
+              </p>
             </div>
           ) : (
-            pipelineCandidates.map((candidate, idx) => {
+            filteredCandidates.map((candidate, idx) => {
               const stats = getCandidateDocumentStats(candidate);
               const progressPercent = (stats.complete / stats.total) * 100;
               const stageIndex = getStageIndex(candidate.stage);

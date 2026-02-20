@@ -232,3 +232,45 @@ export const onboardingService = {
     return response.data;
   },
 };
+
+export const offersService = {
+  getAll: async (): Promise<any[]> => {
+    const response = await api.get("/offers");
+    return response.data;
+  },
+  getById: async (id: string): Promise<any> => {
+    const response = await api.get(`/offers/${id}`);
+    return response.data;
+  },
+  getByCandidateId: async (candidateId: string): Promise<any> => {
+    const response = await api.get(`/offers/candidate/${candidateId}`);
+    return response.data;
+  },
+  create: async (data: {
+    candidateId: string;
+    jobId?: string;
+    salary: string;
+    currency?: string;
+    startDate?: string;
+    benefits?: string[];
+    notes?: string;
+  }): Promise<any> => {
+    const response = await api.post("/offers", data);
+    return response.data;
+  },
+  update: async (id: string, data: any): Promise<any> => {
+    const response = await api.patch(`/offers/${id}`, data);
+    return response.data;
+  },
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/offers/${id}`);
+  },
+  send: async (id: string): Promise<any> => {
+    const response = await api.post(`/offers/${id}/send`);
+    return response.data;
+  },
+  respond: async (id: string, response: "accepted" | "declined"): Promise<any> => {
+    const resp = await api.post(`/offers/${id}/respond`, { response });
+    return resp.data;
+  },
+};

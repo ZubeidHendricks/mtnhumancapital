@@ -831,13 +831,20 @@ export class DocumentTemplateGenerator {
     }
   }
 
+  private formatSalary(data: EmployeeData): string {
+    if (!data.salary) return 'To be discussed';
+    const prefix = data.currency || 'R';
+    const sal = data.salary.replace(/^R\s*/, '');
+    return `${prefix}${sal}`;
+  }
+
   private getOfferLetterPrompt(data: EmployeeData, templateText: string): string {
     return `Generate content for a job offer letter with these details:
 - Employee: ${data.fullName}
 - Position: ${data.jobTitle}
 - Department: ${data.department || 'Not specified'}
 - Start Date: ${data.startDate}
-- Salary: ${data.salary || 'To be discussed'} ${data.currency || ''}
+- Salary: ${this.formatSalary(data)}
 - Company: ${data.companyName}
 - Manager: ${data.manager || 'Not specified'}
 - Probation Period: ${data.probationPeriod || '3 months'}
@@ -917,7 +924,7 @@ Return JSON with these fields (use formal legal language):
 - Position: ${data.jobTitle}
 - Department: ${data.department || 'Not specified'}
 - Start Date: ${data.startDate}
-- Salary: ${data.salary || 'As per offer'} ${data.currency || ''}
+- Salary: ${this.formatSalary(data)}
 - Company: ${data.companyName}
 - Working Hours: ${data.workingHours || 'Standard business hours (08:00-17:00)'}
 - Leave Entitlement: ${data.leaveEntitlement || '15 days annual leave'}
@@ -973,7 +980,7 @@ Return JSON with these fields:
         greeting: `Dear ${data.fullName},`,
         openingParagraph: `We are pleased to offer you the position of ${data.jobTitle} at ${data.companyName}.`,
         positionDetails: `You will be joining us as ${data.jobTitle}${data.department ? ` in the ${data.department} department` : ''}.`,
-        compensationDetails: `Your compensation package will be ${data.salary || 'as discussed'}.`,
+        compensationDetails: `Your compensation package will be ${this.formatSalary(data)} per month.`,
         benefitsOverview: `You will be entitled to our standard employee benefits package.`,
         startDateInfo: `Your start date will be ${data.startDate}.`,
         conditionsOfEmployment: `This offer is conditional upon successful background verification and completion of required documentation.`,
@@ -1009,7 +1016,7 @@ Return JSON with these fields:
         partiesClause: `This Employment Contract is entered into between ${data.companyName} ("the Employer") and ${data.fullName} ("the Employee").`,
         appointmentAndDuties: `The Employer hereby appoints the Employee as ${data.jobTitle}. The Employee shall perform duties as reasonably assigned by the Employer and as outlined in the job description.`,
         commencementAndProbation: `Employment shall commence on ${data.startDate}. The Employee will be subject to a probationary period of ${data.probationPeriod || '3 months'}.`,
-        remunerationAndBenefits: `The Employee shall receive a monthly salary of ${data.salary || 'as per the offer letter'}. Salary will be paid on the last working day of each month. Additional benefits include those specified in the company benefits policy.`,
+        remunerationAndBenefits: `The Employee shall receive a monthly salary of ${this.formatSalary(data)}. Salary will be paid on the last working day of each month. Additional benefits include those specified in the company benefits policy.`,
         workingHoursAndLeave: `Normal working hours shall be ${data.workingHours || '08:00 to 17:00, Monday to Friday'}. The Employee is entitled to ${data.leaveEntitlement || '15 days'} annual leave per year.`,
         confidentialityClause: `The Employee undertakes to maintain confidentiality regarding all proprietary information and trade secrets of the Employer, both during and after employment.`,
         terminationClause: `Either party may terminate this agreement by giving one month's written notice, or payment in lieu thereof. The Employer may terminate employment immediately for gross misconduct.`,

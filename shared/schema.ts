@@ -2654,3 +2654,40 @@ export const weighbridgeSlips = pgTable("weighbridge_slips", {
 export const insertWeighbridgeSlipSchema = createInsertSchema(weighbridgeSlips);
 export type WeighbridgeSlip = typeof weighbridgeSlips.$inferSelect;
 export type InsertWeighbridgeSlip = typeof weighbridgeSlips.$inferInsert;
+
+// ============================================
+// OFFERS MANAGEMENT
+// ============================================
+
+export const offers = pgTable("offers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id"),
+  candidateId: varchar("candidate_id").notNull().references(() => candidates.id),
+  jobId: varchar("job_id").references(() => jobs.id),
+  salary: text("salary").notNull(),
+  currency: text("currency").notNull().default("ZAR"),
+  startDate: timestamp("start_date"),
+  benefits: jsonb("benefits"),
+  status: text("status").notNull().default("draft"),
+  sentAt: timestamp("sent_at"),
+  respondedAt: timestamp("responded_at"),
+  expiresAt: timestamp("expires_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertOfferSchema = createInsertSchema(offers, {
+  startDate: z.coerce.date().optional().nullable(),
+  sentAt: z.coerce.date().optional().nullable(),
+  respondedAt: z.coerce.date().optional().nullable(),
+  expiresAt: z.coerce.date().optional().nullable(),
+}).omit({
+  id: true,
+  tenantId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertOffer = z.infer<typeof insertOfferSchema>;
+export type Offer = typeof offers.$inferSelect;

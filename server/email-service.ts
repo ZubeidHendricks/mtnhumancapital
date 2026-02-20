@@ -1,11 +1,18 @@
 import type { IStorage } from "./storage";
 import nodemailer from "nodemailer";
 
+interface EmailAttachment {
+  filename: string;
+  content: Buffer;
+  contentType?: string;
+}
+
 interface EmailOptions {
   to: string;
   subject: string;
   body: string;
   html?: string;
+  attachments?: EmailAttachment[];
 }
 
 export class EmailService {
@@ -55,14 +62,22 @@ export class EmailService {
       }
 
       if (this.transporter) {
-        await this.transporter.sendMail({
+        const mailOptions: any = {
           from: process.env.SMTP_FROM || process.env.SMTP_USER || "noreply@avatarhuman.capital",
           to: actualTo,
           subject: options.subject,
           text: options.body,
           html: options.html,
-        });
-        console.log(`[EmailService] Email sent to ${actualTo}: ${options.subject}`);
+        };
+        if (options.attachments?.length) {
+          mailOptions.attachments = options.attachments.map(a => ({
+            filename: a.filename,
+            content: a.content,
+            contentType: a.contentType,
+          }));
+        }
+        await this.transporter.sendMail(mailOptions);
+        console.log(`[EmailService] Email sent to ${actualTo}: ${options.subject}${options.attachments?.length ? ` (${options.attachments.length} attachment(s))` : ''}`);
       } else {
         console.log("\n=== EMAIL NOTIFICATION (console only - SMTP not configured) ===");
         console.log(`To: ${actualTo}`);
@@ -263,5 +278,80 @@ This is an automated notification from the AHC Onboarding System.`;
       subject,
       body,
     });
+  }
+
+  async sendOfferNotification(options: {
+    to: string;
+    candidateName: string;
+    jobTitle: string;
+    salary: string;
+    startDate: string;
+    companyName?: string;
+    attachments?: EmailAttachment[];
+  }): Promise<boolean> {
+    const { to, candidateName, jobTitle, salary, startDate, companyName, attachments } = options;
+    const company = companyName || "AHC Recruiting";
+
+    const subject = `Job Offer: ${jobTitle} - ${company}`;
+
+    const body = `Dear ${candidateName},
+
+We are pleased to extend a formal offer for the position of ${jobTitle}.
+
+Offer Details:
+- Position: ${jobTitle}
+- Salary: ${salary}
+- Proposed Start Date: ${startDate}
+
+Please review the offer and respond at your earliest convenience.
+
+Best regards,
+${company} HR Team`;
+
+    const html = `
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #059669, #2563eb); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">Job Offer</h1>
+    <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">${jobTitle}</p>
+  </div>
+  <div style="background: #ffffff; border: 1px solid #e5e7eb; border-top: none; padding: 30px; border-radius: 0 0 12px 12px;">
+    <p style="font-size: 16px; color: #374151;">Dear ${candidateName},</p>
+    <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
+      We are pleased to extend a formal offer for the position of <strong>${jobTitle}</strong>.
+    </p>
+    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin: 20px 0;">
+      <h3 style="margin: 0 0 12px 0; color: #166534;">Offer Details</h3>
+      <p style="margin: 4px 0; color: #374151;"><strong>Position:</strong> ${jobTitle}</p>
+      <p style="margin: 4px 0; color: #374151;"><strong>Salary:</strong> ${salary}</p>
+      <p style="margin: 4px 0; color: #374151;"><strong>Start Date:</strong> ${startDate}</p>
+    </div>
+    <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
+      Please review the offer details and respond at your earliest convenience.
+    </p>
+    <p style="font-size: 14px; color: #6b7280;">Best regards,<br><strong>${company} HR Team</strong></p>
+  </div>
+</div>`;
+
+    return this.sendEmail({ to, subject, body, html, attachments });
+  }
+
+  async notifyHROfOfferResponse(candidateName: string, jobTitle: string, response: "accepted" | "declined"): Promise<void> {
+    const hrEmail = await this.getHRAdminEmail();
+    if (!hrEmail) {
+      console.log("[EmailService] HR admin email not configured, skipping offer response notification");
+      return;
+    }
+
+    const subject = `Offer ${response === "accepted" ? "Accepted" : "Declined"}: ${candidateName} - ${jobTitle}`;
+    const body = `Candidate ${candidateName} has ${response} the offer for ${jobTitle}.
+
+${response === "accepted"
+      ? "Next Steps:\n- Integrity checks will be auto-launched\n- The candidate has been transitioned to the integrity verification stage"
+      : "The candidate has been marked as withdrawn from the pipeline."
+    }
+
+This is an automated notification from the AHC HR System.`;
+
+    await this.sendEmail({ to: hrEmail, subject, body });
   }
 }

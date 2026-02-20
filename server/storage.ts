@@ -77,6 +77,8 @@ import {
   type InsertCandidateRecommendation,
   type ModelTrainingEvent,
   type InsertModelTrainingEvent,
+  type Offer,
+  type InsertOffer,
   users,
   jobs,
   candidates,
@@ -114,6 +116,7 @@ import {
   interviewFeedback,
   candidateRecommendations,
   modelTrainingEvents,
+  offers,
   dataSources,
   dataSourceSyncHistory,
   dataSourceFields,
@@ -604,6 +607,14 @@ export interface IStorage {
   createDocumentTemplate(tenantId: string, template: InsertDocumentTemplate): Promise<DocumentTemplate>;
   activateDocumentTemplate(tenantId: string, id: string): Promise<DocumentTemplate | undefined>;
   deleteDocumentTemplate(tenantId: string, id: string): Promise<boolean>;
+
+  // Offers Management
+  getAllOffers(tenantId: string): Promise<Offer[]>;
+  getOffer(tenantId: string, id: string): Promise<Offer | undefined>;
+  getOfferByCandidateId(tenantId: string, candidateId: string): Promise<Offer | undefined>;
+  createOffer(tenantId: string, offer: InsertOffer): Promise<Offer>;
+  updateOffer(tenantId: string, id: string, offer: Partial<InsertOffer>): Promise<Offer | undefined>;
+  deleteOffer(tenantId: string, id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3654,6 +3665,57 @@ export class DatabaseStorage implements IStorage {
         )
       );
     return true;
+  }
+
+  // ========== OFFERS MANAGEMENT ==========
+
+  async getAllOffers(tenantId: string): Promise<Offer[]> {
+    return await db.select().from(offers).where(eq(offers.tenantId, tenantId)).orderBy(desc(offers.createdAt));
+  }
+
+  async getOffer(tenantId: string, id: string): Promise<Offer | undefined> {
+    const [offer] = await db.select().from(offers).where(and(eq(offers.id, id), eq(offers.tenantId, tenantId)));
+    return offer || undefined;
+  }
+
+  async getOfferByCandidateId(tenantId: string, candidateId: string): Promise<Offer | undefined> {
+    const [offer] = await db.select().from(offers).where(and(eq(offers.candidateId, candidateId), eq(offers.tenantId, tenantId))).orderBy(desc(offers.createdAt));
+    return offer || undefined;
+  }
+
+  async createOffer(tenantId: string, insertOffer: InsertOffer): Promise<Offer> {
+    const candidate = await this.getCandidate(tenantId, insertOffer.candidateId);
+    if (!candidate) {
+      throw new Error(`Candidate ${insertOffer.candidateId} not found in tenant ${tenantId}`);
+    }
+
+    const cleanedOffer = Object.fromEntries(
+      Object.entries(insertOffer).filter(([_, v]) => v !== null && v !== undefined)
+    ) as any;
+
+    const [offer] = await db
+      .insert(offers)
+      .values({ ...cleanedOffer, tenantId })
+      .returning();
+    return offer;
+  }
+
+  async updateOffer(tenantId: string, id: string, updates: Partial<InsertOffer>): Promise<Offer | undefined> {
+    const cleanedUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([_, v]) => v !== null && v !== undefined)
+    ) as any;
+
+    const [offer] = await db
+      .update(offers)
+      .set({ ...cleanedUpdates, updatedAt: new Date() })
+      .where(and(eq(offers.id, id), eq(offers.tenantId, tenantId)))
+      .returning();
+    return offer || undefined;
+  }
+
+  async deleteOffer(tenantId: string, id: string): Promise<boolean> {
+    const result = await db.delete(offers).where(and(eq(offers.id, id), eq(offers.tenantId, tenantId)));
+    return result.rowCount ? result.rowCount > 0 : false;
   }
 }
 

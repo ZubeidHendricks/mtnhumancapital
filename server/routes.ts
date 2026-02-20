@@ -4,7 +4,7 @@ import crypto from "crypto";
 import path from "path";
 import fs from "fs";
 import { storage } from "./storage";
-import { insertCandidateSchema, insertJobSchema, insertIntegrityCheckSchema, insertRecruitmentSessionSchema, insertInterviewSchema, updateInterviewSchema, insertTenantRequestSchema, updateTenantRequestSchema, type InsertCandidate, insertIntegrityDocumentRequirementSchema, updateIntegrityDocumentRequirementSchema, insertCandidateDocumentSchema, updateCandidateDocumentSchema, documentTypes, insertInterviewSessionSchema, insertInterviewFeedbackSchema, updateInterviewFeedbackSchema } from "@shared/schema";
+import { insertCandidateSchema, insertJobSchema, insertIntegrityCheckSchema, insertRecruitmentSessionSchema, insertInterviewSchema, updateInterviewSchema, insertTenantRequestSchema, updateTenantRequestSchema, type InsertCandidate, insertIntegrityDocumentRequirementSchema, updateIntegrityDocumentRequirementSchema, insertCandidateDocumentSchema, updateCandidateDocumentSchema, documentTypes, insertInterviewSessionSchema, insertInterviewFeedbackSchema, updateInterviewFeedbackSchema, insertOfferSchema } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { IntegrityOrchestrator } from "./integrity-orchestrator";
@@ -9963,6 +9963,230 @@ Format your response as JSON:
       res.json({ success: true, message: "Conversation history cleared" });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message || "Failed to clear history" });
+    }
+  });
+
+  // ============= OFFERS MANAGEMENT =============
+
+  app.get("/api/offers", async (req, res) => {
+    try {
+      const allOffers = await storage.getAllOffers(req.tenant.id);
+      res.json(allOffers);
+    } catch (error) {
+      console.error("Error fetching offers:", error);
+      res.status(500).json({ message: "Failed to fetch offers" });
+    }
+  });
+
+  app.get("/api/offers/candidate/:candidateId", async (req, res) => {
+    try {
+      const offer = await storage.getOfferByCandidateId(req.tenant.id, req.params.candidateId);
+      res.json(offer || null);
+    } catch (error) {
+      console.error("Error fetching candidate offer:", error);
+      res.status(500).json({ message: "Failed to fetch candidate offer" });
+    }
+  });
+
+  app.get("/api/offers/:id", async (req, res) => {
+    try {
+      const offer = await storage.getOffer(req.tenant.id, req.params.id);
+      if (!offer) {
+        return res.status(404).json({ message: "Offer not found" });
+      }
+      res.json(offer);
+    } catch (error) {
+      console.error("Error fetching offer:", error);
+      res.status(500).json({ message: "Failed to fetch offer" });
+    }
+  });
+
+  app.post("/api/offers", async (req, res) => {
+    try {
+      const result = insertOfferSchema.safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      const offer = await storage.createOffer(req.tenant.id, result.data);
+      res.status(201).json(offer);
+    } catch (error) {
+      console.error("Error creating offer:", error);
+      res.status(500).json({ message: "Failed to create offer" });
+    }
+  });
+
+  app.patch("/api/offers/:id", async (req, res) => {
+    try {
+      const result = insertOfferSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      const offer = await storage.updateOffer(req.tenant.id, req.params.id, result.data);
+      if (!offer) {
+        return res.status(404).json({ message: "Offer not found" });
+      }
+      res.json(offer);
+    } catch (error) {
+      console.error("Error updating offer:", error);
+      res.status(500).json({ message: "Failed to update offer" });
+    }
+  });
+
+  app.delete("/api/offers/:id", async (req, res) => {
+    try {
+      const success = await storage.deleteOffer(req.tenant.id, req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "Offer not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting offer:", error);
+      res.status(500).json({ message: "Failed to delete offer" });
+    }
+  });
+
+  app.post("/api/offers/:id/send", upload.single("attachment"), async (req, res) => {
+    try {
+      const offer = await storage.getOffer(req.tenant.id, req.params.id);
+      if (!offer) {
+        return res.status(404).json({ message: "Offer not found" });
+      }
+
+      const candidate = await storage.getCandidate(req.tenant.id, offer.candidateId);
+      if (!candidate) {
+        return res.status(404).json({ message: "Candidate not found" });
+      }
+
+      let jobTitle = candidate.role || "Position";
+      if (offer.jobId) {
+        const job = await storage.getJob(req.tenant.id, offer.jobId);
+        if (job) jobTitle = job.title;
+      }
+
+      const updatedOffer = await storage.updateOffer(req.tenant.id, offer.id, {
+        status: "sent",
+        sentAt: new Date(),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      } as any);
+
+      // Build email attachments from uploaded file
+      const emailAttachments: { filename: string; content: Buffer; contentType?: string }[] = [];
+      if (req.file) {
+        emailAttachments.push({
+          filename: req.file.originalname,
+          content: req.file.buffer,
+          contentType: req.file.mimetype,
+        });
+      }
+
+      let emailSent = false;
+      if (candidate.email) {
+        emailSent = await emailService.sendOfferNotification({
+          to: candidate.email,
+          candidateName: candidate.fullName,
+          jobTitle,
+          salary: `${offer.currency || "ZAR"} ${offer.salary}`,
+          startDate: offer.startDate ? new Date(offer.startDate).toLocaleDateString() : "TBD",
+          attachments: emailAttachments.length > 0 ? emailAttachments : undefined,
+        });
+      }
+
+      let pipelineTransition = null;
+      try {
+        const { pipelineOrchestrator } = await import("./pipeline-orchestrator");
+        pipelineTransition = await pipelineOrchestrator.transitionCandidate(
+          offer.candidateId,
+          "offer_pending",
+          req.tenant.id,
+          {
+            triggeredBy: "manual",
+            triggeredByUserId: req.user?.id,
+            reason: "Offer sent to candidate",
+            skipPrerequisites: true,
+          }
+        );
+      } catch (err) {
+        console.error("Pipeline transition failed (non-blocking):", err);
+      }
+
+      res.json({
+        offer: updatedOffer,
+        emailSent,
+        pipelineTransition,
+      });
+    } catch (error) {
+      console.error("Error sending offer:", error);
+      res.status(500).json({ message: "Failed to send offer" });
+    }
+  });
+
+  app.post("/api/offers/:id/respond", async (req, res) => {
+    try {
+      const { response } = req.body;
+      if (!response || !["accepted", "declined"].includes(response)) {
+        return res.status(400).json({ message: "response must be 'accepted' or 'declined'" });
+      }
+
+      const offer = await storage.getOffer(req.tenant.id, req.params.id);
+      if (!offer) {
+        return res.status(404).json({ message: "Offer not found" });
+      }
+
+      const updatedOffer = await storage.updateOffer(req.tenant.id, offer.id, {
+        status: response,
+        respondedAt: new Date(),
+      } as any);
+
+      const candidate = await storage.getCandidate(req.tenant.id, offer.candidateId);
+      let jobTitle = candidate?.role || "Position";
+      if (offer.jobId) {
+        const job = await storage.getJob(req.tenant.id, offer.jobId);
+        if (job) jobTitle = job.title;
+      }
+
+      await emailService.notifyHROfOfferResponse(
+        candidate?.fullName || "Unknown",
+        jobTitle,
+        response
+      );
+
+      let pipelineTransition = null;
+      try {
+        const { pipelineOrchestrator } = await import("./pipeline-orchestrator");
+        if (response === "accepted") {
+          pipelineTransition = await pipelineOrchestrator.transitionCandidate(
+            offer.candidateId,
+            "offer_accepted",
+            req.tenant.id,
+            {
+              triggeredBy: "manual",
+              triggeredByUserId: req.user?.id,
+              reason: "Candidate accepted the offer",
+            }
+          );
+        } else {
+          pipelineTransition = await pipelineOrchestrator.transitionCandidate(
+            offer.candidateId,
+            "withdrawn",
+            req.tenant.id,
+            {
+              triggeredBy: "manual",
+              triggeredByUserId: req.user?.id,
+              reason: "Candidate declined the offer",
+              skipPrerequisites: true,
+            }
+          );
+        }
+      } catch (err) {
+        console.error("Pipeline transition failed (non-blocking):", err);
+      }
+
+      res.json({ offer: updatedOffer, pipelineTransition });
+    } catch (error) {
+      console.error("Error responding to offer:", error);
+      res.status(500).json({ message: "Failed to process offer response" });
     }
   });
 

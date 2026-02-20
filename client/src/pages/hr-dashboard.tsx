@@ -74,6 +74,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
+// Format stage names: "offer_pending" → "Offer Pending", "integrity_checks" → "Integrity Checks"
+const formatStageName = (stage: string) =>
+  stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
 // Fallback data in case of API error
 const MOCK_CANDIDATES = [
   { id: 1, name: "Sarah Jenkins", role: "Senior Project Manager", status: "Interviewing", match: 94, stage: "Screening" },
@@ -117,6 +121,7 @@ export default function HRDashboard() {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedJob, setSelectedJob] = useState<any>(null);
   const [isJobDetailOpen, setIsJobDetailOpen] = useState(false);
+  const [pipelineStageFilter, setPipelineStageFilter] = useState<string>("all");
 
   const createJobMutation = useMutation({
     mutationFn: jobsService.create,
@@ -1287,11 +1292,48 @@ BENEFITS:
                       </DialogContent>
                     </Dialog>
 
-                    <Button variant="outline" size="icon"><Filter className="h-4 w-4" /></Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant={pipelineStageFilter !== "all" ? "default" : "outline"} size="icon">
+                          <Filter className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuLabel>Filter by Stage</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className={`cursor-pointer ${pipelineStageFilter === "all" ? "font-bold" : ""}`}
+                          onClick={() => setPipelineStageFilter("all")}
+                        >
+                          All Stages
+                        </DropdownMenuItem>
+                        {(() => {
+                          const stages = [...new Set(displayCandidates.map((c: any) => c.stage || "New"))];
+                          return stages.map((stage: string) => (
+                            <DropdownMenuItem
+                              key={stage}
+                              className={`cursor-pointer ${pipelineStageFilter === stage ? "font-bold" : ""}`}
+                              onClick={() => setPipelineStageFilter(pipelineStageFilter === stage ? "all" : stage)}
+                            >
+                              {formatStageName(stage)} ({displayCandidates.filter((c: any) => (c.stage || "New") === stage).length})
+                            </DropdownMenuItem>
+                          ));
+                        })()}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
+                {pipelineStageFilter !== "all" && (
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-sm text-muted-foreground">Filtering:</span>
+                    <Badge variant="secondary" className="gap-1">
+                      {formatStageName(pipelineStageFilter)}
+                      <button onClick={() => setPipelineStageFilter("all")} className="ml-1 hover:text-destructive">&times;</button>
+                    </Badge>
+                  </div>
+                )}
                 <div className="rounded-md border border-border overflow-hidden">
                   <div className="bg-white/5 px-4 py-3 grid grid-cols-12 text-sm font-medium text-foreground font-semibold">
                     <div className="col-span-3">Candidate</div>
@@ -1306,9 +1348,15 @@ BENEFITS:
                          <Loader2 className="w-6 h-6 animate-spin" />
                          <p>Syncing with DigitalOcean Backend...</p>
                        </div>
+                    ) : displayCandidates.filter((c: any) => pipelineStageFilter === "all" || (c.stage || "New") === pipelineStageFilter).length === 0 ? (
+                       <div className="flex flex-col items-center justify-center h-32 gap-2 text-muted-foreground">
+                         <Filter className="w-6 h-6 opacity-50" />
+                         <p>No candidates at "{formatStageName(pipelineStageFilter)}" stage</p>
+                         <Button variant="link" size="sm" onClick={() => setPipelineStageFilter("all")}>Clear filter</Button>
+                       </div>
                     ) : (
-                      // Use explicit array mapping
-                      displayCandidates.map((candidate: any) => (
+                      // Use explicit array mapping with stage filter
+                      displayCandidates.filter((c: any) => pipelineStageFilter === "all" || (c.stage || "New") === pipelineStageFilter).map((candidate: any) => (
                         <div key={candidate.id || Math.random()} className="px-4 py-3 grid grid-cols-12 items-center border-t border-border hover:bg-white/5 transition-colors">
                           <div className="col-span-3 font-medium">{candidate.fullName || candidate.name || "Unknown Candidate"}</div>
                           <div className="col-span-3 text-sm text-foreground font-semibold">{candidate.role || "General Application"}</div>
@@ -1317,7 +1365,7 @@ BENEFITS:
                               {candidate.match || candidate.overall_score || 0}% Match
                             </Badge>
                           </div>
-                          <div className="col-span-2 text-sm">{candidate.stage || candidate.status || "New"}</div>
+                          <div className="col-span-2 text-sm">{formatStageName(candidate.stage || candidate.status || "New")}</div>
                           <div className="col-span-2 text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
