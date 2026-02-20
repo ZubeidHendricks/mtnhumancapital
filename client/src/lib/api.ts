@@ -212,8 +212,11 @@ export const onboardingService = {
     const response = await api.get(`/onboarding/workflows/${id}`);
     return response.data;
   },
-  triggerOnboarding: async (candidateId: string): Promise<{ message: string; workflow: OnboardingWorkflow }> => {
-    const response = await api.post(`/onboarding/trigger/${candidateId}`);
+  triggerOnboarding: async (
+    candidateId: string,
+    options?: { requirements?: { itSetup?: boolean; buildingAccess?: boolean; equipment?: boolean }; startDate?: string }
+  ): Promise<{ message: string; workflow: OnboardingWorkflow }> => {
+    const response = await api.post(`/onboarding/trigger/${candidateId}`, options || {});
     return response.data;
   },
   getStatus: async (candidateId: string): Promise<OnboardingWorkflow | null> => {

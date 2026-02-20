@@ -3624,9 +3624,14 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     try {
       const { OnboardingOrchestrator } = await import("./onboarding-orchestrator");
       const orchestrator = new OnboardingOrchestrator(storage);
-      
-      const workflow = await orchestrator.startOnboarding(req.tenant.id, req.params.candidateId);
-      
+
+      const { requirements, startDate } = req.body || {};
+
+      const workflow = await orchestrator.startOnboarding(req.tenant.id, req.params.candidateId, false, {
+        requirements,
+        startDate: startDate ? new Date(startDate) : undefined,
+      });
+
       res.status(201).json({
         message: "Onboarding workflow started",
         workflow,

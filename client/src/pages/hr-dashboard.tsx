@@ -824,7 +824,7 @@ BENEFITS:
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card className="bg-card border-border">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-foreground font-bold text-sm font-medium text-foreground font-semibold">Open Roles</CardTitle>
+                  <CardTitle className="text-foreground font-bold text-sm">Open Roles</CardTitle>
                   <div className="text-2xl font-bold">
                     {loadingJobs ? <Loader2 className="w-6 h-6 animate-spin" /> : jobCount}
                   </div>
@@ -832,7 +832,7 @@ BENEFITS:
               </Card>
               <Card className="bg-card border-border">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-foreground font-bold text-sm font-medium text-foreground font-semibold">Candidates in Pipeline</CardTitle>
+                  <CardTitle className="text-foreground font-bold text-sm">Candidates in Pipeline</CardTitle>
                   <div className="text-2xl font-bold">
                     {loadingCandidates ? <Loader2 className="w-6 h-6 animate-spin" /> : displayCandidates.length}
                   </div>
@@ -840,7 +840,7 @@ BENEFITS:
               </Card>
               <Card className="bg-card border-border">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-foreground font-bold text-sm font-medium text-foreground font-semibold">Time to Hire (Avg)</CardTitle>
+                  <CardTitle className="text-foreground font-bold text-sm">Time to Hire (Avg)</CardTitle>
                   <div className="text-2xl font-bold">18 Days</div>
                 </CardHeader>
               </Card>
@@ -852,7 +852,7 @@ BENEFITS:
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-foreground font-bold text-foreground font-bold">Open Roles</CardTitle>
-                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">
                       {loadingJobs ? "Loading positions..." : "Active job requisitions and hiring pipelines"}
                     </CardDescription>
                   </div>
@@ -1005,7 +1005,7 @@ BENEFITS:
                         <FileArchive className="h-5 w-5 text-gray-400" />
                         Archived Roles
                       </CardTitle>
-                      <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">
+                      <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">
                         {loadingArchivedJobs ? "Loading archived positions..." : `${archivedJobs.length} archived job${archivedJobs.length !== 1 ? 's' : ''}`}
                       </CardDescription>
                     </div>
@@ -1082,7 +1082,7 @@ BENEFITS:
                       <Star className="h-5 w-5 text-yellow-600 dark:text-yellow-400 fill-yellow-400" />
                       Shortlisted Candidates
                     </CardTitle>
-                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">
                       {loadingCandidates ? "Loading..." : "Top talent ready for interviews and offers"}
                     </CardDescription>
                   </div>
@@ -1159,7 +1159,7 @@ BENEFITS:
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-foreground font-bold text-foreground font-bold">Candidate Pipeline</CardTitle>
-                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">
                       {loadingCandidates ? "Fetching data from backend..." : "AI-ranked candidates matched to hiring needs"}
                     </CardDescription>
                   </div>
@@ -1408,7 +1408,7 @@ BENEFITS:
                       <Briefcase className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                       Job Specifications Library
                     </CardTitle>
-                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">Extracted job requirements from uploaded specifications</CardDescription>
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Extracted job requirements from uploaded specifications</CardDescription>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="flex items-center bg-gray-200 dark:bg-zinc-800 rounded-lg p-1">
@@ -1811,7 +1811,7 @@ BENEFITS:
                     <ShieldCheck className="w-5 h-5 text-teal-600 dark:text-teal-400" />
                     Risk Assessment Overview
                   </CardTitle>
-                  <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">AI-generated risk profiles based on background data</CardDescription>
+                  <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">AI-generated risk profiles based on background data</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {!selectedRiskCandidate ? (
@@ -2029,7 +2029,7 @@ BENEFITS:
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <Card className="border-border bg-card">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-foreground font-bold text-sm font-medium text-foreground font-semibold">Consent Status</CardTitle>
+                  <CardTitle className="text-foreground font-bold text-sm">Consent Status</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
@@ -2051,7 +2051,7 @@ BENEFITS:
 
               <Card className="border-border bg-card">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-foreground font-bold text-sm font-medium text-foreground font-semibold">Screening Progress</CardTitle>
+                  <CardTitle className="text-foreground font-bold text-sm">Screening Progress</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
@@ -2073,7 +2073,7 @@ BENEFITS:
 
               <Card className="border-border bg-card">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-foreground font-bold text-sm font-medium text-foreground font-semibold">Risk Distribution</CardTitle>
+                  <CardTitle className="text-foreground font-bold text-sm">Risk Distribution</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
@@ -2112,7 +2112,7 @@ BENEFITS:
                     <Eye className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                     Pending Human Reviews
                   </CardTitle>
-                  <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">Social screening findings requiring HR review</CardDescription>
+                  <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Social screening findings requiring HR review</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {socialPendingReviews.length === 0 ? (
@@ -2289,7 +2289,7 @@ BENEFITS:
                       <Calendar className="w-5 h-5 text-primary" />
                       Active Review Cycles
                     </CardTitle>
-                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">Current KPI review periods</CardDescription>
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Current KPI review periods</CardDescription>
                   </div>
                   <Link href="/kpi-management?tab=cycles&action=new-cycle">
                     <Button className="bg-teal-600 hover:bg-teal-700 text-white font-semibold" data-testid="button-new-cycle">
@@ -2351,7 +2351,7 @@ BENEFITS:
                       <FileCheck className="w-5 h-5 text-primary" />
                       Recent Submissions
                     </CardTitle>
-                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">Employee KPI review submissions</CardDescription>
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Employee KPI review submissions</CardDescription>
                   </div>
                   <Link href="/kpi-hr-dashboard">
                     <Button variant="outline" className="border-border" data-testid="button-view-all-submissions">
@@ -2421,7 +2421,7 @@ BENEFITS:
                       <Target className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                       KPI Assignments
                     </CardTitle>
-                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">Current quarter performance objectives</CardDescription>
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Current quarter performance objectives</CardDescription>
                   </div>
                   <Link href="/kpi-management">
                     <Button variant="outline" className="border-border" data-testid="button-manage-assignments">
@@ -2564,7 +2564,7 @@ BENEFITS:
                       <BookOpen className="w-5 h-5 text-primary" />
                       Active Training Courses
                     </CardTitle>
-                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">Current learning programs and progress</CardDescription>
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Current learning programs and progress</CardDescription>
                   </div>
                   <Link href="/learning-management">
                     <Button className="bg-teal-600 hover:bg-teal-700 text-white font-semibold" data-testid="button-create-course-lms">
@@ -2625,7 +2625,7 @@ BENEFITS:
                   <GraduationCap className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                   Employee Learning Progress
                 </CardTitle>
-                <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">Individual training completion status</CardDescription>
+                <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Individual training completion status</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -2742,7 +2742,7 @@ BENEFITS:
                       <Timer className="w-5 h-5 text-primary" />
                       Today's Attendance
                     </CardTitle>
-                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">Real-time employee attendance tracking</CardDescription>
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Real-time employee attendance tracking</CardDescription>
                   </div>
                   <div className="flex gap-2">
                     <Button variant="outline" className="border-border">
@@ -2810,7 +2810,7 @@ BENEFITS:
                       <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                       Pending Leave Requests
                     </CardTitle>
-                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium text-gray-700 dark:text-gray-300 font-medium">Approve or reject employee leave requests</CardDescription>
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Approve or reject employee leave requests</CardDescription>
                   </div>
                 </div>
               </CardHeader>

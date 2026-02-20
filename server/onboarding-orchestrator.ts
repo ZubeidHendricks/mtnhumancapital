@@ -36,19 +36,24 @@ export class OnboardingOrchestrator {
     }
   }
 
-  async startOnboarding(tenantId: string, candidateId: string, restart: boolean = false): Promise<OnboardingWorkflow> {
+  async startOnboarding(
+    tenantId: string,
+    candidateId: string,
+    restart: boolean = false,
+    options?: { requirements?: { itSetup?: boolean; buildingAccess?: boolean; equipment?: boolean }; startDate?: Date }
+  ): Promise<OnboardingWorkflow> {
     const candidate = await this.storage.getCandidate(tenantId, candidateId);
     if (!candidate) {
       throw new Error("Candidate not found");
     }
 
     const existing = await this.storage.getOnboardingWorkflowByCandidateId(tenantId, candidateId);
-    
+
     if (existing && !restart) {
       if (existing.status === "In Progress") {
         return existing;
       }
-      
+
       if (existing.status === "Completed" || existing.status === "Failed") {
         restart = true;
       }
@@ -57,6 +62,8 @@ export class OnboardingOrchestrator {
     if (restart && existing) {
       await this.storage.deleteOnboardingWorkflow(tenantId, existing.id);
     }
+
+    const reqs = options?.requirements || { itSetup: true, buildingAccess: true, equipment: true };
 
     const initialTasks: OnboardingTask[] = [
       {
@@ -73,13 +80,18 @@ export class OnboardingOrchestrator {
         type: "paperwork",
         details: ["Send tax forms (W-4/I-9)", "Request banking details", "Deploy NDA for e-signature"]
       },
-      {
+      ...(reqs.itSetup !== false ? [{
         id: "provisioning",
         title: "IT Provisioning",
-        status: "pending",
-        type: "provisioning",
-        details: ["Create AD account", "Order equipment", "Generate VPN credentials"]
-      },
+        status: "pending" as const,
+        type: "provisioning" as const,
+        details: [
+          "Create AD account",
+          ...(reqs.equipment !== false ? ["Order equipment"] : []),
+          "Generate VPN credentials",
+          ...(reqs.buildingAccess !== false ? ["Request building access card"] : []),
+        ]
+      }] : []),
       {
         id: "orientation",
         title: "Orientation",
@@ -95,7 +107,8 @@ export class OnboardingOrchestrator {
       currentStep: "welcome",
       tasks: initialTasks as any,
       documents: [] as any,
-      provisioningData: {} as any,
+      provisioningData: { requirements: reqs } as any,
+      ...(options?.startDate ? { startDate: options.startDate } : {}),
     });
 
     this.processWorkflow(tenantId, workflow.id, candidate).catch(error => {

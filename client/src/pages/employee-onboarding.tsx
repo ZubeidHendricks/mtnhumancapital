@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Building2,
   Download,
@@ -24,7 +25,11 @@ import {
   CheckCircle2,
   Package,
   Loader2,
-  Sparkles
+  Sparkles,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  AlertCircle
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -44,6 +49,111 @@ const defaultDocForm: DocFormData = {
   email: "",
 };
 
+function WorkflowDetail({ workflowId }: { workflowId: string }) {
+  const docRequestsKey = useTenantQueryKey(['onboarding-doc-requests', workflowId]);
+  const agentLogsKey = useTenantQueryKey(['onboarding-agent-logs', workflowId]);
+
+  const { data: docRequests = [], isLoading: loadingDocs } = useQuery({
+    queryKey: docRequestsKey,
+    queryFn: () => onboardingService.getDocumentRequests(workflowId),
+    retry: 1,
+  });
+
+  const { data: agentLogs = [], isLoading: loadingLogs } = useQuery({
+    queryKey: agentLogsKey,
+    queryFn: () => onboardingService.getAgentLogs(workflowId),
+    retry: 1,
+  });
+
+  const isLoading = loadingDocs || loadingLogs;
+
+  const getDocStatusBadge = (status: string) => {
+    switch (status) {
+      case "verified": return <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-0 text-[10px]">Verified</Badge>;
+      case "received": return <Badge className="bg-blue-500/20 text-blue-600 dark:text-blue-400 border-0 text-[10px]">Received</Badge>;
+      case "requested": return <Badge className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-0 text-[10px]">Requested</Badge>;
+      case "overdue": return <Badge className="bg-red-500/20 text-red-600 dark:text-red-400 border-0 text-[10px]">Overdue</Badge>;
+      default: return <Badge className="bg-gray-500/20 text-gray-600 dark:text-gray-400 border-0 text-[10px]">Pending</Badge>;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="px-4 pb-4 flex items-center justify-center py-4">
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        <span className="ml-2 text-xs text-muted-foreground">Loading details...</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-4 pb-4 space-y-3 border-t border-gray-300 dark:border-zinc-700/50">
+      {/* Document Requests */}
+      <div className="pt-3">
+        <h5 className="text-xs font-semibold text-foreground flex items-center gap-1.5 mb-2">
+          <FileText className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+          Document Requests ({docRequests.length})
+        </h5>
+        {docRequests.length === 0 ? (
+          <p className="text-xs text-muted-foreground pl-5">No document requests for this workflow yet.</p>
+        ) : (
+          <ScrollArea className={docRequests.length > 3 ? "h-[120px]" : ""}>
+            <div className="space-y-1.5">
+              {docRequests.map((doc: any) => (
+                <div key={doc.id} className="flex items-center justify-between px-2 py-1.5 rounded bg-white/50 dark:bg-zinc-900/50 text-xs">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FileText className="h-3 w-3 text-muted-foreground shrink-0" />
+                    <span className="truncate">{doc.documentName || doc.documentType}</span>
+                  </div>
+                  {getDocStatusBadge(doc.status)}
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        )}
+      </div>
+
+      {/* Agent Activity Log */}
+      <div>
+        <h5 className="text-xs font-semibold text-foreground flex items-center gap-1.5 mb-2">
+          <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+          Agent Activity ({agentLogs.length})
+        </h5>
+        {agentLogs.length === 0 ? (
+          <p className="text-xs text-muted-foreground pl-5">No agent activity recorded yet.</p>
+        ) : (
+          <ScrollArea className={agentLogs.length > 4 ? "h-[140px]" : ""}>
+            <div className="space-y-1.5">
+              {agentLogs.map((log: any) => (
+                <div key={log.id} className="flex items-start gap-2 px-2 py-1.5 rounded bg-white/50 dark:bg-zinc-900/50 text-xs">
+                  {log.status === "success" ? (
+                    <CheckCircle2 className="h-3 w-3 text-green-500 shrink-0 mt-0.5" />
+                  ) : log.status === "failed" || log.status === "requires_intervention" ? (
+                    <AlertCircle className="h-3 w-3 text-red-500 shrink-0 mt-0.5" />
+                  ) : (
+                    <Clock className="h-3 w-3 text-yellow-500 shrink-0 mt-0.5" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium truncate">{log.action?.replace(/_/g, ' ')}</span>
+                      <span className="text-muted-foreground shrink-0">
+                        {log.createdAt ? new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""}
+                      </span>
+                    </div>
+                    {log.stepName && (
+                      <span className="text-muted-foreground">Step: {log.stepName}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function EmployeeOnboarding() {
   const queryClient = useQueryClient();
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
@@ -55,6 +165,7 @@ export default function EmployeeOnboarding() {
   const [docType, setDocType] = useState<string>("welcome_letter");
   const [docForm, setDocForm] = useState<DocFormData>(defaultDocForm);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [expandedWorkflowId, setExpandedWorkflowId] = useState<string | null>(null);
 
   // Fetch real data from API
   const workflowsKey = useTenantQueryKey(['onboarding-workflows']);
@@ -81,7 +192,11 @@ export default function EmployeeOnboarding() {
 
   // Trigger onboarding mutation
   const triggerOnboarding = useMutation({
-    mutationFn: (candidateId: string) => onboardingService.triggerOnboarding(candidateId),
+    mutationFn: (params: { candidateId: string; requirements: { itSetup: boolean; buildingAccess: boolean; equipment: boolean }; startDate?: string }) =>
+      onboardingService.triggerOnboarding(params.candidateId, {
+        requirements: params.requirements,
+        startDate: params.startDate,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: workflowsKey });
       toast({
@@ -205,7 +320,11 @@ export default function EmployeeOnboarding() {
       });
       return;
     }
-    triggerOnboarding.mutate(selectedEmployee);
+    triggerOnboarding.mutate({
+      candidateId: selectedEmployee,
+      requirements: { itSetup: requiresIT, buildingAccess: requiresAccess, equipment: requiresEquipment },
+      startDate,
+    });
   };
 
   const handleRequestIT = () => {
@@ -217,7 +336,11 @@ export default function EmployeeOnboarding() {
       });
       return;
     }
-    triggerOnboarding.mutate(selectedEmployee);
+    triggerOnboarding.mutate({
+      candidateId: selectedEmployee,
+      requirements: { itSetup: requiresIT, buildingAccess: requiresAccess, equipment: requiresEquipment },
+      startDate: startDate || undefined,
+    });
   };
 
   const isLoading = loadingWorkflows || loadingCandidates;
@@ -389,31 +512,45 @@ export default function EmployeeOnboarding() {
                 const name = candidate ? ((candidate as any).fullName || (candidate as any).name || "Unknown") : "Unknown Candidate";
                 const role = candidate ? ((candidate as any).role || (candidate as any).position || "") : "";
                 const dept = candidate ? ((candidate as any).department || "") : "";
+                const isExpanded = expandedWorkflowId === workflow.id;
                 return (
                   <div
                     key={workflow.id}
-                    className="p-4 rounded-lg bg-gray-200 dark:bg-zinc-800/50 border border-gray-300 dark:border-zinc-700/50"
+                    className="rounded-lg bg-gray-200 dark:bg-zinc-800/50 border border-gray-300 dark:border-zinc-700/50"
                     data-testid={`employee-item-${workflow.id}`}
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                          <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <div
+                      className="p-4 cursor-pointer"
+                      onClick={() => setExpandedWorkflowId(isExpanded ? null : workflow.id)}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          {isExpanded ? (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                          )}
+                          <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                            <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-foreground">{name}</h4>
+                            <p className="text-sm text-muted-foreground">{role}{dept ? ` - ${dept}` : ""}</p>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="font-medium text-foreground">{name}</h4>
-                          <p className="text-sm text-muted-foreground">{role}{dept ? ` - ${dept}` : ""}</p>
-                        </div>
+                        {getStatusBadge(workflow.status)}
                       </div>
-                      {getStatusBadge(workflow.status)}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Start Date: {workflow.startDate ? new Date(workflow.startDate).toLocaleDateString() : "Not set"}
-                    </p>
-                    {workflow.currentStep && (
-                      <p className="text-xs text-muted-foreground">
-                        Current Step: {workflow.currentStep}
+                      <p className="text-xs text-muted-foreground mt-2 ml-7">
+                        Start Date: {workflow.startDate ? new Date(workflow.startDate).toLocaleDateString() : "Not set"}
                       </p>
+                      {workflow.currentStep && (
+                        <p className="text-xs text-muted-foreground ml-7">
+                          Current Step: {workflow.currentStep}
+                        </p>
+                      )}
+                    </div>
+                    {isExpanded && (
+                      <WorkflowDetail workflowId={workflow.id} />
                     )}
                   </div>
                 );
