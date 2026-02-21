@@ -306,9 +306,24 @@ function WorkflowDetail({ workflowId }: { workflowId: string }) {
                         {log.createdAt ? new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""}
                       </span>
                     </div>
-                    {log.stepName && (
-                      <span className="text-muted-foreground">Step: {log.stepName}</span>
-                    )}
+                    {(() => {
+                      const details = typeof log.details === 'string' ? (() => { try { return JSON.parse(log.details); } catch { return null; } })() : log.details;
+                      const parts: string[] = [];
+                      if (log.stepName) parts.push(`Step: ${log.stepName}`);
+                      if (details) {
+                        if (log.action === 'reminder_sent' || log.action === 'reminder_escalated') {
+                          if (details.documentName) parts.push(details.documentName);
+                          if (details.reminderCount && details.maxReminders) parts.push(`Reminder ${details.reminderCount} of ${details.maxReminders}`);
+                        } else if (log.action === 'bulk_reminder_sent') {
+                          if (details.documentCount) parts.push(`${details.documentCount} document${details.documentCount !== 1 ? 's' : ''}`);
+                        } else if (details.documentName) {
+                          parts.push(details.documentName);
+                        }
+                      }
+                      return parts.length > 0 ? (
+                        <span className="text-muted-foreground">{parts.join(' · ')}</span>
+                      ) : null;
+                    })()}
                   </div>
                 </div>
               ))}

@@ -193,7 +193,7 @@ export class OnboardingAgent {
     if (updated) {
       await this.logStep(tenantId, request.workflowId, request.candidateId, 'document_collector', 'document_verified', {
         stepName: 'documentation',
-        details: { documentType: request.documentType, verifiedBy },
+        details: { documentType: request.documentType, documentName: request.documentName, verifiedBy },
         targetEntity: 'hr_staff',
         targetEntityId: verifiedBy,
         communicationChannel: 'system',
@@ -260,7 +260,7 @@ export class OnboardingAgent {
     await this.logStep(tenantId, request.workflowId, request.candidateId, 'reminder', 'reminder_sent', {
       stepName: 'documentation',
       status: 'success',
-      details: { documentType: request.documentType, reminderCount, maxReminders },
+      details: { documentType: request.documentType, documentName: request.documentName, reminderCount, maxReminders },
       targetEntity: 'candidate',
       targetEntityId: request.candidateId,
       communicationChannel: channel,
