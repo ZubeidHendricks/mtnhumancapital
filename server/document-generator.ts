@@ -18,7 +18,7 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
 
-export type DocumentType = 'offer_letter' | 'welcome_letter' | 'employee_handbook' | 'nda' | 'employment_contract';
+export type DocumentType = 'offer_letter' | 'welcome_letter' | 'employee_handbook' | 'nda' | 'employment_contract' | 'company_policies' | 'onboarding_checklist';
 
 export interface EmployeeData {
   fullName: string;
@@ -112,6 +112,34 @@ const HandbookSectionSchema = z.object({
   acknowledgment: z.string(),
 });
 
+const CompanyPoliciesContentSchema = z.object({
+  title: z.string(),
+  introduction: z.string(),
+  equalOpportunity: z.string(),
+  antiHarassment: z.string(),
+  dataPrivacy: z.string(),
+  internetAndEmail: z.string(),
+  conflictOfInterest: z.string(),
+  whistleblower: z.string(),
+  environmentalPolicy: z.string(),
+  complianceAndEnforcement: z.string(),
+  acknowledgment: z.string(),
+});
+
+const OnboardingChecklistContentSchema = z.object({
+  title: z.string(),
+  introduction: z.string(),
+  preArrival: z.string(),
+  firstDay: z.string(),
+  firstWeek: z.string(),
+  firstMonth: z.string(),
+  documentsRequired: z.string(),
+  systemsAccess: z.string(),
+  trainingModules: z.string(),
+  keyContacts: z.string(),
+  signOff: z.string(),
+});
+
 export class DocumentTemplateGenerator {
   private storage: IStorage;
 
@@ -138,6 +166,10 @@ export class DocumentTemplateGenerator {
         return this.generateEmploymentContract(employeeData, templateText);
       case 'employee_handbook':
         return this.generateEmployeeHandbook(employeeData, templateText);
+      case 'company_policies':
+        return this.generateCompanyPolicies(employeeData, templateText);
+      case 'onboarding_checklist':
+        return this.generateOnboardingChecklist(employeeData, templateText);
       default:
         throw new Error(`Unsupported document type: ${documentType}`);
     }
@@ -793,6 +825,308 @@ export class DocumentTemplateGenerator {
     };
   }
 
+  private async generateCompanyPolicies(data: EmployeeData, templateText: string): Promise<GeneratedDocumentResult> {
+    const content = await this.generateContentWithAI('company_policies', data, templateText);
+    const parsed = CompanyPoliciesContentSchema.parse(content);
+
+    const doc = new Document({
+      sections: [{
+        properties: {
+          page: {
+            margin: {
+              top: convertInchesToTwip(1),
+              bottom: convertInchesToTwip(1),
+              left: convertInchesToTwip(1),
+              right: convertInchesToTwip(1),
+            },
+          },
+        },
+        children: [
+          new Paragraph({
+            children: [new TextRun({ text: data.companyName, bold: true, size: 36 })],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: parsed.title, bold: true, size: 32 })],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: `Effective Date: ${new Date().toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' })}`, italics: true })],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 600 },
+          }),
+          new Paragraph({ children: [new PageBreak()] }),
+          new Paragraph({
+            children: [new TextRun({ text: "INTRODUCTION", bold: true })],
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 300, after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: parsed.introduction })],
+            spacing: { after: 300 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: "1. EQUAL OPPORTUNITY POLICY", bold: true })],
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 300, after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: parsed.equalOpportunity })],
+            spacing: { after: 300 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: "2. ANTI-HARASSMENT POLICY", bold: true })],
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 300, after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: parsed.antiHarassment })],
+            spacing: { after: 300 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: "3. DATA PRIVACY & PROTECTION", bold: true })],
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 300, after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: parsed.dataPrivacy })],
+            spacing: { after: 300 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: "4. INTERNET & EMAIL USAGE", bold: true })],
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 300, after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: parsed.internetAndEmail })],
+            spacing: { after: 300 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: "5. CONFLICT OF INTEREST", bold: true })],
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 300, after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: parsed.conflictOfInterest })],
+            spacing: { after: 300 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: "6. WHISTLEBLOWER POLICY", bold: true })],
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 300, after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: parsed.whistleblower })],
+            spacing: { after: 300 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: "7. ENVIRONMENTAL POLICY", bold: true })],
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 300, after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: parsed.environmentalPolicy })],
+            spacing: { after: 300 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: "8. COMPLIANCE & ENFORCEMENT", bold: true })],
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 300, after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: parsed.complianceAndEnforcement })],
+            spacing: { after: 400 },
+          }),
+          new Paragraph({ children: [new PageBreak()] }),
+          new Paragraph({
+            children: [new TextRun({ text: "ACKNOWLEDGMENT", bold: true })],
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 300, after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: parsed.acknowledgment })],
+            spacing: { after: 400 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: `\n\nEmployee Name: ${data.fullName}` })],
+            spacing: { after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: "Signature: ___________________________    Date: _______________" })],
+          }),
+        ],
+      }],
+    });
+
+    const buffer = await this.generateDocxBuffer(doc);
+    return {
+      buffer,
+      filename: `Company_Policies_${data.fullName.replace(/\s+/g, '_')}_${Date.now()}.docx`,
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    };
+  }
+
+  private async generateOnboardingChecklist(data: EmployeeData, templateText: string): Promise<GeneratedDocumentResult> {
+    const content = await this.generateContentWithAI('onboarding_checklist', data, templateText);
+    const parsed = OnboardingChecklistContentSchema.parse(content);
+
+    const doc = new Document({
+      sections: [{
+        properties: {
+          page: {
+            margin: {
+              top: convertInchesToTwip(1),
+              bottom: convertInchesToTwip(1),
+              left: convertInchesToTwip(1),
+              right: convertInchesToTwip(1),
+            },
+          },
+        },
+        children: [
+          new Paragraph({
+            children: [new TextRun({ text: data.companyName, bold: true, size: 36 })],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: parsed.title, bold: true, size: 32 })],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: `Employee: ${data.fullName}`, italics: true })],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 100 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: `Position: ${data.jobTitle}`, italics: true })],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 100 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: `Start Date: ${data.startDate}`, italics: true })],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 600 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: "INTRODUCTION", bold: true })],
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 300, after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: parsed.introduction })],
+            spacing: { after: 300 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: "PRE-ARRIVAL", bold: true })],
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 300, after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: parsed.preArrival })],
+            spacing: { after: 300 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: "FIRST DAY", bold: true })],
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 300, after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: parsed.firstDay })],
+            spacing: { after: 300 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: "FIRST WEEK", bold: true })],
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 300, after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: parsed.firstWeek })],
+            spacing: { after: 300 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: "FIRST MONTH", bold: true })],
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 300, after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: parsed.firstMonth })],
+            spacing: { after: 300 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: "DOCUMENTS REQUIRED", bold: true })],
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 300, after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: parsed.documentsRequired })],
+            spacing: { after: 300 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: "SYSTEMS ACCESS", bold: true })],
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 300, after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: parsed.systemsAccess })],
+            spacing: { after: 300 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: "TRAINING MODULES", bold: true })],
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 300, after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: parsed.trainingModules })],
+            spacing: { after: 300 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: "KEY CONTACTS", bold: true })],
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 300, after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: parsed.keyContacts })],
+            spacing: { after: 400 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: "SIGN-OFF", bold: true })],
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 300, after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: parsed.signOff })],
+            spacing: { after: 400 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: `\n\nEmployee: ${data.fullName}` })],
+            spacing: { after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: "Signature: ___________________________    Date: _______________" })],
+            spacing: { after: 300 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: `\n\nManager/HR:` })],
+            spacing: { after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: "Signature: ___________________________    Date: _______________" })],
+          }),
+        ],
+      }],
+    });
+
+    const buffer = await this.generateDocxBuffer(doc);
+    return {
+      buffer,
+      filename: `Onboarding_Checklist_${data.fullName.replace(/\s+/g, '_')}_${Date.now()}.docx`,
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    };
+  }
+
   private async generateContentWithAI(documentType: DocumentType, data: EmployeeData, templateText: string): Promise<Record<string, string>> {
     const prompts: Record<DocumentType, string> = {
       offer_letter: this.getOfferLetterPrompt(data, templateText),
@@ -800,6 +1134,8 @@ export class DocumentTemplateGenerator {
       nda: this.getNDAPrompt(data, templateText),
       employment_contract: this.getEmploymentContractPrompt(data, templateText),
       employee_handbook: this.getHandbookPrompt(data, templateText),
+      company_policies: this.getCompanyPoliciesPrompt(data, templateText),
+      onboarding_checklist: this.getOnboardingChecklistPrompt(data, templateText),
     };
 
     try {
@@ -973,6 +1309,57 @@ Return JSON with these fields:
 }`;
   }
 
+  private getCompanyPoliciesPrompt(data: EmployeeData, templateText: string): string {
+    return `Generate content for a Company Policies document with these details:
+- Employee: ${data.fullName}
+- Position: ${data.jobTitle}
+- Company: ${data.companyName}
+
+${templateText ? `Reference template style:\n${templateText.substring(0, 2000)}` : ''}
+
+Return JSON with these fields:
+{
+  "title": "COMPANY POLICIES",
+  "introduction": "This document outlines the key policies of [Company]...",
+  "equalOpportunity": "Our commitment to equal opportunity and non-discrimination...",
+  "antiHarassment": "Zero tolerance for harassment and bullying in the workplace...",
+  "dataPrivacy": "How we handle personal data, POPIA compliance, data protection...",
+  "internetAndEmail": "Acceptable use of company internet, email, and devices...",
+  "conflictOfInterest": "Disclosure requirements and guidelines for conflicts of interest...",
+  "whistleblower": "How to report concerns, protection for whistleblowers...",
+  "environmentalPolicy": "Our commitment to environmental sustainability...",
+  "complianceAndEnforcement": "How policies are enforced, consequences of violations...",
+  "acknowledgment": "I acknowledge that I have read and understood these company policies..."
+}`;
+  }
+
+  private getOnboardingChecklistPrompt(data: EmployeeData, templateText: string): string {
+    return `Generate content for an Onboarding Checklist with these details:
+- Employee: ${data.fullName}
+- Position: ${data.jobTitle}
+- Department: ${data.department || 'Not specified'}
+- Start Date: ${data.startDate}
+- Company: ${data.companyName}
+- Manager: ${data.manager || 'Not specified'}
+
+${templateText ? `Reference template style:\n${templateText.substring(0, 2000)}` : ''}
+
+Return JSON with these fields (use checkbox-style bullet points like "[ ] Task description" for actionable items):
+{
+  "title": "ONBOARDING CHECKLIST",
+  "introduction": "This checklist ensures a smooth onboarding experience for [Employee]...",
+  "preArrival": "[ ] Workstation prepared\\n[ ] Email account created\\n[ ] Access card arranged...",
+  "firstDay": "[ ] Welcome and office tour\\n[ ] Meet the team\\n[ ] Review company policies...",
+  "firstWeek": "[ ] Complete mandatory training\\n[ ] Set up all systems\\n[ ] First check-in with manager...",
+  "firstMonth": "[ ] Complete probation goals discussion\\n[ ] Review KPIs\\n[ ] Feedback session...",
+  "documentsRequired": "[ ] ID Document\\n[ ] Proof of Address\\n[ ] Tax number\\n[ ] Bank details\\n[ ] Signed contract...",
+  "systemsAccess": "[ ] Email & calendar\\n[ ] VPN access\\n[ ] Project management tools\\n[ ] HR portal...",
+  "trainingModules": "[ ] Company culture orientation\\n[ ] Health & safety\\n[ ] IT security awareness\\n[ ] Role-specific training...",
+  "keyContacts": "HR contact, IT helpdesk, line manager, buddy/mentor details...",
+  "signOff": "I confirm that all items in this checklist have been completed..."
+}`;
+  }
+
   private getDefaultContent(documentType: DocumentType, data: EmployeeData): Record<string, string> {
     const defaults: Record<DocumentType, Record<string, string>> = {
       offer_letter: {
@@ -1035,6 +1422,32 @@ Return JSON with these fields:
         healthAndSafety: `The safety of our employees is paramount. Report any hazards or accidents immediately. Emergency procedures are posted in common areas. First aid kits and fire extinguishers are located throughout the premises.`,
         disciplinaryProcedures: `Disciplinary action may be taken for misconduct or poor performance. The progressive discipline process includes verbal warning, written warning, final warning, and dismissal. Serious misconduct may result in immediate dismissal.`,
         acknowledgment: `I acknowledge that I have received, read, and understood this Employee Handbook. I agree to comply with all policies and procedures outlined herein. I understand that this handbook does not constitute a contract of employment.`,
+      },
+      company_policies: {
+        title: "COMPANY POLICIES",
+        introduction: `This document outlines the key policies of ${data.companyName}. All employees are expected to familiarise themselves with these policies and adhere to them at all times. These policies are designed to create a safe, fair, and productive work environment.`,
+        equalOpportunity: `${data.companyName} is an equal opportunity employer. We are committed to providing a workplace free from discrimination based on race, gender, age, disability, religion, sexual orientation, or any other protected characteristic. All employment decisions are based on merit, qualifications, and business needs.`,
+        antiHarassment: `${data.companyName} maintains a zero-tolerance policy towards harassment, bullying, and intimidation of any kind. This includes verbal, physical, and electronic harassment. All employees have the right to work in an environment free from offensive or hostile behaviour. Any incidents should be reported immediately to HR or management.`,
+        dataPrivacy: `In compliance with the Protection of Personal Information Act (POPIA), ${data.companyName} is committed to protecting the personal information of employees, clients, and stakeholders. Employees must handle personal data with care, only access data necessary for their role, and report any data breaches immediately.`,
+        internetAndEmail: `Company internet, email, and devices are provided for business purposes. Limited personal use is permitted provided it does not interfere with work duties, compromise security, or violate any laws. Employees must not access inappropriate content, download unauthorised software, or share confidential information via unsecured channels.`,
+        conflictOfInterest: `Employees must avoid situations where personal interests conflict with the interests of ${data.companyName}. Any potential conflicts of interest must be disclosed to management promptly. This includes outside employment, financial interests in competitors or suppliers, and personal relationships that may influence business decisions.`,
+        whistleblower: `${data.companyName} encourages employees to report any unethical, illegal, or unsafe practices through our confidential reporting channels. Whistleblowers are protected from retaliation. Reports can be made to HR, management, or through the anonymous reporting hotline.`,
+        environmentalPolicy: `${data.companyName} is committed to minimising our environmental impact. We encourage sustainable practices including recycling, energy conservation, and responsible resource use. All employees are expected to support our environmental initiatives and report any environmental concerns.`,
+        complianceAndEnforcement: `Violation of company policies may result in disciplinary action, up to and including termination of employment. The severity of disciplinary action will depend on the nature and gravity of the violation. Repeated violations will be treated with progressively stricter measures.`,
+        acknowledgment: `I acknowledge that I have received, read, and understood the Company Policies of ${data.companyName}. I agree to comply with all policies outlined in this document and understand that violations may result in disciplinary action.`,
+      },
+      onboarding_checklist: {
+        title: "ONBOARDING CHECKLIST",
+        introduction: `This checklist is designed to ensure a smooth and comprehensive onboarding experience for ${data.fullName} joining ${data.companyName} as ${data.jobTitle}. Both the employee and manager/HR should work through these items systematically.`,
+        preArrival: `[ ] Workstation and office space prepared\n[ ] Email account and company credentials created\n[ ] Access card/building access arranged\n[ ] IT equipment ordered and configured\n[ ] Welcome pack prepared\n[ ] Team notified of new starter\n[ ] First week schedule planned`,
+        firstDay: `[ ] Welcome and reception by HR/manager\n[ ] Office tour and facility orientation\n[ ] Introduction to immediate team members\n[ ] Review of company policies and handbook\n[ ] IT setup and systems walkthrough\n[ ] Issue access card and parking permit\n[ ] Lunch with team or buddy`,
+        firstWeek: `[ ] Complete all mandatory training modules\n[ ] Set up all required software and tools\n[ ] First formal check-in with line manager\n[ ] Review role expectations and KPIs\n[ ] Meet key stakeholders and department heads\n[ ] Begin role-specific onboarding tasks\n[ ] Submit all outstanding documentation`,
+        firstMonth: `[ ] Complete probation goals discussion with manager\n[ ] Review and confirm KPIs and objectives\n[ ] Attend scheduled feedback session\n[ ] Complete all compliance and safety training\n[ ] Evaluate onboarding experience (feedback form)\n[ ] Confirm all IT systems and access working\n[ ] Schedule regular 1-on-1 meetings with manager`,
+        documentsRequired: `[ ] Valid ID Document (SA ID or Passport)\n[ ] Proof of Address (not older than 3 months)\n[ ] SARS Tax Number (ITR5)\n[ ] Bank Account Details for salary payments\n[ ] Qualification Certificates\n[ ] Signed Employment Contract\n[ ] Signed Non-Disclosure Agreement\n[ ] Medical Aid details (if applicable)`,
+        systemsAccess: `[ ] Email and calendar (Outlook/Gmail)\n[ ] VPN and remote access\n[ ] Project management tools\n[ ] HR self-service portal\n[ ] Time and attendance system\n[ ] Company intranet\n[ ] Department-specific software\n[ ] Communication tools (Teams/Slack)`,
+        trainingModules: `[ ] Company culture and values orientation\n[ ] Health and safety awareness\n[ ] IT security and data protection\n[ ] Anti-harassment and diversity training\n[ ] Role-specific technical training\n[ ] Compliance and regulatory training\n[ ] Emergency procedures and evacuation`,
+        keyContacts: `HR Department: Contact for employment queries, benefits, and policies.\nIT Helpdesk: Contact for technical issues, access requests, and equipment.\nLine Manager: ${data.manager || 'To be assigned'} - Primary point of contact for role guidance.\nBuddy/Mentor: To be assigned - Peer support during onboarding period.`,
+        signOff: `I confirm that all items in this checklist have been completed and that I have received the necessary orientation, documentation, and access to begin my role at ${data.companyName}.`,
       },
     };
 

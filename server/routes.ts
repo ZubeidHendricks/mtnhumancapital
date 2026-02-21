@@ -1127,7 +1127,7 @@ Return JSON format:
   app.post("/api/documents/generate/:type", async (req, res) => {
     try {
       const { type } = req.params;
-      const validTypes = ['offer_letter', 'welcome_letter', 'employee_handbook', 'nda', 'employment_contract'];
+      const validTypes = ['offer_letter', 'welcome_letter', 'employee_handbook', 'nda', 'employment_contract', 'company_policies', 'onboarding_checklist'];
       
       if (!validTypes.includes(type)) {
         return res.status(400).json({ message: `Invalid document type. Must be one of: ${validTypes.join(', ')}` });
@@ -1168,7 +1168,7 @@ Return JSON format:
   app.post("/api/candidates/:id/generate-document/:type", async (req, res) => {
     try {
       const { id, type } = req.params;
-      const validTypes = ['offer_letter', 'welcome_letter', 'employee_handbook', 'nda', 'employment_contract'];
+      const validTypes = ['offer_letter', 'welcome_letter', 'employee_handbook', 'nda', 'employment_contract', 'company_policies', 'onboarding_checklist'];
       
       if (!validTypes.includes(type)) {
         return res.status(400).json({ message: `Invalid document type. Must be one of: ${validTypes.join(', ')}` });
@@ -3620,17 +3620,72 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     }
   });
 
-  app.post("/api/onboarding/trigger/:candidateId", async (req, res) => {
+  app.post("/api/onboarding/trigger/:candidateId", upload.array("files", 20), async (req, res) => {
     try {
       const { OnboardingOrchestrator } = await import("./onboarding-orchestrator");
+      const { EmailService } = await import("./email-service");
       const orchestrator = new OnboardingOrchestrator(storage);
+      const emailService = new EmailService(storage);
 
       const { requirements, startDate } = req.body || {};
+      // Parse JSON strings from multipart form data
+      const parsedRequirements = typeof requirements === "string" ? JSON.parse(requirements) : requirements;
+
+      const candidate = await storage.getCandidate(req.tenant.id, req.params.candidateId);
+      if (!candidate) {
+        return res.status(404).json({ message: "Candidate not found" });
+      }
 
       const workflow = await orchestrator.startOnboarding(req.tenant.id, req.params.candidateId, false, {
-        requirements,
+        requirements: parsedRequirements,
         startDate: startDate ? new Date(startDate) : undefined,
       });
+
+      // Upload and email the attached onboarding pack documents
+      const files = req.files as Express.Multer.File[] | undefined;
+      if (files && files.length > 0) {
+        // Save files to disk
+        for (const file of files) {
+          const fileName = `onboarding_pack_${candidate.id}_${Date.now()}_${file.originalname}`;
+          const filePath = path.join("uploads/onboarding-packs", fileName);
+          fs.mkdirSync(path.dirname(filePath), { recursive: true });
+          fs.writeFileSync(filePath, file.buffer);
+        }
+
+        // Send onboarding pack email with attachments
+        const attachments = files.map(f => ({
+          filename: f.originalname,
+          content: f.buffer,
+          contentType: f.mimetype,
+        }));
+
+        await emailService.sendEmail({
+          to: candidate.email || "no-email@placeholder.com",
+          subject: `Onboarding Pack - Welcome to the Team, ${candidate.fullName}!`,
+          body: `Dear ${candidate.fullName},\n\nPlease find attached your onboarding documents. Review them carefully and reach out if you have any questions.\n\nBest regards,\nHR Team`,
+          html: `
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #0d9488, #2563eb); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">Welcome to the Team!</h1>
+    <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">${candidate.fullName}</p>
+  </div>
+  <div style="background: #ffffff; border: 1px solid #e5e7eb; border-top: none; padding: 30px; border-radius: 0 0 12px 12px;">
+    <p style="font-size: 16px; color: #374151;">Dear ${candidate.fullName},</p>
+    <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
+      Please find attached your onboarding documents (${files.length} file${files.length > 1 ? 's' : ''}). Review them carefully and reach out if you have any questions.
+    </p>
+    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 20px 0;">
+      <h3 style="margin: 0 0 8px 0; color: #166534;">Attached Documents</h3>
+      ${files.map(f => `<p style="margin: 4px 0; color: #374151;">- ${f.originalname}</p>`).join('')}
+    </div>
+    <p style="font-size: 14px; color: #6b7280;">Best regards,<br><strong>HR Team</strong></p>
+  </div>
+</div>`,
+          attachments,
+        });
+
+        console.log(`[Onboarding] Sent onboarding pack email with ${files.length} attachment(s) for ${candidate.fullName}`);
+      }
 
       res.status(201).json({
         message: "Onboarding workflow started",
@@ -3705,12 +3760,15 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
 
   app.post("/api/onboarding/resolve-intervention/:logId", async (req, res) => {
     try {
-      const { notes } = req.body;
-      const updated = await storage.updateOnboardingAgentLog(req.tenant.id, req.params.logId, {
-        requiresHumanReview: 0,
-        reviewedAt: new Date(),
-        reviewNotes: notes,
-      });
+      const { notes, reviewedBy } = req.body;
+      const { createOnboardingAgent } = await import("./onboarding-agent");
+      const agent = createOnboardingAgent(storage);
+      const updated = await agent.resolveHumanIntervention(
+        req.tenant.id,
+        req.params.logId,
+        reviewedBy || "unknown",
+        notes || ""
+      );
       res.json(updated);
     } catch (error) {
       console.error("Error resolving intervention:", error);
@@ -3770,12 +3828,57 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     }
   });
 
+  app.post("/api/onboarding/document-requests/:requestId/upload", upload.single("file"), async (req, res) => {
+    try {
+      const { createOnboardingAgent } = await import("./onboarding-agent");
+      const agent = createOnboardingAgent(storage);
+      const file = req.file;
+
+      if (!file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      // Get the document request to find candidateId and documentType
+      const request = await storage.getOnboardingDocumentRequest(req.tenant.id, req.params.requestId);
+      if (!request) {
+        return res.status(404).json({ message: "Document request not found" });
+      }
+
+      // Save file to disk
+      const fileName = `onboarding_${request.candidateId}_${request.documentType}_${Date.now()}${path.extname(file.originalname)}`;
+      const filePath = path.join("uploads/onboarding-documents", fileName);
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+      fs.writeFileSync(filePath, file.buffer);
+
+      // Create a document record (receivedDocumentId FK references the documents table)
+      const doc = await storage.createDocument(req.tenant.id, {
+        filename: fileName,
+        originalFilename: file.originalname,
+        mimeType: file.mimetype,
+        fileSize: file.size,
+        filePath: filePath,
+        type: "onboarding",
+        status: "uploaded",
+        linkedCandidateId: request.candidateId,
+      });
+
+      // Mark the onboarding document request as received, linking the uploaded doc
+      const updated = await agent.markDocumentReceived(req.tenant.id, req.params.requestId, doc.id);
+
+      res.json({ documentRequest: updated, document: doc });
+    } catch (error) {
+      console.error("Error uploading onboarding document:", error);
+      res.status(500).json({ message: "Failed to upload document" });
+    }
+  });
+
   app.post("/api/onboarding/document-requests/:requestId/verified", async (req, res) => {
     try {
       const { createOnboardingAgent } = await import("./onboarding-agent");
       const agent = createOnboardingAgent(storage);
       
-      const updated = await agent.markDocumentVerified(req.tenant.id, req.params.requestId, "system");
+      const { verifiedBy } = req.body;
+      const updated = await agent.markDocumentVerified(req.tenant.id, req.params.requestId, verifiedBy || "HR Staff");
       
       if (!updated) {
         return res.status(404).json({ message: "Document request not found" });
@@ -3785,6 +3888,19 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     } catch (error) {
       console.error("Error verifying document:", error);
       res.status(500).json({ message: "Failed to verify document" });
+    }
+  });
+
+  app.post("/api/onboarding/workflows/:workflowId/remind-all", async (req, res) => {
+    try {
+      const { createOnboardingAgent } = await import("./onboarding-agent");
+      const agent = createOnboardingAgent(storage);
+
+      const result = await agent.sendBulkReminder(req.tenant.id, req.params.workflowId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error sending bulk reminder:", error);
+      res.status(500).json({ message: "Failed to send reminders" });
     }
   });
 

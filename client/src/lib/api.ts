@@ -214,9 +214,19 @@ export const onboardingService = {
   },
   triggerOnboarding: async (
     candidateId: string,
-    options?: { requirements?: { itSetup?: boolean; buildingAccess?: boolean; equipment?: boolean }; startDate?: string }
+    options?: { requirements?: { itSetup?: boolean; buildingAccess?: boolean; equipment?: boolean }; startDate?: string; files?: File[] }
   ): Promise<{ message: string; workflow: OnboardingWorkflow }> => {
-    const response = await api.post(`/onboarding/trigger/${candidateId}`, options || {});
+    const formData = new FormData();
+    if (options?.requirements) formData.append("requirements", JSON.stringify(options.requirements));
+    if (options?.startDate) formData.append("startDate", options.startDate);
+    if (options?.files) {
+      for (const file of options.files) {
+        formData.append("files", file);
+      }
+    }
+    const response = await api.post(`/onboarding/trigger/${candidateId}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
     return response.data;
   },
   getStatus: async (candidateId: string): Promise<OnboardingWorkflow | null> => {
@@ -229,6 +239,34 @@ export const onboardingService = {
   },
   getAgentLogs: async (workflowId: string) => {
     const response = await api.get(`/onboarding/agent-logs/${workflowId}`);
+    return response.data;
+  },
+  initializeDocumentRequests: async (workflowId: string) => {
+    const response = await api.post(`/onboarding/document-requests/${workflowId}/initialize`);
+    return response.data;
+  },
+  markDocumentReceived: async (requestId: string, documentId?: string) => {
+    const response = await api.post(`/onboarding/document-requests/${requestId}/received`, { documentId });
+    return response.data;
+  },
+  uploadDocument: async (requestId: string, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await api.post(`/onboarding/document-requests/${requestId}/upload`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  },
+  markDocumentVerified: async (requestId: string, verifiedBy: string) => {
+    const response = await api.post(`/onboarding/document-requests/${requestId}/verified`, { verifiedBy });
+    return response.data;
+  },
+  sendReminder: async (requestId: string) => {
+    const response = await api.post(`/onboarding/document-requests/${requestId}/remind`);
+    return response.data;
+  },
+  sendBulkReminder: async (workflowId: string) => {
+    const response = await api.post(`/onboarding/workflows/${workflowId}/remind-all`);
     return response.data;
   },
 };

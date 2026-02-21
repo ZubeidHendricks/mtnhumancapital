@@ -2063,7 +2063,10 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(onboardingDocumentRequests)
       .where(and(
         eq(onboardingDocumentRequests.tenantId, tenantId),
-        eq(onboardingDocumentRequests.status, 'pending')
+        or(
+          eq(onboardingDocumentRequests.status, 'pending'),
+          eq(onboardingDocumentRequests.status, 'requested')
+        )
       ))
       .orderBy(desc(onboardingDocumentRequests.createdAt));
   }
@@ -2073,7 +2076,10 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(onboardingDocumentRequests)
       .where(and(
         eq(onboardingDocumentRequests.tenantId, tenantId),
-        eq(onboardingDocumentRequests.status, 'pending'),
+        or(
+          eq(onboardingDocumentRequests.status, 'pending'),
+          eq(onboardingDocumentRequests.status, 'requested')
+        ),
         lte(onboardingDocumentRequests.dueDate, now)
       ))
       .orderBy(desc(onboardingDocumentRequests.dueDate));

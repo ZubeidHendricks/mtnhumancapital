@@ -2,6 +2,7 @@ import Groq from "groq-sdk";
 import type { IStorage } from "./storage";
 import type { Candidate, OnboardingWorkflow } from "@shared/schema";
 import { EmailService } from "./email-service";
+import { createOnboardingAgent } from "./onboarding-agent";
 
 interface OnboardingTask {
   id: string;
@@ -47,20 +48,10 @@ export class OnboardingOrchestrator {
       throw new Error("Candidate not found");
     }
 
+    // If a workflow already exists, return it — never delete or duplicate
     const existing = await this.storage.getOnboardingWorkflowByCandidateId(tenantId, candidateId);
-
-    if (existing && !restart) {
-      if (existing.status === "In Progress") {
-        return existing;
-      }
-
-      if (existing.status === "Completed" || existing.status === "Failed") {
-        restart = true;
-      }
-    }
-
-    if (restart && existing) {
-      await this.storage.deleteOnboardingWorkflow(tenantId, existing.id);
+    if (existing) {
+      return existing;
     }
 
     const reqs = options?.requirements || { itSetup: true, buildingAccess: true, equipment: true };
@@ -144,18 +135,80 @@ export class OnboardingOrchestrator {
       
       const orientationResult = await this.processOrientation(tenantId, workflowId, candidate, tasks, documents);
 
+      // Send welcome email with document requirements to the candidate
+      try {
+        const agent = createOnboardingAgent(this.storage);
+        const docRequests = await this.storage.getOnboardingDocumentRequests(tenantId, workflowId);
+
+        const welcomeTask = tasks.find(t => t.id === "welcome");
+        const welcomeMessage = welcomeTask?.result?.message ||
+          `Dear ${candidate.fullName},\n\nWelcome to the team! We're excited to have you join us as ${candidate.role || 'a team member'}.`;
+
+        const orientationInfo = orientationResult
+          ? `Your orientation is scheduled for ${orientationResult.orientationDate}.`
+          : '';
+
+        // Build document list for email
+        const docListHtml = docRequests.map(r => {
+          const dueDate = r.dueDate ? new Date(r.dueDate).toLocaleDateString('en-ZA') : 'ASAP';
+          const priorityBadge = r.priority === 'urgent' ? ' <span style="color:#dc2626;font-weight:bold;">(Urgent)</span>' :
+                               r.priority === 'high' ? ' <span style="color:#ea580c;">(High Priority)</span>' : '';
+          return `<tr>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">${r.documentName}${priorityBadge}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:13px;">${r.description || ''}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">${dueDate}</td>
+          </tr>`;
+        }).join('');
+
+        const docListText = docRequests.map(r => {
+          const dueDate = r.dueDate ? new Date(r.dueDate).toLocaleDateString('en-ZA') : 'ASAP';
+          return `- ${r.documentName}: ${r.description || ''} (Due: ${dueDate})`;
+        }).join('\n');
+
+        if (candidate.email) {
+          await this.emailService.sendEmail({
+            to: candidate.email,
+            subject: `Welcome to the Team, ${candidate.fullName}! - Onboarding Information`,
+            body: `${welcomeMessage}\n\n${orientationInfo}\n\nAs part of your onboarding, we need the following documents:\n\n${docListText}\n\nPlease submit these documents at your earliest convenience by replying to this email or contacting HR.\n\nBest regards,\nHR Team`,
+            html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+  <div style="background:linear-gradient(135deg,#0d9488,#2563eb);padding:30px;border-radius:12px 12px 0 0;text-align:center;">
+    <h1 style="color:white;margin:0;font-size:24px;">Welcome to the Team!</h1>
+    <p style="color:rgba(255,255,255,0.9);margin:10px 0 0 0;">${candidate.fullName} - ${candidate.role || 'New Team Member'}</p>
+  </div>
+  <div style="background:#ffffff;border:1px solid #e5e7eb;border-top:none;padding:30px;border-radius:0 0 12px 12px;">
+    <p style="font-size:14px;color:#374151;line-height:1.6;white-space:pre-line;">${welcomeMessage}</p>
+    ${orientationInfo ? `<p style="font-size:14px;color:#374151;margin-top:16px;"><strong>${orientationInfo}</strong></p>` : ''}
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:20px;margin:24px 0;">
+      <h3 style="margin:0 0 12px 0;color:#92400e;">Required Documents</h3>
+      <p style="font-size:13px;color:#6b7280;margin:0 0 12px 0;">Please submit the following documents as soon as possible:</p>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead><tr style="background:#fef3c7;">
+          <th style="padding:8px 12px;text-align:left;">Document</th>
+          <th style="padding:8px 12px;text-align:left;">Details</th>
+          <th style="padding:8px 12px;text-align:left;">Due Date</th>
+        </tr></thead>
+        <tbody>${docListHtml}</tbody>
+      </table>
+    </div>
+    <p style="font-size:14px;color:#6b7280;">Please reply to this email or contact HR to submit your documents.</p>
+    <p style="font-size:14px;color:#6b7280;">Best regards,<br><strong>HR Team</strong></p>
+  </div>
+</div>`,
+          });
+        }
+
+        // Update document request statuses from 'pending' to 'requested'
+        await agent.requestDocuments(tenantId, workflowId, candidate.id.toString(), 'email');
+      } catch (error) {
+        console.error("Failed to send welcome email with document requirements:", error);
+      }
+
       const finalTasks = tasks.map(t => ({ ...t, status: "completed" as const }));
       await this.storage.updateOnboardingWorkflow(tenantId, workflowId, {
         tasks: finalTasks as any,
-        status: "Completed",
-        completedAt: new Date(),
+        status: "In Progress",
+        currentStep: "documentation",
       });
-
-      await this.emailService.notifyHRForOnboardingCompletion(
-        candidate.fullName,
-        candidate.email || "N/A",
-        orientationResult?.orientationDate || "TBD"
-      );
     } catch (error) {
       console.error("Workflow processing error:", error);
       await this.storage.updateOnboardingWorkflow(tenantId, workflowId, {
@@ -279,6 +332,14 @@ export class OnboardingOrchestrator {
       tasks: tasks as any,
       documents: documents as any,
     });
+
+    // Initialize real document tracking requests
+    try {
+      const agent = createOnboardingAgent(this.storage);
+      await agent.initializeDocumentRequests(tenantId, workflowId, candidate.id.toString());
+    } catch (error) {
+      console.error("Failed to initialize document requests:", error);
+    }
   }
 
   private async processProvisioning(

@@ -1,5 +1,6 @@
 import type { IStorage } from "./storage";
 import type { Candidate, OnboardingWorkflow, OnboardingAgentLog, OnboardingDocumentRequest } from "@shared/schema";
+import { EmailService } from "./email-service";
 
 interface DocumentRequirement {
   documentType: string;
@@ -22,9 +23,11 @@ const STANDARD_ONBOARDING_DOCUMENTS: DocumentRequirement[] = [
 
 export class OnboardingAgent {
   private storage: IStorage;
+  private emailService: EmailService;
 
   constructor(storage: IStorage) {
     this.storage = storage;
+    this.emailService = new EmailService(storage);
   }
 
   async logStep(
@@ -195,6 +198,8 @@ export class OnboardingAgent {
         targetEntityId: verifiedBy,
         communicationChannel: 'system',
       });
+
+      await this.checkDocumentCompletion(tenantId, request.workflowId, request.candidateId);
     }
 
     return updated;
@@ -226,6 +231,32 @@ export class OnboardingAgent {
       nextReminderAt,
     });
 
+    // Actually send the reminder via email
+    try {
+      const candidate = await this.storage.getCandidateById(tenantId, request.candidateId);
+      if (candidate?.email) {
+        const dueInfo = request.dueDate
+          ? `Due date: ${new Date(request.dueDate).toLocaleDateString('en-ZA')}`
+          : '';
+        await this.emailService.sendEmail({
+          to: candidate.email,
+          subject: `Document Reminder: ${request.documentName} - Onboarding`,
+          body: message,
+          html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+  <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:20px;">
+    <h2 style="color:#92400e;margin:0 0 10px 0;">Document Reminder</h2>
+    <p style="color:#374151;">Hi ${candidate.fullName},</p>
+    <p style="color:#374151;">${message}</p>
+    ${dueInfo ? `<p style="color:#dc2626;font-weight:bold;">${dueInfo}</p>` : ''}
+    <p style="color:#6b7280;font-size:13px;margin-top:16px;">Please reply to this email or contact HR to submit your document.</p>
+  </div>
+</div>`,
+        });
+      }
+    } catch (error) {
+      console.error(`[ONBOARDING AGENT] Failed to send reminder email for ${request.documentName}:`, error);
+    }
+
     await this.logStep(tenantId, request.workflowId, request.candidateId, 'reminder', 'reminder_sent', {
       stepName: 'documentation',
       status: 'success',
@@ -237,6 +268,113 @@ export class OnboardingAgent {
     });
 
     return { sent: true, escalated: false };
+  }
+
+  async sendBulkReminder(
+    tenantId: string,
+    workflowId: string
+  ): Promise<{ sent: number; escalated: number }> {
+    const requests = await this.storage.getOnboardingDocumentRequests(tenantId, workflowId);
+    const outstanding = requests.filter(r => r.status === 'pending' || r.status === 'requested' || r.status === 'overdue');
+
+    if (outstanding.length === 0) {
+      return { sent: 0, escalated: 0 };
+    }
+
+    // Check if any have exceeded max reminders
+    let escalatedCount = 0;
+    const toRemind: typeof outstanding = [];
+    for (const req of outstanding) {
+      const reminderCount = (req.reminderCount || 0) + 1;
+      const maxReminders = req.maxReminders || 3;
+      if (reminderCount > maxReminders) {
+        await this.escalateToHuman(tenantId, req.id, 'Maximum reminders reached without response');
+        escalatedCount++;
+      } else {
+        toRemind.push(req);
+      }
+    }
+
+    if (toRemind.length === 0) {
+      return { sent: 0, escalated: escalatedCount };
+    }
+
+    const candidateId = toRemind[0].candidateId;
+    const candidate = await this.storage.getCandidateById(tenantId, candidateId);
+
+    // Build consolidated message
+    const docListText = toRemind.map(r => {
+      const dueDate = r.dueDate ? new Date(r.dueDate).toLocaleDateString('en-ZA') : 'ASAP';
+      return `- ${r.documentName} (Due: ${dueDate})`;
+    }).join('\n');
+
+    const message = `Reminder: We still need the following documents for your onboarding:\n\n${docListText}\n\nPlease submit them as soon as possible.`;
+
+    // Update DB for each request
+    const now = new Date();
+    const nextReminderAt = new Date();
+    nextReminderAt.setDate(nextReminderAt.getDate() + 2);
+
+    for (const req of toRemind) {
+      await this.storage.updateOnboardingDocumentRequest(tenantId, req.id, {
+        reminderCount: (req.reminderCount || 0) + 1,
+        lastReminderAt: now,
+        nextReminderAt,
+      });
+    }
+
+    // Send one consolidated email
+    if (candidate?.email) {
+      const docListHtml = toRemind.map(r => {
+        const dueDate = r.dueDate ? new Date(r.dueDate).toLocaleDateString('en-ZA') : 'ASAP';
+        const priorityBadge = r.priority === 'urgent' ? ' <span style="color:#dc2626;">(Urgent)</span>' :
+                             r.priority === 'high' ? ' <span style="color:#ea580c;">(High Priority)</span>' : '';
+        return `<tr>
+          <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">${r.documentName}${priorityBadge}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:13px;">${r.description || ''}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">${dueDate}</td>
+        </tr>`;
+      }).join('');
+
+      try {
+        await this.emailService.sendEmail({
+          to: candidate.email,
+          subject: `Document Reminder: ${toRemind.length} Outstanding Document${toRemind.length > 1 ? 's' : ''} - Onboarding`,
+          body: `Hi ${candidate.fullName},\n\n${message}`,
+          html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+  <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:20px;">
+    <h2 style="color:#92400e;margin:0 0 10px 0;">Document Reminder</h2>
+    <p style="color:#374151;">Hi ${candidate.fullName},</p>
+    <p style="color:#374151;">We still need the following documents for your onboarding:</p>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;margin:12px 0;">
+      <thead><tr style="background:#fef3c7;">
+        <th style="padding:8px 12px;text-align:left;">Document</th>
+        <th style="padding:8px 12px;text-align:left;">Details</th>
+        <th style="padding:8px 12px;text-align:left;">Due Date</th>
+      </tr></thead>
+      <tbody>${docListHtml}</tbody>
+    </table>
+    <p style="color:#6b7280;font-size:13px;">Please reply to this email or contact HR to submit your documents.</p>
+  </div>
+</div>`,
+        });
+      } catch (error) {
+        console.error(`[ONBOARDING AGENT] Failed to send bulk reminder email:`, error);
+      }
+    }
+
+    // Log one consolidated action
+    await this.logStep(tenantId, workflowId, candidateId, 'reminder', 'bulk_reminder_sent', {
+      stepName: 'documentation',
+      status: 'success',
+      details: { documentCount: toRemind.length, documents: toRemind.map(r => r.documentType) },
+      targetEntity: 'candidate',
+      targetEntityId: candidateId,
+      communicationChannel: 'email',
+      messageContent: message,
+    });
+
+    return { sent: toRemind.length, escalated: escalatedCount };
   }
 
   async escalateToHuman(
@@ -292,6 +430,38 @@ export class OnboardingAgent {
         details: { totalRequired: requiredDocs.length, verified },
         communicationChannel: 'system',
       });
+
+      // Auto-complete workflow when all required documents are verified
+      const allVerified = requiredDocs.every(r => r.status === 'verified');
+      if (allVerified) {
+        const workflow = await this.storage.getOnboardingWorkflow(tenantId, workflowId);
+        if (workflow && workflow.status !== 'Completed') {
+          await this.storage.updateOnboardingWorkflow(tenantId, workflowId, {
+            status: 'Completed',
+            completedAt: new Date(),
+          });
+          await this.logStep(tenantId, workflowId, candidateId, 'workflow_manager', 'workflow_completed', {
+            stepName: 'completion',
+            status: 'success',
+            details: { reason: 'All required documents verified' },
+            communicationChannel: 'system',
+          });
+
+          // Notify HR of onboarding completion
+          try {
+            const candidate = await this.storage.getCandidateById(tenantId, candidateId);
+            if (candidate) {
+              await this.emailService.notifyHRForOnboardingCompletion(
+                candidate.fullName,
+                candidate.email || 'N/A',
+                'All documents verified'
+              );
+            }
+          } catch (e) {
+            console.error("Failed to send HR completion notification:", e);
+          }
+        }
+      }
     }
 
     return { complete, pending, received, verified };
@@ -302,7 +472,7 @@ export class OnboardingAgent {
     let escalated = 0;
 
     for (const request of overdue) {
-      const result = await this.sendReminder(tenantId, request.id, 'whatsapp');
+      const result = await this.sendReminder(tenantId, request.id, 'email');
       if (result.escalated) {
         escalated++;
       }
@@ -318,7 +488,7 @@ export class OnboardingAgent {
 
     for (const request of pending) {
       if (request.nextReminderAt && new Date(request.nextReminderAt) <= now) {
-        await this.sendReminder(tenantId, request.id, 'whatsapp');
+        await this.sendReminder(tenantId, request.id, 'email');
         remindersSent++;
       }
     }

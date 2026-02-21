@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTenantQueryKey } from "@/hooks/useTenant";
 import { onboardingService, candidateService } from "@/lib/api";
@@ -29,7 +29,9 @@ import {
   ChevronDown,
   ChevronRight,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Bell,
+  Upload
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -50,6 +52,11 @@ const defaultDocForm: DocFormData = {
 };
 
 function WorkflowDetail({ workflowId }: { workflowId: string }) {
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingRequestId, setUploadingRequestId] = useState<string | null>(null);
+  const [remindingRequestId, setRemindingRequestId] = useState<string | null>(null);
+  const workflowsKey = useTenantQueryKey(['onboarding-workflows']);
   const docRequestsKey = useTenantQueryKey(['onboarding-doc-requests', workflowId]);
   const agentLogsKey = useTenantQueryKey(['onboarding-agent-logs', workflowId]);
 
@@ -63,6 +70,88 @@ function WorkflowDetail({ workflowId }: { workflowId: string }) {
     queryKey: agentLogsKey,
     queryFn: () => onboardingService.getAgentLogs(workflowId),
     retry: 1,
+  });
+
+  const initDocsMutation = useMutation({
+    mutationFn: () => onboardingService.initializeDocumentRequests(workflowId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: docRequestsKey });
+      queryClient.invalidateQueries({ queryKey: agentLogsKey });
+      toast({ title: "Documents Initialized", description: "Document requests created for this workflow." });
+    },
+    onError: () => {
+      toast({ title: "Failed", description: "Could not initialize documents.", variant: "destructive" });
+    },
+  });
+
+  const uploadMutation = useMutation({
+    mutationFn: ({ requestId, file }: { requestId: string; file: File }) =>
+      onboardingService.uploadDocument(requestId, file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: docRequestsKey });
+      queryClient.invalidateQueries({ queryKey: agentLogsKey });
+      toast({ title: "Document Uploaded", description: "Document uploaded and marked as received." });
+      setUploadingRequestId(null);
+    },
+    onError: () => {
+      toast({ title: "Upload Failed", description: "Could not upload document.", variant: "destructive" });
+      setUploadingRequestId(null);
+    },
+  });
+
+  const handleUploadClick = (requestId: string) => {
+    setUploadingRequestId(requestId);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && uploadingRequestId) {
+      uploadMutation.mutate({ requestId: uploadingRequestId, file });
+    }
+    e.target.value = "";
+  };
+
+  const verifyMutation = useMutation({
+    mutationFn: (requestId: string) => onboardingService.markDocumentVerified(requestId, "HR Staff"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: docRequestsKey });
+      queryClient.invalidateQueries({ queryKey: agentLogsKey });
+      queryClient.invalidateQueries({ queryKey: workflowsKey });
+      toast({ title: "Document Verified", description: "Document has been verified." });
+    },
+    onError: () => {
+      toast({ title: "Failed", description: "Could not verify document.", variant: "destructive" });
+    },
+  });
+
+  const sendReminderMutation = useMutation({
+    mutationFn: (requestId: string) => {
+      setRemindingRequestId(requestId);
+      return onboardingService.sendReminder(requestId);
+    },
+    onSuccess: () => {
+      setRemindingRequestId(null);
+      queryClient.invalidateQueries({ queryKey: docRequestsKey });
+      queryClient.invalidateQueries({ queryKey: agentLogsKey });
+      toast({ title: "Reminder Sent", description: "A reminder has been sent to the candidate." });
+    },
+    onError: () => {
+      setRemindingRequestId(null);
+      toast({ title: "Failed", description: "Could not send reminder.", variant: "destructive" });
+    },
+  });
+
+  const remindAllMutation = useMutation({
+    mutationFn: () => onboardingService.sendBulkReminder(workflowId),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: docRequestsKey });
+      queryClient.invalidateQueries({ queryKey: agentLogsKey });
+      toast({ title: "Reminder Sent", description: `Sent reminder for ${data.sent} outstanding document(s).` });
+    },
+    onError: () => {
+      toast({ title: "Failed", description: "Could not send reminder.", variant: "destructive" });
+    },
   });
 
   const isLoading = loadingDocs || loadingLogs;
@@ -88,24 +177,101 @@ function WorkflowDetail({ workflowId }: { workflowId: string }) {
 
   return (
     <div className="px-4 pb-4 space-y-3 border-t border-gray-300 dark:border-zinc-700/50">
+      <input
+        ref={fileInputRef}
+        type="file"
+        className="hidden"
+        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+        onChange={handleFileChange}
+      />
       {/* Document Requests */}
       <div className="pt-3">
-        <h5 className="text-xs font-semibold text-foreground flex items-center gap-1.5 mb-2">
-          <FileText className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-          Document Requests ({docRequests.length})
-        </h5>
+        <div className="flex items-center justify-between mb-2">
+          <h5 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+            <FileText className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+            Document Requests ({docRequests.length})
+          </h5>
+          {docRequests.some((d: any) => d.status === "pending" || d.status === "requested" || d.status === "overdue") && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-6 text-[10px] px-2 text-amber-600 border-amber-300"
+              onClick={() => remindAllMutation.mutate()}
+              disabled={remindAllMutation.isPending}
+            >
+              {remindAllMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Bell className="h-3 w-3 mr-1" />Remind All</>}
+            </Button>
+          )}
+        </div>
         {docRequests.length === 0 ? (
-          <p className="text-xs text-muted-foreground pl-5">No document requests for this workflow yet.</p>
+          <div className="flex items-center gap-2 pl-5">
+            <p className="text-xs text-muted-foreground">No document requests yet.</p>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-6 text-[10px] px-2"
+              onClick={() => initDocsMutation.mutate()}
+              disabled={initDocsMutation.isPending}
+            >
+              {initDocsMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <><FileText className="h-3 w-3 mr-1" />Initialize Documents</>}
+            </Button>
+          </div>
         ) : (
-          <ScrollArea className={docRequests.length > 3 ? "h-[120px]" : ""}>
+          <ScrollArea className={docRequests.length > 3 ? "h-[180px]" : ""}>
             <div className="space-y-1.5">
               {docRequests.map((doc: any) => (
-                <div key={doc.id} className="flex items-center justify-between px-2 py-1.5 rounded bg-white/50 dark:bg-zinc-900/50 text-xs">
+                <div key={doc.id} className="flex items-center justify-between px-2 py-1.5 rounded bg-white/50 dark:bg-zinc-900/50 text-xs gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     <FileText className="h-3 w-3 text-muted-foreground shrink-0" />
                     <span className="truncate">{doc.documentName || doc.documentType}</span>
                   </div>
-                  {getDocStatusBadge(doc.status)}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {getDocStatusBadge(doc.status)}
+                    {(doc.status === "pending" || doc.status === "requested") && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-5 text-[10px] px-1.5"
+                          onClick={() => handleUploadClick(doc.id)}
+                          disabled={uploadMutation.isPending && uploadingRequestId === doc.id}
+                        >
+                          {uploadMutation.isPending && uploadingRequestId === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Upload className="h-3 w-3 mr-0.5" />Upload</>}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-5 text-[10px] px-1.5 text-amber-600"
+                          onClick={() => sendReminderMutation.mutate(doc.id)}
+                          disabled={sendReminderMutation.isPending && remindingRequestId === doc.id}
+                        >
+                          {sendReminderMutation.isPending && remindingRequestId === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Bell className="h-3 w-3 mr-0.5" />Remind</>}
+                        </Button>
+                      </>
+                    )}
+                    {doc.status === "received" && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-5 text-[10px] px-1.5 text-green-600"
+                        onClick={() => verifyMutation.mutate(doc.id)}
+                        disabled={verifyMutation.isPending}
+                      >
+                        {verifyMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <><CheckCircle2 className="h-3 w-3 mr-0.5" />Verify</>}
+                      </Button>
+                    )}
+                    {doc.status === "overdue" && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-5 text-[10px] px-1.5 text-amber-600"
+                        onClick={() => sendReminderMutation.mutate(doc.id)}
+                        disabled={sendReminderMutation.isPending && remindingRequestId === doc.id}
+                      >
+                        {sendReminderMutation.isPending && remindingRequestId === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Bell className="h-3 w-3 mr-0.5" />Remind</>}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -166,6 +332,8 @@ export default function EmployeeOnboarding() {
   const [docForm, setDocForm] = useState<DocFormData>(defaultDocForm);
   const [isGenerating, setIsGenerating] = useState(false);
   const [expandedWorkflowId, setExpandedWorkflowId] = useState<string | null>(null);
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const packFileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch real data from API
   const workflowsKey = useTenantQueryKey(['onboarding-workflows']);
@@ -197,10 +365,11 @@ export default function EmployeeOnboarding() {
 
   // Trigger onboarding mutation
   const triggerOnboarding = useMutation({
-    mutationFn: (params: { candidateId: string; requirements: { itSetup: boolean; buildingAccess: boolean; equipment: boolean }; startDate?: string }) =>
+    mutationFn: (params: { candidateId: string; requirements: { itSetup: boolean; buildingAccess: boolean; equipment: boolean }; startDate?: string; files?: File[] }) =>
       onboardingService.triggerOnboarding(params.candidateId, {
         requirements: params.requirements,
         startDate: params.startDate,
+        files: params.files,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: workflowsKey });
@@ -210,6 +379,7 @@ export default function EmployeeOnboarding() {
       });
       setSelectedEmployee("");
       setStartDate("");
+      setAttachedFiles([]);
     },
     onError: (error: any) => {
       toast({
@@ -325,18 +495,10 @@ export default function EmployeeOnboarding() {
       });
       return;
     }
-    triggerOnboarding.mutate({
-      candidateId: selectedEmployee,
-      requirements: { itSetup: requiresIT, buildingAccess: requiresAccess, equipment: requiresEquipment },
-      startDate,
-    });
-  };
-
-  const handleRequestIT = () => {
-    if (!selectedEmployee) {
+    if (attachedFiles.length === 0) {
       toast({
-        title: "No Employee Selected",
-        description: "Please select an employee first.",
+        title: "No Documents Attached",
+        description: "Please attach at least one onboarding document.",
         variant: "destructive",
       });
       return;
@@ -344,7 +506,8 @@ export default function EmployeeOnboarding() {
     triggerOnboarding.mutate({
       candidateId: selectedEmployee,
       requirements: { itSetup: requiresIT, buildingAccess: requiresAccess, equipment: requiresEquipment },
-      startDate: startDate || undefined,
+      startDate,
+      files: attachedFiles,
     });
   };
 
@@ -374,7 +537,16 @@ export default function EmployeeOnboarding() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>Select Employee *</Label>
-              <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+              <Select value={selectedEmployee} onValueChange={(val) => {
+                setSelectedEmployee(val);
+                // Auto-fill start date from existing workflow
+                const existingWorkflow = workflows.find((w: OnboardingWorkflow) => w.candidateId === val);
+                if (existingWorkflow?.startDate) {
+                  setStartDate(new Date(existingWorkflow.startDate).toISOString().split('T')[0]);
+                } else if (!startDate) {
+                  setStartDate(new Date().toISOString().split('T')[0]);
+                }
+              }}>
                 <SelectTrigger data-testid="select-employee">
                   <SelectValue placeholder={loadingCandidates ? "Loading candidates..." : "Choose an employee"} />
                 </SelectTrigger>
@@ -409,6 +581,57 @@ export default function EmployeeOnboarding() {
                   data-testid="input-start-date"
                 />
               </div>
+            </div>
+
+            {/* Onboarding Documents Upload */}
+            <div className="space-y-2 pt-2">
+              <Label>Onboarding Documents *</Label>
+              <p className="text-xs text-muted-foreground">Attach at least one document (welcome letter, contract, handbook, etc.)</p>
+              <input
+                ref={packFileInputRef}
+                type="file"
+                className="hidden"
+                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                multiple
+                onChange={(e) => {
+                  if (e.target.files) {
+                    setAttachedFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+                  }
+                  e.target.value = "";
+                }}
+              />
+              <div
+                className="border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-lg p-4 text-center cursor-pointer hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
+                onClick={() => packFileInputRef.current?.click()}
+              >
+                <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
+                <p className="text-sm text-muted-foreground">Click to upload documents</p>
+                <p className="text-xs text-muted-foreground">PDF, Word, Images</p>
+              </div>
+              {attachedFiles.length > 0 && (
+                <div className="space-y-1.5 mt-2">
+                  {attachedFiles.map((file, idx) => (
+                    <div key={idx} className="flex items-center justify-between px-3 py-1.5 rounded bg-gray-100 dark:bg-zinc-800/50 text-xs">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FileText className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                        <span className="truncate">{file.name}</span>
+                        <span className="text-muted-foreground shrink-0">({(file.size / 1024).toFixed(0)} KB)</span>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-5 w-5 p-0 text-muted-foreground hover:text-red-500"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setAttachedFiles(prev => prev.filter((_, i) => i !== idx));
+                        }}
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="space-y-3 pt-2">
@@ -456,23 +679,9 @@ export default function EmployeeOnboarding() {
 
             <div className="flex gap-3 pt-4">
               <Button
-                variant="outline"
-                className="flex-1"
-                onClick={handleRequestIT}
-                disabled={!selectedEmployee || triggerOnboarding.isPending}
-                data-testid="button-request-it"
-              >
-                {triggerOnboarding.isPending ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Monitor className="h-4 w-4 mr-2" />
-                )}
-                Request IT Setup
-              </Button>
-              <Button
                 className="flex-1 bg-blue-600 hover:bg-blue-700"
                 onClick={handleSendOnboardingPack}
-                disabled={triggerOnboarding.isPending}
+                disabled={triggerOnboarding.isPending || attachedFiles.length === 0}
                 data-testid="button-send-pack"
               >
                 {triggerOnboarding.isPending ? (
@@ -480,7 +689,7 @@ export default function EmployeeOnboarding() {
                 ) : (
                   <Send className="h-4 w-4 mr-2" />
                 )}
-                Send Onboarding Pack
+                Send Onboarding Pack ({attachedFiles.length})
               </Button>
             </div>
           </CardContent>
@@ -594,7 +803,7 @@ export default function EmployeeOnboarding() {
               variant="outline"
               className="h-auto py-4 flex-col gap-2"
               data-testid="button-download-policies"
-              onClick={() => openGenerateDialog("employee_handbook")}
+              onClick={() => openGenerateDialog("company_policies")}
             >
               <FileText className="h-8 w-8 text-green-600 dark:text-green-400" />
               <span>Company Policies</span>
@@ -604,7 +813,7 @@ export default function EmployeeOnboarding() {
               variant="outline"
               className="h-auto py-4 flex-col gap-2"
               data-testid="button-download-checklist"
-              onClick={() => openGenerateDialog("welcome_letter")}
+              onClick={() => openGenerateDialog("onboarding_checklist")}
             >
               <CheckCircle2 className="h-8 w-8 text-amber-600 dark:text-amber-400" />
               <span>Onboarding Checklist</span>
