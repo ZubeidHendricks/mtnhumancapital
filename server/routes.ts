@@ -2760,16 +2760,31 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
       // Send WhatsApp request if candidate has phone and flag is set
       if (sendWhatsappRequest && candidate.phone) {
         try {
-          const { WhatsAppService } = await import("./whatsapp-service");
-          const whatsappService = new WhatsAppService(storage);
-          
-          const docList = createdRequirements.map((r, i) => 
+          const { whatsappService } = await import("./whatsapp-service");
+
+          const docList = createdRequirements.map((r, i) =>
             `${i + 1}. ${r.description} (Ref: ${r.referenceCode})`
           ).join('\n');
-          
+
           const message = `Hi ${candidate.fullName},\n\nWe need the following documents to complete your background verification:\n\n${docList}\n\nPlease reply with the document type (e.g., "ID Document") before uploading each document so we can track your submission.\n\nReference these codes when submitting:\n${createdRequirements.map(r => `- ${r.referenceCode}`).join('\n')}`;
-          
-          await whatsappService.sendMessage(candidate.phone.replace(/\D/g, ''), message);
+
+          const candidatePhone = candidate.phone.replace(/\D/g, '');
+          const conversation = await whatsappService.getOrCreateConversation(
+            req.tenant.id,
+            candidatePhone,
+            candidatePhone,
+            candidate.fullName,
+            candidate.id,
+            'document_collection'
+          );
+
+          await whatsappService.sendTextMessage(
+            req.tenant.id,
+            conversation.id,
+            candidatePhone,
+            message,
+            'ai'
+          );
         } catch (whatsappError) {
           console.error("Failed to send WhatsApp request:", whatsappError);
           // Don't fail the request, just log the error
@@ -2801,12 +2816,27 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
       }
       
       try {
-        const { WhatsAppService } = await import("./whatsapp-service");
-        const whatsappService = new WhatsAppService(storage);
-        
+        const { whatsappService } = await import("./whatsapp-service");
+
         const message = `Hi ${candidate.fullName},\n\nThis is a reminder that we're still waiting for your ${requirement.description}.\n\nReference code: ${requirement.referenceCode}\n\nPlease upload this document at your earliest convenience to complete your background verification.\n\nReply with "${requirement.documentType}" before sending the document.`;
-        
-        await whatsappService.sendMessage(candidate.phone.replace(/\D/g, ''), message);
+
+        const candidatePhone = candidate.phone.replace(/\D/g, '');
+        const conversation = await whatsappService.getOrCreateConversation(
+          req.tenant.id,
+          candidatePhone,
+          candidatePhone,
+          candidate.fullName,
+          candidate.id,
+          'document_collection'
+        );
+
+        await whatsappService.sendTextMessage(
+          req.tenant.id,
+          conversation.id,
+          candidatePhone,
+          message,
+          'ai'
+        );
         
         // Update reminder tracking
         const now = new Date();
@@ -6318,16 +6348,10 @@ Format your response as JSON:
         return res.status(404).json({ message: "Conversation not found" });
       }
       
-      // Apply DEV_TEST_PHONE override: message stored with candidate's phone, but API sends to test number
-      const actualPhone = process.env.DEV_TEST_PHONE || conversation.phone;
-      if (process.env.DEV_TEST_PHONE && process.env.DEV_TEST_PHONE !== conversation.phone) {
-        console.log(`[WhatsApp] DEV_TEST_PHONE override: ${conversation.phone} -> ${actualPhone}`);
-      }
-
       const message = await whatsappService.sendTextMessage(
         req.tenant.id,
         req.params.id,
-        actualPhone,
+        conversation.phone,
         body,
         senderType || "human"
       );
@@ -7891,12 +7915,12 @@ Format your response as JSON:
 
           const message = `Hi ${employee.firstName}! 👋\n\nYou have a performance self-assessment to complete for *${cycle.name}*.\n\nPlease rate your performance on your assigned KPIs by clicking the link below:\n\n🔗 ${assessmentUrl}\n\n⏰ This link expires in ${expiryDays} days.\n\nIf you have any questions, please contact your HR department.`;
 
-          await whatsappService.sendMessage(
+          await whatsappService.sendTextMessage(
             req.tenant.id,
             conversation.id,
             employee.phone,
             message,
-            'self_assessment_link'
+            'ai'
           );
           whatsappSent = true;
         } catch (whatsappError) {

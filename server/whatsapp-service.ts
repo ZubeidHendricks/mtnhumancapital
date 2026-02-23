@@ -26,7 +26,7 @@ const DOC_TYPE_KEYWORDS: Record<string, string[]> = {
   medical_certificate: ["medical", "medical certificate", "health"],
 };
 
-const WHATSAPP_API_URL = "https://graph.facebook.com/v18.0";
+const WHATSAPP_API_URL = "https://graph.facebook.com/v22.0";
 
 interface WhatsappApiResponse {
   messaging_product: string;
@@ -48,6 +48,15 @@ export class WhatsAppService {
     return !!(this.token && this.phoneNumberId);
   }
 
+  private getActualPhone(phone: string): string {
+    const devPhone = process.env.DEV_TEST_PHONE;
+    if (devPhone && devPhone !== phone) {
+      console.log(`[WhatsApp] DEV_TEST_PHONE override: ${phone} -> ${devPhone}`);
+      return devPhone;
+    }
+    return phone;
+  }
+
   async sendTextMessage(
     tenantId: string,
     conversationId: string,
@@ -59,6 +68,9 @@ export class WhatsAppService {
     let whatsappMessageId: string | undefined;
     let status: "sent" | "pending" | "failed" = "pending";
     let apiError: string | undefined;
+
+    // Apply DEV_TEST_PHONE override: message stored with candidate's phone, but API sends to test number
+    const actualPhone = this.getActualPhone(phone);
 
     // Try to send via WhatsApp API if configured
     if (this.isConfigured()) {
@@ -73,7 +85,7 @@ export class WhatsAppService {
             },
             body: JSON.stringify({
               messaging_product: "whatsapp",
-              to: phone,
+              to: actualPhone,
               type: "text",
               text: { body },
             }),
