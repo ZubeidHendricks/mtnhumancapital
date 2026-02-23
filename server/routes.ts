@@ -3657,9 +3657,10 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
       const orchestrator = new OnboardingOrchestrator(storage);
       const emailService = new EmailService(storage);
 
-      const { requirements, startDate } = req.body || {};
+      const { requirements, startDate, equipmentList } = req.body || {};
       // Parse JSON strings from multipart form data
       const parsedRequirements = typeof requirements === "string" ? JSON.parse(requirements) : requirements;
+      const parsedEquipmentList = typeof equipmentList === "string" ? JSON.parse(equipmentList) : (equipmentList || []);
 
       const candidate = await storage.getCandidate(req.tenant.id, req.params.candidateId);
       if (!candidate) {
@@ -3668,6 +3669,7 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
 
       const workflow = await orchestrator.startOnboarding(req.tenant.id, req.params.candidateId, false, {
         requirements: parsedRequirements,
+        equipmentList: parsedEquipmentList,
         startDate: startDate ? new Date(startDate) : undefined,
       });
 
@@ -3724,6 +3726,121 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     } catch (error) {
       console.error("Error starting onboarding:", error);
       res.status(500).json({ message: "Failed to start onboarding workflow" });
+    }
+  });
+
+  // HR-facing endpoint: confirm provisioning sub-tasks from the dashboard
+  app.post("/api/onboarding/workflows/:id/confirm-provisioning", async (req, res) => {
+    try {
+      const { type, confirmedBy } = req.body;
+      if (!type || !["it", "buildingAccess", "equipment"].includes(type)) {
+        return res.status(400).json({ message: "type must be 'it', 'buildingAccess', or 'equipment'" });
+      }
+
+      const workflow = await storage.getOnboardingWorkflow(req.tenant.id, req.params.id);
+      if (!workflow) {
+        return res.status(404).json({ message: "Workflow not found" });
+      }
+
+      const pd = (workflow.provisioningData as any) || {};
+      const tasks = (workflow.tasks as any[]) || [];
+
+      if (type === "it") {
+        pd.itConfirmed = true;
+        pd.itConfirmedAt = new Date().toISOString();
+        pd.itConfirmedBy = confirmedBy || "HR Staff";
+      } else if (type === "buildingAccess") {
+        pd.buildingAccessConfirmed = true;
+        pd.buildingAccessConfirmedAt = new Date().toISOString();
+        pd.buildingAccessConfirmedBy = confirmedBy || "Facilities Staff";
+      } else if (type === "equipment") {
+        pd.equipmentConfirmed = true;
+        pd.equipmentConfirmedAt = new Date().toISOString();
+        pd.equipmentConfirmedBy = confirmedBy || "IT Staff";
+      }
+
+      // Check if all provisioning sub-tasks are confirmed
+      const itDone = pd.itConfirmed === true;
+      const buildingDone = pd.buildingAccessConfirmed === true;
+      const equipmentDone = pd.equipmentConfirmed === true || !(pd.equipmentList?.length > 0);
+      const allConfirmed = itDone && buildingDone && equipmentDone;
+
+      if (allConfirmed) {
+        const provTask = tasks.find((t: any) => t.type === "provisioning");
+        if (provTask) provTask.status = "completed";
+      }
+
+      const allTasksDone = tasks.every((t: any) => t.status === "completed");
+
+      await storage.updateOnboardingWorkflow(req.tenant.id, workflow.id, {
+        provisioningData: pd as any,
+        tasks: tasks as any,
+        ...(allTasksDone ? { status: "Completed", completedAt: new Date() } : {}),
+      });
+
+      res.json({
+        message: `${type} provisioning confirmed`,
+        itConfirmed: pd.itConfirmed || false,
+        buildingAccessConfirmed: pd.buildingAccessConfirmed || false,
+        equipmentConfirmed: pd.equipmentConfirmed || false,
+        allComplete: allConfirmed,
+      });
+    } catch (error) {
+      console.error("Error confirming provisioning:", error);
+      res.status(500).json({ message: "Failed to confirm provisioning" });
+    }
+  });
+
+  // Token-based confirmation endpoint (for IT/facilities staff via email link)
+  app.post("/api/onboarding/provisioning/confirm", async (req, res) => {
+    try {
+      const { token, confirmedBy, notes } = req.body;
+      if (!token) return res.status(400).json({ message: "Token required" });
+
+      const allWorkflows = await storage.getAllOnboardingWorkflows(req.tenant.id);
+      const workflow = allWorkflows.find(w => {
+        const pd = w.provisioningData as any;
+        return pd?.itConfirmationToken === token || pd?.buildingAccessToken === token;
+      });
+
+      if (!workflow) return res.status(404).json({ message: "Invalid or expired token" });
+
+      const pd = (workflow.provisioningData as any) || {};
+      const tasks = (workflow.tasks as any[]) || [];
+      const isITToken = pd.itConfirmationToken === token;
+      const isBuildingToken = pd.buildingAccessToken === token;
+
+      if (isITToken) {
+        pd.itConfirmed = true;
+        pd.itConfirmedAt = new Date().toISOString();
+        pd.itConfirmedBy = confirmedBy || "IT Staff";
+        if (notes) pd.itNotes = notes;
+      }
+      if (isBuildingToken) {
+        pd.buildingAccessConfirmed = true;
+        pd.buildingAccessConfirmedAt = new Date().toISOString();
+        pd.buildingAccessConfirmedBy = confirmedBy || "Facilities Staff";
+        if (notes) pd.buildingAccessNotes = notes;
+      }
+
+      const allConfirmed = pd.itConfirmed && pd.buildingAccessConfirmed;
+      if (allConfirmed) {
+        const provTask = tasks.find((t: any) => t.type === "provisioning");
+        if (provTask) provTask.status = "completed";
+      }
+
+      const allTasksDone = tasks.every((t: any) => t.status === "completed");
+
+      await storage.updateOnboardingWorkflow(req.tenant.id, workflow.id, {
+        provisioningData: pd as any,
+        tasks: tasks as any,
+        ...(allTasksDone ? { status: "Completed", completedAt: new Date() } : {}),
+      });
+
+      res.json({ message: "Provisioning confirmed", allComplete: allConfirmed });
+    } catch (error) {
+      console.error("Error confirming provisioning via token:", error);
+      res.status(500).json({ message: "Failed to confirm provisioning" });
     }
   });
 

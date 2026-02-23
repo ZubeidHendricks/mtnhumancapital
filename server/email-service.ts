@@ -53,6 +53,19 @@ export class EmailService {
     return setting?.value || null;
   }
 
+  async getBuildingAccessEmail(): Promise<string | null> {
+    const setting = await this.storage.getSystemSetting("building_access_email");
+    return setting?.value || null;
+  }
+
+  async getDefaultEquipmentList(): Promise<string[]> {
+    const setting = await this.storage.getSystemSetting("default_equipment_list");
+    if (setting?.value) {
+      return setting.value.split(",").map((s: string) => s.trim()).filter(Boolean);
+    }
+    return ["Laptop", "External Monitor", "Keyboard & Mouse"];
+  }
+
   async sendEmail(options: EmailOptions): Promise<boolean> {
     try {
       // Apply dev override
@@ -153,12 +166,16 @@ AHC Recruiting Team`;
     return this.sendEmail({ to, subject, body, html });
   }
 
-  async notifyITForProvisioning(candidateName: string, candidateEmail: string, credentials: any): Promise<void> {
+  async notifyITForProvisioning(candidateName: string, candidateEmail: string, credentials: any, equipmentList?: string[]): Promise<void> {
     const itEmail = await this.getITEmail();
     if (!itEmail) {
       console.log("IT email not configured, skipping notification");
       return;
     }
+
+    const equipmentSection = equipmentList && equipmentList.length > 0
+      ? `Equipment:\n${equipmentList.map(item => `- ${item}`).join("\n")}`
+      : "Equipment: None requested";
 
     const subject = `New Employee IT Provisioning Required: ${candidateName}`;
     const body = `A new employee onboarding has been initiated and requires IT provisioning.
@@ -172,10 +189,7 @@ System Access Required:
 - VPN Access: ${credentials.vpnKey || "Pending"}
 - Slack Workspace: ${credentials.slackInvite || "Pending"}
 
-Equipment:
-- MacBook Pro M3
-- External Monitor
-- Keyboard & Mouse
+${equipmentSection}
 
 Please process these requests and confirm when ready.
 
@@ -186,6 +200,34 @@ This is an automated notification from the AHC Onboarding System.`;
       subject,
       body,
     });
+  }
+
+  async notifyFacilitiesForBuildingAccess(candidateName: string, candidateEmail: string, startDate: string): Promise<void> {
+    const facilityEmail = await this.getBuildingAccessEmail();
+    const toEmail = facilityEmail || await this.getITEmail();
+    if (!toEmail) {
+      console.log("Building access / IT email not configured, skipping building access notification");
+      return;
+    }
+
+    const subject = `Building Access Request: ${candidateName}`;
+    const body = `A new employee requires building access provisioning.
+
+Employee Details:
+- Name: ${candidateName}
+- Email: ${candidateEmail}
+- Start Date: ${startDate}
+
+Please arrange the following:
+- Building access card
+- Floor/zone access permissions
+- Parking allocation (if applicable)
+
+Please process this request and confirm when ready.
+
+This is an automated notification from the AHC Onboarding System.`;
+
+    await this.sendEmail({ to: toEmail, subject, body });
   }
 
   async notifyHRForOnboardingStart(candidateName: string, candidateEmail: string, role: string): Promise<void> {

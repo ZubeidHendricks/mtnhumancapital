@@ -1,4 +1,5 @@
 import Groq from "groq-sdk";
+import { randomUUID } from "crypto";
 import type { IStorage } from "./storage";
 import type { Candidate, OnboardingWorkflow } from "@shared/schema";
 import { EmailService } from "./email-service";
@@ -41,7 +42,7 @@ export class OnboardingOrchestrator {
     tenantId: string,
     candidateId: string,
     restart: boolean = false,
-    options?: { requirements?: { itSetup?: boolean; buildingAccess?: boolean; equipment?: boolean }; startDate?: Date }
+    options?: { requirements?: { itSetup?: boolean; buildingAccess?: boolean; equipment?: boolean }; equipmentList?: string[]; startDate?: Date }
   ): Promise<OnboardingWorkflow> {
     const candidate = await this.storage.getCandidate(tenantId, candidateId);
     if (!candidate) {
@@ -98,7 +99,7 @@ export class OnboardingOrchestrator {
       currentStep: "welcome",
       tasks: initialTasks as any,
       documents: [] as any,
-      provisioningData: { requirements: reqs } as any,
+      provisioningData: { requirements: reqs, equipmentList: options?.equipmentList || [] } as any,
       ...(options?.startDate ? { startDate: options.startDate } : {}),
     });
 
@@ -129,8 +130,24 @@ export class OnboardingOrchestrator {
       await this.processPaperwork(tenantId, workflowId, candidate, tasks, documents);
       await new Promise(r => setTimeout(r, 1000));
       
-      const provisioningCredentials = await this.processProvisioning(tenantId, workflowId, candidate, tasks, documents);
-      await this.notifyITAfterProvisioning(candidate, provisioningCredentials || {});
+      const provisioningResult = await this.processProvisioning(tenantId, workflowId, candidate, tasks, documents);
+      await this.notifyITAfterProvisioning(candidate, provisioningResult || {});
+
+      // Send building access notification if requested
+      if (provisioningResult?.reqs?.buildingAccess !== false) {
+        const startDateStr = workflow.startDate
+          ? new Date(workflow.startDate).toLocaleDateString('en-ZA')
+          : "TBD";
+        try {
+          await this.emailService.notifyFacilitiesForBuildingAccess(
+            candidate.fullName,
+            candidate.email || "N/A",
+            startDateStr
+          );
+        } catch (error) {
+          console.error("Failed to send building access notification:", error);
+        }
+      }
       await new Promise(r => setTimeout(r, 1000));
       
       const orientationResult = await this.processOrientation(tenantId, workflowId, candidate, tasks, documents);
@@ -203,7 +220,12 @@ export class OnboardingOrchestrator {
         console.error("Failed to send welcome email with document requirements:", error);
       }
 
-      const finalTasks = tasks.map(t => ({ ...t, status: "completed" as const }));
+      // Provisioning stays "pending" until IT/facilities confirm completion
+      const finalTasks = tasks.map(t =>
+        t.type === "provisioning"
+          ? { ...t, status: "pending" as const }
+          : { ...t, status: "completed" as const }
+      );
       await this.storage.updateOnboardingWorkflow(tenantId, workflowId, {
         tasks: finalTasks as any,
         status: "In Progress",
@@ -398,41 +420,68 @@ export class OnboardingOrchestrator {
       }
     }
 
+    // Get the stored requirements and equipment list from the workflow
+    const currentWorkflow = await this.storage.getOnboardingWorkflow(tenantId, workflowId);
+    const storedData = (currentWorkflow?.provisioningData as any) || {};
+    const reqs = storedData.requirements || {};
+    const equipmentList: string[] = storedData.equipmentList || [];
+
+    const equipmentSnippet = equipmentList.length > 0
+      ? equipmentList.join(", ") + " — request sent to IT."
+      : "No equipment requested.";
+
     documents.push(
       {
         id: `asset-laptop-${Date.now()}`,
-        title: "IT_Asset_Request_#4922",
+        title: "IT_Asset_Request",
         type: "asset",
-        status: "provisioned",
-        snippet: "MacBook Pro M3 & Monitor dispatched to IT."
+        status: "pending",
+        snippet: equipmentSnippet
       },
       {
         id: `asset-access-${Date.now()}`,
         title: "System_Access_Credentials",
         type: "asset",
-        status: "provisioned",
+        status: "pending",
         snippet: "SSO Invite sent. VPN Access granted."
       }
     );
 
-    tasks[taskIndex].status = "completed";
+    // Generate confirmation tokens for IT and building access
+    const itConfirmationToken = randomUUID();
+    const buildingAccessToken = randomUUID();
+
+    // Provisioning stays "pending" until IT confirms
+    tasks[taskIndex].status = "pending";
     tasks[taskIndex].result = credentials;
+
+    const provisioningData = {
+      ...credentials,
+      requirements: reqs,
+      equipmentList,
+      itConfirmationToken,
+      itConfirmed: false,
+      buildingAccessToken,
+      buildingAccessConfirmed: reqs.buildingAccess === false, // auto-confirm if not requested
+      equipmentConfirmed: equipmentList.length === 0, // auto-confirm if no equipment requested
+    };
 
     await this.storage.updateOnboardingWorkflow(tenantId, workflowId, {
       tasks: tasks as any,
       documents: documents as any,
-      provisioningData: credentials as any,
+      provisioningData: provisioningData as any,
     });
 
-    return credentials;
+    return { credentials, equipmentList, itConfirmationToken, buildingAccessToken, reqs };
   }
 
-  private async notifyITAfterProvisioning(candidate: Candidate, credentials: any): Promise<void> {
+  private async notifyITAfterProvisioning(candidate: Candidate, provisioningResult: any): Promise<void> {
     try {
       await this.emailService.notifyITForProvisioning(
         candidate.fullName,
         candidate.email || "N/A",
-        credentials
+        provisioningResult.credentials || provisioningResult,
+        provisioningResult.equipmentList
       );
     } catch (error) {
       console.error("Failed to send IT notification:", error);

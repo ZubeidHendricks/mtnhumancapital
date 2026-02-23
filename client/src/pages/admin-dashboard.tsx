@@ -427,6 +427,15 @@ export default function AdminDashboard() {
                   testId="hr-admin-email"
                 />
 
+                <EmailConfigField
+                  label="Building Access / Facilities Email"
+                  description="Receives notifications for building access card requests (falls back to IT email if not set)"
+                  settingKey="building_access_email"
+                  currentValue={getSetting("building_access_email")}
+                  updateMutation={updateSettingMutation}
+                  testId="building-access-email"
+                />
+
                 <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 mt-4">
                   <div className="flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />

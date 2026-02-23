@@ -214,10 +214,11 @@ export const onboardingService = {
   },
   triggerOnboarding: async (
     candidateId: string,
-    options?: { requirements?: { itSetup?: boolean; buildingAccess?: boolean; equipment?: boolean }; startDate?: string; files?: File[] }
+    options?: { requirements?: { itSetup?: boolean; buildingAccess?: boolean; equipment?: boolean }; equipmentList?: string[]; startDate?: string; files?: File[] }
   ): Promise<{ message: string; workflow: OnboardingWorkflow }> => {
     const formData = new FormData();
     if (options?.requirements) formData.append("requirements", JSON.stringify(options.requirements));
+    if (options?.equipmentList) formData.append("equipmentList", JSON.stringify(options.equipmentList));
     if (options?.startDate) formData.append("startDate", options.startDate);
     if (options?.files) {
       for (const file of options.files) {
@@ -227,6 +228,10 @@ export const onboardingService = {
     const response = await api.post(`/onboarding/trigger/${candidateId}`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
+    return response.data;
+  },
+  confirmProvisioning: async (workflowId: string, type: "it" | "buildingAccess" | "equipment", confirmedBy?: string): Promise<any> => {
+    const response = await api.post(`/onboarding/workflows/${workflowId}/confirm-provisioning`, { type, confirmedBy });
     return response.data;
   },
   getStatus: async (candidateId: string): Promise<OnboardingWorkflow | null> => {

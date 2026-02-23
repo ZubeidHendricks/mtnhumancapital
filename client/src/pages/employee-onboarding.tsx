@@ -57,8 +57,15 @@ function WorkflowDetail({ workflowId }: { workflowId: string }) {
   const [uploadingRequestId, setUploadingRequestId] = useState<string | null>(null);
   const [remindingRequestId, setRemindingRequestId] = useState<string | null>(null);
   const workflowsKey = useTenantQueryKey(['onboarding-workflows']);
+  const workflowKey = useTenantQueryKey(['onboarding-workflow', workflowId]);
   const docRequestsKey = useTenantQueryKey(['onboarding-doc-requests', workflowId]);
   const agentLogsKey = useTenantQueryKey(['onboarding-agent-logs', workflowId]);
+
+  const { data: workflow } = useQuery({
+    queryKey: workflowKey,
+    queryFn: () => onboardingService.getWorkflow(workflowId),
+    retry: 1,
+  });
 
   const { data: docRequests = [], isLoading: loadingDocs } = useQuery({
     queryKey: docRequestsKey,
@@ -70,6 +77,19 @@ function WorkflowDetail({ workflowId }: { workflowId: string }) {
     queryKey: agentLogsKey,
     queryFn: () => onboardingService.getAgentLogs(workflowId),
     retry: 1,
+  });
+
+  const confirmProvisioningMutation = useMutation({
+    mutationFn: (type: "it" | "buildingAccess" | "equipment") =>
+      onboardingService.confirmProvisioning(workflowId, type, "HR Staff"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: workflowKey });
+      queryClient.invalidateQueries({ queryKey: workflowsKey });
+      toast({ title: "Provisioning Confirmed", description: "Provisioning task updated." });
+    },
+    onError: () => {
+      toast({ title: "Failed", description: "Could not confirm provisioning.", variant: "destructive" });
+    },
   });
 
   const initDocsMutation = useMutation({
@@ -279,6 +299,113 @@ function WorkflowDetail({ workflowId }: { workflowId: string }) {
         )}
       </div>
 
+      {/* Provisioning Status */}
+      {workflow?.provisioningData && (() => {
+        const pd = workflow.provisioningData as any;
+        const reqs = pd.requirements || {};
+        const hasProvisioning = reqs.itSetup !== false;
+        if (!hasProvisioning) return null;
+        const equipmentList: string[] = pd.equipmentList || [];
+        return (
+          <div>
+            <h5 className="text-xs font-semibold text-foreground flex items-center gap-1.5 mb-2">
+              <Monitor className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
+              Provisioning Status
+            </h5>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between px-2 py-1.5 rounded bg-white/50 dark:bg-zinc-900/50 text-xs">
+                <span className="flex items-center gap-1.5">
+                  <Monitor className="h-3 w-3" />
+                  IT Setup (email, VPN, accounts)
+                </span>
+                <div className="flex items-center gap-2">
+                  {pd.itConfirmed ? (
+                    <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-0 text-[10px]">Confirmed</Badge>
+                  ) : (
+                    <>
+                      <Badge className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-0 text-[10px]">Pending</Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-5 px-2 text-[10px]"
+                        onClick={() => confirmProvisioningMutation.mutate("it")}
+                        disabled={confirmProvisioningMutation.isPending}
+                      >
+                        {confirmProvisioningMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <><CheckCircle2 className="h-3 w-3 mr-0.5" />Confirm</>}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {reqs.buildingAccess !== false && (
+                <div className="flex items-center justify-between px-2 py-1.5 rounded bg-white/50 dark:bg-zinc-900/50 text-xs">
+                  <span className="flex items-center gap-1.5">
+                    <Building2 className="h-3 w-3" />
+                    Building Access Card
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {pd.buildingAccessConfirmed ? (
+                      <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-0 text-[10px]">Confirmed</Badge>
+                    ) : (
+                      <>
+                        <Badge className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-0 text-[10px]">Pending</Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 px-2 text-[10px]"
+                          onClick={() => confirmProvisioningMutation.mutate("buildingAccess")}
+                          disabled={confirmProvisioningMutation.isPending}
+                        >
+                          {confirmProvisioningMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <><CheckCircle2 className="h-3 w-3 mr-0.5" />Confirm</>}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {reqs.equipment !== false && (
+                <div className="flex items-center justify-between px-2 py-1.5 rounded bg-white/50 dark:bg-zinc-900/50 text-xs">
+                  <div>
+                    <span className="flex items-center gap-1.5 mb-1">
+                      <Package className="h-3 w-3" />
+                      Equipment Requested
+                    </span>
+                    <div className="pl-4.5 text-muted-foreground">
+                      {equipmentList.length > 0
+                        ? equipmentList.map((item: string, i: number) => (
+                            <span key={i}>{i > 0 ? ", " : ""}{item}</span>
+                          ))
+                        : <span>Standard equipment</span>
+                      }
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {pd.equipmentConfirmed ? (
+                      <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-0 text-[10px]">Confirmed</Badge>
+                    ) : (
+                      <>
+                        <Badge className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-0 text-[10px]">Pending</Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 px-2 text-[10px]"
+                          onClick={() => confirmProvisioningMutation.mutate("equipment")}
+                          disabled={confirmProvisioningMutation.isPending}
+                        >
+                          {confirmProvisioningMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <><CheckCircle2 className="h-3 w-3 mr-0.5" />Confirm</>}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Agent Activity Log */}
       <div>
         <h5 className="text-xs font-semibold text-foreground flex items-center gap-1.5 mb-2">
@@ -342,6 +469,7 @@ export default function EmployeeOnboarding() {
   const [requiresIT, setRequiresIT] = useState(true);
   const [requiresAccess, setRequiresAccess] = useState(true);
   const [requiresEquipment, setRequiresEquipment] = useState(true);
+  const [selectedEquipment, setSelectedEquipment] = useState<string[]>(["Laptop", "External Monitor", "Keyboard & Mouse"]);
   const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
   const [docType, setDocType] = useState<string>("welcome_letter");
   const [docForm, setDocForm] = useState<DocFormData>(defaultDocForm);
@@ -380,9 +508,10 @@ export default function EmployeeOnboarding() {
 
   // Trigger onboarding mutation
   const triggerOnboarding = useMutation({
-    mutationFn: (params: { candidateId: string; requirements: { itSetup: boolean; buildingAccess: boolean; equipment: boolean }; startDate?: string; files?: File[] }) =>
+    mutationFn: (params: { candidateId: string; requirements: { itSetup: boolean; buildingAccess: boolean; equipment: boolean }; equipmentList?: string[]; startDate?: string; files?: File[] }) =>
       onboardingService.triggerOnboarding(params.candidateId, {
         requirements: params.requirements,
+        equipmentList: params.equipmentList,
         startDate: params.startDate,
         files: params.files,
       }),
@@ -521,6 +650,7 @@ export default function EmployeeOnboarding() {
     triggerOnboarding.mutate({
       candidateId: selectedEmployee,
       requirements: { itSetup: requiresIT, buildingAccess: requiresAccess, equipment: requiresEquipment },
+      equipmentList: requiresEquipment ? selectedEquipment : [],
       startDate,
       files: attachedFiles,
     });
@@ -687,9 +817,29 @@ export default function EmployeeOnboarding() {
                 />
                 <label htmlFor="requires-equipment" className="text-sm text-muted-foreground flex items-center gap-2">
                   <Package className="h-4 w-4" />
-                  Request Equipment (laptop, phone, etc.)
+                  Request Equipment
                 </label>
               </div>
+
+              {requiresEquipment && (
+                <div className="ml-8 space-y-1.5 p-3 rounded-lg bg-muted/50 border border-border">
+                  <p className="text-xs text-muted-foreground font-medium mb-2">Select equipment items:</p>
+                  {["Laptop", "External Monitor", "Keyboard & Mouse", "Headset", "Phone", "Docking Station"].map((item) => (
+                    <div key={item} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`equip-${item}`}
+                        checked={selectedEquipment.includes(item)}
+                        onCheckedChange={(checked) => {
+                          setSelectedEquipment(prev =>
+                            checked ? [...prev, item] : prev.filter(e => e !== item)
+                          );
+                        }}
+                      />
+                      <label htmlFor={`equip-${item}`} className="text-xs text-muted-foreground">{item}</label>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3 pt-4">
