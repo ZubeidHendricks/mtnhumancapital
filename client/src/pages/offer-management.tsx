@@ -92,6 +92,14 @@ export default function OfferManagement() {
   const [showDocxPreview, setShowDocxPreview] = useState(false);
   const docxContainerRef = useRef<HTMLDivElement | null>(null);
 
+  // Offer document viewer state (for Recent Offers table)
+  const [showOfferDocPreview, setShowOfferDocPreview] = useState(false);
+  const [offerDocBlob, setOfferDocBlob] = useState<Blob | null>(null);
+  const [offerDocFilename, setOfferDocFilename] = useState("");
+  const [offerDocUrl, setOfferDocUrl] = useState<string | null>(null);
+  const [isLoadingOfferDoc, setIsLoadingOfferDoc] = useState<string | null>(null);
+  const offerDocContainerRef = useRef<HTMLDivElement | null>(null);
+
   const { data: allOffers = [], isLoading: offersLoading } = useQuery({
     queryKey: offersKey,
     queryFn: offersService.getAll,
@@ -218,6 +226,57 @@ export default function OfferManagement() {
       }
     },
     [previewBlob]
+  );
+
+  // View offer document from Recent Offers table
+  const handleViewOfferDoc = async (offer: any) => {
+    if (!offer.documentPath) return;
+    setIsLoadingOfferDoc(offer.id);
+    try {
+      const response = await fetch(offer.documentPath);
+      const blob = await response.blob();
+      const filename = offer.documentPath.split("/").pop() || "offer-document.docx";
+      setOfferDocBlob(blob);
+      setOfferDocFilename(filename);
+      setOfferDocUrl(offer.documentPath);
+      setShowOfferDocPreview(true);
+    } catch (err) {
+      toast({ title: "Error", description: "Failed to load document.", variant: "destructive" });
+    } finally {
+      setIsLoadingOfferDoc(null);
+    }
+  };
+
+  const handleDownloadOfferDoc = () => {
+    if (!offerDocUrl) return;
+    const a = document.createElement("a");
+    a.href = offerDocUrl;
+    a.download = offerDocFilename || "offer-document.docx";
+    a.click();
+  };
+
+  // Callback ref for offer doc preview dialog
+  const offerDocPreviewRefCallback = useCallback(
+    (node: HTMLDivElement | null) => {
+      offerDocContainerRef.current = node;
+      if (node && offerDocBlob) {
+        node.innerHTML = '<p class="text-center text-muted-foreground py-8">Rendering document...</p>';
+        renderAsync(offerDocBlob, node, undefined, {
+          className: "docx-preview",
+          inWrapper: true,
+          ignoreWidth: false,
+          ignoreHeight: false,
+          ignoreFonts: false,
+          breakPages: true,
+        }).catch((err) => {
+          console.error("DOCX preview render error:", err);
+          if (node) {
+            node.innerHTML = '<p class="text-center text-muted-foreground py-8">Failed to render document preview.</p>';
+          }
+        });
+      }
+    },
+    [offerDocBlob]
   );
 
   const respondMutation = useMutation({
@@ -627,20 +686,36 @@ export default function OfferManagement() {
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2">
                             {offer.documentPath && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-7 text-xs"
-                                onClick={() => {
-                                  const a = document.createElement("a");
-                                  a.href = offer.documentPath;
-                                  a.download = offer.documentPath.split("/").pop() || "offer-document.docx";
-                                  a.click();
-                                }}
-                              >
-                                <Download className="h-3 w-3 mr-1" />
-                                Download Doc
-                              </Button>
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 w-7 p-0"
+                                  title="View Document"
+                                  onClick={() => handleViewOfferDoc(offer)}
+                                  disabled={isLoadingOfferDoc === offer.id}
+                                >
+                                  {isLoadingOfferDoc === offer.id ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  ) : (
+                                    <Eye className="h-3.5 w-3.5" />
+                                  )}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 w-7 p-0"
+                                  title="Download Document"
+                                  onClick={() => {
+                                    const a = document.createElement("a");
+                                    a.href = offer.documentPath;
+                                    a.download = offer.documentPath.split("/").pop() || "offer-document.docx";
+                                    a.click();
+                                  }}
+                                >
+                                  <Download className="h-3.5 w-3.5" />
+                                </Button>
+                              </>
                             )}
                             {offer.status === "sent" && (
                               <>
@@ -706,6 +781,28 @@ export default function OfferManagement() {
           </div>
           <div
             ref={docxPreviewRefCallback}
+            className="flex-1 overflow-auto border rounded-lg bg-white"
+            style={{ minHeight: 0 }}
+          />
+        </DialogContent>
+      </Dialog>
+      {/* Offer Document Viewer Dialog */}
+      <Dialog open={showOfferDocPreview} onOpenChange={setShowOfferDocPreview}>
+        <DialogContent className="max-w-4xl h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Offer Document — {offerDocFilename}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-end pb-2">
+            <Button size="sm" variant="outline" onClick={handleDownloadOfferDoc}>
+              <Download className="h-3.5 w-3.5 mr-1" />
+              Download
+            </Button>
+          </div>
+          <div
+            ref={offerDocPreviewRefCallback}
             className="flex-1 overflow-auto border rounded-lg bg-white"
             style={{ minHeight: 0 }}
           />

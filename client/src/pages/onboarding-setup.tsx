@@ -142,7 +142,7 @@ export default function OnboardingSetup() {
   );
 
   const handlePreviewTemplate = async (template: DocumentTemplate) => {
-    setIsLoadingPreview(true);
+    setIsLoadingPreview(template.id);
     try {
       const response = await fetch(template.filePath);
       if (!response.ok) throw new Error("Failed to fetch template");
@@ -157,7 +157,7 @@ export default function OnboardingSetup() {
         variant: "destructive",
       });
     } finally {
-      setIsLoadingPreview(false);
+      setIsLoadingPreview(null);
     }
   };
 
@@ -600,9 +600,14 @@ export default function OnboardingSetup() {
                         variant="outline"
                         size="sm"
                         onClick={() => handlePreviewTemplate(template)}
+                        disabled={isLoadingPreview === template.id}
                         data-testid={`button-preview-custom-${template.id}`}
                       >
-                        <Eye className="w-4 h-4" />
+                        {isLoadingPreview === template.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
                       </Button>
                       <a href={template.filePath} download={template.originalFilename}>
                         <Button
