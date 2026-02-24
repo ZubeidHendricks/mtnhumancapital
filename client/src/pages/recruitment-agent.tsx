@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTenantQueryKey } from "@/hooks/useTenant";
-import { Link, useSearch, useLocation } from "wouter";
+import { useSearch, useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -1044,12 +1044,18 @@ export default function RecruitmentAgent() {
                           {candidate.match || 0}%
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <Link href={`/candidates-list?candidateId=${candidate.id}`}>
-                            <Button size="sm" variant="outline" className="border-border hover:bg-muted h-8 text-xs">
-                              <Eye className="h-3 w-3 mr-1" />
-                              Profile
-                            </Button>
-                          </Link>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-border hover:bg-muted h-8 text-xs"
+                            onClick={() => {
+                              setShowShortlistDialog(false);
+                              handleCandidateClick(candidate);
+                            }}
+                          >
+                            <Eye className="h-3 w-3 mr-1" />
+                            Profile
+                          </Button>
                           <Button
                             size="sm"
                             className="bg-gradient-to-r from-teal-600 to-blue-600 hover:from-teal-500 hover:to-blue-500 h-8 text-xs"
