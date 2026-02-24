@@ -606,6 +606,7 @@ export interface IStorage {
   getActiveDocumentTemplate(tenantId: string, templateType: string): Promise<DocumentTemplate | undefined>;
   createDocumentTemplate(tenantId: string, template: InsertDocumentTemplate): Promise<DocumentTemplate>;
   activateDocumentTemplate(tenantId: string, id: string): Promise<DocumentTemplate | undefined>;
+  deactivateDocumentTemplate(tenantId: string, id: string): Promise<DocumentTemplate | undefined>;
   deleteDocumentTemplate(tenantId: string, id: string): Promise<boolean>;
 
   // Offers Management
@@ -3609,6 +3610,14 @@ export class DatabaseStorage implements IStorage {
     
     const [updated] = await db.update(documentTemplates)
       .set({ isActive: 1, updatedAt: new Date() })
+      .where(and(eq(documentTemplates.id, id), eq(documentTemplates.tenantId, tenantId)))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deactivateDocumentTemplate(tenantId: string, id: string): Promise<DocumentTemplate | undefined> {
+    const [updated] = await db.update(documentTemplates)
+      .set({ isActive: 0, updatedAt: new Date() })
       .where(and(eq(documentTemplates.id, id), eq(documentTemplates.tenantId, tenantId)))
       .returning();
     return updated || undefined;

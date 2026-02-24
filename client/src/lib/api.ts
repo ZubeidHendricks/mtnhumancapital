@@ -297,9 +297,27 @@ export const offersService = {
     startDate?: string;
     benefits?: string[];
     notes?: string;
+    contractType?: string;
   }): Promise<any> => {
     const response = await api.post("/offers", data);
     return response.data;
+  },
+  generateDocumentPreview: async (data: {
+    candidateId: string;
+    jobId?: string;
+    contractType: string;
+    salary?: string;
+    startDate?: string;
+    benefits?: string[];
+  }): Promise<{ blob: Blob; filename: string }> => {
+    const response = await api.post("/offers/generate-document-preview", data, {
+      responseType: "blob",
+    });
+    // Extract filename from Content-Disposition header
+    const disposition = response.headers["content-disposition"] || "";
+    const match = disposition.match(/filename="?([^";\n]+)"?/);
+    const filename = match?.[1] || "document-preview.docx";
+    return { blob: response.data, filename };
   },
   update: async (id: string, data: any): Promise<any> => {
     const response = await api.patch(`/offers/${id}`, data);

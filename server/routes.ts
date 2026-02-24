@@ -27,6 +27,7 @@ import { pnetAPIService } from "./pnet-api-service";
 import { pnetApplicationAgent } from "./pnet-application-agent";
 import { pnetJobPostingAgent } from "./pnet-job-posting-agent";
 import { registerWeighbridgeRoutes } from "./routes/weighbridge";
+import type { EmployeeData } from "./document-generator";
 import { registerFleetLogixRoutes } from "./fleetlogix-routes";
 import { ragSupportService } from "./rag-support-service";
 
@@ -1068,6 +1069,20 @@ Return JSON format:
     }
   });
 
+  app.patch("/api/document-templates/:id/deactivate", async (req, res) => {
+    try {
+      const template = await storage.getDocumentTemplateById(req.tenant.id, req.params.id);
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+      const updated = await storage.deactivateDocumentTemplate(req.tenant.id, req.params.id);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error deactivating document template:", error);
+      res.status(500).json({ message: "Failed to deactivate document template" });
+    }
+  });
+
   app.delete("/api/document-templates/:id", async (req, res) => {
     try {
       const template = await storage.getDocumentTemplateById(req.tenant.id, req.params.id);
@@ -1124,10 +1139,36 @@ Return JSON format:
     companyAddress: z.string().optional(),
   });
 
+  // Fast preview endpoint — uses hardcoded content, no AI call
+  app.get("/api/documents/preview/:type", async (req, res) => {
+    try {
+      const { type } = req.params;
+      const validTypes = ['offer_letter', 'welcome_letter', 'employee_handbook', 'nda', 'employment_contract', 'executive_offer', 'company_policies', 'onboarding_checklist', 'it_request_form', 'benefits_enrollment'];
+
+      if (!validTypes.includes(type)) {
+        return res.status(400).json({ message: `Invalid document type. Must be one of: ${validTypes.join(', ')}` });
+      }
+
+      const { createDocumentGenerator } = await import("./document-generator");
+      const docGenerator = createDocumentGenerator(storage);
+      const tenantConfig = await storage.getTenantConfig(req.tenant.id);
+      const companyName = tenantConfig?.companyName || req.tenant.subdomain || 'Company';
+
+      const result = await docGenerator.generatePreviewDocument(type as any, companyName);
+
+      res.setHeader('Content-Type', result.mimeType);
+      res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+      res.send(result.buffer);
+    } catch (error) {
+      console.error("Error generating preview:", error);
+      res.status(500).json({ message: "Failed to generate preview", error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
   app.post("/api/documents/generate/:type", async (req, res) => {
     try {
       const { type } = req.params;
-      const validTypes = ['offer_letter', 'welcome_letter', 'employee_handbook', 'nda', 'employment_contract', 'company_policies', 'onboarding_checklist'];
+      const validTypes = ['offer_letter', 'welcome_letter', 'employee_handbook', 'nda', 'employment_contract', 'executive_offer', 'company_policies', 'onboarding_checklist', 'it_request_form', 'benefits_enrollment'];
       
       if (!validTypes.includes(type)) {
         return res.status(400).json({ message: `Invalid document type. Must be one of: ${validTypes.join(', ')}` });
@@ -1168,7 +1209,7 @@ Return JSON format:
   app.post("/api/candidates/:id/generate-document/:type", async (req, res) => {
     try {
       const { id, type } = req.params;
-      const validTypes = ['offer_letter', 'welcome_letter', 'employee_handbook', 'nda', 'employment_contract', 'company_policies', 'onboarding_checklist'];
+      const validTypes = ['offer_letter', 'welcome_letter', 'employee_handbook', 'nda', 'employment_contract', 'executive_offer', 'company_policies', 'onboarding_checklist', 'it_request_form', 'benefits_enrollment'];
       
       if (!validTypes.includes(type)) {
         return res.status(400).json({ message: `Invalid document type. Must be one of: ${validTypes.join(', ')}` });
@@ -10304,6 +10345,60 @@ Format your response as JSON:
     }
   });
 
+  // Generate document preview (returns DOCX binary, no file saved)
+  app.post("/api/offers/generate-document-preview", async (req, res) => {
+    try {
+      const { candidateId, jobId, contractType, salary, startDate, benefits } = req.body;
+      if (!candidateId || !contractType) {
+        return res.status(400).json({ message: "candidateId and contractType are required" });
+      }
+
+      const candidate = await storage.getCandidate(req.tenant.id, candidateId);
+      if (!candidate) {
+        return res.status(404).json({ message: "Candidate not found" });
+      }
+
+      let jobTitle = candidate.role || "Position";
+      let department = "";
+      if (jobId) {
+        const job = await storage.getJob(req.tenant.id, jobId);
+        if (job) {
+          jobTitle = job.title;
+          department = job.department || "";
+        }
+      }
+
+      const { createDocumentGenerator } = await import("./document-generator");
+      const docGenerator = createDocumentGenerator(storage);
+
+      const employeeData: EmployeeData = {
+        fullName: candidate.fullName,
+        email: candidate.email || undefined,
+        phone: candidate.phone || undefined,
+        jobTitle,
+        department,
+        startDate: startDate || "TBD",
+        salary: salary || undefined,
+        currency: "ZAR",
+        benefits: benefits || undefined,
+        companyName: "AHC Recruiting",
+      };
+
+      const { buffer, filename, mimeType } = await docGenerator.generateDocumentForOffer(
+        req.tenant.id,
+        contractType,
+        employeeData
+      );
+
+      res.setHeader("Content-Type", mimeType);
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (error) {
+      console.error("Error generating document preview:", error);
+      res.status(500).json({ message: "Failed to generate document preview" });
+    }
+  });
+
   app.post("/api/offers/:id/send", upload.single("attachment"), async (req, res) => {
     try {
       const offer = await storage.getOffer(req.tenant.id, req.params.id);
@@ -10317,16 +10412,14 @@ Format your response as JSON:
       }
 
       let jobTitle = candidate.role || "Position";
+      let department = "";
       if (offer.jobId) {
         const job = await storage.getJob(req.tenant.id, offer.jobId);
-        if (job) jobTitle = job.title;
+        if (job) {
+          jobTitle = job.title;
+          department = job.department || "";
+        }
       }
-
-      const updatedOffer = await storage.updateOffer(req.tenant.id, offer.id, {
-        status: "sent",
-        sentAt: new Date(),
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      } as any);
 
       // Build email attachments from uploaded file
       const emailAttachments: { filename: string; content: Buffer; contentType?: string }[] = [];
@@ -10337,6 +10430,59 @@ Format your response as JSON:
           contentType: req.file.mimetype,
         });
       }
+
+      // If offer has contractType, generate DOCX, save to disk, and attach to email
+      let documentPath: string | undefined;
+      if (offer.contractType) {
+        try {
+          const { createDocumentGenerator } = await import("./document-generator");
+          const docGenerator = createDocumentGenerator(storage);
+
+          const employeeData: EmployeeData = {
+            fullName: candidate.fullName,
+            email: candidate.email || undefined,
+            phone: candidate.phone || undefined,
+            jobTitle,
+            department,
+            startDate: offer.startDate ? new Date(offer.startDate).toLocaleDateString() : "TBD",
+            salary: offer.salary || undefined,
+            currency: offer.currency || "ZAR",
+            benefits: Array.isArray(offer.benefits) ? offer.benefits as string[] : undefined,
+            companyName: "AHC Recruiting",
+          };
+
+          const { buffer, filename, mimeType } = await docGenerator.generateDocumentForOffer(
+            req.tenant.id,
+            offer.contractType as any,
+            employeeData
+          );
+
+          // Save to disk
+          const uploadDir = path.join(process.cwd(), "uploads", "offer-documents");
+          if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+          }
+          const savedPath = path.join(uploadDir, filename);
+          fs.writeFileSync(savedPath, buffer);
+          documentPath = `/uploads/offer-documents/${filename}`;
+
+          // Add generated document as email attachment
+          emailAttachments.push({
+            filename,
+            content: buffer,
+            contentType: mimeType,
+          });
+        } catch (docErr) {
+          console.error("Document generation failed (non-blocking):", docErr);
+        }
+      }
+
+      const updatedOffer = await storage.updateOffer(req.tenant.id, offer.id, {
+        status: "sent",
+        sentAt: new Date(),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        ...(documentPath ? { documentPath } : {}),
+      } as any);
 
       let emailSent = false;
       if (candidate.email) {

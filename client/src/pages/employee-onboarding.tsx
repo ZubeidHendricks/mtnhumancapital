@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTenantQueryKey } from "@/hooks/useTenant";
 import { onboardingService, candidateService } from "@/lib/api";
@@ -10,11 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Building2,
-  Download,
   Send,
   User,
   Calendar,
@@ -25,31 +23,39 @@ import {
   CheckCircle2,
   Package,
   Loader2,
-  Sparkles,
   ChevronDown,
   ChevronRight,
   Clock,
   AlertCircle,
   Bell,
-  Upload
+  Upload,
+  ClipboardList,
+  Settings2
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
-interface DocFormData {
-  fullName: string;
-  jobTitle: string;
-  startDate: string;
-  department: string;
-  email: string;
+const ONBOARDING_FORM_KEY = "onboarding_form_draft";
+
+function getSavedOnboardingState() {
+  try {
+    const raw = sessionStorage.getItem(ONBOARDING_FORM_KEY);
+    if (raw) {
+      sessionStorage.removeItem(ONBOARDING_FORM_KEY);
+      return JSON.parse(raw);
+    }
+  } catch {}
+  return null;
 }
 
-const defaultDocForm: DocFormData = {
-  fullName: "",
-  jobTitle: "",
-  startDate: new Date().toISOString().split('T')[0],
-  department: "",
-  email: "",
-};
+const ONBOARDING_DOCUMENTS = [
+  { id: "welcome_letter", name: "Welcome Letter", icon: Mail },
+  { id: "employee_handbook", name: "Employee Handbook", icon: BookOpen },
+  { id: "company_policies", name: "Company Policies", icon: ClipboardList },
+  { id: "onboarding_checklist", name: "Onboarding Checklist", icon: CheckCircle2 },
+  { id: "it_request_form", name: "IT Equipment Request Form", icon: FileText },
+  { id: "benefits_enrollment", name: "Benefits Enrollment Form", icon: FileText },
+];
 
 function WorkflowDetail({ workflowId }: { workflowId: string }) {
   const queryClient = useQueryClient();
@@ -464,19 +470,29 @@ function WorkflowDetail({ workflowId }: { workflowId: string }) {
 
 export default function EmployeeOnboarding() {
   const queryClient = useQueryClient();
-  const [selectedEmployee, setSelectedEmployee] = useState<string>("");
-  const [startDate, setStartDate] = useState("");
-  const [requiresIT, setRequiresIT] = useState(true);
-  const [requiresAccess, setRequiresAccess] = useState(true);
-  const [requiresEquipment, setRequiresEquipment] = useState(true);
-  const [selectedEquipment, setSelectedEquipment] = useState<string[]>(["Laptop", "External Monitor", "Keyboard & Mouse"]);
-  const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
-  const [docType, setDocType] = useState<string>("welcome_letter");
-  const [docForm, setDocForm] = useState<DocFormData>(defaultDocForm);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [expandedWorkflowId, setExpandedWorkflowId] = useState<string | null>(null);
-  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
-  const packFileInputRef = useRef<HTMLInputElement>(null);
+  const [, navigate] = useLocation();
+  const savedOnboarding = useRef(getSavedOnboardingState());
+
+  // Restore scroll position when returning from Onboarding Setup
+  useEffect(() => {
+    if (savedOnboarding.current) {
+      const scrollY = savedOnboarding.current.scrollY;
+      if (scrollY != null) {
+        setTimeout(() => {
+          window.scrollTo({ top: scrollY, behavior: "smooth" });
+        }, 400);
+      }
+    }
+  }, []);
+
+  const [selectedEmployee, setSelectedEmployee] = useState<string>(savedOnboarding.current?.selectedEmployee || "");
+  const [startDate, setStartDate] = useState(savedOnboarding.current?.startDate || "");
+  const [requiresIT, setRequiresIT] = useState(savedOnboarding.current?.requiresIT ?? true);
+  const [requiresAccess, setRequiresAccess] = useState(savedOnboarding.current?.requiresAccess ?? true);
+  const [requiresEquipment, setRequiresEquipment] = useState(savedOnboarding.current?.requiresEquipment ?? true);
+  const [selectedEquipment, setSelectedEquipment] = useState<string[]>(savedOnboarding.current?.selectedEquipment || ["Laptop", "External Monitor", "Keyboard & Mouse"]);
+  const [expandedWorkflowId, setExpandedWorkflowId] = useState<string | null>(savedOnboarding.current?.expandedWorkflowId || null);
+  const [selectedDocuments, setSelectedDocuments] = useState<string[]>(savedOnboarding.current?.selectedDocuments || ["welcome_letter", "employee_handbook", "company_policies"]);
 
   // Fetch real data from API
   const workflowsKey = useTenantQueryKey(['onboarding-workflows']);
@@ -523,7 +539,7 @@ export default function EmployeeOnboarding() {
       });
       setSelectedEmployee("");
       setStartDate("");
-      setAttachedFiles([]);
+      setSelectedDocuments(["welcome_letter", "employee_handbook", "company_policies"]);
     },
     onError: (error: any) => {
       toast({
@@ -550,86 +566,6 @@ export default function EmployeeOnboarding() {
     return <Badge className="bg-gray-500/20 text-gray-600 dark:text-gray-400 border-0">Pending</Badge>;
   };
 
-  const handleGenerateDocument = async () => {
-    if (!docForm.fullName || !docForm.jobTitle || !docForm.startDate) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in Full Name, Job Title, and Start Date.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsGenerating(true);
-    try {
-      const response = await fetch(`/api/documents/generate/${docType}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(docForm),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to generate document");
-      }
-
-      const blob = await response.blob();
-      const filename = `${docType}_${docForm.fullName.replace(/\s+/g, '_')}.docx`;
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      toast({
-        title: "Document Downloaded",
-        description: `${docType.replace(/_/g, ' ')} has been generated and downloaded.`,
-      });
-      setGenerateDialogOpen(false);
-      setDocForm(defaultDocForm);
-    } catch (error) {
-      toast({
-        title: "Generation Failed",
-        description: error instanceof Error ? error.message : "Failed to generate document",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const openGenerateDialog = (type: string) => {
-    setDocType(type);
-    // Pre-fill from selected employee if one is chosen
-    if (selectedEmployee) {
-      const candidate = candidates.find((c: Candidate) => c.id.toString() === selectedEmployee);
-      if (candidate) {
-        setDocForm({
-          fullName: (candidate as any).fullName || (candidate as any).name || "",
-          jobTitle: (candidate as any).role || (candidate as any).position || "",
-          startDate: startDate || new Date().toISOString().split('T')[0],
-          department: (candidate as any).department || "",
-          email: (candidate as any).email || "",
-        });
-        setGenerateDialogOpen(true);
-        return;
-      }
-    }
-    setDocForm(defaultDocForm);
-    setGenerateDialogOpen(true);
-  };
-
-  const handleDownloadWelcomeLetter = () => {
-    openGenerateDialog("welcome_letter");
-  };
-
-  const handleDownloadHandbook = () => {
-    openGenerateDialog("employee_handbook");
-  };
-
   const handleSendOnboardingPack = () => {
     if (!selectedEmployee || !startDate) {
       toast({
@@ -639,10 +575,10 @@ export default function EmployeeOnboarding() {
       });
       return;
     }
-    if (attachedFiles.length === 0) {
+    if (selectedDocuments.length === 0) {
       toast({
-        title: "No Documents Attached",
-        description: "Please attach at least one onboarding document.",
+        title: "No Documents Selected",
+        description: "Please select at least one onboarding document to send.",
         variant: "destructive",
       });
       return;
@@ -652,22 +588,36 @@ export default function EmployeeOnboarding() {
       requirements: { itSetup: requiresIT, buildingAccess: requiresAccess, equipment: requiresEquipment },
       equipmentList: requiresEquipment ? selectedEquipment : [],
       startDate,
-      files: attachedFiles,
     });
   };
 
   const isLoading = loadingWorkflows || loadingCandidates;
 
+  const handleGoToOnboardingSetup = () => {
+    sessionStorage.setItem(ONBOARDING_FORM_KEY, JSON.stringify({
+      selectedEmployee, startDate, requiresIT, requiresAccess, requiresEquipment,
+      selectedEquipment, expandedWorkflowId, selectedDocuments,
+      scrollY: window.scrollY,
+    }));
+    navigate("/onboarding-setup");
+  };
+
   return (
     <div className="container mx-auto py-8 px-4 max-w-6xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-          <Building2 className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-          Employee Onboarding
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Manage the onboarding process for new employees
-        </p>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+            <Building2 className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+            Employee Onboarding
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Manage the onboarding process for new employees
+          </p>
+        </div>
+        <Button variant="outline" onClick={handleGoToOnboardingSetup}>
+          <Settings2 className="h-4 w-4 mr-2" />
+          Manage Templates
+        </Button>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -728,55 +678,33 @@ export default function EmployeeOnboarding() {
               </div>
             </div>
 
-            {/* Onboarding Documents Upload */}
+            {/* Onboarding Documents Selection */}
             <div className="space-y-2 pt-2">
-              <Label>Onboarding Documents *</Label>
-              <p className="text-xs text-muted-foreground">Attach at least one document (welcome letter, contract, handbook, etc.)</p>
-              <input
-                ref={packFileInputRef}
-                type="file"
-                className="hidden"
-                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                multiple
-                onChange={(e) => {
-                  if (e.target.files) {
-                    setAttachedFiles(prev => [...prev, ...Array.from(e.target.files!)]);
-                  }
-                  e.target.value = "";
-                }}
-              />
-              <div
-                className="border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-lg p-4 text-center cursor-pointer hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
-                onClick={() => packFileInputRef.current?.click()}
-              >
-                <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
-                <p className="text-sm text-muted-foreground">Click to upload documents</p>
-                <p className="text-xs text-muted-foreground">PDF, Word, Images</p>
-              </div>
-              {attachedFiles.length > 0 && (
-                <div className="space-y-1.5 mt-2">
-                  {attachedFiles.map((file, idx) => (
-                    <div key={idx} className="flex items-center justify-between px-3 py-1.5 rounded bg-gray-100 dark:bg-zinc-800/50 text-xs">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <FileText className="h-3.5 w-3.5 text-blue-500 shrink-0" />
-                        <span className="truncate">{file.name}</span>
-                        <span className="text-muted-foreground shrink-0">({(file.size / 1024).toFixed(0)} KB)</span>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-5 w-5 p-0 text-muted-foreground hover:text-red-500"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setAttachedFiles(prev => prev.filter((_, i) => i !== idx));
+              <Label>Documents to Send *</Label>
+              <p className="text-xs text-muted-foreground">Select documents to include in the onboarding pack (from Onboarding Setup templates)</p>
+              <div className="space-y-2 p-3 rounded-lg border border-border bg-muted/30">
+                {ONBOARDING_DOCUMENTS.map((doc) => {
+                  const Icon = doc.icon;
+                  return (
+                    <div key={doc.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`doc-${doc.id}`}
+                        checked={selectedDocuments.includes(doc.id)}
+                        onCheckedChange={(checked) => {
+                          setSelectedDocuments(prev =>
+                            checked ? [...prev, doc.id] : prev.filter(d => d !== doc.id)
+                          );
                         }}
-                      >
-                        ×
-                      </Button>
+                        data-testid={`checkbox-doc-${doc.id}`}
+                      />
+                      <label htmlFor={`doc-${doc.id}`} className="text-sm text-muted-foreground flex items-center gap-2 cursor-pointer">
+                        <Icon className="h-4 w-4" />
+                        {doc.name}
+                      </label>
                     </div>
-                  ))}
-                </div>
-              )}
+                  );
+                })}
+              </div>
             </div>
 
             <div className="space-y-3 pt-2">
@@ -846,7 +774,7 @@ export default function EmployeeOnboarding() {
               <Button
                 className="flex-1 bg-blue-600 hover:bg-blue-700"
                 onClick={handleSendOnboardingPack}
-                disabled={triggerOnboarding.isPending || attachedFiles.length === 0}
+                disabled={triggerOnboarding.isPending || selectedDocuments.length === 0}
                 data-testid="button-send-pack"
               >
                 {triggerOnboarding.isPending ? (
@@ -854,7 +782,7 @@ export default function EmployeeOnboarding() {
                 ) : (
                   <Send className="h-4 w-4 mr-2" />
                 )}
-                Send Onboarding Pack ({attachedFiles.length})
+                Send Onboarding Pack ({selectedDocuments.length})
               </Button>
             </div>
           </CardContent>
@@ -934,141 +862,6 @@ export default function EmployeeOnboarding() {
         </Card>
       </div>
 
-      <Card className="mt-6 bg-card border-border">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Download className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-            Onboarding Documents
-          </CardTitle>
-          <CardDescription>Download templates and documents for new employees</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-4">
-            <Button
-              variant="outline"
-              className="h-auto py-4 flex-col gap-2"
-              onClick={handleDownloadWelcomeLetter}
-              data-testid="button-download-welcome"
-            >
-              <Mail className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-              <span>Welcome Letter</span>
-              <span className="text-xs text-muted-foreground">Template</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-auto py-4 flex-col gap-2"
-              onClick={handleDownloadHandbook}
-              data-testid="button-download-handbook"
-            >
-              <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-              <span>Employee Handbook</span>
-              <span className="text-xs text-muted-foreground">PDF Document</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-auto py-4 flex-col gap-2"
-              data-testid="button-download-policies"
-              onClick={() => openGenerateDialog("company_policies")}
-            >
-              <FileText className="h-8 w-8 text-green-600 dark:text-green-400" />
-              <span>Company Policies</span>
-              <span className="text-xs text-muted-foreground">PDF Document</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-auto py-4 flex-col gap-2"
-              data-testid="button-download-checklist"
-              onClick={() => openGenerateDialog("onboarding_checklist")}
-            >
-              <CheckCircle2 className="h-8 w-8 text-amber-600 dark:text-amber-400" />
-              <span>Onboarding Checklist</span>
-              <span className="text-xs text-muted-foreground">Template</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Dialog open={generateDialogOpen} onOpenChange={setGenerateDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              Generate {docType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-            </DialogTitle>
-            <DialogDescription>
-              Enter employee details to generate a personalized document.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="docFullName">Full Name *</Label>
-              <Input
-                id="docFullName"
-                placeholder="John Smith"
-                value={docForm.fullName}
-                onChange={(e) => setDocForm(prev => ({ ...prev, fullName: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="docEmail">Email</Label>
-              <Input
-                id="docEmail"
-                type="email"
-                placeholder="john@company.com"
-                value={docForm.email}
-                onChange={(e) => setDocForm(prev => ({ ...prev, email: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="docJobTitle">Job Title *</Label>
-              <Input
-                id="docJobTitle"
-                placeholder="Senior Developer"
-                value={docForm.jobTitle}
-                onChange={(e) => setDocForm(prev => ({ ...prev, jobTitle: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="docDepartment">Department</Label>
-              <Input
-                id="docDepartment"
-                placeholder="Engineering"
-                value={docForm.department}
-                onChange={(e) => setDocForm(prev => ({ ...prev, department: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="docStartDate">Start Date *</Label>
-              <Input
-                id="docStartDate"
-                type="date"
-                value={docForm.startDate}
-                onChange={(e) => setDocForm(prev => ({ ...prev, startDate: e.target.value }))}
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setGenerateDialogOpen(false)} disabled={isGenerating}>
-              Cancel
-            </Button>
-            <Button onClick={handleGenerateDocument} disabled={isGenerating || !docForm.fullName || !docForm.jobTitle}>
-              {isGenerating ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Download className="h-4 w-4 mr-2" />
-                  Generate & Download
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

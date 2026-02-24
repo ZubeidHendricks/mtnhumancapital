@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTenantQueryKey } from "@/hooks/useTenant";
-import { Link, useSearch } from "wouter";
+import { Link, useSearch, useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,16 +12,18 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Loader2, Users, Target, TrendingUp, CheckCircle, AlertCircle, Search, Sparkles,
   Bot, Brain, FileSearch, UserCheck, Zap, Clock, ArrowRight, Play, MessageSquare,
-  ChevronRight, Star, Briefcase, MapPin, Award, Activity, X, Building2, GraduationCap,
-  Mail, Phone, Linkedin, FileText, ThumbsUp, Eye
+  ChevronRight, ChevronDown, ChevronUp, Star, Briefcase, MapPin, Award, Activity, X, Building2, GraduationCap,
+  Mail, Phone, Linkedin, FileText, ThumbsUp, Eye, Send
 } from "lucide-react";
 import { api, candidateService } from "@/lib/api";
 import { toast } from "sonner";
 import type { Job, RecruitmentSession, Candidate } from "@shared/schema";
+import { InterviewInviteDialog } from "@/components/interview-invite-dialog";
 
 const AGENT_STEPS = [
   { id: "analyzing", name: "Analyzing Job", icon: FileSearch, description: "Understanding requirements and skills needed" },
@@ -214,7 +216,12 @@ export default function RecruitmentAgent() {
   const [showCandidateDialog, setShowCandidateDialog] = useState(false);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [showAgentModal, setShowAgentModal] = useState(false);
-  
+  const [showShortlistDialog, setShowShortlistDialog] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteCandidate, setInviteCandidate] = useState<Candidate | null>(null);
+  const [shortlistingId, setShortlistingId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+
   // Update selectedJobId when URL param changes
   useEffect(() => {
     if (jobIdFromUrl && jobIdFromUrl !== selectedJobId) {
@@ -235,6 +242,13 @@ export default function RecruitmentAgent() {
       return Array.isArray(body) ? body : body.data ?? [];
     },
   });
+
+  // Auto-select first job if navigated without a jobId (e.g. from sidebar menu)
+  useEffect(() => {
+    if (!jobIdFromUrl && !selectedJobId && jobs && jobs.length > 0) {
+      setSelectedJobId(jobs[0].id);
+    }
+  }, [jobs, jobIdFromUrl, selectedJobId]);
 
   const { data: sessions, isLoading: sessionsLoading } = useQuery<RecruitmentSession[]>({
     queryKey: recruitmentSessionsKey,
@@ -264,6 +278,7 @@ export default function RecruitmentAgent() {
 
   const handleShortlist = async (candidate: Candidate, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    setShortlistingId(String(candidate.id));
     try {
       await updateCandidateMutation.mutateAsync({
         id: String(candidate.id),
@@ -272,6 +287,8 @@ export default function RecruitmentAgent() {
       toast.success(`${candidate.fullName} moved to shortlisted`);
     } catch {
       toast.error("Failed to shortlist candidate");
+    } finally {
+      setShortlistingId(null);
     }
   };
 
@@ -426,6 +443,10 @@ export default function RecruitmentAgent() {
     ?.filter(c => activeJobId ? c.jobId === activeJobId : true)
     .sort((a, b) => (b.match || 0) - (a.match || 0))
     .slice(0, 10) || [];
+
+  const shortlistedCount = candidates
+    ?.filter(c => c.stage === "Shortlisted" && (activeJobId ? c.jobId === activeJobId : true))
+    .length || 0;
 
   // Get the job title for display
   const displayJobTitle = activeJobId ? jobs?.find(j => j.id === activeJobId)?.title : null;
@@ -653,12 +674,16 @@ export default function RecruitmentAgent() {
                     </Select>
                   )}
                   {topCandidates.length > 0 && (
-                    <Link href="/candidates-list">
-                      <Button variant="outline" size="sm" className="border-border hover:bg-muted" data-testid="button-view-all-candidates">
-                        View All Candidates
-                        <ChevronRight className="h-4 w-4 ml-1" />
-                      </Button>
-                    </Link>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-border hover:bg-muted"
+                      data-testid="button-view-shortlist"
+                      onClick={() => setShowShortlistDialog(true)}
+                    >
+                      View Shortlist ({shortlistedCount})
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
                   )}
                 </div>
               </div>
@@ -730,21 +755,27 @@ export default function RecruitmentAgent() {
                         <ContactEnrichmentSection candidate={candidate} metadata={metadata} />
 
                         <div className="mt-3 pt-3 border-t border-border flex gap-2">
-                          <Link href={`/candidates-list?candidateId=${candidate.id}`} onClick={(e: any) => e.stopPropagation()}>
-                            <Button size="sm" className="bg-blue-600 hover:bg-blue-500 text-xs h-7">
-                              <Eye className="h-3 w-3 mr-1" />
-                              Profile
-                            </Button>
-                          </Link>
+                          <Button
+                            size="sm"
+                            className="bg-blue-600 hover:bg-blue-500 text-xs h-7"
+                            onClick={(e: any) => { e.stopPropagation(); handleCandidateClick(candidate); }}
+                          >
+                            <Eye className="h-3 w-3 mr-1" />
+                            View Profile
+                          </Button>
                           <Button
                             size="sm"
                             variant="outline"
                             className={`border-border hover:bg-muted text-xs h-7 ${candidate.stage === 'Shortlisted' ? 'bg-green-500/20 text-green-600 border-green-500/30' : ''}`}
                             onClick={(e: any) => { e.stopPropagation(); handleShortlist(candidate, e); }}
-                            disabled={candidate.stage === 'Shortlisted'}
+                            disabled={candidate.stage === 'Shortlisted' || shortlistingId === String(candidate.id)}
                           >
-                            <ThumbsUp className="h-3 w-3 mr-1" />
-                            {candidate.stage === 'Shortlisted' ? 'Shortlisted' : 'Shortlist'}
+                            {shortlistingId === String(candidate.id) ? (
+                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                            ) : (
+                              <ThumbsUp className="h-3 w-3 mr-1" />
+                            )}
+                            {candidate.stage === 'Shortlisted' ? 'Shortlisted' : shortlistingId === String(candidate.id) ? 'Shortlisting...' : 'Shortlist'}
                           </Button>
                         </div>
                       </div>
@@ -947,6 +978,128 @@ export default function RecruitmentAgent() {
         </DialogContent>
       </Dialog>
 
+      {/* Shortlisted Candidates Dialog */}
+      <Dialog open={showShortlistDialog} onOpenChange={setShowShortlistDialog}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden bg-card border-border text-foreground">
+          <DialogHeader className="border-b border-border pb-4">
+            <DialogTitle className="text-xl flex items-center gap-2">
+              <Star className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+              Shortlisted Candidates
+              {displayJobTitle && (
+                <Badge className="ml-2 bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30">
+                  <Briefcase className="h-3 w-3 mr-1" />
+                  {displayJobTitle}
+                </Badge>
+              )}
+            </DialogTitle>
+            <DialogDescription className="text-gray-500 dark:text-gray-400">
+              Top talent ready for interviews and offers
+            </DialogDescription>
+          </DialogHeader>
+
+          <ScrollArea className="max-h-[65vh] pr-4">
+            {(() => {
+              const shortlisted = candidates
+                ?.filter(c => c.stage === "Shortlisted" && (activeJobId ? c.jobId === activeJobId : true))
+                .sort((a, b) => (b.match || 0) - (a.match || 0)) || [];
+
+              if (shortlisted.length === 0) {
+                return (
+                  <div className="text-center py-12 text-gray-500 dark:text-gray-500">
+                    <Star className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                    <h3 className="text-base font-medium text-foreground mb-1">No shortlisted candidates</h3>
+                    <p className="text-sm">
+                      {activeJobId
+                        ? "No candidates have been shortlisted for this position yet."
+                        : "Shortlist candidates from the top matches to see them here."}
+                    </p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-3 py-4">
+                  {shortlisted.map((candidate) => {
+                    const metadata = candidate.metadata as any;
+                    return (
+                      <div
+                        key={candidate.id}
+                        className="flex items-center gap-4 p-4 rounded-lg border border-border bg-muted/50 hover:border-blue-500/30 transition-all"
+                      >
+                        <Avatar className="h-11 w-11 bg-gradient-to-br from-teal-500 to-blue-600 flex-shrink-0">
+                          <AvatarFallback className="text-white text-sm font-bold bg-transparent">
+                            {candidate.fullName?.split(' ').map(n => n[0]).join('') || '?'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold truncate">{candidate.fullName}</h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{candidate.role || 'No role specified'}</p>
+                          {(candidate.location || metadata?.location) && (
+                            <p className="text-xs text-gray-500 dark:text-gray-500 flex items-center gap-1 mt-0.5">
+                              <MapPin className="h-3 w-3" /> {candidate.location || metadata?.location}
+                            </p>
+                          )}
+                        </div>
+                        <div className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-sm font-semibold ${getMatchColor(candidate.match || 0)}`}>
+                          {candidate.match || 0}%
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Link href={`/candidates-list?candidateId=${candidate.id}`}>
+                            <Button size="sm" variant="outline" className="border-border hover:bg-muted h-8 text-xs">
+                              <Eye className="h-3 w-3 mr-1" />
+                              Profile
+                            </Button>
+                          </Link>
+                          <Button
+                            size="sm"
+                            className="bg-gradient-to-r from-teal-600 to-blue-600 hover:from-teal-500 hover:to-blue-500 h-8 text-xs"
+                            data-testid={`ai-interview-${candidate.id}`}
+                            onClick={() => {
+                              setInviteCandidate(candidate);
+                              setInviteOpen(true);
+                            }}
+                          >
+                            <Bot className="h-3 w-3 mr-1" />
+                            AI Interview
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-red-300 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 h-8 text-xs"
+                            data-testid={`remove-shortlist-${candidate.id}`}
+                            onClick={async () => {
+                              setRemovingId(String(candidate.id));
+                              try {
+                                await updateCandidateMutation.mutateAsync({
+                                  id: String(candidate.id),
+                                  updates: { stage: "Screening" },
+                                });
+                                toast.success(`${candidate.fullName} removed from shortlist`);
+                              } catch {
+                                toast.error("Failed to remove from shortlist");
+                              } finally {
+                                setRemovingId(null);
+                              }
+                            }}
+                            disabled={removingId === String(candidate.id)}
+                          >
+                            {removingId === String(candidate.id) ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <X className="h-3 w-3" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
       {/* Candidate Details Dialog */}
       <Dialog open={showCandidateDialog} onOpenChange={setShowCandidateDialog}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden bg-card border-border text-foreground">
@@ -1082,21 +1235,19 @@ export default function RecruitmentAgent() {
 
                         {/* Actions */}
                         <div className="mt-4 flex gap-2">
-                          <Link href={`/candidates-list?candidateId=${candidate.id}`}>
-                            <Button size="sm" className="bg-blue-600 hover:bg-blue-500">
-                              <Eye className="h-4 w-4 mr-1" />
-                              View Full Profile
-                            </Button>
-                          </Link>
                           <Button
                             size="sm"
                             variant="outline"
                             className={`border-border hover:bg-muted ${candidate.stage === 'Shortlisted' ? 'bg-green-500/20 text-green-600 border-green-500/30' : ''}`}
                             onClick={() => handleShortlist(candidate)}
-                            disabled={candidate.stage === 'Shortlisted'}
+                            disabled={candidate.stage === 'Shortlisted' || shortlistingId === String(candidate.id)}
                           >
-                            <ThumbsUp className="h-4 w-4 mr-1" />
-                            {candidate.stage === 'Shortlisted' ? 'Shortlisted' : 'Shortlist'}
+                            {shortlistingId === String(candidate.id) ? (
+                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                            ) : (
+                              <ThumbsUp className="h-4 w-4 mr-1" />
+                            )}
+                            {candidate.stage === 'Shortlisted' ? 'Shortlisted' : shortlistingId === String(candidate.id) ? 'Shortlisting...' : 'Shortlist'}
                           </Button>
                         </div>
                       </div>
@@ -1108,6 +1259,14 @@ export default function RecruitmentAgent() {
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      {/* Interview Invite Dialog */}
+      <InterviewInviteDialog
+        open={inviteOpen}
+        onOpenChange={setInviteOpen}
+        candidate={inviteCandidate}
+        job={selectedJob}
+      />
     </div>
   );
 }

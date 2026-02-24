@@ -89,7 +89,7 @@ const MOCK_CANDIDATES = [
 export default function HRDashboard() {
   const [activeTab, setActiveTabState] = useState(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.get('tab') || "recruitment";
+    return params.get('tab') || "jobs";
   });
   const setActiveTab = (tab: string) => {
     setActiveTabState(tab);
@@ -799,8 +799,8 @@ BENEFITS:
             <TabsList className="grid grid-cols-2 md:grid-cols-5 lg:w-[600px] bg-white dark:bg-gray-800 border-2 border-teal-200 dark:border-teal-700">
               <TabsTrigger value="jobs" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white font-semibold">Jobs</TabsTrigger>
               <TabsTrigger value="recruitment" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white font-semibold">Recruitment</TabsTrigger>
-              <TabsTrigger value="integrity" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white font-semibold">Integrity</TabsTrigger>
               <TabsTrigger value="offer" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white font-semibold">Offer</TabsTrigger>
+              <TabsTrigger value="integrity" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white font-semibold">Integrity</TabsTrigger>
               <TabsTrigger value="onboarding" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white font-semibold">Onboarding</TabsTrigger>
             </TabsList>
           </div>
@@ -945,7 +945,7 @@ BENEFITS:
                                   Start Search
                                 </Button>
                               </Link>
-                              <Link href={`/candidates-list?jobId=${job.id}`}>
+                              <Link href={`/recruitment-agent?jobId=${job.id}`}>
                                 <Button variant="outline" size="sm" className="gap-2 border-border hover:bg-white/5" data-testid={`button-view-candidates-${job.id}`}>
                                   <Eye className="h-4 w-4" />
                                   View

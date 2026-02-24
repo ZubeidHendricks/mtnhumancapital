@@ -2672,6 +2672,8 @@ export const offers = pgTable("offers", {
   sentAt: timestamp("sent_at"),
   respondedAt: timestamp("responded_at"),
   expiresAt: timestamp("expires_at"),
+  contractType: text("contract_type"),
+  documentPath: text("document_path"),
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
