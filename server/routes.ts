@@ -3698,10 +3698,11 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
       const orchestrator = new OnboardingOrchestrator(storage);
       const emailService = new EmailService(storage);
 
-      const { requirements, startDate, equipmentList } = req.body || {};
+      const { requirements, startDate, equipmentList, selectedDocuments: selectedDocsRaw } = req.body || {};
       // Parse JSON strings from multipart form data
       const parsedRequirements = typeof requirements === "string" ? JSON.parse(requirements) : requirements;
       const parsedEquipmentList = typeof equipmentList === "string" ? JSON.parse(equipmentList) : (equipmentList || []);
+      const parsedSelectedDocuments: string[] = typeof selectedDocsRaw === "string" ? JSON.parse(selectedDocsRaw) : (selectedDocsRaw || []);
 
       const candidate = await storage.getCandidate(req.tenant.id, req.params.candidateId);
       if (!candidate) {
@@ -3714,24 +3715,78 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
         startDate: startDate ? new Date(startDate) : undefined,
       });
 
-      // Upload and email the attached onboarding pack documents
+      // Build email attachments from manually uploaded files + generated documents
+      const emailAttachments: { filename: string; content: Buffer; contentType: string }[] = [];
+
+      // Upload and collect any manually attached files
       const files = req.files as Express.Multer.File[] | undefined;
       if (files && files.length > 0) {
-        // Save files to disk
         for (const file of files) {
           const fileName = `onboarding_pack_${candidate.id}_${Date.now()}_${file.originalname}`;
           const filePath = path.join("uploads/onboarding-packs", fileName);
           fs.mkdirSync(path.dirname(filePath), { recursive: true });
           fs.writeFileSync(filePath, file.buffer);
+          emailAttachments.push({
+            filename: file.originalname,
+            content: file.buffer,
+            contentType: file.mimetype,
+          });
         }
+      }
 
-        // Send onboarding pack email with attachments
-        const attachments = files.map(f => ({
-          filename: f.originalname,
-          content: f.buffer,
-          contentType: f.mimetype,
-        }));
+      // Generate DOCX documents for each selected document type
+      const sentDocuments: { id: string; title: string; type: string; status: string; snippet: string; url: string; docType: string }[] = [];
+      if (parsedSelectedDocuments.length > 0) {
+        try {
+          const { createDocumentGenerator } = await import("./document-generator");
+          const docGenerator = createDocumentGenerator(storage);
+          const tenantConfig = await storage.getTenantConfig(req.tenant.id);
+          const companyName = tenantConfig?.companyName || req.tenant.subdomain || "Company";
 
+          const employeeData = {
+            fullName: candidate.fullName,
+            email: candidate.email || undefined,
+            phone: candidate.phone || undefined,
+            jobTitle: (candidate as any).role || (candidate as any).position || "Position",
+            department: (candidate as any).department || "",
+            startDate: startDate || "TBD",
+            companyName,
+          };
+
+          for (const docType of parsedSelectedDocuments) {
+            try {
+              const { buffer, filename, mimeType } = await docGenerator.generateDocument(
+                req.tenant.id,
+                docType as any,
+                employeeData
+              );
+              // Save to disk
+              const uploadDir = path.join(process.cwd(), "uploads", "onboarding-packs");
+              fs.mkdirSync(uploadDir, { recursive: true });
+              const savedPath = path.join(uploadDir, `${candidate.id}_${filename}`);
+              fs.writeFileSync(savedPath, buffer);
+
+              emailAttachments.push({ filename, content: buffer, contentType: mimeType });
+              sentDocuments.push({
+                id: `sent-${docType}-${Date.now()}`,
+                title: filename,
+                type: "document",
+                status: "sent",
+                snippet: `Sent in onboarding pack`,
+                url: `/uploads/onboarding-packs/${candidate.id}_${filename}`,
+                docType,
+              });
+            } catch (docErr) {
+              console.error(`[Onboarding] Failed to generate ${docType} (non-blocking):`, docErr);
+            }
+          }
+        } catch (genErr) {
+          console.error("[Onboarding] Document generation setup failed (non-blocking):", genErr);
+        }
+      }
+
+      // Send onboarding pack email if we have any attachments
+      if (emailAttachments.length > 0) {
         await emailService.sendEmail({
           to: candidate.email || "no-email@placeholder.com",
           subject: `Onboarding Pack - Welcome to the Team, ${candidate.fullName}!`,
@@ -3745,19 +3800,27 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
   <div style="background: #ffffff; border: 1px solid #e5e7eb; border-top: none; padding: 30px; border-radius: 0 0 12px 12px;">
     <p style="font-size: 16px; color: #374151;">Dear ${candidate.fullName},</p>
     <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
-      Please find attached your onboarding documents (${files.length} file${files.length > 1 ? 's' : ''}). Review them carefully and reach out if you have any questions.
+      Please find attached your onboarding documents (${emailAttachments.length} file${emailAttachments.length > 1 ? 's' : ''}). Review them carefully and reach out if you have any questions.
     </p>
     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 20px 0;">
       <h3 style="margin: 0 0 8px 0; color: #166534;">Attached Documents</h3>
-      ${files.map(f => `<p style="margin: 4px 0; color: #374151;">- ${f.originalname}</p>`).join('')}
+      ${emailAttachments.map(a => `<p style="margin: 4px 0; color: #374151;">- ${a.filename}</p>`).join('')}
     </div>
     <p style="font-size: 14px; color: #6b7280;">Best regards,<br><strong>HR Team</strong></p>
   </div>
 </div>`,
-          attachments,
+          attachments: emailAttachments,
         });
 
-        console.log(`[Onboarding] Sent onboarding pack email with ${files.length} attachment(s) for ${candidate.fullName}`);
+        console.log(`[Onboarding] Sent onboarding pack email with ${emailAttachments.length} attachment(s) for ${candidate.fullName}`);
+      }
+
+      // Store sent documents in the workflow for tracking
+      if (sentDocuments.length > 0) {
+        const existingDocs = (workflow.documents as any[]) || [];
+        await storage.updateOnboardingWorkflow(req.tenant.id, workflow.id, {
+          documents: [...existingDocs, ...sentDocuments] as any,
+        });
       }
 
       res.status(201).json({

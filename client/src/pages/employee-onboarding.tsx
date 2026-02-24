@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTenantQueryKey } from "@/hooks/useTenant";
-import { onboardingService, candidateService } from "@/lib/api";
+import { onboardingService, candidateService, api } from "@/lib/api";
 import type { Candidate, OnboardingWorkflow } from "@shared/schema";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Building2,
   Send,
@@ -30,8 +31,11 @@ import {
   Bell,
   Upload,
   ClipboardList,
-  Settings2
+  Settings2,
+  Eye,
+  Download
 } from "lucide-react";
+import { renderAsync } from "docx-preview";
 import { toast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 
@@ -57,7 +61,7 @@ const ONBOARDING_DOCUMENTS = [
   { id: "benefits_enrollment", name: "Benefits Enrollment Form", icon: FileText },
 ];
 
-function WorkflowDetail({ workflowId }: { workflowId: string }) {
+function WorkflowDetail({ workflowId, onViewDocument }: { workflowId: string; onViewDocument: (blob: Blob, filename: string) => void }) {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingRequestId, setUploadingRequestId] = useState<string | null>(null);
@@ -210,6 +214,56 @@ function WorkflowDetail({ workflowId }: { workflowId: string }) {
         accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
         onChange={handleFileChange}
       />
+      {/* Sent Documents (from onboarding pack) */}
+      {(() => {
+        const sentDocs = ((workflow?.documents as any[]) || []).filter((d: any) => d.type === "document" && d.url);
+        if (sentDocs.length === 0) return null;
+        return (
+          <div className="pt-3">
+            <h5 className="text-xs font-semibold text-foreground flex items-center gap-1.5 mb-2">
+              <Send className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+              Sent Documents ({sentDocs.length})
+            </h5>
+            <div className="space-y-1.5">
+              {sentDocs.map((doc: any) => (
+                <div key={doc.id} className="flex items-center justify-between px-2 py-1.5 rounded bg-white/50 dark:bg-zinc-900/50 text-xs gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FileText className="h-3 w-3 text-green-600 dark:text-green-400 shrink-0" />
+                    <span className="truncate">{doc.title}</span>
+                    <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-0 text-[10px]">Sent</Badge>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-5 text-[10px] px-1.5"
+                      onClick={async () => {
+                        try {
+                          const resp = await fetch(doc.url);
+                          if (!resp.ok) throw new Error("Failed to fetch");
+                          const blob = await resp.blob();
+                          onViewDocument(blob, doc.title);
+                        } catch {
+                          // fallback: direct download
+                          window.open(doc.url, "_blank");
+                        }
+                      }}
+                    >
+                      <Eye className="h-3 w-3 mr-0.5" />View
+                    </Button>
+                    <a href={doc.url} download={doc.title}>
+                      <Button size="sm" variant="ghost" className="h-5 text-[10px] px-1.5">
+                        <Download className="h-3 w-3 mr-0.5" />Download
+                      </Button>
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Document Requests */}
       <div className="pt-3">
         <div className="flex items-center justify-between mb-2">
@@ -510,6 +564,129 @@ export default function EmployeeOnboarding() {
     retry: 1,
   });
 
+  // Fetch document templates to show which types have custom templates
+  const { data: allTemplates = [] } = useQuery({
+    queryKey: useTenantQueryKey(["document-templates"]),
+    queryFn: async () => (await api.get("/document-templates")).data,
+  });
+
+  // Document preview state (single doc - for Eye buttons and View from generated list)
+  const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
+  const [previewFilename, setPreviewFilename] = useState("");
+  const [isGeneratingPreview, setIsGeneratingPreview] = useState<string | null>(null);
+  const [showDocxPreview, setShowDocxPreview] = useState(false);
+  const docxContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Generate All Previews state
+  const [generatedPreviews, setGeneratedPreviews] = useState<{docId: string; blob: Blob; filename: string}[]>([]);
+  const [isGeneratingAll, setIsGeneratingAll] = useState(false);
+  const [generateProgress, setGenerateProgress] = useState(0);
+
+  const handlePreviewDocument = async (docId: string) => {
+    setIsGeneratingPreview(docId);
+    try {
+      const response = await api.get(`/documents/preview/${docId}`, { responseType: "blob" });
+      const disposition = response.headers["content-disposition"] || "";
+      const match = disposition.match(/filename="?([^";\n]+)"?/);
+      const filename = match?.[1] || `${docId}-preview.docx`;
+      setPreviewBlob(response.data);
+      setPreviewFilename(filename);
+      setShowDocxPreview(true);
+    } catch (error) {
+      toast({
+        title: "Preview Failed",
+        description: "Could not generate document preview.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingPreview(null);
+    }
+  };
+
+  const handleDownloadPreview = () => {
+    if (!previewBlob) return;
+    const url = URL.createObjectURL(previewBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = previewFilename || "document-preview.docx";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const docxPreviewRefCallback = useCallback(
+    (node: HTMLDivElement | null) => {
+      docxContainerRef.current = node;
+      if (node && previewBlob) {
+        node.innerHTML = '<p class="text-center text-muted-foreground py-8">Rendering document...</p>';
+        renderAsync(previewBlob, node, undefined, {
+          className: "docx-preview",
+          inWrapper: true,
+          ignoreWidth: false,
+          ignoreHeight: false,
+          ignoreFonts: false,
+          breakPages: true,
+        }).catch((err) => {
+          console.error("DOCX preview render error:", err);
+          if (node) {
+            node.innerHTML = '<p class="text-center text-muted-foreground py-8">Failed to render document preview.</p>';
+          }
+        });
+      }
+    },
+    [previewBlob]
+  );
+
+  // Generate all selected document previews
+  const handleGenerateAllPreviews = async () => {
+    if (selectedDocuments.length === 0) return;
+    setIsGeneratingAll(true);
+    setGenerateProgress(0);
+    const results: {docId: string; blob: Blob; filename: string}[] = [];
+    for (let i = 0; i < selectedDocuments.length; i++) {
+      const docId = selectedDocuments[i];
+      try {
+        const response = await api.get(`/documents/preview/${docId}`, { responseType: "blob" });
+        const disposition = response.headers["content-disposition"] || "";
+        const match = disposition.match(/filename="?([^";\n]+)"?/);
+        const filename = match?.[1] || `${docId}-preview.docx`;
+        results.push({ docId, blob: response.data, filename });
+      } catch {
+        const docName = ONBOARDING_DOCUMENTS.find(d => d.id === docId)?.name || docId;
+        toast({ title: "Preview Failed", description: `Could not generate preview for ${docName}.`, variant: "destructive" });
+      }
+      setGenerateProgress(i + 1);
+    }
+    setGeneratedPreviews(results);
+    setIsGeneratingAll(false);
+  };
+
+  // Clear generated previews when selected documents change
+  const clearPreviews = useCallback(() => {
+    setGeneratedPreviews([]);
+  }, []);
+
+  // Watch selectedDocuments changes to clear previews
+  useEffect(() => {
+    clearPreviews();
+  }, [selectedDocuments, clearPreviews]);
+
+  // View a generated preview in the dialog
+  const handleViewGeneratedPreview = (preview: {blob: Blob; filename: string}) => {
+    setPreviewBlob(preview.blob);
+    setPreviewFilename(preview.filename);
+    setShowDocxPreview(true);
+  };
+
+  // Download a single generated preview
+  const handleDownloadGeneratedPreview = (preview: {blob: Blob; filename: string}) => {
+    const url = URL.createObjectURL(preview.blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = preview.filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   // Candidates eligible for onboarding: at a stage ready for onboarding, or have an active (non-completed) workflow
   const workflowCandidateIds = new Set(
     workflows
@@ -524,12 +701,13 @@ export default function EmployeeOnboarding() {
 
   // Trigger onboarding mutation
   const triggerOnboarding = useMutation({
-    mutationFn: (params: { candidateId: string; requirements: { itSetup: boolean; buildingAccess: boolean; equipment: boolean }; equipmentList?: string[]; startDate?: string; files?: File[] }) =>
+    mutationFn: (params: { candidateId: string; requirements: { itSetup: boolean; buildingAccess: boolean; equipment: boolean }; equipmentList?: string[]; startDate?: string; files?: File[]; selectedDocuments?: string[] }) =>
       onboardingService.triggerOnboarding(params.candidateId, {
         requirements: params.requirements,
         equipmentList: params.equipmentList,
         startDate: params.startDate,
         files: params.files,
+        selectedDocuments: params.selectedDocuments,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: workflowsKey });
@@ -540,6 +718,7 @@ export default function EmployeeOnboarding() {
       setSelectedEmployee("");
       setStartDate("");
       setSelectedDocuments(["welcome_letter", "employee_handbook", "company_policies"]);
+      setGeneratedPreviews([]);
     },
     onError: (error: any) => {
       toast({
@@ -588,6 +767,7 @@ export default function EmployeeOnboarding() {
       requirements: { itSetup: requiresIT, buildingAccess: requiresAccess, equipment: requiresEquipment },
       equipmentList: requiresEquipment ? selectedEquipment : [],
       startDate,
+      selectedDocuments,
     });
   };
 
@@ -620,7 +800,7 @@ export default function EmployeeOnboarding() {
         </Button>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="space-y-6">
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -630,160 +810,279 @@ export default function EmployeeOnboarding() {
             <CardDescription>Prepare and send onboarding documents to a new employee</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Select Employee *</Label>
-              <Select value={selectedEmployee} onValueChange={(val) => {
-                setSelectedEmployee(val);
-                // Auto-fill start date from existing workflow
-                const existingWorkflow = workflows.find((w: OnboardingWorkflow) => w.candidateId === val);
-                if (existingWorkflow?.startDate) {
-                  setStartDate(new Date(existingWorkflow.startDate).toISOString().split('T')[0]);
-                } else if (!startDate) {
-                  setStartDate(new Date().toISOString().split('T')[0]);
-                }
-              }}>
-                <SelectTrigger data-testid="select-employee">
-                  <SelectValue placeholder={loadingCandidates ? "Loading candidates..." : "Choose an employee"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {onboardingCandidates.length > 0 ? (
-                    onboardingCandidates.map((candidate: Candidate) => (
-                      <SelectItem key={candidate.id} value={candidate.id.toString()}>
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4" />
-                          {(candidate as any).fullName || (candidate as any).name} - {(candidate as any).role || (candidate as any).position || "Candidate"}
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Select Employee *</Label>
+                <Select value={selectedEmployee} onValueChange={(val) => {
+                  setSelectedEmployee(val);
+                  clearPreviews();
+                  // Auto-fill start date from existing workflow
+                  const existingWorkflow = workflows.find((w: OnboardingWorkflow) => w.candidateId === val);
+                  if (existingWorkflow?.startDate) {
+                    setStartDate(new Date(existingWorkflow.startDate).toISOString().split('T')[0]);
+                  } else if (!startDate) {
+                    setStartDate(new Date().toISOString().split('T')[0]);
+                  }
+                }}>
+                  <SelectTrigger data-testid="select-employee">
+                    <SelectValue placeholder={loadingCandidates ? "Loading candidates..." : "Choose an employee"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {onboardingCandidates.length > 0 ? (
+                      onboardingCandidates.map((candidate: Candidate) => (
+                        <SelectItem key={candidate.id} value={candidate.id.toString()}>
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4" />
+                            {(candidate as any).fullName || (candidate as any).name} - {(candidate as any).role || (candidate as any).position || "Candidate"}
+                          </div>
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                        No candidates ready for onboarding. Candidates must pass integrity checks first.
+                      </div>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Start Date *</Label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => { setStartDate(e.target.value); clearPreviews(); }}
+                    className="pl-10"
+                    data-testid="input-start-date"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Documents + Requirements side by side */}
+            <div className="grid gap-4 md:grid-cols-2 pt-2">
+              {/* Onboarding Documents Selection */}
+              <div className="space-y-2">
+                <Label>Documents to Send *</Label>
+                <p className="text-xs text-muted-foreground">Select documents to include in the onboarding pack</p>
+                <div className="space-y-1.5 p-3 rounded-lg border border-border bg-muted/30">
+                  {ONBOARDING_DOCUMENTS.map((doc) => {
+                    const Icon = doc.icon;
+                    const tmpl = allTemplates.find((t: any) => t.templateType === doc.id && t.isActive);
+                    return (
+                      <div key={doc.id} className="flex items-center justify-between py-1.5 px-1 rounded hover:bg-muted/50">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Checkbox
+                            id={`doc-${doc.id}`}
+                            checked={selectedDocuments.includes(doc.id)}
+                            onCheckedChange={(checked) => {
+                              setSelectedDocuments(prev =>
+                                checked ? [...prev, doc.id] : prev.filter(d => d !== doc.id)
+                              );
+                            }}
+                            data-testid={`checkbox-doc-${doc.id}`}
+                          />
+                          <label htmlFor={`doc-${doc.id}`} className="cursor-pointer min-w-0">
+                            <div className="flex items-center gap-2">
+                              <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                              <span className="text-sm truncate">{doc.name}</span>
+                              {tmpl && (
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700 shrink-0">
+                                  Template
+                                </Badge>
+                              )}
+                            </div>
+                            <p className={`text-[11px] ml-6 ${tmpl ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`}>
+                              {tmpl ? (
+                                <span className="flex items-center gap-1">
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  Custom template: {tmpl.name}
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  System default template
+                                </span>
+                              )}
+                            </p>
+                          </label>
                         </div>
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <div className="px-2 py-4 text-center text-sm text-muted-foreground">
-                      No candidates ready for onboarding. Candidates must pass integrity checks first.
-                    </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 w-7 p-0 shrink-0 text-muted-foreground hover:text-foreground"
+                          onClick={() => handlePreviewDocument(doc.id)}
+                          disabled={isGeneratingPreview === doc.id}
+                          title="Preview document"
+                        >
+                          {isGeneratingPreview === doc.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Eye className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Onboarding Requirements */}
+              <div className="space-y-3">
+                <Label>Onboarding Requirements</Label>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="requires-it"
+                    checked={requiresIT}
+                    onCheckedChange={(checked) => setRequiresIT(checked as boolean)}
+                    data-testid="checkbox-requires-it"
+                  />
+                  <label htmlFor="requires-it" className="text-sm text-muted-foreground flex items-center gap-2">
+                    <Monitor className="h-4 w-4" />
+                    Request IT Setup (email, accounts, software)
+                  </label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="requires-access"
+                    checked={requiresAccess}
+                    onCheckedChange={(checked) => setRequiresAccess(checked as boolean)}
+                    data-testid="checkbox-requires-access"
+                  />
+                  <label htmlFor="requires-access" className="text-sm text-muted-foreground flex items-center gap-2">
+                    <Building2 className="h-4 w-4" />
+                    Request Building Access Card
+                  </label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="requires-equipment"
+                    checked={requiresEquipment}
+                    onCheckedChange={(checked) => setRequiresEquipment(checked as boolean)}
+                    data-testid="checkbox-requires-equipment"
+                  />
+                  <label htmlFor="requires-equipment" className="text-sm text-muted-foreground flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Request Equipment
+                  </label>
+                </div>
+
+                {requiresEquipment && (
+                  <div className="ml-8 space-y-1.5 p-3 rounded-lg bg-muted/50 border border-border">
+                    <p className="text-xs text-muted-foreground font-medium mb-2">Select equipment items:</p>
+                    {["Laptop", "External Monitor", "Keyboard & Mouse", "Headset", "Phone", "Docking Station"].map((item) => (
+                      <div key={item} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`equip-${item}`}
+                          checked={selectedEquipment.includes(item)}
+                          onCheckedChange={(checked) => {
+                            setSelectedEquipment(prev =>
+                              checked ? [...prev, item] : prev.filter(e => e !== item)
+                            );
+                          }}
+                        />
+                        <label htmlFor={`equip-${item}`} className="text-xs text-muted-foreground">{item}</label>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Document Preview + Actions */}
+            <div className="pt-4 border-t space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={handleGenerateAllPreviews}
+                    disabled={selectedDocuments.length === 0 || isGeneratingAll}
+                    className="border-blue-300 text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950"
+                  >
+                    {isGeneratingAll ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Generating ({generateProgress}/{selectedDocuments.length})...
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="h-4 w-4 mr-2" />
+                        Generate Previews ({selectedDocuments.length})
+                      </>
+                    )}
+                  </Button>
+                  {generatedPreviews.length === 0 && !isGeneratingAll && (
+                    <span className="text-xs text-muted-foreground">
+                      Generate previews to review documents before sending
+                    </span>
                   )}
-                </SelectContent>
-              </Select>
-            </div>
+                </div>
 
-            <div className="space-y-2">
-              <Label>Start Date *</Label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="pl-10"
-                  data-testid="input-start-date"
-                />
-              </div>
-            </div>
-
-            {/* Onboarding Documents Selection */}
-            <div className="space-y-2 pt-2">
-              <Label>Documents to Send *</Label>
-              <p className="text-xs text-muted-foreground">Select documents to include in the onboarding pack (from Onboarding Setup templates)</p>
-              <div className="space-y-2 p-3 rounded-lg border border-border bg-muted/30">
-                {ONBOARDING_DOCUMENTS.map((doc) => {
-                  const Icon = doc.icon;
-                  return (
-                    <div key={doc.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`doc-${doc.id}`}
-                        checked={selectedDocuments.includes(doc.id)}
-                        onCheckedChange={(checked) => {
-                          setSelectedDocuments(prev =>
-                            checked ? [...prev, doc.id] : prev.filter(d => d !== doc.id)
-                          );
-                        }}
-                        data-testid={`checkbox-doc-${doc.id}`}
-                      />
-                      <label htmlFor={`doc-${doc.id}`} className="text-sm text-muted-foreground flex items-center gap-2 cursor-pointer">
-                        <Icon className="h-4 w-4" />
-                        {doc.name}
-                      </label>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="space-y-3 pt-2">
-              <Label>Onboarding Requirements</Label>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="requires-it"
-                  checked={requiresIT}
-                  onCheckedChange={(checked) => setRequiresIT(checked as boolean)}
-                  data-testid="checkbox-requires-it"
-                />
-                <label htmlFor="requires-it" className="text-sm text-muted-foreground flex items-center gap-2">
-                  <Monitor className="h-4 w-4" />
-                  Request IT Setup (email, accounts, software)
-                </label>
+                <Button
+                  className="bg-green-600 hover:bg-green-700 px-8"
+                  onClick={handleSendOnboardingPack}
+                  disabled={triggerOnboarding.isPending || selectedDocuments.length === 0 || generatedPreviews.length === 0}
+                  data-testid="button-send-pack"
+                >
+                  {triggerOnboarding.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-2" />
+                      Send Onboarding Pack ({selectedDocuments.length})
+                    </>
+                  )}
+                </Button>
               </div>
 
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="requires-access"
-                  checked={requiresAccess}
-                  onCheckedChange={(checked) => setRequiresAccess(checked as boolean)}
-                  data-testid="checkbox-requires-access"
-                />
-                <label htmlFor="requires-access" className="text-sm text-muted-foreground flex items-center gap-2">
-                  <Building2 className="h-4 w-4" />
-                  Request Building Access Card
-                </label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="requires-equipment"
-                  checked={requiresEquipment}
-                  onCheckedChange={(checked) => setRequiresEquipment(checked as boolean)}
-                  data-testid="checkbox-requires-equipment"
-                />
-                <label htmlFor="requires-equipment" className="text-sm text-muted-foreground flex items-center gap-2">
-                  <Package className="h-4 w-4" />
-                  Request Equipment
-                </label>
-              </div>
-
-              {requiresEquipment && (
-                <div className="ml-8 space-y-1.5 p-3 rounded-lg bg-muted/50 border border-border">
-                  <p className="text-xs text-muted-foreground font-medium mb-2">Select equipment items:</p>
-                  {["Laptop", "External Monitor", "Keyboard & Mouse", "Headset", "Phone", "Docking Station"].map((item) => (
-                    <div key={item} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`equip-${item}`}
-                        checked={selectedEquipment.includes(item)}
-                        onCheckedChange={(checked) => {
-                          setSelectedEquipment(prev =>
-                            checked ? [...prev, item] : prev.filter(e => e !== item)
-                          );
-                        }}
-                      />
-                      <label htmlFor={`equip-${item}`} className="text-xs text-muted-foreground">{item}</label>
-                    </div>
-                  ))}
+              {/* Generated previews list */}
+              {generatedPreviews.length > 0 && (
+                <div className="space-y-1.5 p-3 rounded-lg border border-border bg-muted/30">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">
+                    Generated Documents ({generatedPreviews.length})
+                  </p>
+                  {generatedPreviews.map((preview) => {
+                    const doc = ONBOARDING_DOCUMENTS.find(d => d.id === preview.docId);
+                    const Icon = doc?.icon || FileText;
+                    return (
+                      <div key={preview.docId} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-muted/50">
+                        <div className="flex items-center gap-2 text-sm min-w-0">
+                          <Icon className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                          <span className="font-medium truncate">{preview.filename}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs"
+                            onClick={() => handleViewGeneratedPreview(preview)}
+                          >
+                            <Eye className="h-3 w-3 mr-1" />
+                            View
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs"
+                            onClick={() => handleDownloadGeneratedPreview(preview)}
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            Download
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <Button
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
-                onClick={handleSendOnboardingPack}
-                disabled={triggerOnboarding.isPending || selectedDocuments.length === 0}
-                data-testid="button-send-pack"
-              >
-                {triggerOnboarding.isPending ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4 mr-2" />
-                )}
-                Send Onboarding Pack ({selectedDocuments.length})
-              </Button>
             </div>
           </CardContent>
         </Card>
@@ -852,7 +1151,11 @@ export default function EmployeeOnboarding() {
                       )}
                     </div>
                     {isExpanded && (
-                      <WorkflowDetail workflowId={workflow.id} />
+                      <WorkflowDetail workflowId={workflow.id} onViewDocument={(blob, filename) => {
+                        setPreviewBlob(blob);
+                        setPreviewFilename(filename);
+                        setShowDocxPreview(true);
+                      }} />
                     )}
                   </div>
                 );
@@ -862,6 +1165,28 @@ export default function EmployeeOnboarding() {
         </Card>
       </div>
 
+      {/* DOCX Preview Dialog */}
+      <Dialog open={showDocxPreview} onOpenChange={setShowDocxPreview}>
+        <DialogContent className="max-w-4xl h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Document Preview — {previewFilename}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-end pb-2">
+            <Button size="sm" variant="outline" onClick={handleDownloadPreview}>
+              <Download className="h-3.5 w-3.5 mr-1" />
+              Download
+            </Button>
+          </div>
+          <div
+            ref={docxPreviewRefCallback}
+            className="flex-1 overflow-auto border rounded-lg bg-white"
+            style={{ minHeight: 0 }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
