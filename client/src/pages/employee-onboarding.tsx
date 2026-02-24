@@ -490,7 +490,7 @@ function WorkflowDetail({ workflowId, onViewDocument }: { workflowId: string; on
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-medium truncate">{log.action?.replace(/_/g, ' ')}</span>
                       <span className="text-muted-foreground shrink-0">
-                        {log.createdAt ? new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""}
+                        {log.createdAt ? new Date(log.createdAt).toLocaleDateString([], { day: 'numeric', month: 'short' }) + ' ' + new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""}
                       </span>
                     </div>
                     {(() => {
