@@ -1,85 +1,308 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
-import { 
-  Building2, 
+import {
+  Building2,
   Download,
   Upload,
   Loader2,
+  CheckCircle2,
   FolderOpen,
   FileText,
   BookOpen,
-  ClipboardList
+  ClipboardList,
+  Trash2,
+  Star,
+  Clock,
+  XCircle,
+  ArrowLeft,
+  Eye
 } from "lucide-react";
+import { renderAsync } from "docx-preview";
 import { toast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
+import { Link } from "wouter";
 
-interface Template {
+interface DocumentTemplate {
   id: string;
+  tenantId: string;
+  templateType: string;
   name: string;
-  type: string;
-  description: string;
-  icon: React.ComponentType<{ className?: string }>;
-  lastUpdated: string;
+  originalFilename: string;
+  mimeType: string;
+  fileSize: number;
+  filePath: string;
+  isActive: number;
+  rawText: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export default function OnboardingSetup() {
-  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [isDownloading, setIsDownloading] = useState<string | null>(null);
+const TEMPLATE_TYPES = [
+  { value: "welcome_letter", label: "Welcome Letter" },
+  { value: "employee_handbook", label: "Employee Handbook" },
+  { value: "company_policies", label: "Company Policies" },
+  { value: "onboarding_checklist", label: "Onboarding Checklist" },
+  { value: "it_request_form", label: "IT Equipment Request Form" },
+  { value: "benefits_enrollment", label: "Benefits Enrollment Form" },
+];
 
-  const templates: Template[] = [
-    { 
-      id: "welcome_letter", 
-      name: "Welcome Letter", 
-      type: "welcome_letter",
-      description: "Welcome letter template for new employees",
-      icon: FileText,
-      lastUpdated: "2024-01-15"
+const DEFAULT_TEMPLATES = [
+  {
+    id: "welcome_letter",
+    name: "Welcome Letter",
+    type: "welcome_letter",
+    description: "Welcome letter template for new employees",
+    isSystem: true
+  },
+  {
+    id: "employee_handbook",
+    name: "Employee Handbook",
+    type: "employee_handbook",
+    description: "Comprehensive employee handbook template",
+    isSystem: true
+  },
+  {
+    id: "company_policies",
+    name: "Company Policies",
+    type: "company_policies",
+    description: "Company policies and procedures document",
+    isSystem: true
+  },
+  {
+    id: "onboarding_checklist",
+    name: "Onboarding Checklist",
+    type: "onboarding_checklist",
+    description: "Step-by-step onboarding checklist for new hires",
+    isSystem: true
+  },
+  {
+    id: "it_request_form",
+    name: "IT Equipment Request Form",
+    type: "it_request_form",
+    description: "Form for requesting IT equipment and access",
+    isSystem: true
+  },
+  {
+    id: "benefits_enrollment",
+    name: "Benefits Enrollment Form",
+    type: "benefits_enrollment",
+    description: "Employee benefits enrollment documentation",
+    isSystem: true
+  },
+];
+
+export default function OnboardingSetup() {
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [templateType, setTemplateType] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isDownloading, setIsDownloading] = useState<string | null>(null);
+  const [activatingId, setActivatingId] = useState<string | null>(null);
+  const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // DOCX preview state
+  const [showDocxPreview, setShowDocxPreview] = useState(false);
+  const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
+  const [previewFilename, setPreviewFilename] = useState("");
+  const [isLoadingPreview, setIsLoadingPreview] = useState<string | null>(null);
+  const docxContainerRef = useRef<HTMLDivElement | null>(null);
+  const previewCacheRef = useRef<Map<string, { blob: Blob; filename: string }>>(new Map());
+
+  const docxPreviewRefCallback = useCallback(
+    (node: HTMLDivElement | null) => {
+      docxContainerRef.current = node;
+      if (node && previewBlob) {
+        node.innerHTML = '<p class="text-center text-muted-foreground py-8">Rendering document...</p>';
+        renderAsync(previewBlob, node, undefined, {
+          className: "docx-preview",
+          inWrapper: true,
+          ignoreWidth: false,
+          ignoreHeight: false,
+          ignoreFonts: false,
+          breakPages: true,
+        }).catch((err) => {
+          console.error("DOCX preview render error:", err);
+          if (node) {
+            node.innerHTML = '<p class="text-center text-muted-foreground py-8">Failed to render document preview.</p>';
+          }
+        });
+      }
     },
-    { 
-      id: "employee_handbook", 
-      name: "Employee Handbook", 
-      type: "employee_handbook",
-      description: "Comprehensive employee handbook template",
-      icon: BookOpen,
-      lastUpdated: "2024-01-10"
+    [previewBlob]
+  );
+
+  const handlePreviewTemplate = async (template: DocumentTemplate) => {
+    setIsLoadingPreview(template.id);
+    try {
+      const response = await fetch(template.filePath);
+      if (!response.ok) throw new Error("Failed to fetch template");
+      const blob = await response.blob();
+      setPreviewBlob(blob);
+      setPreviewFilename(template.originalFilename);
+      setShowDocxPreview(true);
+    } catch (error) {
+      toast({
+        title: "Preview Failed",
+        description: "Failed to load template preview.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingPreview(null);
+    }
+  };
+
+  const handleDownloadFromPreview = () => {
+    if (!previewBlob || !previewFilename) return;
+    const url = URL.createObjectURL(previewBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = previewFilename;
+    document.body.appendChild(a);
+    a.click();
+    URL.revokeObjectURL(url);
+    a.remove();
+  };
+
+  const { data: customTemplates = [], isLoading } = useQuery<DocumentTemplate[]>({
+    queryKey: ['document-templates'],
+    queryFn: async () => {
+      const response = await api.get("/document-templates");
+      return response.data;
+    }
+  });
+
+  // Filter to only onboarding-related custom templates
+  const onboardingTemplateTypes = TEMPLATE_TYPES.map(t => t.value);
+  const onboardingCustomTemplates = customTemplates.filter(t => onboardingTemplateTypes.includes(t.templateType));
+
+  const uploadMutation = useMutation({
+    mutationFn: async ({ file, name, type }: { file: File; name: string; type: string }) => {
+      const formData = new FormData();
+      formData.append("template", file);
+      formData.append("name", name);
+      formData.append("templateType", type);
+
+      const response = await api.post("/document-templates/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      return response.data;
     },
-    { 
-      id: "company_policies", 
-      name: "Company Policies", 
-      type: "company_policies",
-      description: "Company policies and procedures document",
-      icon: ClipboardList,
-      lastUpdated: "2024-01-08"
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['document-templates'] });
+      setUploadDialogOpen(false);
+      setTemplateName("");
+      setTemplateType("");
+      setSelectedFile(null);
+      toast({
+        title: "Template Uploaded",
+        description: "Your custom template has been uploaded successfully.",
+      });
     },
-    { 
-      id: "onboarding_checklist", 
-      name: "Onboarding Checklist", 
-      type: "onboarding_checklist",
-      description: "Step-by-step onboarding checklist for new hires",
-      icon: ClipboardList,
-      lastUpdated: "2024-01-05"
+    onError: () => {
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload the template. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const activateMutation = useMutation({
+    mutationFn: async (id: string) => {
+      setActivatingId(id);
+      const response = await api.patch(`/document-templates/${id}/activate`);
+      return response.data;
     },
-    { 
-      id: "it_request_form", 
-      name: "IT Equipment Request Form", 
-      type: "it_request",
-      description: "Form for requesting IT equipment and access",
-      icon: FileText,
-      lastUpdated: "2024-01-03"
+    onSuccess: () => {
+      setActivatingId(null);
+      queryClient.invalidateQueries({ queryKey: ['document-templates'] });
+      toast({
+        title: "Template Activated",
+        description: "This template is now the active template for its type.",
+      });
     },
-    { 
-      id: "benefits_enrollment", 
-      name: "Benefits Enrollment Form", 
-      type: "benefits_enrollment",
-      description: "Employee benefits enrollment documentation",
-      icon: FileText,
-      lastUpdated: "2024-01-01"
+    onError: () => {
+      setActivatingId(null);
+    }
+  });
+
+  const deactivateMutation = useMutation({
+    mutationFn: async (id: string) => {
+      setDeactivatingId(id);
+      const response = await api.patch(`/document-templates/${id}/deactivate`);
+      return response.data;
     },
-  ];
+    onSuccess: () => {
+      setDeactivatingId(null);
+      queryClient.invalidateQueries({ queryKey: ['document-templates'] });
+      toast({
+        title: "Template Deactivated",
+        description: "This template has been deactivated. The system template will be used instead.",
+      });
+    },
+    onError: () => {
+      setDeactivatingId(null);
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      setDeletingId(id);
+      await api.delete(`/document-templates/${id}`);
+    },
+    onSuccess: () => {
+      setDeletingId(null);
+      queryClient.invalidateQueries({ queryKey: ['document-templates'] });
+      toast({
+        title: "Template Deleted",
+        description: "The template has been removed.",
+      });
+    },
+    onError: () => {
+      setDeletingId(null);
+    }
+  });
+
+  const handlePreviewSystemTemplate = async (templateId: string, templateName: string) => {
+    // Check cache first
+    const cached = previewCacheRef.current.get(templateId);
+    if (cached) {
+      setPreviewBlob(cached.blob);
+      setPreviewFilename(cached.filename);
+      setShowDocxPreview(true);
+      return;
+    }
+
+    setIsLoadingPreview(templateId);
+    try {
+      const response = await fetch(`/api/documents/preview/${templateId}`);
+      if (!response.ok) throw new Error("Failed to fetch template");
+      const blob = await response.blob();
+      const filename = `${templateName.replace(/\s+/g, "_")}_Template.docx`;
+      previewCacheRef.current.set(templateId, { blob, filename });
+      setPreviewBlob(blob);
+      setPreviewFilename(filename);
+      setShowDocxPreview(true);
+    } catch (error) {
+      toast({
+        title: "Preview Failed",
+        description: "Failed to load template preview.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingPreview(null);
+    }
+  };
 
   const handleDownloadTemplate = async (templateId: string, templateName: string) => {
     setIsDownloading(templateId);
@@ -123,11 +346,37 @@ export default function OnboardingSetup() {
   };
 
   const handleUploadTemplate = () => {
-    toast({
-      title: "Template Uploaded",
-      description: "Your custom template has been uploaded successfully.",
-    });
-    setUploadDialogOpen(false);
+    if (!selectedFile || !templateName || !templateType) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all fields and select a file.",
+        variant: "destructive",
+      });
+      return;
+    }
+    uploadMutation.mutate({ file: selectedFile, name: templateName, type: templateType });
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      if (!templateName) {
+        setTemplateName(file.name.replace(/\.[^/.]+$/, ""));
+      }
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const formatDateTime = (dateString: string) => {
+    const d = new Date(dateString);
+    return d.toLocaleDateString('en-ZA', { year: 'numeric', month: 'short', day: 'numeric' })
+      + ' ' + d.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
   };
 
   return (
@@ -142,85 +391,313 @@ export default function OnboardingSetup() {
             Download and upload onboarding document templates
           </p>
         </div>
-        <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" data-testid="button-upload-template">
-              <Upload className="w-4 h-4 mr-2" />
-              Upload Custom Template
+        <div className="flex items-center gap-2">
+          <Link href="/hr-dashboard?tab=onboarding">
+            <Button variant="outline">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Onboarding
             </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Upload Custom Template</DialogTitle>
-              <DialogDescription>
-                Upload your own onboarding template to use in the system
-              </DialogDescription>
-            </DialogHeader>
+          </Link>
+          <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" data-testid="button-upload-template">
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Custom Template
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Upload Custom Template</DialogTitle>
+                <DialogDescription>
+                  Upload your own onboarding template to use in the system
+                </DialogDescription>
+              </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label>Template Name</Label>
-                <Input placeholder="e.g., Custom Welcome Letter" data-testid="input-template-name" />
+                <Input
+                  placeholder="e.g., Custom Welcome Letter"
+                  value={templateName}
+                  onChange={(e) => setTemplateName(e.target.value)}
+                  data-testid="input-template-name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Template Type</Label>
+                <Select value={templateType} onValueChange={setTemplateType}>
+                  <SelectTrigger data-testid="select-template-type">
+                    <SelectValue placeholder="Select template type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TEMPLATE_TYPES.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label>Template File</Label>
-                <Input type="file" accept=".docx,.doc,.pdf" data-testid="input-template-file" />
+                <Input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".docx,.doc,.pdf"
+                  onChange={handleFileChange}
+                  data-testid="input-template-file"
+                />
+                {selectedFile && (
+                  <p className="text-sm text-muted-foreground">
+                    Selected: {selectedFile.name} ({formatFileSize(selectedFile.size)})
+                  </p>
+                )}
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleUploadTemplate} data-testid="button-confirm-upload">
-                <Upload className="w-4 h-4 mr-2" />
+              <Button
+                onClick={handleUploadTemplate}
+                disabled={uploadMutation.isPending || !selectedFile || !templateName || !templateType}
+                data-testid="button-confirm-upload"
+              >
+                {uploadMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Upload className="w-4 h-4 mr-2" />
+                )}
                 Upload Template
               </Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {templates.map((template) => {
-          const Icon = template.icon;
-          return (
-            <Card key={template.id} className="hover:border-primary/50 transition-colors" data-testid={`template-card-${template.id}`}>
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Icon className="w-5 h-5 text-primary" />
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FolderOpen className="w-5 h-5" />
+              System Templates
+            </CardTitle>
+            <CardDescription>
+              Default onboarding templates provided by the system. Download these as a starting point.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2">
+              {DEFAULT_TEMPLATES.map((template) => (
+                <div
+                  key={template.id}
+                  className="flex items-center justify-between p-4 rounded-lg border bg-card"
+                  data-testid={`template-${template.id}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <FileText className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">{template.name}</h4>
+                      <p className="text-sm text-muted-foreground">{template.description}</p>
+                    </div>
                   </div>
-                  <div>
-                    <CardTitle className="text-base">{template.name}</CardTitle>
-                    <CardDescription className="text-xs">{template.description}</CardDescription>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePreviewSystemTemplate(template.id, template.name)}
+                      disabled={isLoadingPreview === template.id}
+                      data-testid={`button-preview-${template.id}`}
+                    >
+                      {isLoadingPreview === template.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownloadTemplate(template.id, template.name)}
+                      disabled={isDownloading === template.id}
+                      data-testid={`button-download-${template.id}`}
+                    >
+                      {isDownloading === template.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Download className="w-4 h-4" />
+                      )}
+                    </Button>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <Badge variant="outline" className="text-xs">
-                    {template.lastUpdated}
-                  </Badge>
-                  <Button 
-                    size="sm"
-                    onClick={() => handleDownloadTemplate(template.id, template.name)}
-                    disabled={isDownloading === template.id}
-                    data-testid={`button-download-${template.id}`}
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Upload className="w-5 h-5" />
+              Custom Templates
+            </CardTitle>
+            <CardDescription>
+              Templates you've uploaded. Set one as active for each type to use in onboarding.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin" />
+              </div>
+            ) : onboardingCustomTemplates.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>No custom templates uploaded yet.</p>
+                <p className="text-sm">Click "Upload Custom Template" to add your own.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {onboardingCustomTemplates.map((template) => (
+                  <div
+                    key={template.id}
+                    className={`flex items-center justify-between p-4 rounded-lg border ${
+                      template.isActive ? 'bg-green-500/10 border-green-500/30' : 'bg-card'
+                    }`}
+                    data-testid={`custom-template-${template.id}`}
                   >
-                    {isDownloading === template.id ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <>
-                        <Download className="w-4 h-4 mr-1" />
-                        Download
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-lg ${template.isActive ? 'bg-green-500/20' : 'bg-primary/10'}`}>
+                        <FileText className={`w-5 h-5 ${template.isActive ? 'text-green-600 dark:text-green-400' : 'text-primary'}`} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium">{template.name}</h4>
+                          {template.isActive === 1 && (
+                            <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30">
+                              <Star className="w-3 h-3 mr-1" />
+                              Active
+                            </Badge>
+                          )}
+                          <Badge variant="outline" className="text-xs">
+                            {TEMPLATE_TYPES.find(t => t.value === template.templateType)?.label || template.templateType}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                          <span>{template.originalFilename}</span>
+                          <span>{formatFileSize(template.fileSize)}</span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {formatDateTime(template.createdAt)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePreviewTemplate(template)}
+                        disabled={isLoadingPreview === template.id}
+                        data-testid={`button-preview-custom-${template.id}`}
+                      >
+                        {isLoadingPreview === template.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </Button>
+                      <a href={template.filePath} download={template.originalFilename}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          data-testid={`button-download-custom-${template.id}`}
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
+                      </a>
+                      {template.isActive === 1 ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-amber-600 dark:text-amber-400 hover:text-amber-500 dark:hover:text-amber-300 hover:bg-amber-500/10"
+                          onClick={() => deactivateMutation.mutate(template.id)}
+                          disabled={deactivatingId === template.id}
+                          data-testid={`button-deactivate-${template.id}`}
+                        >
+                          {deactivatingId === template.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <XCircle className="w-4 h-4" />
+                          )}
+                          <span className="ml-1">Deactivate</span>
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => activateMutation.mutate(template.id)}
+                          disabled={activatingId === template.id}
+                          data-testid={`button-activate-${template.id}`}
+                        >
+                          {activatingId === template.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="w-4 h-4" />
+                          )}
+                          <span className="ml-1">Set Active</span>
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 hover:bg-red-500/10"
+                        onClick={() => deleteMutation.mutate(template.id)}
+                        disabled={deletingId === template.id}
+                        data-testid={`button-delete-${template.id}`}
+                      >
+                        {deletingId === template.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
+
+      {/* DOCX Preview Dialog */}
+      <Dialog open={showDocxPreview} onOpenChange={(open) => {
+        setShowDocxPreview(open);
+        if (!open) { setPreviewBlob(null); setPreviewFilename(""); }
+      }}>
+        <DialogContent className="max-w-4xl h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Template Preview — {previewFilename}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-end pb-2">
+            <Button size="sm" variant="outline" onClick={handleDownloadFromPreview}>
+              <Download className="h-3.5 w-3.5 mr-1" />
+              Download
+            </Button>
+          </div>
+          <div
+            ref={docxPreviewRefCallback}
+            className="flex-1 overflow-auto border rounded-lg bg-white"
+            style={{ minHeight: 0 }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

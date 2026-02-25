@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wsl -e bash -ic \"pgrep -f ''node.*server/index.ts'' | xargs -r kill; sleep 1; echo killed\")",
+      "Bash(wsl:*)"
+    ]
+  }
+}

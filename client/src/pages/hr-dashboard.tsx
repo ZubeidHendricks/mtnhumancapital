@@ -1,6 +1,6 @@
 import { useState, useRef, lazy, Suspense } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { jobsService, candidateService, api } from "@/lib/api";
+import { jobsService, candidateService, integrityChecksService, api } from "@/lib/api";
 import { useTenantQueryKey } from "@/hooks/useTenant";
 import { CustomizableDashboard, DataSourceConfig } from "@/components/customizable-dashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { JobCreationChat } from "@/components/job-creation-chat";
 import OfferManagement from "@/pages/offer-management";
 import EmployeeOnboarding from "@/pages/employee-onboarding";
@@ -74,19 +74,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
-// Mock Data as fallback if API fails or for other tabs not yet connected
-const integrityChecks = [
-  { id: 1, candidate: "Sarah Jenkins", type: "Criminal Record", status: "Clear", date: "2024-05-10" },
-  { id: 2, candidate: "Sarah Jenkins", type: "Credit Check", status: "Clear", date: "2024-05-11" },
-  { id: 3, candidate: "Marcus Johnson", type: "Reference Check", status: "Pending", date: "2024-05-12" },
-];
-
-const onboardingTasks = [
-  { id: 1, task: "Send Welcome Letter", assignee: "AI Agent", status: "Completed" },
-  { id: 2, task: "Distribute Employee Handbook", assignee: "AI Agent", status: "Completed" },
-  { id: 3, task: "Procure Tax Forms", assignee: "AI Agent", status: "In Progress" },
-  { id: 4, task: "IT Equipment Setup", assignee: "IT Dept", status: "Pending" },
-];
+// Format stage names: "offer_pending" → "Offer Pending", "integrity_checks" → "Integrity Checks"
+const formatStageName = (stage: string) =>
+  stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
 // Fallback data in case of API error
 const MOCK_CANDIDATES = [
@@ -97,7 +87,17 @@ const MOCK_CANDIDATES = [
 ];
 
 export default function HRDashboard() {
-  const [activeTab, setActiveTab] = useState("recruitment");
+  const [, navigate] = useLocation();
+  const [activeTab, setActiveTabState] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('tab') || "jobs";
+  });
+  const setActiveTab = (tab: string) => {
+    setActiveTabState(tab);
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', tab);
+    window.history.replaceState({}, '', url.toString());
+  };
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isCreateJobOpen, setIsCreateJobOpen] = useState(false);
   const [showArchivedJobs, setShowArchivedJobs] = useState(false);
@@ -122,6 +122,7 @@ export default function HRDashboard() {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedJob, setSelectedJob] = useState<any>(null);
   const [isJobDetailOpen, setIsJobDetailOpen] = useState(false);
+  const [pipelineStageFilter, setPipelineStageFilter] = useState<string>("all");
 
   const createJobMutation = useMutation({
     mutationFn: jobsService.create,
@@ -158,6 +159,25 @@ export default function HRDashboard() {
       toast.error("Failed to update candidate");
     }
   });
+
+  const [verifyingCheckId, setVerifyingCheckId] = useState<string | null>(null);
+
+  const verifyIntegrityCheck = async (checkId: string, candidateId: string) => {
+    setVerifyingCheckId(checkId);
+    try {
+      // Mark the check as Completed/Clear
+      await integrityChecksService.update(checkId, { status: "Completed" as any, result: "Clear" as any });
+      // Auto-advance pipeline if all checks are done
+      await api.post(`/pipeline/candidates/${candidateId}/check-integrity`);
+      queryClient.invalidateQueries({ queryKey: integrityChecksKey });
+      queryClient.invalidateQueries({ queryKey: candidatesKey });
+      toast.success("Verification marked as clear");
+    } catch {
+      toast.error("Failed to verify check");
+    } finally {
+      setVerifyingCheckId(null);
+    }
+  };
 
   const PIPELINE_STAGES = [
     { key: "sourcing", name: "Sourcing" },
@@ -388,10 +408,10 @@ BENEFITS:
   };
 
   // Fetch real data from backend
-  const { 
-    data: jobs, 
-    isLoading: loadingJobs, 
-    isError: jobsError 
+  const {
+    data: jobs,
+    isLoading: loadingJobs,
+    isError: jobsError
   } = useQuery({
     queryKey: jobsKey,
     queryFn: async () => {
@@ -403,7 +423,6 @@ BENEFITS:
       }
     },
     retry: 1,
-    placeholderData: [] 
   });
 
   const archivedJobsKey = useTenantQueryKey("archivedJobs");
@@ -775,15 +794,24 @@ BENEFITS:
           </Alert>
         )}
 
-        <Tabs defaultValue="jobs" className="space-y-6" onValueChange={setActiveTab}>
+        <Tabs value={activeTab} className="space-y-6" onValueChange={setActiveTab}>
           <div className="flex items-center gap-3 flex-wrap">
             {/* Main 5 Tabs */}
+<<<<<<< HEAD
             <TabsList className="grid grid-cols-2 md:grid-cols-5 lg:w-[600px] bg-white border-2 border-border dark:border-border">
               <TabsTrigger value="jobs" className="data-[state=active]:bg-muted data-[state=active]:text-white font-semibold">Jobs</TabsTrigger>
               <TabsTrigger value="recruitment" className="data-[state=active]:bg-muted data-[state=active]:text-white font-semibold">Recruitment</TabsTrigger>
               <TabsTrigger value="integrity" className="data-[state=active]:bg-muted data-[state=active]:text-white font-semibold">Integrity</TabsTrigger>
               <TabsTrigger value="offer" className="data-[state=active]:bg-muted data-[state=active]:text-white font-semibold">Offer</TabsTrigger>
               <TabsTrigger value="onboarding" className="data-[state=active]:bg-muted data-[state=active]:text-white font-semibold">Onboarding</TabsTrigger>
+=======
+            <TabsList className="grid grid-cols-2 md:grid-cols-5 lg:w-[600px] bg-white dark:bg-gray-800 border-2 border-teal-200 dark:border-teal-700">
+              <TabsTrigger value="jobs" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white font-semibold">Jobs</TabsTrigger>
+              <TabsTrigger value="recruitment" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white font-semibold">Recruitment</TabsTrigger>
+              <TabsTrigger value="offer" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white font-semibold">Offer</TabsTrigger>
+              <TabsTrigger value="integrity" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white font-semibold">Integrity</TabsTrigger>
+              <TabsTrigger value="onboarding" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white font-semibold">Onboarding</TabsTrigger>
+>>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
             </TabsList>
           </div>
 
@@ -830,7 +858,7 @@ BENEFITS:
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card className="bg-card border-border">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-foreground font-bold text-sm font-medium text-foreground font-semibold">Open Roles</CardTitle>
+                  <CardTitle className="text-foreground font-bold text-sm">Open Roles</CardTitle>
                   <div className="text-2xl font-bold">
                     {loadingJobs ? <Loader2 className="w-6 h-6 animate-spin" /> : jobCount}
                   </div>
@@ -838,7 +866,7 @@ BENEFITS:
               </Card>
               <Card className="bg-card border-border">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-foreground font-bold text-sm font-medium text-foreground font-semibold">Candidates in Pipeline</CardTitle>
+                  <CardTitle className="text-foreground font-bold text-sm">Candidates in Pipeline</CardTitle>
                   <div className="text-2xl font-bold">
                     {loadingCandidates ? <Loader2 className="w-6 h-6 animate-spin" /> : displayCandidates.length}
                   </div>
@@ -846,7 +874,7 @@ BENEFITS:
               </Card>
               <Card className="bg-card border-border">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-foreground font-bold text-sm font-medium text-foreground font-semibold">Time to Hire (Avg)</CardTitle>
+                  <CardTitle className="text-foreground font-bold text-sm">Time to Hire (Avg)</CardTitle>
                   <div className="text-2xl font-bold">18 Days</div>
                 </CardHeader>
               </Card>
@@ -858,7 +886,11 @@ BENEFITS:
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-foreground font-bold text-foreground font-bold">Open Roles</CardTitle>
+<<<<<<< HEAD
                     <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">
+=======
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">
+>>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                       {loadingJobs ? "Loading positions..." : "Active job requisitions and hiring pipelines"}
                     </CardDescription>
                   </div>
@@ -927,7 +959,7 @@ BENEFITS:
                                   Start Search
                                 </Button>
                               </Link>
-                              <Link href={`/candidates-list?jobId=${job.id}`}>
+                              <Link href={`/recruitment-agent?jobId=${job.id}`}>
                                 <Button variant="outline" size="sm" className="gap-2 border-border hover:bg-white/5" data-testid={`button-view-candidates-${job.id}`}>
                                   <Eye className="h-4 w-4" />
                                   View
@@ -1011,7 +1043,11 @@ BENEFITS:
                         <FileArchive className="h-5 w-5 text-gray-400" />
                         Archived Roles
                       </CardTitle>
+<<<<<<< HEAD
                       <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">
+=======
+                      <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">
+>>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                         {loadingArchivedJobs ? "Loading archived positions..." : `${archivedJobs.length} archived job${archivedJobs.length !== 1 ? 's' : ''}`}
                       </CardDescription>
                     </div>
@@ -1088,7 +1124,11 @@ BENEFITS:
                       <Star className="h-5 w-5 text-foreground fill-yellow-400" />
                       Shortlisted Candidates
                     </CardTitle>
+<<<<<<< HEAD
                     <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">
+=======
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">
+>>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                       {loadingCandidates ? "Loading..." : "Top talent ready for interviews and offers"}
                     </CardDescription>
                   </div>
@@ -1165,7 +1205,11 @@ BENEFITS:
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-foreground font-bold text-foreground font-bold">Candidate Pipeline</CardTitle>
+<<<<<<< HEAD
                     <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">
+=======
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">
+>>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                       {loadingCandidates ? "Fetching data from backend..." : "AI-ranked candidates matched to hiring needs"}
                     </CardDescription>
                   </div>
@@ -1293,11 +1337,48 @@ BENEFITS:
                       </DialogContent>
                     </Dialog>
 
-                    <Button variant="outline" size="icon"><Filter className="h-4 w-4" /></Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant={pipelineStageFilter !== "all" ? "default" : "outline"} size="icon">
+                          <Filter className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuLabel>Filter by Stage</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className={`cursor-pointer ${pipelineStageFilter === "all" ? "font-bold" : ""}`}
+                          onClick={() => setPipelineStageFilter("all")}
+                        >
+                          All Stages
+                        </DropdownMenuItem>
+                        {(() => {
+                          const stages = [...new Set(displayCandidates.map((c: any) => c.stage || "New"))];
+                          return stages.map((stage: string) => (
+                            <DropdownMenuItem
+                              key={stage}
+                              className={`cursor-pointer ${pipelineStageFilter === stage ? "font-bold" : ""}`}
+                              onClick={() => setPipelineStageFilter(pipelineStageFilter === stage ? "all" : stage)}
+                            >
+                              {formatStageName(stage)} ({displayCandidates.filter((c: any) => (c.stage || "New") === stage).length})
+                            </DropdownMenuItem>
+                          ));
+                        })()}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
+                {pipelineStageFilter !== "all" && (
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-sm text-muted-foreground">Filtering:</span>
+                    <Badge variant="secondary" className="gap-1">
+                      {formatStageName(pipelineStageFilter)}
+                      <button onClick={() => setPipelineStageFilter("all")} className="ml-1 hover:text-destructive">&times;</button>
+                    </Badge>
+                  </div>
+                )}
                 <div className="rounded-md border border-border overflow-hidden">
                   <div className="bg-white/5 px-4 py-3 grid grid-cols-12 text-sm font-medium text-foreground font-semibold">
                     <div className="col-span-3">Candidate</div>
@@ -1312,9 +1393,15 @@ BENEFITS:
                          <Loader2 className="w-6 h-6 animate-spin" />
                          <p>Syncing with DigitalOcean Backend...</p>
                        </div>
+                    ) : displayCandidates.filter((c: any) => pipelineStageFilter === "all" || (c.stage || "New") === pipelineStageFilter).length === 0 ? (
+                       <div className="flex flex-col items-center justify-center h-32 gap-2 text-muted-foreground">
+                         <Filter className="w-6 h-6 opacity-50" />
+                         <p>No candidates at "{formatStageName(pipelineStageFilter)}" stage</p>
+                         <Button variant="link" size="sm" onClick={() => setPipelineStageFilter("all")}>Clear filter</Button>
+                       </div>
                     ) : (
-                      // Use explicit array mapping
-                      displayCandidates.map((candidate: any) => (
+                      // Use explicit array mapping with stage filter
+                      displayCandidates.filter((c: any) => pipelineStageFilter === "all" || (c.stage || "New") === pipelineStageFilter).map((candidate: any) => (
                         <div key={candidate.id || Math.random()} className="px-4 py-3 grid grid-cols-12 items-center border-t border-border hover:bg-white/5 transition-colors">
                           <div className="col-span-3 font-medium">{candidate.fullName || candidate.name || "Unknown Candidate"}</div>
                           <div className="col-span-3 text-sm text-foreground font-semibold">{candidate.role || "General Application"}</div>
@@ -1323,7 +1410,7 @@ BENEFITS:
                               {candidate.match || candidate.overall_score || 0}% Match
                             </Badge>
                           </div>
-                          <div className="col-span-2 text-sm">{candidate.stage || candidate.status || "New"}</div>
+                          <div className="col-span-2 text-sm">{formatStageName(candidate.stage || candidate.status || "New")}</div>
                           <div className="col-span-2 text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -1414,7 +1501,11 @@ BENEFITS:
                       <Briefcase className="h-5 w-5 text-foreground dark:text-foreground" />
                       Job Specifications Library
                     </CardTitle>
+<<<<<<< HEAD
                     <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Extracted job requirements from uploaded specifications</CardDescription>
+=======
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Extracted job requirements from uploaded specifications</CardDescription>
+>>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="flex items-center bg-gray-200 rounded-lg p-1">
@@ -1454,7 +1545,7 @@ BENEFITS:
                           Create New Job
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-[700px] max-h-[90vh] bg-card border-border p-0">
+                      <DialogContent className="sm:max-w-[95vw] w-[95vw] max-h-[90vh] bg-card border-border p-0">
                         <JobCreationChat 
                           onJobCreated={() => {
                             setIsCreateJobOpen(false);
@@ -1469,7 +1560,7 @@ BENEFITS:
                 </div>
               </CardHeader>
               <CardContent>
-                {loadingJobs && loadingJobSpecs ? (
+                {loadingJobs || loadingJobSpecs ? (
                   <div className="text-center py-12">
                     <Loader2 className="h-8 w-8 animate-spin text-foreground dark:text-foreground mx-auto" />
                   </div>
@@ -1765,11 +1856,13 @@ BENEFITS:
               <Card className="border-border bg-card">
                 <CardHeader>
                   <CardTitle className="text-foreground font-bold flex items-center gap-2">
-                    <FileCheck className="w-5 h-5 text-primary" /> 
+                    <FileCheck className="w-5 h-5 text-primary" />
                     Pending Verifications
                   </CardTitle>
+                  <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Background check results and verification status</CardDescription>
                 </CardHeader>
                 <CardContent>
+<<<<<<< HEAD
                   <div className="space-y-4">
                     {integrityChecks.map((check) => (
                       <div key={check.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-border">
@@ -1780,8 +1873,66 @@ BENEFITS:
                         <Badge variant={check.status === "Clear" ? "default" : "secondary"} className={check.status === "Clear" ? "bg-muted/20 text-foreground" : "bg-muted/20 text-foreground"}>
                           {check.status}
                         </Badge>
+=======
+                  <div className="space-y-3">
+                    <p className="text-sm text-foreground font-semibold mb-3">Recent integrity checks across all candidates:</p>
+                    <ScrollArea className="h-[300px]">
+                      <div className="space-y-2">
+                        {allIntegrityChecks.length === 0 ? (
+                          <div className="text-center text-foreground font-semibold py-8">
+                            <FileCheck className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">No integrity checks pending</p>
+                            <p className="text-xs text-muted-foreground mt-1">Start a check from the button above</p>
+                          </div>
+                        ) : (
+                          allIntegrityChecks.map((check: any) => {
+                            const candidate = candidates?.find((c: any) => c.id?.toString() === check.candidateId?.toString());
+                            const candidateName = candidate ? (candidate.fullName || candidate.name || "Unknown") : "Unknown Candidate";
+                            return (
+                              <div
+                                key={check.id}
+                                className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-border cursor-pointer hover:bg-white/10 transition-colors"
+                                onClick={() => navigate(`/integrity-agent?candidateId=${check.candidateId}&readOnly=true`)}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarFallback className="bg-cyan-100 dark:bg-cyan-900 text-primary text-xs">
+                                      {candidateName.substring(0, 2).toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <p className="font-medium text-sm">{candidateName}</p>
+                                    <p className="text-xs text-foreground font-semibold">{check.checkType || check.type || "Verification"}</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {check.status === "Pending" || check.status === "In Progress" ? (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-7 text-xs gap-1 border-green-300 dark:border-green-700 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950"
+                                      disabled={verifyingCheckId === check.id}
+                                      onClick={(e) => { e.stopPropagation(); verifyIntegrityCheck(check.id, check.candidateId); }}
+                                    >
+                                      {verifyingCheckId === check.id ? (
+                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                      ) : (
+                                        <CheckCircle2 className="h-3 w-3" />
+                                      )}
+                                      Verify
+                                    </Button>
+                                  ) : null}
+                                  <Badge variant={check.status === "Clear" || check.status === "completed" || check.status === "Completed" ? "default" : "secondary"} className={check.status === "Clear" || check.status === "completed" || check.status === "Completed" ? "bg-green-500/20 text-green-600 dark:text-green-400" : "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"}>
+                                    {check.status}
+                                  </Badge>
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+>>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                       </div>
-                    ))}
+                    </ScrollArea>
                   </div>
                 </CardContent>
               </Card>
@@ -1792,15 +1943,19 @@ BENEFITS:
                     <ShieldCheck className="w-5 h-5 text-foreground dark:text-foreground" />
                     Risk Assessment Overview
                   </CardTitle>
+<<<<<<< HEAD
                   <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">AI-generated risk profiles based on background data</CardDescription>
+=======
+                  <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">AI-generated risk profiles based on background data</CardDescription>
+>>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                 </CardHeader>
                 <CardContent>
                   {!selectedRiskCandidate ? (
                     <div className="space-y-3">
                       <p className="text-sm text-foreground font-semibold mb-3">Select a candidate to view risk analysis:</p>
-                      <ScrollArea className="h-[180px]">
+                      <ScrollArea className="h-[300px]">
                         <div className="space-y-2">
-                          {candidates && candidates.length > 0 ? candidates.slice(0, 8).map((candidate: any) => {
+                          {candidates && candidates.length > 0 ? candidates.slice(0, 20).map((candidate: any) => {
                             const riskData = getCandidateRiskData(candidate.id);
                             return (
                               <div 
@@ -1879,7 +2034,7 @@ BENEFITS:
                               <p className="text-sm">No risk assessment data available</p>
                               <p className="text-xs mt-1">Run an integrity check or social screening first</p>
                               <div className="flex gap-2 justify-center mt-3">
-                                <Link href="/integrity-agent">
+                                <Link href={`/integrity-agent?candidateId=${selectedRiskCandidate.id}&autoStart=true`}>
                                   <Button size="sm" variant="outline">
                                     <ShieldCheck className="w-4 h-4 mr-1" /> Start Integrity Check
                                   </Button>
@@ -2010,7 +2165,7 @@ BENEFITS:
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <Card className="border-border bg-card">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-foreground font-bold text-sm font-medium text-foreground font-semibold">Consent Status</CardTitle>
+                  <CardTitle className="text-foreground font-bold text-sm">Consent Status</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
@@ -2032,7 +2187,7 @@ BENEFITS:
 
               <Card className="border-border bg-card">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-foreground font-bold text-sm font-medium text-foreground font-semibold">Screening Progress</CardTitle>
+                  <CardTitle className="text-foreground font-bold text-sm">Screening Progress</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
@@ -2054,7 +2209,7 @@ BENEFITS:
 
               <Card className="border-border bg-card">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-foreground font-bold text-sm font-medium text-foreground font-semibold">Risk Distribution</CardTitle>
+                  <CardTitle className="text-foreground font-bold text-sm">Risk Distribution</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
@@ -2093,7 +2248,11 @@ BENEFITS:
                     <Eye className="w-5 h-5 text-foreground dark:text-foreground" />
                     Pending Human Reviews
                   </CardTitle>
+<<<<<<< HEAD
                   <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Social screening findings requiring HR review</CardDescription>
+=======
+                  <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Social screening findings requiring HR review</CardDescription>
+>>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                 </CardHeader>
                 <CardContent>
                   {socialPendingReviews.length === 0 ? (
@@ -2270,7 +2429,11 @@ BENEFITS:
                       <Calendar className="w-5 h-5 text-primary" />
                       Active Review Cycles
                     </CardTitle>
+<<<<<<< HEAD
                     <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Current KPI review periods</CardDescription>
+=======
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Current KPI review periods</CardDescription>
+>>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                   </div>
                   <Link href="/kpi-management?tab=cycles&action=new-cycle">
                     <Button className="bg-muted hover:bg-muted text-white font-semibold" data-testid="button-new-cycle">
@@ -2332,7 +2495,11 @@ BENEFITS:
                       <FileCheck className="w-5 h-5 text-primary" />
                       Recent Submissions
                     </CardTitle>
+<<<<<<< HEAD
                     <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Employee KPI review submissions</CardDescription>
+=======
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Employee KPI review submissions</CardDescription>
+>>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                   </div>
                   <Link href="/kpi-hr-dashboard">
                     <Button variant="outline" className="border-border" data-testid="button-view-all-submissions">
@@ -2402,7 +2569,11 @@ BENEFITS:
                       <Target className="w-5 h-5 text-foreground dark:text-foreground" />
                       KPI Assignments
                     </CardTitle>
+<<<<<<< HEAD
                     <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Current quarter performance objectives</CardDescription>
+=======
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Current quarter performance objectives</CardDescription>
+>>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                   </div>
                   <Link href="/kpi-management">
                     <Button variant="outline" className="border-border" data-testid="button-manage-assignments">
@@ -2545,7 +2716,11 @@ BENEFITS:
                       <BookOpen className="w-5 h-5 text-primary" />
                       Active Training Courses
                     </CardTitle>
+<<<<<<< HEAD
                     <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Current learning programs and progress</CardDescription>
+=======
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Current learning programs and progress</CardDescription>
+>>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                   </div>
                   <Link href="/learning-management">
                     <Button className="bg-muted hover:bg-muted text-white font-semibold" data-testid="button-create-course-lms">
@@ -2606,7 +2781,11 @@ BENEFITS:
                   <GraduationCap className="w-5 h-5 text-foreground dark:text-foreground" />
                   Employee Learning Progress
                 </CardTitle>
+<<<<<<< HEAD
                 <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Individual training completion status</CardDescription>
+=======
+                <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Individual training completion status</CardDescription>
+>>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -2723,7 +2902,11 @@ BENEFITS:
                       <Timer className="w-5 h-5 text-primary" />
                       Today's Attendance
                     </CardTitle>
+<<<<<<< HEAD
                     <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Real-time employee attendance tracking</CardDescription>
+=======
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Real-time employee attendance tracking</CardDescription>
+>>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                   </div>
                   <div className="flex gap-2">
                     <Button variant="outline" className="border-border">
@@ -2791,7 +2974,11 @@ BENEFITS:
                       <Calendar className="w-5 h-5 text-foreground dark:text-foreground" />
                       Pending Leave Requests
                     </CardTitle>
+<<<<<<< HEAD
                     <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Approve or reject employee leave requests</CardDescription>
+=======
+                    <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Approve or reject employee leave requests</CardDescription>
+>>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                   </div>
                 </div>
               </CardHeader>

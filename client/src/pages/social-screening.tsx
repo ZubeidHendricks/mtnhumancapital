@@ -414,7 +414,8 @@ export default function SocialScreening() {
     queryFn: async () => {
       const res = await fetch("/api/candidates");
       if (!res.ok) return [];
-      return res.json();
+      const body = await res.json();
+      return Array.isArray(body) ? body : body.data ?? [];
     },
   });
 

@@ -303,7 +303,8 @@ export default function WhatsAppMonitor() {
     queryKey: conversationsKey,
     queryFn: async () => {
       const response = await api.get('/whatsapp/conversations');
-      return response.data;
+      const body = response.data;
+      return Array.isArray(body) ? body : body.data ?? [];
     },
     refetchInterval: 10000,
   });
@@ -322,7 +323,8 @@ export default function WhatsAppMonitor() {
     queryKey: useTenantQueryKey(['candidates']),
     queryFn: async () => {
       const response = await api.get('/candidates');
-      return response.data;
+      const body = response.data;
+      return Array.isArray(body) ? body : body.data ?? [];
     },
   });
 
@@ -749,12 +751,18 @@ export default function WhatsAppMonitor() {
                             data-testid={`message-${message.id}`}
                           >
                             <div
-                              className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+                              className={`max-w-[80%] rounded-2xl px-4 py-2 text-[#F8FAFC] ${
                                 message.direction === 'outbound'
                                   ? message.senderType === 'ai'
+<<<<<<< HEAD
                                     ? 'bg-muted/20 text-foreground'
                                     : 'bg-primary text-primary-foreground'
                                   : 'bg-white/10 text-foreground'
+=======
+                                    ? 'bg-blue-500/20'
+                                    : 'bg-primary'
+                                  : 'bg-white/10'
+>>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                               }`}
                             >
                               {message.senderType === 'ai' && message.direction === 'outbound' && (
@@ -774,11 +782,15 @@ export default function WhatsAppMonitor() {
                                   </a>
                                 </div>
                               )}
+<<<<<<< HEAD
                               <div className={`flex items-center justify-end gap-1 mt-1 text-xs ${
                                 message.direction === 'outbound' && message.senderType !== 'ai'
                                   ? 'text-foreground'
                                   : 'text-gray-500'
                               }`}>
+=======
+                              <div className={`flex items-center justify-end gap-1 mt-1 text-xs text-[#F8FAFC]/60`}>
+>>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                                 <span>
                                   {format(new Date(message.createdAt), 'HH:mm')}
                                 </span>

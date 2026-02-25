@@ -111,7 +111,8 @@ export default function CVTemplatePage() {
     queryFn: async () => {
       const res = await fetch("/api/candidates");
       if (!res.ok) throw new Error("Failed to fetch candidates");
-      return res.json();
+      const body = await res.json();
+      return Array.isArray(body) ? body : body.data ?? [];
     },
   });
 

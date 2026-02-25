@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,8 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
-import { 
-  FileText, 
+import {
+  FileText,
   Download,
   Upload,
   Loader2,
@@ -16,10 +16,15 @@ import {
   FolderOpen,
   Trash2,
   Star,
-  Clock
+  Clock,
+  XCircle,
+  ArrowLeft,
+  Eye
 } from "lucide-react";
+import { renderAsync } from "docx-preview";
 import { toast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
+import { Link } from "wouter";
 
 interface DocumentTemplate {
   id: string;
@@ -38,11 +43,9 @@ interface DocumentTemplate {
 
 const TEMPLATE_TYPES = [
   { value: "offer_letter", label: "Offer Letter" },
-  { value: "contract", label: "Employment Contract" },
+  { value: "employment_contract", label: "Employment Contract" },
   { value: "executive_offer", label: "Executive Offer Package" },
   { value: "nda", label: "Non-Disclosure Agreement" },
-  { value: "welcome_letter", label: "Welcome Letter" },
-  { value: "employee_handbook", label: "Employee Handbook" },
 ];
 
 const DEFAULT_TEMPLATES = [
@@ -53,10 +56,10 @@ const DEFAULT_TEMPLATES = [
     description: "Standard employment offer letter template",
     isSystem: true
   },
-  { 
-    id: "contract", 
-    name: "Employment Contract", 
-    type: "contract",
+  {
+    id: "employment_contract",
+    name: "Employment Contract",
+    type: "employment_contract",
     description: "Full employment contract template with terms and conditions",
     isSystem: true
   },
@@ -84,14 +87,84 @@ export default function OfferSetup() {
   const [templateType, setTemplateType] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDownloading, setIsDownloading] = useState<string | null>(null);
+  const [activatingId, setActivatingId] = useState<string | null>(null);
+  const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const { data: customTemplates = [], isLoading } = useQuery<DocumentTemplate[]>({
+  // DOCX preview state
+  const [showDocxPreview, setShowDocxPreview] = useState(false);
+  const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
+  const [previewFilename, setPreviewFilename] = useState("");
+  const [isLoadingPreview, setIsLoadingPreview] = useState<string | null>(null);
+  const docxContainerRef = useRef<HTMLDivElement | null>(null);
+  const previewCacheRef = useRef<Map<string, { blob: Blob; filename: string }>>(new Map());
+
+  const docxPreviewRefCallback = useCallback(
+    (node: HTMLDivElement | null) => {
+      docxContainerRef.current = node;
+      if (node && previewBlob) {
+        node.innerHTML = '<p class="text-center text-muted-foreground py-8">Rendering document...</p>';
+        renderAsync(previewBlob, node, undefined, {
+          className: "docx-preview",
+          inWrapper: true,
+          ignoreWidth: false,
+          ignoreHeight: false,
+          ignoreFonts: false,
+          breakPages: true,
+        }).catch((err) => {
+          console.error("DOCX preview render error:", err);
+          if (node) {
+            node.innerHTML = '<p class="text-center text-muted-foreground py-8">Failed to render document preview.</p>';
+          }
+        });
+      }
+    },
+    [previewBlob]
+  );
+
+  const handlePreviewTemplate = async (template: DocumentTemplate) => {
+    setIsLoadingPreview(true);
+    try {
+      const response = await fetch(template.filePath);
+      if (!response.ok) throw new Error("Failed to fetch template");
+      const blob = await response.blob();
+      setPreviewBlob(blob);
+      setPreviewFilename(template.originalFilename);
+      setShowDocxPreview(true);
+    } catch (error) {
+      toast({
+        title: "Preview Failed",
+        description: "Failed to load template preview.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingPreview(false);
+    }
+  };
+
+  const handleDownloadFromPreview = () => {
+    if (!previewBlob || !previewFilename) return;
+    const url = URL.createObjectURL(previewBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = previewFilename;
+    document.body.appendChild(a);
+    a.click();
+    URL.revokeObjectURL(url);
+    a.remove();
+  };
+
+  const { data: allCustomTemplates = [], isLoading } = useQuery<DocumentTemplate[]>({
     queryKey: ['document-templates'],
     queryFn: async () => {
       const response = await api.get("/document-templates");
       return response.data;
     }
   });
+
+  // Filter to only offer-related custom templates
+  const offerTemplateTypes = TEMPLATE_TYPES.map(t => t.value);
+  const customTemplates = allCustomTemplates.filter(t => offerTemplateTypes.includes(t.templateType));
 
   const uploadMutation = useMutation({
     mutationFn: async ({ file, name, type }: { file: File; name: string; type: string }) => {
@@ -127,30 +200,90 @@ export default function OfferSetup() {
 
   const activateMutation = useMutation({
     mutationFn: async (id: string) => {
+      setActivatingId(id);
       const response = await api.patch(`/document-templates/${id}/activate`);
       return response.data;
     },
     onSuccess: () => {
+      setActivatingId(null);
       queryClient.invalidateQueries({ queryKey: ['document-templates'] });
       toast({
         title: "Template Activated",
         description: "This template is now the active template for its type.",
       });
+    },
+    onError: () => {
+      setActivatingId(null);
+    }
+  });
+
+  const deactivateMutation = useMutation({
+    mutationFn: async (id: string) => {
+      setDeactivatingId(id);
+      const response = await api.patch(`/document-templates/${id}/deactivate`);
+      return response.data;
+    },
+    onSuccess: () => {
+      setDeactivatingId(null);
+      queryClient.invalidateQueries({ queryKey: ['document-templates'] });
+      toast({
+        title: "Template Deactivated",
+        description: "This template has been deactivated. The system template will be used instead.",
+      });
+    },
+    onError: () => {
+      setDeactivatingId(null);
     }
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      setDeletingId(id);
       await api.delete(`/document-templates/${id}`);
     },
     onSuccess: () => {
+      setDeletingId(null);
       queryClient.invalidateQueries({ queryKey: ['document-templates'] });
       toast({
         title: "Template Deleted",
         description: "The template has been removed.",
       });
+    },
+    onError: () => {
+      setDeletingId(null);
     }
   });
+
+  const handlePreviewSystemTemplate = async (templateId: string, templateName: string) => {
+    // Check cache first
+    const cached = previewCacheRef.current.get(templateId);
+    if (cached) {
+      setPreviewBlob(cached.blob);
+      setPreviewFilename(cached.filename);
+      setShowDocxPreview(true);
+      return;
+    }
+
+    setIsLoadingPreview(templateId);
+    try {
+      const response = await fetch(`/api/documents/preview/${templateId}`);
+      if (!response.ok) throw new Error("Failed to fetch template");
+      const blob = await response.blob();
+      const filename = `${templateName.replace(/\s+/g, "_")}_Template.docx`;
+      previewCacheRef.current.set(templateId, { blob, filename });
+      setPreviewBlob(blob);
+      setPreviewFilename(filename);
+      setShowDocxPreview(true);
+    } catch (error) {
+      toast({
+        title: "Preview Failed",
+        description: "Failed to load template preview.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingPreview(null);
+    }
+  };
 
   const handleDownloadTemplate = async (templateId: string, templateName: string) => {
     setIsDownloading(templateId);
@@ -221,12 +354,10 @@ export default function OfferSetup() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-ZA', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+  const formatDateTime = (dateString: string) => {
+    const d = new Date(dateString);
+    return d.toLocaleDateString('en-ZA', { year: 'numeric', month: 'short', day: 'numeric' })
+      + ' ' + d.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
   };
 
   return (
@@ -241,13 +372,20 @@ export default function OfferSetup() {
             Download and upload offer document templates
           </p>
         </div>
-        <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" data-testid="button-upload-template">
-              <Upload className="w-4 h-4 mr-2" />
-              Upload Custom Template
+        <div className="flex items-center gap-2">
+          <Link href="/hr-dashboard?tab=offer">
+            <Button variant="outline">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Offers
             </Button>
-          </DialogTrigger>
+          </Link>
+          <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" data-testid="button-upload-template">
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Custom Template
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Upload Custom Template</DialogTitle>
@@ -314,7 +452,8 @@ export default function OfferSetup() {
               </Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       <div className="space-y-6">
@@ -345,19 +484,34 @@ export default function OfferSetup() {
                       <p className="text-sm text-muted-foreground">{template.description}</p>
                     </div>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDownloadTemplate(template.id, template.name)}
-                    disabled={isDownloading === template.id}
-                    data-testid={`button-download-${template.id}`}
-                  >
-                    {isDownloading === template.id ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Download className="w-4 h-4" />
-                    )}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePreviewSystemTemplate(template.id, template.name)}
+                      disabled={isLoadingPreview === template.id}
+                      data-testid={`button-preview-${template.id}`}
+                    >
+                      {isLoadingPreview === template.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownloadTemplate(template.id, template.name)}
+                      disabled={isDownloading === template.id}
+                      data-testid={`button-download-${template.id}`}
+                    >
+                      {isDownloading === template.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Download className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -417,21 +571,54 @@ export default function OfferSetup() {
                           <span>{formatFileSize(template.fileSize)}</span>
                           <span className="flex items-center gap-1">
                             <Clock className="w-3 h-3" />
-                            {formatDate(template.createdAt)}
+                            {formatDateTime(template.createdAt)}
                           </span>
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {template.isActive !== 1 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePreviewTemplate(template)}
+                        data-testid={`button-preview-custom-${template.id}`}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <a href={template.filePath} download={template.originalFilename}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          data-testid={`button-download-custom-${template.id}`}
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
+                      </a>
+                      {template.isActive === 1 ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-amber-600 dark:text-amber-400 hover:text-amber-500 dark:hover:text-amber-300 hover:bg-amber-500/10"
+                          onClick={() => deactivateMutation.mutate(template.id)}
+                          disabled={deactivatingId === template.id}
+                          data-testid={`button-deactivate-${template.id}`}
+                        >
+                          {deactivatingId === template.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <XCircle className="w-4 h-4" />
+                          )}
+                          <span className="ml-1">Deactivate</span>
+                        </Button>
+                      ) : (
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => activateMutation.mutate(template.id)}
-                          disabled={activateMutation.isPending}
+                          disabled={activatingId === template.id}
                           data-testid={`button-activate-${template.id}`}
                         >
-                          {activateMutation.isPending ? (
+                          {activatingId === template.id ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
                           ) : (
                             <CheckCircle2 className="w-4 h-4" />
@@ -444,10 +631,10 @@ export default function OfferSetup() {
                         size="sm"
                         className="text-destructive hover:text-destructive dark:hover:text-destructive hover:bg-destructive/10"
                         onClick={() => deleteMutation.mutate(template.id)}
-                        disabled={deleteMutation.isPending}
+                        disabled={deletingId === template.id}
                         data-testid={`button-delete-${template.id}`}
                       >
-                        {deleteMutation.isPending ? (
+                        {deletingId === template.id ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
                           <Trash2 className="w-4 h-4" />
@@ -461,6 +648,32 @@ export default function OfferSetup() {
           </CardContent>
         </Card>
       </div>
+
+      {/* DOCX Preview Dialog */}
+      <Dialog open={showDocxPreview} onOpenChange={(open) => {
+        setShowDocxPreview(open);
+        if (!open) { setPreviewBlob(null); setPreviewFilename(""); }
+      }}>
+        <DialogContent className="max-w-4xl h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Template Preview — {previewFilename}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-end pb-2">
+            <Button size="sm" variant="outline" onClick={handleDownloadFromPreview}>
+              <Download className="h-3.5 w-3.5 mr-1" />
+              Download
+            </Button>
+          </div>
+          <div
+            ref={docxPreviewRefCallback}
+            className="flex-1 overflow-auto border rounded-lg bg-white"
+            style={{ minHeight: 0 }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

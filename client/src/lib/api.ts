@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { Candidate, InsertCandidate, Job, InsertJob, IntegrityCheck, InsertIntegrityCheck, Interview } from "@shared/schema";
+import type { Candidate, InsertCandidate, Job, InsertJob, IntegrityCheck, InsertIntegrityCheck, Interview, OnboardingWorkflow } from "@shared/schema";
 
 // Determine the API URL based on environment
 // In development (Replit), use relative URLs
@@ -51,10 +51,17 @@ api.interceptors.request.use(
   }
 );
 
+// Helper: unwrap paginated { data, total, page, limit } responses into plain arrays
+function unwrapArray<T>(body: any): T[] {
+  if (Array.isArray(body)) return body;
+  if (body && Array.isArray(body.data)) return body.data;
+  return [];
+}
+
 export const jobsService = {
   getAll: async (): Promise<Job[]> => {
     const response = await api.get("/jobs");
-    return response.data;
+    return unwrapArray<Job>(response.data);
   },
   getArchived: async (): Promise<Job[]> => {
     const response = await api.get("/jobs/archived");
@@ -88,7 +95,7 @@ export const jobsService = {
 export const candidateService = {
   getAll: async (): Promise<Candidate[]> => {
     const response = await api.get("/candidates");
-    return response.data;
+    return unwrapArray<Candidate>(response.data);
   },
   getById: async (id: string): Promise<Candidate> => {
     const response = await api.get(`/candidates/${id}`);
@@ -194,4 +201,138 @@ export const integrityChecksService = {
     const response = await api.patch(`/integrity-checks/${id}/reminder-config`, config);
     return response.data;
   }
+};
+
+export const onboardingService = {
+  getWorkflows: async (): Promise<OnboardingWorkflow[]> => {
+    const response = await api.get("/onboarding/workflows");
+    return response.data;
+  },
+  getWorkflow: async (id: string): Promise<OnboardingWorkflow> => {
+    const response = await api.get(`/onboarding/workflows/${id}`);
+    return response.data;
+  },
+  triggerOnboarding: async (
+    candidateId: string,
+    options?: { requirements?: { itSetup?: boolean; buildingAccess?: boolean; equipment?: boolean }; equipmentList?: string[]; startDate?: string; files?: File[]; selectedDocuments?: string[] }
+  ): Promise<{ message: string; workflow: OnboardingWorkflow }> => {
+    const formData = new FormData();
+    if (options?.requirements) formData.append("requirements", JSON.stringify(options.requirements));
+    if (options?.equipmentList) formData.append("equipmentList", JSON.stringify(options.equipmentList));
+    if (options?.startDate) formData.append("startDate", options.startDate);
+    if (options?.selectedDocuments) formData.append("selectedDocuments", JSON.stringify(options.selectedDocuments));
+    if (options?.files) {
+      for (const file of options.files) {
+        formData.append("files", file);
+      }
+    }
+    const response = await api.post(`/onboarding/trigger/${candidateId}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  },
+  confirmProvisioning: async (workflowId: string, type: "it" | "buildingAccess" | "equipment", confirmedBy?: string): Promise<any> => {
+    const response = await api.post(`/onboarding/workflows/${workflowId}/confirm-provisioning`, { type, confirmedBy });
+    return response.data;
+  },
+  getStatus: async (candidateId: string): Promise<OnboardingWorkflow | null> => {
+    const response = await api.get(`/onboarding/status/${candidateId}`);
+    return response.data;
+  },
+  getDocumentRequests: async (workflowId: string) => {
+    const response = await api.get(`/onboarding/document-requests/${workflowId}`);
+    return response.data;
+  },
+  getAgentLogs: async (workflowId: string) => {
+    const response = await api.get(`/onboarding/agent-logs/${workflowId}`);
+    return response.data;
+  },
+  initializeDocumentRequests: async (workflowId: string) => {
+    const response = await api.post(`/onboarding/document-requests/${workflowId}/initialize`);
+    return response.data;
+  },
+  markDocumentReceived: async (requestId: string, documentId?: string) => {
+    const response = await api.post(`/onboarding/document-requests/${requestId}/received`, { documentId });
+    return response.data;
+  },
+  uploadDocument: async (requestId: string, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await api.post(`/onboarding/document-requests/${requestId}/upload`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  },
+  markDocumentVerified: async (requestId: string, verifiedBy: string) => {
+    const response = await api.post(`/onboarding/document-requests/${requestId}/verified`, { verifiedBy });
+    return response.data;
+  },
+  sendReminder: async (requestId: string) => {
+    const response = await api.post(`/onboarding/document-requests/${requestId}/remind`);
+    return response.data;
+  },
+  sendBulkReminder: async (workflowId: string) => {
+    const response = await api.post(`/onboarding/workflows/${workflowId}/remind-all`);
+    return response.data;
+  },
+};
+
+export const offersService = {
+  getAll: async (): Promise<any[]> => {
+    const response = await api.get("/offers");
+    return response.data;
+  },
+  getById: async (id: string): Promise<any> => {
+    const response = await api.get(`/offers/${id}`);
+    return response.data;
+  },
+  getByCandidateId: async (candidateId: string): Promise<any> => {
+    const response = await api.get(`/offers/candidate/${candidateId}`);
+    return response.data;
+  },
+  create: async (data: {
+    candidateId: string;
+    jobId?: string;
+    salary: string;
+    currency?: string;
+    startDate?: string;
+    benefits?: string[];
+    notes?: string;
+    contractType?: string;
+  }): Promise<any> => {
+    const response = await api.post("/offers", data);
+    return response.data;
+  },
+  generateDocumentPreview: async (data: {
+    candidateId: string;
+    jobId?: string;
+    contractType: string;
+    salary?: string;
+    startDate?: string;
+    benefits?: string[];
+  }): Promise<{ blob: Blob; filename: string }> => {
+    const response = await api.post("/offers/generate-document-preview", data, {
+      responseType: "blob",
+    });
+    // Extract filename from Content-Disposition header
+    const disposition = response.headers["content-disposition"] || "";
+    const match = disposition.match(/filename="?([^";\n]+)"?/);
+    const filename = match?.[1] || "document-preview.docx";
+    return { blob: response.data, filename };
+  },
+  update: async (id: string, data: any): Promise<any> => {
+    const response = await api.patch(`/offers/${id}`, data);
+    return response.data;
+  },
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/offers/${id}`);
+  },
+  send: async (id: string): Promise<any> => {
+    const response = await api.post(`/offers/${id}/send`);
+    return response.data;
+  },
+  respond: async (id: string, response: "accepted" | "declined"): Promise<any> => {
+    const resp = await api.post(`/offers/${id}/respond`, { response });
+    return resp.data;
+  },
 };

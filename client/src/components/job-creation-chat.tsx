@@ -324,9 +324,9 @@ export function JobCreationChat({ onJobCreated, onCancel }: JobCreationChatProps
   const hasAnyData = jobSpec && Object.values(jobSpec).some(v => v !== undefined && v !== null && v !== '');
 
   return (
-    <div className="flex flex-col h-[600px]">
+    <div className="flex flex-col h-[80vh]">
       {/* Mode Selector */}
-      <div className="p-4 border-b border-white/10">
+      <div className="p-4 pr-12 border-b border-white/10">
         <Tabs value={mode} onValueChange={(v) => setMode(v as "chat" | "paste" | "research")}>
           <TabsList className="grid w-full grid-cols-3 bg-card/50">
             <TabsTrigger value="research" className="gap-2" data-testid="tab-research-mode">
@@ -347,7 +347,7 @@ export function JobCreationChat({ onJobCreated, onCancel }: JobCreationChatProps
 
       <div className="flex gap-4 flex-1 overflow-hidden p-4">
         {/* Main Content Area */}
-        <div className="flex flex-col flex-1">
+        <div className="flex flex-col flex-1 basis-1/2">
           {mode === "research" ? (
             <>
               {/* AI Research Mode */}
@@ -752,7 +752,7 @@ Benefits: Medical aid, retirement fund, flexible hours`}
 
         {/* Collected Data Panel */}
         {showCollectedData && (
-          <Card className="w-80 flex-shrink-0 p-4 bg-card/50 border-white/10 overflow-hidden relative">
+          <Card className="flex-1 basis-1/2 p-4 bg-card/50 border-white/10 overflow-hidden relative">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-sm">{isEditing ? 'Edit Job Details' : 'Extracted Information'}</h3>
               <div className="flex items-center gap-1">
@@ -791,17 +791,7 @@ Benefits: Medical aid, retirement fund, flexible hours`}
                       <X className="h-3 w-3" />
                     </Button>
                   </>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowCollectedData(false)}
-                    className="h-6 w-6 p-0"
-                    data-testid="button-hide-collected-data"
-                  >
-                    ✕
-                  </Button>
-                )}
+                ) : null}
               </div>
             </div>
             

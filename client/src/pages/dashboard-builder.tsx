@@ -53,7 +53,8 @@ export default function DashboardBuilder() {
     queryKey: ['jobs'],
     queryFn: async () => {
       const response = await api.get('/jobs');
-      return response.data;
+      const body = response.data;
+      return Array.isArray(body) ? body : body.data ?? [];
     }
   });
 
@@ -61,7 +62,8 @@ export default function DashboardBuilder() {
     queryKey: ['candidates'],
     queryFn: async () => {
       const response = await api.get('/candidates');
-      return response.data;
+      const body = response.data;
+      return Array.isArray(body) ? body : body.data ?? [];
     }
   });
 

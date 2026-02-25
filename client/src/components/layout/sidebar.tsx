@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { 
   LayoutDashboard, 
   UserSearch, 
@@ -49,6 +49,21 @@ export function Sidebar() {
   const [location] = useLocation();
   const { isModuleEnabled } = useTenant();
   const [collapsed, setCollapsed] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
+
+  // Auto-scroll sidebar to show the active nav item when route changes
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    // Small delay to let DOM update with the active indicator
+    const timer = setTimeout(() => {
+      const activeEl = nav.querySelector('[data-active="true"]');
+      if (activeEl) {
+        activeEl.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [location]);
 
   const sections: NavSection[] = [
     {
@@ -110,7 +125,7 @@ export function Sidebar() {
 
   const isActive = (href: string) => {
     if (href === "/") return location === "/";
-    return location.startsWith(href);
+    return location === href || location.startsWith(href + "/");
   };
 
   return (
@@ -140,7 +155,7 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 px-2">
+      <nav ref={navRef} className="flex-1 overflow-y-auto py-4 px-2">
         {sections.map((section) => {
           const visibleItems = section.items.filter(item => 
             !item.module || isModuleEnabled(item.module)
@@ -174,10 +189,12 @@ export function Sidebar() {
                         </a>
                       ) : (
                         <Link href={item.href}>
-                          <div className={cn(
+                          <div
+                            data-active={active ? "true" : undefined}
+                            className={cn(
                             "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer group relative",
-                            active 
-                              ? "bg-primary/10 text-primary" 
+                            active
+                              ? "bg-primary/10 text-primary"
                               : "text-muted-foreground hover:bg-accent hover:text-foreground"
                           )}>
                             {active && (

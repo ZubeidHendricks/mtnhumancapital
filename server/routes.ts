@@ -4,7 +4,7 @@ import crypto from "crypto";
 import path from "path";
 import fs from "fs";
 import { storage } from "./storage";
-import { insertCandidateSchema, insertJobSchema, insertIntegrityCheckSchema, insertRecruitmentSessionSchema, insertInterviewSchema, updateInterviewSchema, insertTenantRequestSchema, updateTenantRequestSchema, type InsertCandidate, insertIntegrityDocumentRequirementSchema, updateIntegrityDocumentRequirementSchema, insertCandidateDocumentSchema, updateCandidateDocumentSchema, documentTypes, insertInterviewSessionSchema, insertInterviewFeedbackSchema, updateInterviewFeedbackSchema } from "@shared/schema";
+import { insertCandidateSchema, insertJobSchema, insertIntegrityCheckSchema, insertRecruitmentSessionSchema, insertInterviewSchema, updateInterviewSchema, insertTenantRequestSchema, updateTenantRequestSchema, type InsertCandidate, insertIntegrityDocumentRequirementSchema, updateIntegrityDocumentRequirementSchema, insertCandidateDocumentSchema, updateCandidateDocumentSchema, documentTypes, insertInterviewSessionSchema, insertInterviewFeedbackSchema, updateInterviewFeedbackSchema, insertOfferSchema } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { IntegrityOrchestrator } from "./integrity-orchestrator";
@@ -27,6 +27,7 @@ import { pnetAPIService } from "./pnet-api-service";
 import { pnetApplicationAgent } from "./pnet-application-agent";
 import { pnetJobPostingAgent } from "./pnet-job-posting-agent";
 import { registerWeighbridgeRoutes } from "./routes/weighbridge";
+import type { EmployeeData } from "./document-generator";
 import { registerFleetLogixRoutes } from "./fleetlogix-routes";
 import { ragSupportService } from "./rag-support-service";
 
@@ -62,7 +63,10 @@ function inferDepartmentFromTitle(title: string): string {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  
+
+  const { EmailService } = await import("./email-service");
+  const emailService = new EmailService(storage);
+
   // ============= AUTHENTICATION =============
   app.post("/api/auth/login", async (req, res) => {
     try {
@@ -360,8 +364,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/candidates", async (req, res) => {
     try {
-      const candidates = await storage.getAllCandidates(req.tenant.id);
-      res.json(candidates);
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
+      const { data, total } = await storage.getCandidatesPaginated(req.tenant.id, page, limit);
+      res.json({ data, total, page, limit });
     } catch (error) {
       console.error("Error fetching candidates:", error);
       res.status(500).json({ message: "Failed to fetch candidates" });
@@ -381,12 +387,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Applications endpoint for dashboard (uses candidates data)
+  // Applications endpoint for dashboard (uses candidates data with pagination)
   app.get("/api/applications", async (req, res) => {
     try {
-      const candidates = await storage.getAllCandidates(req.tenant.id);
-      // Return candidates as applications with relevant fields
-      const applications = candidates.map(candidate => ({
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
+      const { data: candidatesData, total } = await storage.getCandidatesPaginated(req.tenant.id, page, limit);
+      const applications = candidatesData.map(candidate => ({
         id: candidate.id,
         candidateId: candidate.id,
         candidateName: candidate.name,
@@ -397,7 +404,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdAt: candidate.createdAt,
         updatedAt: candidate.updatedAt
       }));
-      res.json(applications);
+      res.json({ data: applications, total, page, limit });
     } catch (error) {
       console.error("Error fetching applications:", error);
       res.status(500).json({ message: "Failed to fetch applications" });
@@ -1062,6 +1069,20 @@ Return JSON format:
     }
   });
 
+  app.patch("/api/document-templates/:id/deactivate", async (req, res) => {
+    try {
+      const template = await storage.getDocumentTemplateById(req.tenant.id, req.params.id);
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+      const updated = await storage.deactivateDocumentTemplate(req.tenant.id, req.params.id);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error deactivating document template:", error);
+      res.status(500).json({ message: "Failed to deactivate document template" });
+    }
+  });
+
   app.delete("/api/document-templates/:id", async (req, res) => {
     try {
       const template = await storage.getDocumentTemplateById(req.tenant.id, req.params.id);
@@ -1118,10 +1139,36 @@ Return JSON format:
     companyAddress: z.string().optional(),
   });
 
+  // Fast preview endpoint — uses hardcoded content, no AI call
+  app.get("/api/documents/preview/:type", async (req, res) => {
+    try {
+      const { type } = req.params;
+      const validTypes = ['offer_letter', 'welcome_letter', 'employee_handbook', 'nda', 'employment_contract', 'executive_offer', 'company_policies', 'onboarding_checklist', 'it_request_form', 'benefits_enrollment'];
+
+      if (!validTypes.includes(type)) {
+        return res.status(400).json({ message: `Invalid document type. Must be one of: ${validTypes.join(', ')}` });
+      }
+
+      const { createDocumentGenerator } = await import("./document-generator");
+      const docGenerator = createDocumentGenerator(storage);
+      const tenantConfig = await storage.getTenantConfig(req.tenant.id);
+      const companyName = tenantConfig?.companyName || req.tenant.subdomain || 'Company';
+
+      const result = await docGenerator.generatePreviewDocument(type as any, companyName);
+
+      res.setHeader('Content-Type', result.mimeType);
+      res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+      res.send(result.buffer);
+    } catch (error) {
+      console.error("Error generating preview:", error);
+      res.status(500).json({ message: "Failed to generate preview", error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
   app.post("/api/documents/generate/:type", async (req, res) => {
     try {
       const { type } = req.params;
-      const validTypes = ['offer_letter', 'welcome_letter', 'employee_handbook', 'nda', 'employment_contract'];
+      const validTypes = ['offer_letter', 'welcome_letter', 'employee_handbook', 'nda', 'employment_contract', 'executive_offer', 'company_policies', 'onboarding_checklist', 'it_request_form', 'benefits_enrollment'];
       
       if (!validTypes.includes(type)) {
         return res.status(400).json({ message: `Invalid document type. Must be one of: ${validTypes.join(', ')}` });
@@ -1162,7 +1209,7 @@ Return JSON format:
   app.post("/api/candidates/:id/generate-document/:type", async (req, res) => {
     try {
       const { id, type } = req.params;
-      const validTypes = ['offer_letter', 'welcome_letter', 'employee_handbook', 'nda', 'employment_contract'];
+      const validTypes = ['offer_letter', 'welcome_letter', 'employee_handbook', 'nda', 'employment_contract', 'executive_offer', 'company_policies', 'onboarding_checklist', 'it_request_form', 'benefits_enrollment'];
       
       if (!validTypes.includes(type)) {
         return res.status(400).json({ message: `Invalid document type. Must be one of: ${validTypes.join(', ')}` });
@@ -1502,8 +1549,10 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
 
   app.get("/api/jobs", async (req, res) => {
     try {
-      const jobs = await storage.getAllJobs(req.tenant.id);
-      res.json(jobs);
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
+      const { data, total } = await storage.getJobsPaginated(req.tenant.id, page, limit);
+      res.json({ data, total, page, limit });
     } catch (error) {
       console.error("Error fetching jobs:", error);
       res.status(500).json({ message: "Failed to fetch jobs" });
@@ -2194,10 +2243,12 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
   // Interview routes - enhanced with candidate info
   app.get("/api/interviews", async (req, res) => {
     try {
-      const interviews = await storage.getAllInterviews(req.tenant.id);
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
+      const { data: interviewsData, total } = await storage.getInterviewsPaginated(req.tenant.id, page, limit);
       // Enrich interviews with candidate names
       const enrichedInterviews = await Promise.all(
-        interviews.map(async (interview) => {
+        interviewsData.map(async (interview) => {
           let candidateName = null;
           if (interview.candidateId) {
             const candidate = await storage.getCandidate(req.tenant.id, interview.candidateId);
@@ -2211,7 +2262,7 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
           };
         })
       );
-      res.json(enrichedInterviews);
+      res.json({ data: enrichedInterviews, total, page, limit });
     } catch (error) {
       console.error("Error fetching interviews:", error);
       res.status(500).json({ message: "Failed to fetch interviews" });
@@ -2353,6 +2404,33 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     } catch (error) {
       console.error("Error creating interview session:", error);
       res.status(500).json({ message: "Failed to create interview session" });
+    }
+  });
+
+  // Send interview invitation via email
+  app.post("/api/interview-sessions/send-email-invite", async (req, res) => {
+    try {
+      const { to, candidateName, jobTitle, interviewUrl } = req.body;
+
+      if (!to || !interviewUrl) {
+        return res.status(400).json({ message: "Recipient email and interview URL are required" });
+      }
+
+      const result = await emailService.sendInterviewInvitation({
+        to,
+        candidateName: candidateName || "Candidate",
+        jobTitle: jobTitle || "Open Position",
+        interviewUrl,
+      });
+
+      if (result) {
+        res.json({ success: true, message: `Interview invitation sent to ${process.env.DEV_TEST_EMAIL || to}` });
+      } else {
+        res.status(500).json({ success: false, message: "Failed to send email" });
+      }
+    } catch (error) {
+      console.error("Error sending email invite:", error);
+      res.status(500).json({ message: "Failed to send email invitation" });
     }
   });
 
@@ -2723,16 +2801,31 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
       // Send WhatsApp request if candidate has phone and flag is set
       if (sendWhatsappRequest && candidate.phone) {
         try {
-          const { WhatsAppService } = await import("./whatsapp-service");
-          const whatsappService = new WhatsAppService(storage);
-          
-          const docList = createdRequirements.map((r, i) => 
+          const { whatsappService } = await import("./whatsapp-service");
+
+          const docList = createdRequirements.map((r, i) =>
             `${i + 1}. ${r.description} (Ref: ${r.referenceCode})`
           ).join('\n');
-          
+
           const message = `Hi ${candidate.fullName},\n\nWe need the following documents to complete your background verification:\n\n${docList}\n\nPlease reply with the document type (e.g., "ID Document") before uploading each document so we can track your submission.\n\nReference these codes when submitting:\n${createdRequirements.map(r => `- ${r.referenceCode}`).join('\n')}`;
-          
-          await whatsappService.sendMessage(candidate.phone.replace(/\D/g, ''), message);
+
+          const candidatePhone = candidate.phone.replace(/\D/g, '');
+          const conversation = await whatsappService.getOrCreateConversation(
+            req.tenant.id,
+            candidatePhone,
+            candidatePhone,
+            candidate.fullName,
+            candidate.id,
+            'document_collection'
+          );
+
+          await whatsappService.sendTextMessage(
+            req.tenant.id,
+            conversation.id,
+            candidatePhone,
+            message,
+            'ai'
+          );
         } catch (whatsappError) {
           console.error("Failed to send WhatsApp request:", whatsappError);
           // Don't fail the request, just log the error
@@ -2764,12 +2857,27 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
       }
       
       try {
-        const { WhatsAppService } = await import("./whatsapp-service");
-        const whatsappService = new WhatsAppService(storage);
-        
+        const { whatsappService } = await import("./whatsapp-service");
+
         const message = `Hi ${candidate.fullName},\n\nThis is a reminder that we're still waiting for your ${requirement.description}.\n\nReference code: ${requirement.referenceCode}\n\nPlease upload this document at your earliest convenience to complete your background verification.\n\nReply with "${requirement.documentType}" before sending the document.`;
-        
-        await whatsappService.sendMessage(candidate.phone.replace(/\D/g, ''), message);
+
+        const candidatePhone = candidate.phone.replace(/\D/g, '');
+        const conversation = await whatsappService.getOrCreateConversation(
+          req.tenant.id,
+          candidatePhone,
+          candidatePhone,
+          candidate.fullName,
+          candidate.id,
+          'document_collection'
+        );
+
+        await whatsappService.sendTextMessage(
+          req.tenant.id,
+          conversation.id,
+          candidatePhone,
+          message,
+          'ai'
+        );
         
         // Update reminder tracking
         const now = new Date();
@@ -2798,10 +2906,12 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
   app.get("/api/candidate-documents", async (req, res) => {
     try {
       const { documentType, status, candidateId, search } = req.query;
-      
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
+
       // Get all documents (passing undefined to get all)
       let documents = await storage.getCandidateDocuments(req.tenant.id, candidateId as string | undefined);
-      
+
       // Apply filters
       if (documentType && documentType !== 'all') {
         documents = documents.filter(doc => doc.documentType === documentType);
@@ -2811,15 +2921,19 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
       }
       if (search) {
         const searchLower = (search as string).toLowerCase();
-        documents = documents.filter(doc => 
+        documents = documents.filter(doc =>
           doc.fileName.toLowerCase().includes(searchLower) ||
           doc.referenceCode?.toLowerCase().includes(searchLower) ||
           doc.documentType.toLowerCase().includes(searchLower)
         );
       }
-      
+
+      // Paginate after filtering
+      const total = documents.length;
+      const paginatedDocs = documents.slice((page - 1) * limit, page * limit);
+
       // Get candidate info for each document
-      const documentsWithCandidates = await Promise.all(documents.map(async (doc) => {
+      const documentsWithCandidates = await Promise.all(paginatedDocs.map(async (doc) => {
         if (doc.candidateId) {
           const candidate = await storage.getCandidateById(req.tenant.id, doc.candidateId);
           return {
@@ -2830,8 +2944,8 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
         }
         return { ...doc, candidateName: 'Unknown', candidateEmail: '' };
       }));
-      
-      res.json(documentsWithCandidates);
+
+      res.json({ data: documentsWithCandidates, total, page, limit });
     } catch (error) {
       console.error("Error fetching all candidate documents:", error);
       res.status(500).json({ message: "Failed to fetch documents" });
@@ -3577,13 +3691,138 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     }
   });
 
-  app.post("/api/onboarding/trigger/:candidateId", async (req, res) => {
+  app.post("/api/onboarding/trigger/:candidateId", upload.array("files", 20), async (req, res) => {
     try {
       const { OnboardingOrchestrator } = await import("./onboarding-orchestrator");
+      const { EmailService } = await import("./email-service");
       const orchestrator = new OnboardingOrchestrator(storage);
-      
-      const workflow = await orchestrator.startOnboarding(req.tenant.id, req.params.candidateId);
-      
+      const emailService = new EmailService(storage);
+
+      const { requirements, startDate, equipmentList, selectedDocuments: selectedDocsRaw } = req.body || {};
+      // Parse JSON strings from multipart form data
+      const parsedRequirements = typeof requirements === "string" ? JSON.parse(requirements) : requirements;
+      const parsedEquipmentList = typeof equipmentList === "string" ? JSON.parse(equipmentList) : (equipmentList || []);
+      const parsedSelectedDocuments: string[] = typeof selectedDocsRaw === "string" ? JSON.parse(selectedDocsRaw) : (selectedDocsRaw || []);
+
+      const candidate = await storage.getCandidate(req.tenant.id, req.params.candidateId);
+      if (!candidate) {
+        return res.status(404).json({ message: "Candidate not found" });
+      }
+
+      const workflow = await orchestrator.startOnboarding(req.tenant.id, req.params.candidateId, false, {
+        requirements: parsedRequirements,
+        equipmentList: parsedEquipmentList,
+        startDate: startDate ? new Date(startDate) : undefined,
+      });
+
+      // Build email attachments from manually uploaded files + generated documents
+      const emailAttachments: { filename: string; content: Buffer; contentType: string }[] = [];
+
+      // Upload and collect any manually attached files
+      const files = req.files as Express.Multer.File[] | undefined;
+      if (files && files.length > 0) {
+        for (const file of files) {
+          const fileName = `onboarding_pack_${candidate.id}_${Date.now()}_${file.originalname}`;
+          const filePath = path.join("uploads/onboarding-packs", fileName);
+          fs.mkdirSync(path.dirname(filePath), { recursive: true });
+          fs.writeFileSync(filePath, file.buffer);
+          emailAttachments.push({
+            filename: file.originalname,
+            content: file.buffer,
+            contentType: file.mimetype,
+          });
+        }
+      }
+
+      // Generate DOCX documents for each selected document type
+      const sentDocuments: { id: string; title: string; type: string; status: string; snippet: string; url: string; docType: string }[] = [];
+      if (parsedSelectedDocuments.length > 0) {
+        try {
+          const { createDocumentGenerator } = await import("./document-generator");
+          const docGenerator = createDocumentGenerator(storage);
+          const tenantConfig = await storage.getTenantConfig(req.tenant.id);
+          const companyName = tenantConfig?.companyName || req.tenant.subdomain || "Company";
+
+          const employeeData = {
+            fullName: candidate.fullName,
+            email: candidate.email || undefined,
+            phone: candidate.phone || undefined,
+            jobTitle: (candidate as any).role || (candidate as any).position || "Position",
+            department: (candidate as any).department || "",
+            startDate: startDate || "TBD",
+            companyName,
+          };
+
+          for (const docType of parsedSelectedDocuments) {
+            try {
+              const { buffer, filename, mimeType } = await docGenerator.generateDocument(
+                req.tenant.id,
+                docType as any,
+                employeeData
+              );
+              // Save to disk
+              const uploadDir = path.join(process.cwd(), "uploads", "onboarding-packs");
+              fs.mkdirSync(uploadDir, { recursive: true });
+              const savedPath = path.join(uploadDir, `${candidate.id}_${filename}`);
+              fs.writeFileSync(savedPath, buffer);
+
+              emailAttachments.push({ filename, content: buffer, contentType: mimeType });
+              sentDocuments.push({
+                id: `sent-${docType}-${Date.now()}`,
+                title: filename,
+                type: "document",
+                status: "sent",
+                snippet: `Sent in onboarding pack`,
+                url: `/uploads/onboarding-packs/${candidate.id}_${filename}`,
+                docType,
+              });
+            } catch (docErr) {
+              console.error(`[Onboarding] Failed to generate ${docType} (non-blocking):`, docErr);
+            }
+          }
+        } catch (genErr) {
+          console.error("[Onboarding] Document generation setup failed (non-blocking):", genErr);
+        }
+      }
+
+      // Send onboarding pack email if we have any attachments
+      if (emailAttachments.length > 0) {
+        await emailService.sendEmail({
+          to: candidate.email || "no-email@placeholder.com",
+          subject: `Onboarding Pack - Welcome to the Team, ${candidate.fullName}!`,
+          body: `Dear ${candidate.fullName},\n\nPlease find attached your onboarding documents. Review them carefully and reach out if you have any questions.\n\nBest regards,\nHR Team`,
+          html: `
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #0d9488, #2563eb); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">Welcome to the Team!</h1>
+    <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">${candidate.fullName}</p>
+  </div>
+  <div style="background: #ffffff; border: 1px solid #e5e7eb; border-top: none; padding: 30px; border-radius: 0 0 12px 12px;">
+    <p style="font-size: 16px; color: #374151;">Dear ${candidate.fullName},</p>
+    <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
+      Please find attached your onboarding documents (${emailAttachments.length} file${emailAttachments.length > 1 ? 's' : ''}). Review them carefully and reach out if you have any questions.
+    </p>
+    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 20px 0;">
+      <h3 style="margin: 0 0 8px 0; color: #166534;">Attached Documents</h3>
+      ${emailAttachments.map(a => `<p style="margin: 4px 0; color: #374151;">- ${a.filename}</p>`).join('')}
+    </div>
+    <p style="font-size: 14px; color: #6b7280;">Best regards,<br><strong>HR Team</strong></p>
+  </div>
+</div>`,
+          attachments: emailAttachments,
+        });
+
+        console.log(`[Onboarding] Sent onboarding pack email with ${emailAttachments.length} attachment(s) for ${candidate.fullName}`);
+      }
+
+      // Store sent documents in the workflow for tracking
+      if (sentDocuments.length > 0) {
+        const existingDocs = (workflow.documents as any[]) || [];
+        await storage.updateOnboardingWorkflow(req.tenant.id, workflow.id, {
+          documents: [...existingDocs, ...sentDocuments] as any,
+        });
+      }
+
       res.status(201).json({
         message: "Onboarding workflow started",
         workflow,
@@ -3591,6 +3830,121 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     } catch (error) {
       console.error("Error starting onboarding:", error);
       res.status(500).json({ message: "Failed to start onboarding workflow" });
+    }
+  });
+
+  // HR-facing endpoint: confirm provisioning sub-tasks from the dashboard
+  app.post("/api/onboarding/workflows/:id/confirm-provisioning", async (req, res) => {
+    try {
+      const { type, confirmedBy } = req.body;
+      if (!type || !["it", "buildingAccess", "equipment"].includes(type)) {
+        return res.status(400).json({ message: "type must be 'it', 'buildingAccess', or 'equipment'" });
+      }
+
+      const workflow = await storage.getOnboardingWorkflow(req.tenant.id, req.params.id);
+      if (!workflow) {
+        return res.status(404).json({ message: "Workflow not found" });
+      }
+
+      const pd = (workflow.provisioningData as any) || {};
+      const tasks = (workflow.tasks as any[]) || [];
+
+      if (type === "it") {
+        pd.itConfirmed = true;
+        pd.itConfirmedAt = new Date().toISOString();
+        pd.itConfirmedBy = confirmedBy || "HR Staff";
+      } else if (type === "buildingAccess") {
+        pd.buildingAccessConfirmed = true;
+        pd.buildingAccessConfirmedAt = new Date().toISOString();
+        pd.buildingAccessConfirmedBy = confirmedBy || "Facilities Staff";
+      } else if (type === "equipment") {
+        pd.equipmentConfirmed = true;
+        pd.equipmentConfirmedAt = new Date().toISOString();
+        pd.equipmentConfirmedBy = confirmedBy || "IT Staff";
+      }
+
+      // Check if all provisioning sub-tasks are confirmed
+      const itDone = pd.itConfirmed === true;
+      const buildingDone = pd.buildingAccessConfirmed === true;
+      const equipmentDone = pd.equipmentConfirmed === true || !(pd.equipmentList?.length > 0);
+      const allConfirmed = itDone && buildingDone && equipmentDone;
+
+      if (allConfirmed) {
+        const provTask = tasks.find((t: any) => t.type === "provisioning");
+        if (provTask) provTask.status = "completed";
+      }
+
+      const allTasksDone = tasks.every((t: any) => t.status === "completed");
+
+      await storage.updateOnboardingWorkflow(req.tenant.id, workflow.id, {
+        provisioningData: pd as any,
+        tasks: tasks as any,
+        ...(allTasksDone ? { status: "Completed", completedAt: new Date() } : {}),
+      });
+
+      res.json({
+        message: `${type} provisioning confirmed`,
+        itConfirmed: pd.itConfirmed || false,
+        buildingAccessConfirmed: pd.buildingAccessConfirmed || false,
+        equipmentConfirmed: pd.equipmentConfirmed || false,
+        allComplete: allConfirmed,
+      });
+    } catch (error) {
+      console.error("Error confirming provisioning:", error);
+      res.status(500).json({ message: "Failed to confirm provisioning" });
+    }
+  });
+
+  // Token-based confirmation endpoint (for IT/facilities staff via email link)
+  app.post("/api/onboarding/provisioning/confirm", async (req, res) => {
+    try {
+      const { token, confirmedBy, notes } = req.body;
+      if (!token) return res.status(400).json({ message: "Token required" });
+
+      const allWorkflows = await storage.getAllOnboardingWorkflows(req.tenant.id);
+      const workflow = allWorkflows.find(w => {
+        const pd = w.provisioningData as any;
+        return pd?.itConfirmationToken === token || pd?.buildingAccessToken === token;
+      });
+
+      if (!workflow) return res.status(404).json({ message: "Invalid or expired token" });
+
+      const pd = (workflow.provisioningData as any) || {};
+      const tasks = (workflow.tasks as any[]) || [];
+      const isITToken = pd.itConfirmationToken === token;
+      const isBuildingToken = pd.buildingAccessToken === token;
+
+      if (isITToken) {
+        pd.itConfirmed = true;
+        pd.itConfirmedAt = new Date().toISOString();
+        pd.itConfirmedBy = confirmedBy || "IT Staff";
+        if (notes) pd.itNotes = notes;
+      }
+      if (isBuildingToken) {
+        pd.buildingAccessConfirmed = true;
+        pd.buildingAccessConfirmedAt = new Date().toISOString();
+        pd.buildingAccessConfirmedBy = confirmedBy || "Facilities Staff";
+        if (notes) pd.buildingAccessNotes = notes;
+      }
+
+      const allConfirmed = pd.itConfirmed && pd.buildingAccessConfirmed;
+      if (allConfirmed) {
+        const provTask = tasks.find((t: any) => t.type === "provisioning");
+        if (provTask) provTask.status = "completed";
+      }
+
+      const allTasksDone = tasks.every((t: any) => t.status === "completed");
+
+      await storage.updateOnboardingWorkflow(req.tenant.id, workflow.id, {
+        provisioningData: pd as any,
+        tasks: tasks as any,
+        ...(allTasksDone ? { status: "Completed", completedAt: new Date() } : {}),
+      });
+
+      res.json({ message: "Provisioning confirmed", allComplete: allConfirmed });
+    } catch (error) {
+      console.error("Error confirming provisioning via token:", error);
+      res.status(500).json({ message: "Failed to confirm provisioning" });
     }
   });
 
@@ -3657,12 +4011,15 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
 
   app.post("/api/onboarding/resolve-intervention/:logId", async (req, res) => {
     try {
-      const { notes } = req.body;
-      const updated = await storage.updateOnboardingAgentLog(req.tenant.id, req.params.logId, {
-        requiresHumanReview: 0,
-        reviewedAt: new Date(),
-        reviewNotes: notes,
-      });
+      const { notes, reviewedBy } = req.body;
+      const { createOnboardingAgent } = await import("./onboarding-agent");
+      const agent = createOnboardingAgent(storage);
+      const updated = await agent.resolveHumanIntervention(
+        req.tenant.id,
+        req.params.logId,
+        reviewedBy || "unknown",
+        notes || ""
+      );
       res.json(updated);
     } catch (error) {
       console.error("Error resolving intervention:", error);
@@ -3722,12 +4079,57 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     }
   });
 
+  app.post("/api/onboarding/document-requests/:requestId/upload", upload.single("file"), async (req, res) => {
+    try {
+      const { createOnboardingAgent } = await import("./onboarding-agent");
+      const agent = createOnboardingAgent(storage);
+      const file = req.file;
+
+      if (!file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      // Get the document request to find candidateId and documentType
+      const request = await storage.getOnboardingDocumentRequest(req.tenant.id, req.params.requestId);
+      if (!request) {
+        return res.status(404).json({ message: "Document request not found" });
+      }
+
+      // Save file to disk
+      const fileName = `onboarding_${request.candidateId}_${request.documentType}_${Date.now()}${path.extname(file.originalname)}`;
+      const filePath = path.join("uploads/onboarding-documents", fileName);
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+      fs.writeFileSync(filePath, file.buffer);
+
+      // Create a document record (receivedDocumentId FK references the documents table)
+      const doc = await storage.createDocument(req.tenant.id, {
+        filename: fileName,
+        originalFilename: file.originalname,
+        mimeType: file.mimetype,
+        fileSize: file.size,
+        filePath: filePath,
+        type: "onboarding",
+        status: "uploaded",
+        linkedCandidateId: request.candidateId,
+      });
+
+      // Mark the onboarding document request as received, linking the uploaded doc
+      const updated = await agent.markDocumentReceived(req.tenant.id, req.params.requestId, doc.id);
+
+      res.json({ documentRequest: updated, document: doc });
+    } catch (error) {
+      console.error("Error uploading onboarding document:", error);
+      res.status(500).json({ message: "Failed to upload document" });
+    }
+  });
+
   app.post("/api/onboarding/document-requests/:requestId/verified", async (req, res) => {
     try {
       const { createOnboardingAgent } = await import("./onboarding-agent");
       const agent = createOnboardingAgent(storage);
       
-      const updated = await agent.markDocumentVerified(req.tenant.id, req.params.requestId, "system");
+      const { verifiedBy } = req.body;
+      const updated = await agent.markDocumentVerified(req.tenant.id, req.params.requestId, verifiedBy || "HR Staff");
       
       if (!updated) {
         return res.status(404).json({ message: "Document request not found" });
@@ -3737,6 +4139,19 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     } catch (error) {
       console.error("Error verifying document:", error);
       res.status(500).json({ message: "Failed to verify document" });
+    }
+  });
+
+  app.post("/api/onboarding/workflows/:workflowId/remind-all", async (req, res) => {
+    try {
+      const { createOnboardingAgent } = await import("./onboarding-agent");
+      const agent = createOnboardingAgent(storage);
+
+      const result = await agent.sendBulkReminder(req.tenant.id, req.params.workflowId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error sending bulk reminder:", error);
+      res.status(500).json({ message: "Failed to send reminders" });
     }
   });
 
@@ -5234,8 +5649,10 @@ Format your response as JSON:
   // Get all documents
   app.get("/api/documents", async (req, res) => {
     try {
-      const docs = await storage.getAllDocuments(req.tenant.id);
-      res.json(docs);
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
+      const { data, total } = await storage.getDocumentsPaginated(req.tenant.id, page, limit);
+      res.json({ data, total, page, limit });
     } catch (error) {
       console.error("Error fetching documents:", error);
       res.status(500).json({ message: "Failed to fetch documents" });
@@ -5988,16 +6405,22 @@ Format your response as JSON:
   app.get("/api/whatsapp/conversations", async (req, res) => {
     try {
       const { type, status } = req.query;
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
       let conversations = await storage.getAllWhatsappConversations(req.tenant.id);
-      
+
       if (type && typeof type === "string") {
         conversations = conversations.filter(c => c.type === type);
       }
       if (status && typeof status === "string") {
         conversations = conversations.filter(c => c.status === status);
       }
-      
-      res.json(conversations);
+
+      // Paginate after filtering
+      const total = conversations.length;
+      const data = conversations.slice((page - 1) * limit, page * limit);
+
+      res.json({ data, total, page, limit });
     } catch (error) {
       console.error("Error fetching WhatsApp conversations:", error);
       res.status(500).json({ message: "Failed to fetch conversations" });
@@ -6153,7 +6576,7 @@ Format your response as JSON:
         body,
         senderType || "human"
       );
-      
+
       // Message is always stored locally, even if WhatsApp API fails
       res.status(201).json(message);
     } catch (error: any) {
@@ -7713,12 +8136,12 @@ Format your response as JSON:
 
           const message = `Hi ${employee.firstName}! 👋\n\nYou have a performance self-assessment to complete for *${cycle.name}*.\n\nPlease rate your performance on your assigned KPIs by clicking the link below:\n\n🔗 ${assessmentUrl}\n\n⏰ This link expires in ${expiryDays} days.\n\nIf you have any questions, please contact your HR department.`;
 
-          await whatsappService.sendMessage(
+          await whatsappService.sendTextMessage(
             req.tenant.id,
             conversation.id,
             employee.phone,
             message,
-            'self_assessment_link'
+            'ai'
           );
           whatsappSent = true;
         } catch (whatsappError) {
@@ -9901,6 +10324,335 @@ Format your response as JSON:
       res.json({ success: true, message: "Conversation history cleared" });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message || "Failed to clear history" });
+    }
+  });
+
+  // ============= OFFERS MANAGEMENT =============
+
+  app.get("/api/offers", async (req, res) => {
+    try {
+      const allOffers = await storage.getAllOffers(req.tenant.id);
+      res.json(allOffers);
+    } catch (error) {
+      console.error("Error fetching offers:", error);
+      res.status(500).json({ message: "Failed to fetch offers" });
+    }
+  });
+
+  app.get("/api/offers/candidate/:candidateId", async (req, res) => {
+    try {
+      const offer = await storage.getOfferByCandidateId(req.tenant.id, req.params.candidateId);
+      res.json(offer || null);
+    } catch (error) {
+      console.error("Error fetching candidate offer:", error);
+      res.status(500).json({ message: "Failed to fetch candidate offer" });
+    }
+  });
+
+  app.get("/api/offers/:id", async (req, res) => {
+    try {
+      const offer = await storage.getOffer(req.tenant.id, req.params.id);
+      if (!offer) {
+        return res.status(404).json({ message: "Offer not found" });
+      }
+      res.json(offer);
+    } catch (error) {
+      console.error("Error fetching offer:", error);
+      res.status(500).json({ message: "Failed to fetch offer" });
+    }
+  });
+
+  app.post("/api/offers", async (req, res) => {
+    try {
+      const result = insertOfferSchema.safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      const offer = await storage.createOffer(req.tenant.id, result.data);
+      res.status(201).json(offer);
+    } catch (error) {
+      console.error("Error creating offer:", error);
+      res.status(500).json({ message: "Failed to create offer" });
+    }
+  });
+
+  app.patch("/api/offers/:id", async (req, res) => {
+    try {
+      const result = insertOfferSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        const validationError = fromZodError(result.error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      const offer = await storage.updateOffer(req.tenant.id, req.params.id, result.data);
+      if (!offer) {
+        return res.status(404).json({ message: "Offer not found" });
+      }
+      res.json(offer);
+    } catch (error) {
+      console.error("Error updating offer:", error);
+      res.status(500).json({ message: "Failed to update offer" });
+    }
+  });
+
+  app.delete("/api/offers/:id", async (req, res) => {
+    try {
+      const success = await storage.deleteOffer(req.tenant.id, req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "Offer not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting offer:", error);
+      res.status(500).json({ message: "Failed to delete offer" });
+    }
+  });
+
+  // Generate document preview (returns DOCX binary, no file saved)
+  app.post("/api/offers/generate-document-preview", async (req, res) => {
+    try {
+      const { candidateId, jobId, contractType, salary, startDate, benefits } = req.body;
+      if (!candidateId || !contractType) {
+        return res.status(400).json({ message: "candidateId and contractType are required" });
+      }
+
+      const candidate = await storage.getCandidate(req.tenant.id, candidateId);
+      if (!candidate) {
+        return res.status(404).json({ message: "Candidate not found" });
+      }
+
+      let jobTitle = candidate.role || "Position";
+      let department = "";
+      if (jobId) {
+        const job = await storage.getJob(req.tenant.id, jobId);
+        if (job) {
+          jobTitle = job.title;
+          department = job.department || "";
+        }
+      }
+
+      const { createDocumentGenerator } = await import("./document-generator");
+      const docGenerator = createDocumentGenerator(storage);
+
+      const employeeData: EmployeeData = {
+        fullName: candidate.fullName,
+        email: candidate.email || undefined,
+        phone: candidate.phone || undefined,
+        jobTitle,
+        department,
+        startDate: startDate || "TBD",
+        salary: salary || undefined,
+        currency: "ZAR",
+        benefits: benefits || undefined,
+        companyName: "AHC Recruiting",
+      };
+
+      const { buffer, filename, mimeType } = await docGenerator.generateDocumentForOffer(
+        req.tenant.id,
+        contractType,
+        employeeData
+      );
+
+      res.setHeader("Content-Type", mimeType);
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (error) {
+      console.error("Error generating document preview:", error);
+      res.status(500).json({ message: "Failed to generate document preview" });
+    }
+  });
+
+  app.post("/api/offers/:id/send", upload.single("attachment"), async (req, res) => {
+    try {
+      const offer = await storage.getOffer(req.tenant.id, req.params.id);
+      if (!offer) {
+        return res.status(404).json({ message: "Offer not found" });
+      }
+
+      const candidate = await storage.getCandidate(req.tenant.id, offer.candidateId);
+      if (!candidate) {
+        return res.status(404).json({ message: "Candidate not found" });
+      }
+
+      let jobTitle = candidate.role || "Position";
+      let department = "";
+      if (offer.jobId) {
+        const job = await storage.getJob(req.tenant.id, offer.jobId);
+        if (job) {
+          jobTitle = job.title;
+          department = job.department || "";
+        }
+      }
+
+      // Build email attachments from uploaded file
+      const emailAttachments: { filename: string; content: Buffer; contentType?: string }[] = [];
+      if (req.file) {
+        emailAttachments.push({
+          filename: req.file.originalname,
+          content: req.file.buffer,
+          contentType: req.file.mimetype,
+        });
+      }
+
+      // If offer has contractType, generate DOCX, save to disk, and attach to email
+      let documentPath: string | undefined;
+      if (offer.contractType) {
+        try {
+          const { createDocumentGenerator } = await import("./document-generator");
+          const docGenerator = createDocumentGenerator(storage);
+
+          const employeeData: EmployeeData = {
+            fullName: candidate.fullName,
+            email: candidate.email || undefined,
+            phone: candidate.phone || undefined,
+            jobTitle,
+            department,
+            startDate: offer.startDate ? new Date(offer.startDate).toLocaleDateString() : "TBD",
+            salary: offer.salary || undefined,
+            currency: offer.currency || "ZAR",
+            benefits: Array.isArray(offer.benefits) ? offer.benefits as string[] : undefined,
+            companyName: "AHC Recruiting",
+          };
+
+          const { buffer, filename, mimeType } = await docGenerator.generateDocumentForOffer(
+            req.tenant.id,
+            offer.contractType as any,
+            employeeData
+          );
+
+          // Save to disk
+          const uploadDir = path.join(process.cwd(), "uploads", "offer-documents");
+          if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+          }
+          const savedPath = path.join(uploadDir, filename);
+          fs.writeFileSync(savedPath, buffer);
+          documentPath = `/uploads/offer-documents/${filename}`;
+
+          // Add generated document as email attachment
+          emailAttachments.push({
+            filename,
+            content: buffer,
+            contentType: mimeType,
+          });
+        } catch (docErr) {
+          console.error("Document generation failed (non-blocking):", docErr);
+        }
+      }
+
+      const updatedOffer = await storage.updateOffer(req.tenant.id, offer.id, {
+        status: "sent",
+        sentAt: new Date(),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        ...(documentPath ? { documentPath } : {}),
+      } as any);
+
+      let emailSent = false;
+      if (candidate.email) {
+        emailSent = await emailService.sendOfferNotification({
+          to: candidate.email,
+          candidateName: candidate.fullName,
+          jobTitle,
+          salary: `${offer.currency || "ZAR"} ${offer.salary}`,
+          startDate: offer.startDate ? new Date(offer.startDate).toLocaleDateString() : "TBD",
+          attachments: emailAttachments.length > 0 ? emailAttachments : undefined,
+        });
+      }
+
+      let pipelineTransition = null;
+      try {
+        const { pipelineOrchestrator } = await import("./pipeline-orchestrator");
+        pipelineTransition = await pipelineOrchestrator.transitionCandidate(
+          offer.candidateId,
+          "offer_pending",
+          req.tenant.id,
+          {
+            triggeredBy: "manual",
+            triggeredByUserId: req.user?.id,
+            reason: "Offer sent to candidate",
+            skipPrerequisites: true,
+          }
+        );
+      } catch (err) {
+        console.error("Pipeline transition failed (non-blocking):", err);
+      }
+
+      res.json({
+        offer: updatedOffer,
+        emailSent,
+        pipelineTransition,
+      });
+    } catch (error) {
+      console.error("Error sending offer:", error);
+      res.status(500).json({ message: "Failed to send offer" });
+    }
+  });
+
+  app.post("/api/offers/:id/respond", async (req, res) => {
+    try {
+      const { response } = req.body;
+      if (!response || !["accepted", "declined"].includes(response)) {
+        return res.status(400).json({ message: "response must be 'accepted' or 'declined'" });
+      }
+
+      const offer = await storage.getOffer(req.tenant.id, req.params.id);
+      if (!offer) {
+        return res.status(404).json({ message: "Offer not found" });
+      }
+
+      const updatedOffer = await storage.updateOffer(req.tenant.id, offer.id, {
+        status: response,
+        respondedAt: new Date(),
+      } as any);
+
+      const candidate = await storage.getCandidate(req.tenant.id, offer.candidateId);
+      let jobTitle = candidate?.role || "Position";
+      if (offer.jobId) {
+        const job = await storage.getJob(req.tenant.id, offer.jobId);
+        if (job) jobTitle = job.title;
+      }
+
+      await emailService.notifyHROfOfferResponse(
+        candidate?.fullName || "Unknown",
+        jobTitle,
+        response
+      );
+
+      let pipelineTransition = null;
+      try {
+        const { pipelineOrchestrator } = await import("./pipeline-orchestrator");
+        if (response === "accepted") {
+          pipelineTransition = await pipelineOrchestrator.transitionCandidate(
+            offer.candidateId,
+            "offer_accepted",
+            req.tenant.id,
+            {
+              triggeredBy: "manual",
+              triggeredByUserId: req.user?.id,
+              reason: "Candidate accepted the offer",
+            }
+          );
+        } else {
+          pipelineTransition = await pipelineOrchestrator.transitionCandidate(
+            offer.candidateId,
+            "withdrawn",
+            req.tenant.id,
+            {
+              triggeredBy: "manual",
+              triggeredByUserId: req.user?.id,
+              reason: "Candidate declined the offer",
+              skipPrerequisites: true,
+            }
+          );
+        }
+      } catch (err) {
+        console.error("Pipeline transition failed (non-blocking):", err);
+      }
+
+      res.json({ offer: updatedOffer, pipelineTransition });
+    } catch (error) {
+      console.error("Error responding to offer:", error);
+      res.status(500).json({ message: "Failed to process offer response" });
     }
   });
 
