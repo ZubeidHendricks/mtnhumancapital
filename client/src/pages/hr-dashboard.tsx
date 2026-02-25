@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { JobCreationChat } from "@/components/job-creation-chat";
 import OfferManagement from "@/pages/offer-management";
 import EmployeeOnboarding from "@/pages/employee-onboarding";
@@ -87,6 +87,7 @@ const MOCK_CANDIDATES = [
 ];
 
 export default function HRDashboard() {
+  const [, navigate] = useLocation();
   const [activeTab, setActiveTabState] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('tab') || "jobs";
@@ -1847,7 +1848,11 @@ BENEFITS:
                             const candidate = candidates?.find((c: any) => c.id?.toString() === check.candidateId?.toString());
                             const candidateName = candidate ? (candidate.fullName || candidate.name || "Unknown") : "Unknown Candidate";
                             return (
-                              <div key={check.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-border">
+                              <div
+                                key={check.id}
+                                className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-border cursor-pointer hover:bg-white/10 transition-colors"
+                                onClick={() => navigate(`/integrity-agent?candidateId=${check.candidateId}&readOnly=true`)}
+                              >
                                 <div className="flex items-center gap-3">
                                   <Avatar className="h-8 w-8">
                                     <AvatarFallback className="bg-cyan-100 dark:bg-cyan-900 text-primary text-xs">
@@ -1866,7 +1871,7 @@ BENEFITS:
                                       variant="outline"
                                       className="h-7 text-xs gap-1 border-green-300 dark:border-green-700 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950"
                                       disabled={verifyingCheckId === check.id}
-                                      onClick={() => verifyIntegrityCheck(check.id, check.candidateId)}
+                                      onClick={(e) => { e.stopPropagation(); verifyIntegrityCheck(check.id, check.candidateId); }}
                                     >
                                       {verifyingCheckId === check.id ? (
                                         <Loader2 className="h-3 w-3 animate-spin" />

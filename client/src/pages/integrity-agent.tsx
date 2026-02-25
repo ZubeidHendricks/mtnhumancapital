@@ -68,15 +68,20 @@ export default function IntegrityAgent() {
   const integrityChecksKey = useTenantQueryKey(['integrity-checks']);
 
   const [autoStartPending, setAutoStartPending] = useState(false);
+  const [isReadOnly, setIsReadOnly] = useState(false);
 
   // Auto-select candidate from URL query parameter
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const candidateId = params.get('candidateId');
     const autoStart = params.get('autoStart');
+    const readOnly = params.get('readOnly');
+    if (readOnly === 'true') {
+      setIsReadOnly(true);
+    }
     if (candidateId && !selectedCandidateId) {
       setSelectedCandidateId(candidateId);
-      if (autoStart === 'true') {
+      if (autoStart === 'true' && readOnly !== 'true') {
         setAutoStartPending(true);
       }
     }
@@ -111,6 +116,69 @@ export default function IntegrityAgent() {
       return () => clearTimeout(timer);
     }
   }, [autoStartPending, selectedCandidateId, candidates]);
+
+  // Read-only mode: populate workflow steps from existing findings
+  useEffect(() => {
+    if (!isReadOnly || candidateChecks.length === 0) return;
+
+    // Find the most recent comprehensive check
+    const latestCheck = candidateChecks.find(c => c.checkType === "comprehensive") || candidateChecks[0];
+    let findings = latestCheck.findings;
+    if (typeof findings === 'string') {
+      try { findings = JSON.parse(findings); } catch { findings = {}; }
+    }
+    const findingsMap = (findings && typeof findings === 'object' && !Array.isArray(findings)) ? findings as Record<string, any> : {};
+
+    const steps: WorkflowStep[] = checkTypes.map(type => {
+      const agentFindings = findingsMap[type.value];
+      return {
+        id: type.value,
+        label: type.label,
+        icon: type.icon,
+        status: agentFindings ? "completed" as const :
+                latestCheck.status === "In Progress" ? "pending" as const : "pending" as const,
+        riskScore: agentFindings?.riskScore ?? null,
+        details: agentFindings ? [type.description, `✓ ${agentFindings.findings?.substring(0, 80) || 'Analysis complete'}`] : undefined,
+      };
+    });
+
+    setWorkflowSteps(steps);
+
+    // If check is still in progress, poll for updates
+    if (latestCheck.status === "In Progress") {
+      const pollInterval = setInterval(async () => {
+        try {
+          const updatedCheck = await integrityChecksService.getById(latestCheck.id);
+          let updatedFindings = updatedCheck.findings;
+          if (typeof updatedFindings === 'string') {
+            try { updatedFindings = JSON.parse(updatedFindings); } catch { updatedFindings = {}; }
+          }
+          const updatedMap = (updatedFindings && typeof updatedFindings === 'object' && !Array.isArray(updatedFindings)) ? updatedFindings as Record<string, any> : {};
+
+          setWorkflowSteps(prev => prev.map((step, idx) => {
+            const af = updatedMap[step.id];
+            if (af && step.status !== "completed") {
+              return {
+                ...step,
+                status: "completed" as const,
+                riskScore: af.riskScore ?? null,
+                details: [checkTypes[idx].description, `✓ ${af.findings?.substring(0, 80) || 'Analysis complete'}`],
+              };
+            }
+            return step;
+          }));
+
+          if (updatedCheck.status === "Completed" || updatedCheck.completedAt || updatedCheck.status === "Failed") {
+            clearInterval(pollInterval);
+            refetchCandidateChecks();
+          }
+        } catch (error) {
+          console.error("Error polling check status:", error);
+        }
+      }, 2000);
+      return () => clearInterval(pollInterval);
+    }
+  }, [isReadOnly, candidateChecks]);
 
   const startIntegrityEvaluation = async () => {
     if (!selectedCandidateId) {
@@ -264,6 +332,13 @@ export default function IntegrityAgent() {
           <p className="text-muted-foreground mt-2">
             AI-powered automated background checks and risk assessments
           </p>
+          {isReadOnly && (
+            <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400 text-sm">
+              <Lock className="w-4 h-4 shrink-0" />
+              <span className="font-medium">Viewing Results</span>
+              <span className="text-blue-500/70">— Read-only mode. Return to the Integrity tab to manage verifications.</span>
+            </div>
+          )}
         </div>
 
         {/* Horizontal AI Agent Workflow Pipeline */}
@@ -365,7 +440,7 @@ export default function IntegrityAgent() {
               <CardContent className="space-y-4">
                 <div>
                   <label className="text-xs text-muted-foreground mb-2 block">Candidate</label>
-                  <Select value={selectedCandidateId} onValueChange={setSelectedCandidateId} disabled={isRunningEvaluation}>
+                  <Select value={selectedCandidateId} onValueChange={setSelectedCandidateId} disabled={isRunningEvaluation || isReadOnly}>
                     <SelectTrigger className="bg-white/5 border-border dark:border-white/10" data-testid="select-candidate">
                       <SelectValue placeholder="Choose a candidate..." />
                     </SelectTrigger>
@@ -415,24 +490,31 @@ export default function IntegrityAgent() {
                   </motion.div>
                 )}
 
-                <Button 
-                  onClick={startIntegrityEvaluation}
-                  disabled={!selectedCandidateId || isRunningEvaluation}
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                  data-testid="button-start-evaluation"
-                >
-                  {isRunningEvaluation ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Running Agents...
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="w-4 h-4 mr-2" />
-                      Start Integrity Evaluation
-                    </>
-                  )}
-                </Button>
+                {isReadOnly ? (
+                  <div className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-md bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400 text-sm font-medium">
+                    <Lock className="w-4 h-4" />
+                    Viewing Results
+                  </div>
+                ) : (
+                  <Button
+                    onClick={startIntegrityEvaluation}
+                    disabled={!selectedCandidateId || isRunningEvaluation}
+                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                    data-testid="button-start-evaluation"
+                  >
+                    {isRunningEvaluation ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Running Agents...
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-4 h-4 mr-2" />
+                        Start Integrity Evaluation
+                      </>
+                    )}
+                  </Button>
+                )}
               </CardContent>
             </Card>
 
