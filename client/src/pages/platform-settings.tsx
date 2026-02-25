@@ -102,14 +102,14 @@ export default function PlatformSettings() {
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-muted to-background bg-clip-text text-transparent">
                   Platform Settings
                 </h1>
-                <p className="text-zinc-400">
+                <p className="text-muted-foreground">
                   Configure API keys for job board integrations
                 </p>
               </div>
             </div>
           </div>
 
-          <Card className="bg-gray-100/50 border-gray-200 dark:border-zinc-800 mb-6">
+          <Card className="bg-secondary border-border dark:border-border mb-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Shield className="h-5 w-5 text-foreground dark:text-foreground" />
@@ -128,7 +128,7 @@ export default function PlatformSettings() {
               const isConfigured = getPlatformStatus(platform.platform);
               
               return (
-                <Card key={platform.platform} className="bg-gray-100/50 border-gray-200 dark:border-zinc-800" data-testid={`card-platform-${platform.platform}`}>
+                <Card key={platform.platform} className="bg-secondary border-border dark:border-border" data-testid={`card-platform-${platform.platform}`}>
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
@@ -144,7 +144,7 @@ export default function PlatformSettings() {
                         variant="outline" 
                         className={isConfigured 
                           ? "border-border text-foreground" 
-                          : "border-zinc-600 text-zinc-400"
+                          : "border-zinc-600 text-muted-foreground"
                         }
                         data-testid={`status-${platform.platform}`}
                       >
@@ -164,8 +164,8 @@ export default function PlatformSettings() {
                       {platform.requiredKeys.map((keyConfig) => (
                         <div key={keyConfig.key} className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <Label className="text-zinc-300">{keyConfig.label}</Label>
-                            <code className="text-xs text-zinc-500 bg-gray-200 px-2 py-1 rounded">
+                            <Label className="text-muted-foreground">{keyConfig.label}</Label>
+                            <code className="text-xs text-zinc-500 bg-secondary px-2 py-1 rounded">
                               {keyConfig.key}
                             </code>
                           </div>
@@ -175,7 +175,7 @@ export default function PlatformSettings() {
                               <Input
                                 type={showKeys[keyConfig.key] ? "text" : "password"}
                                 placeholder={isConfigured ? "••••••••••••••••" : "Enter API key..."}
-                                className="bg-gray-200 border-gray-300 dark:border-zinc-700 pr-10"
+                                className="bg-secondary border-border dark:border-border pr-10"
                                 disabled={isConfigured}
                                 data-testid={`input-${keyConfig.key.toLowerCase()}`}
                               />
@@ -187,9 +187,9 @@ export default function PlatformSettings() {
                                 onClick={() => toggleShowKey(keyConfig.key)}
                               >
                                 {showKeys[keyConfig.key] ? (
-                                  <EyeOff className="h-4 w-4 text-zinc-400" />
+                                  <EyeOff className="h-4 w-4 text-muted-foreground" />
                                 ) : (
-                                  <Eye className="h-4 w-4 text-zinc-400" />
+                                  <Eye className="h-4 w-4 text-muted-foreground" />
                                 )}
                               </Button>
                             </div>
@@ -198,7 +198,7 @@ export default function PlatformSettings() {
                       ))}
                     </div>
                     
-                    <Separator className="bg-zinc-700" />
+                    <Separator className="bg-secondary" />
                     
                     <div className="flex items-center justify-between">
                       <a 
@@ -239,7 +239,7 @@ export default function PlatformSettings() {
             })}
           </div>
 
-          <Card className="bg-gray-100/50 border-gray-200 dark:border-zinc-800 mt-6">
+          <Card className="bg-secondary border-border dark:border-border mt-6">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Key className="h-5 w-5 text-foreground" />
@@ -247,19 +247,19 @@ export default function PlatformSettings() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-3 text-sm text-zinc-400">
+              <div className="space-y-3 text-sm text-muted-foreground">
                 <p>
-                  <strong className="text-zinc-300">1. Get API Credentials:</strong> Register as a developer 
+                  <strong className="text-muted-foreground">1. Get API Credentials:</strong> Register as a developer 
                   or employer on each platform to obtain API keys.
                 </p>
                 <p>
-                  <strong className="text-zinc-300">2. Set Environment Variables:</strong> API keys are stored 
+                  <strong className="text-muted-foreground">2. Set Environment Variables:</strong> API keys are stored 
                   as secure environment secrets. Use the Secrets tab in your Replit project to add them.
                 </p>
                 <p>
-                  <strong className="text-zinc-300">3. Required Variables:</strong>
+                  <strong className="text-muted-foreground">3. Required Variables:</strong>
                 </p>
-                <div className="bg-gray-200 rounded-lg p-4 font-mono text-xs space-y-1">
+                <div className="bg-secondary rounded-lg p-4 font-mono text-xs space-y-1">
                   <p># LinkedIn</p>
                   <p>LINKEDIN_API_KEY=your_linkedin_api_key</p>
                   <p>LINKEDIN_API_SECRET=your_linkedin_secret</p>

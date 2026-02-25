@@ -169,7 +169,7 @@ export default function EmployeeOnboarding() {
   const getStatusBadge = (status: NewEmployee["onboardingStatus"]) => {
     switch (status) {
       case "pending":
-        return <Badge className="bg-gray-500/20 text-gray-600 border-0">Pending</Badge>;
+        return <Badge className="bg-secondary0/20 text-gray-600 border-0">Pending</Badge>;
       case "in_progress":
         return <Badge className="bg-muted/20 text-foreground dark:text-foreground border-0">In Progress</Badge>;
       case "completed":
@@ -310,7 +310,7 @@ export default function EmployeeOnboarding() {
             {employees.map((employee) => (
               <div 
                 key={employee.id}
-                className="p-4 rounded-lg bg-gray-200/50 border border-gray-300 dark:border-zinc-700/50"
+                className="p-4 rounded-lg bg-secondary border border-border dark:border-border/50"
                 data-testid={`employee-item-${employee.id}`}
               >
                 <div className="flex items-center justify-between mb-2">

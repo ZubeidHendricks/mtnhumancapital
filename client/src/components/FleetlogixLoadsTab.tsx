@@ -457,7 +457,7 @@ export function FleetlogixLoadsTab() {
                         ? "bg-muted text-foreground"
                         : item.load?.status === "pending"
                         ? "bg-muted text-foreground"
-                        : "bg-gray-100 text-gray-800"
+                        : "bg-secondary text-foreground"
                     }`}>
                       {item.load?.status || "pending"}
                     </span>

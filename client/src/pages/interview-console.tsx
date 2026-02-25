@@ -141,7 +141,7 @@ export default function InterviewConsole() {
       case "started": return "bg-muted/10 text-foreground";
       case "pending": return "bg-muted/10 text-foreground";
       case "expired": return "bg-destructive/10 text-destructive";
-      default: return "bg-gray-500/10 text-gray-500";
+      default: return "bg-secondary0/10 text-muted-foreground";
     }
   };
 
@@ -151,7 +151,7 @@ export default function InterviewConsole() {
       case "rejected": return "bg-destructive text-white";
       case "pipeline": return "bg-muted text-white";
       case "needs_review": return "bg-muted text-white";
-      default: return "bg-gray-500/10 text-gray-500";
+      default: return "bg-secondary0/10 text-muted-foreground";
     }
   };
 
@@ -168,7 +168,7 @@ export default function InterviewConsole() {
     switch (sentiment) {
       case "positive": return "text-foreground";
       case "negative": return "text-destructive";
-      default: return "text-gray-500";
+      default: return "text-muted-foreground";
     }
   };
 
@@ -425,7 +425,7 @@ export default function InterviewConsole() {
                               className={`p-3 rounded-lg ${
                                 segment.speakerRole === "candidate"
                                   ? "bg-muted/20 ml-0 mr-8"
-                                  : "bg-gray-50/20 ml-8 mr-0"
+                                  : "bg-secondary/20 ml-8 mr-0"
                               }`}
                             >
                               <div className="flex items-center justify-between mb-1">
@@ -615,7 +615,7 @@ export default function InterviewConsole() {
 
 function ScoreCard({ label, value }: { label: string; value: number | null }) {
   const getScoreColor = (score: number | null) => {
-    if (score === null) return "text-gray-400";
+    if (score === null) return "text-muted-foreground";
     if (score >= 80) return "text-foreground";
     if (score >= 60) return "text-foreground";
     return "text-destructive";

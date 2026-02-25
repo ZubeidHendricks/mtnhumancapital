@@ -127,7 +127,7 @@ export default function WeighbridgeDashboard() {
       case "pending":
         return "bg-muted";
       default:
-        return "bg-gray-500";
+        return "bg-secondary0";
     }
   };
 

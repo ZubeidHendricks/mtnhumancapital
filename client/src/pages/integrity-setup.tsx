@@ -216,18 +216,18 @@ export default function IntegritySetup() {
             {displayChecks.map((check) => (
               <div 
                 key={check.id} 
-                className="flex items-center justify-between p-4 rounded-lg bg-gray-50/50 border border-gray-200 dark:border-zinc-700/50"
+                className="flex items-center justify-between p-4 rounded-lg bg-secondary/50 border border-border dark:border-border/50"
                 data-testid={`check-item-${check.id}`}
               >
                 <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${check.enabled ? 'bg-muted/20 text-foreground' : 'bg-gray-100 text-gray-400'}`}>
+                  <div className={`p-2 rounded-lg ${check.enabled ? 'bg-muted/20 text-foreground' : 'bg-secondary text-muted-foreground'}`}>
                     {CHECK_ICONS[check.id]}
                   </div>
                   <div>
-                    <h4 className="font-medium text-gray-900">{check.name}</h4>
-                    <p className="text-sm text-gray-500">{check.description}</p>
+                    <h4 className="font-medium text-foreground">{check.name}</h4>
+                    <p className="text-sm text-muted-foreground">{check.description}</p>
                     {check.cost && (
-                      <Badge variant="outline" className="mt-1 text-xs text-gray-600 border-gray-300 dark:border-zinc-600">
+                      <Badge variant="outline" className="mt-1 text-xs text-gray-600 border-border dark:border-zinc-600">
                         Est. cost: {check.cost}
                       </Badge>
                     )}
@@ -272,13 +272,13 @@ export default function IntegritySetup() {
                 className={`p-4 rounded-lg border transition-all ${
                   provider.connected 
                     ? 'bg-muted/10 border-border/30' 
-                    : 'bg-gray-200/50 border-gray-300 dark:border-zinc-700/50'
+                    : 'bg-secondary border-border dark:border-border/50'
                 }`}
                 data-testid={`provider-${provider.id}`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <h4 className="font-medium text-gray-900">{provider.name}</h4>
+                    <h4 className="font-medium text-foreground">{provider.name}</h4>
                     {provider.connected && (
                       <Badge className="bg-muted/20 text-foreground border-border/30">
                         Connected
@@ -314,12 +314,12 @@ export default function IntegritySetup() {
                     </Button>
                   )}
                 </div>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   Supports: {provider.checks.map(c => getCheckName(c)).join(", ")}
                 </p>
 
                 {selectedProvider === provider.id && (
-                  <div className="mt-4 space-y-3 p-3 rounded-lg bg-gray-100/50 border border-gray-300 dark:border-zinc-700">
+                  <div className="mt-4 space-y-3 p-3 rounded-lg bg-secondary border border-border dark:border-border">
                     <div className="space-y-2">
                       <Label htmlFor={`apiKey-${provider.id}`}>API Key</Label>
                       <Input

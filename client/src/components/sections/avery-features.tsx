@@ -140,7 +140,7 @@ export function AHCFeatures() {
           </motion.div>
         </div>
 
-        <div className="bg-zinc-900 border border-white/10 rounded-3xl p-12 mb-32 text-center relative overflow-hidden">
+        <div className="bg-secondary border border-white/10 rounded-3xl p-12 mb-32 text-center relative overflow-hidden">
            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
            <motion.div
              initial={{ opacity: 0, y: 20 }}
@@ -165,7 +165,7 @@ export function AHCFeatures() {
                 <div className="text-white/60">All-in-one</div>
              </div>
 
-             <Button className="bg-white text-black hover:bg-gray-200 rounded-full px-8 py-6 text-lg font-medium">
+             <Button className="bg-white text-black hover:bg-secondary rounded-full px-8 py-6 text-lg font-medium">
                Book a demo
              </Button>
            </motion.div>

@@ -102,7 +102,7 @@ function getStatusBadge(status: string) {
     case 'rejected':
       return <Badge variant="outline" className="bg-destructive text-destructive border-destructive">Rejected</Badge>;
     case 'expired':
-      return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Expired</Badge>;
+      return <Badge variant="outline" className="bg-secondary text-foreground border-border">Expired</Badge>;
     default:
       return <Badge variant="outline">{status}</Badge>;
   }
@@ -919,7 +919,7 @@ export default function CandidateDetail() {
                                 <div className={`w-3 h-3 rounded-full ${
                                   session.status === 'completed' ? 'bg-muted' :
                                   session.status === 'started' ? 'bg-muted' :
-                                  session.status === 'expired' ? 'bg-gray-500' :
+                                  session.status === 'expired' ? 'bg-secondary0' :
                                   'bg-muted'
                                 }`} />
                                 <div>
@@ -1394,10 +1394,10 @@ export default function CandidateDetail() {
                       className="flex items-center justify-between px-3 py-2 rounded-md text-sm bg-white border border-border"
                     >
                       <div className="flex items-center gap-2">
-                        <code className="text-xs font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-700">
+                        <code className="text-xs font-mono bg-secondary px-2 py-0.5 rounded text-foreground">
                           {req.referenceCode}
                         </code>
-                        <span className="text-gray-700 text-xs">
+                        <span className="text-foreground text-xs">
                           {getDocTypeLabel(req.documentType)}
                         </span>
                       </div>
@@ -1467,7 +1467,7 @@ export default function CandidateDetail() {
                         data-testid={`message-${msg.id}`}
                       >
                         {msg.direction === 'inbound' && (
-                          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
                             <User className="h-4 w-4 text-gray-600" />
                           </div>
                         )}
@@ -1476,7 +1476,7 @@ export default function CandidateDetail() {
                             ? msg.senderType === 'ai' 
                               ? 'bg-muted text-foreground' 
                               : 'bg-muted text-foreground'
-                            : 'bg-gray-100 text-gray-900'
+                            : 'bg-secondary text-foreground'
                         }`}>
                           {msg.senderType === 'ai' && msg.direction === 'outbound' && (
                             <div className="text-xs text-foreground mb-1 flex items-center gap-1">

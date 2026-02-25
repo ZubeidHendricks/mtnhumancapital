@@ -187,12 +187,12 @@ export function TutorialWalkthrough({ isOpen, onClose, onNavigate }: TutorialWal
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <Card className="w-full max-w-lg mx-4 bg-gray-100 border-gray-300 dark:border-zinc-700 shadow-2xl" data-testid="tutorial-card">
+      <Card className="w-full max-w-lg mx-4 bg-secondary border-border dark:border-border shadow-2xl" data-testid="tutorial-card">
         <CardHeader className="relative pb-2">
           <Button 
             variant="ghost" 
             size="icon" 
-            className="absolute right-4 top-4 text-zinc-400 hover:text-white"
+            className="absolute right-4 top-4 text-muted-foreground hover:text-white"
             onClick={handleSkip}
             data-testid="button-close-tutorial"
           >
@@ -208,7 +208,7 @@ export function TutorialWalkthrough({ isOpen, onClose, onNavigate }: TutorialWal
           <Progress value={progress} className="h-1 mb-4" />
           
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-gray-200/50 border border-gray-300 dark:border-zinc-700">
+            <div className="p-3 rounded-xl bg-secondary border border-border dark:border-border">
               {step.icon}
             </div>
             <CardTitle className="text-xl text-white">{step.title}</CardTitle>
@@ -216,7 +216,7 @@ export function TutorialWalkthrough({ isOpen, onClose, onNavigate }: TutorialWal
         </CardHeader>
         
         <CardContent className="space-y-4">
-          <p className="text-zinc-300 leading-relaxed">
+          <p className="text-muted-foreground leading-relaxed">
             {step.description}
           </p>
           
@@ -231,13 +231,13 @@ export function TutorialWalkthrough({ isOpen, onClose, onNavigate }: TutorialWal
           
           {step.tips && step.tips.length > 0 && (
             <div className="space-y-2">
-              <p className="text-sm font-medium text-zinc-400 flex items-center gap-2">
+              <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <HelpCircle className="h-4 w-4" />
                 Quick Tips
               </p>
               <ul className="space-y-1.5">
                 {step.tips.map((tip, index) => (
-                  <li key={index} className="text-sm text-zinc-400 flex items-start gap-2">
+                  <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
                     <span className="text-foreground mt-0.5">•</span>
                     {tip}
                   </li>
@@ -250,7 +250,7 @@ export function TutorialWalkthrough({ isOpen, onClose, onNavigate }: TutorialWal
             <Button 
               variant="outline" 
               size="sm"
-              className="w-full border-gray-300 dark:border-zinc-700 text-zinc-600 hover:bg-gray-200 dark:hover:bg-zinc-800"
+              className="w-full border-border dark:border-border text-zinc-600 hover:bg-secondary dark:hover:bg-secondary"
               onClick={() => handleGoToStep(step.route!)}
               data-testid={`button-goto-${step.id}`}
             >
@@ -260,12 +260,12 @@ export function TutorialWalkthrough({ isOpen, onClose, onNavigate }: TutorialWal
           )}
         </CardContent>
         
-        <CardFooter className="flex justify-between pt-4 border-t border-gray-200 dark:border-zinc-800">
+        <CardFooter className="flex justify-between pt-4 border-t border-border dark:border-border">
           <Button 
             variant="ghost" 
             onClick={handlePrevious}
             disabled={isFirstStep}
-            className="text-zinc-400 hover:text-white disabled:opacity-30"
+            className="text-muted-foreground hover:text-white disabled:opacity-30"
             data-testid="button-previous-step"
           >
             <ChevronLeft className="h-4 w-4 mr-1" />
@@ -277,7 +277,7 @@ export function TutorialWalkthrough({ isOpen, onClose, onNavigate }: TutorialWal
               <Button 
                 variant="ghost"
                 onClick={handleSkip}
-                className="text-zinc-500 hover:text-zinc-300"
+                className="text-zinc-500 hover:text-muted-foreground"
                 data-testid="button-skip-tutorial"
               >
                 Skip Tutorial

@@ -246,7 +246,7 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
       <header className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center z-20">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-white/5 border border-border dark:border-white/10 flex items-center justify-center">
-            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-muted animate-pulse' : 'bg-gray-500'}`} />
+            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-muted animate-pulse' : 'bg-secondary0'}`} />
           </div>
           <div>
             <h1 className="font-medium text-sm text-foreground/90">Voice Interview Session</h1>

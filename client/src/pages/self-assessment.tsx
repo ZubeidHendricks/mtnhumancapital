@@ -80,7 +80,7 @@ function StarRating({
               "w-8 h-8 transition-colors",
               (hovered !== null ? star <= hovered : star <= value)
                 ? "fill-yellow-400 text-foreground"
-                : "fill-gray-200 text-gray-300"
+                : "fill-gray-200 text-muted-foreground"
             )}
           />
         </button>
@@ -180,7 +180,7 @@ export default function SelfAssessment() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-secondary">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-foreground mx-auto mb-4" />
           <p className="text-gray-600">Loading your assessment...</p>
@@ -191,11 +191,11 @@ export default function SelfAssessment() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-secondary p-4">
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
             <AlertCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Unable to Load Assessment</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-2">Unable to Load Assessment</h2>
             <p className="text-gray-600">{(error as Error).message}</p>
           </CardContent>
         </Card>
@@ -205,11 +205,11 @@ export default function SelfAssessment() {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-secondary p-4">
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
             <CheckCircle className="w-16 h-16 text-foreground mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Thank You!</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-2">Thank You!</h2>
             <p className="text-gray-600">
               Your self-assessment has been submitted successfully. Your manager will review your responses.
             </p>
@@ -222,7 +222,7 @@ export default function SelfAssessment() {
   if (!data) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-secondary">
       <header 
         className="bg-white shadow-sm border-b"
         style={{ borderBottomColor: primaryColor }}
@@ -264,9 +264,9 @@ export default function SelfAssessment() {
                   <User className="w-4 h-4" />
                   <span>{data.employee.name}</span>
                 </div>
-                <p className="text-sm text-gray-500">{data.employee.position}</p>
+                <p className="text-sm text-muted-foreground">{data.employee.position}</p>
                 {data.employee.department && (
-                  <p className="text-sm text-gray-500">{data.employee.department}</p>
+                  <p className="text-sm text-muted-foreground">{data.employee.department}</p>
                 )}
               </div>
             </div>
@@ -275,7 +275,7 @@ export default function SelfAssessment() {
             <p className="text-gray-600">
               Please rate your performance on each of the KPIs below. Use the 5-star scale where:
             </p>
-            <div className="flex flex-wrap gap-4 mt-2 text-sm text-gray-500">
+            <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
               <span>1 = Needs Improvement</span>
               <span>2 = Below Expectations</span>
               <span>3 = Meets Expectations</span>
@@ -305,13 +305,13 @@ export default function SelfAssessment() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-sm">
                   <div>
-                    <span className="text-gray-500">Target:</span>{" "}
+                    <span className="text-muted-foreground">Target:</span>{" "}
                     <span className="font-medium">
                       {assignment.customTarget || assignment.template.targetValue}
                     </span>
                   </div>
                   <div>
-                    <span className="text-gray-500">Weight:</span>{" "}
+                    <span className="text-muted-foreground">Weight:</span>{" "}
                     <span className="font-medium">{assignment.template.weight}%</span>
                   </div>
                 </div>
@@ -320,7 +320,7 @@ export default function SelfAssessment() {
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-foreground mb-2">
                       Your Rating *
                     </label>
                     <StarRating
@@ -328,7 +328,7 @@ export default function SelfAssessment() {
                       onChange={(v) => updateScore(assignment.id, "score", v)}
                     />
                     {scores[assignment.id]?.score > 0 && (
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-sm text-muted-foreground mt-1">
                         {scores[assignment.id]?.score === 1 && "Needs Improvement"}
                         {scores[assignment.id]?.score === 2 && "Below Expectations"}
                         {scores[assignment.id]?.score === 3 && "Meets Expectations"}
@@ -339,7 +339,7 @@ export default function SelfAssessment() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-foreground mb-2">
                       Comments (optional)
                     </label>
                     <Textarea
@@ -398,14 +398,14 @@ export default function SelfAssessment() {
         </div>
 
         {!allScoresProvided && (
-          <p className="text-sm text-gray-500 text-right mt-2">
+          <p className="text-sm text-muted-foreground text-right mt-2">
             Please rate all {data.assignments.length} KPIs before submitting
           </p>
         )}
       </main>
 
       <footer className="border-t bg-white mt-12">
-        <div className="max-w-4xl mx-auto px-4 py-4 text-center text-sm text-gray-500">
+        <div className="max-w-4xl mx-auto px-4 py-4 text-center text-sm text-muted-foreground">
           {data.tenantConfig?.companyName || "Performance Management System"}
         </div>
       </footer>

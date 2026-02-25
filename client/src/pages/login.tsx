@@ -61,13 +61,13 @@ export default function Login() {
             data-testid="img-login-logo"
           />
           <h1 className="text-3xl font-bold tracking-tight text-black">Welcome Back</h1>
-          <p className="text-gray-500 mt-2">Sign in to your MTN - Human Capital workspace</p>
+          <p className="text-muted-foreground mt-2">Sign in to your MTN - Human Capital workspace</p>
         </div>
 
-        <Card className="border-gray-200 bg-white shadow-lg">
+        <Card className="border-border bg-white shadow-lg">
           <CardHeader>
             <CardTitle className="text-black">Authentication</CardTitle>
-            <CardDescription className="text-gray-500">Enter your credentials to access the platform</CardDescription>
+            <CardDescription className="text-muted-foreground">Enter your credentials to access the platform</CardDescription>
           </CardHeader>
           <CardContent>
             {error && (
@@ -84,7 +84,7 @@ export default function Login() {
                   type="text" 
                   placeholder="admin"
                   data-testid="input-username" 
-                  className="bg-white border-gray-300 text-black"
+                  className="bg-white border-border text-black"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
@@ -97,12 +97,12 @@ export default function Login() {
                   <Button variant="link" className="p-0 h-auto text-xs text-black">Forgot password?</Button>
                 </div>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                  <Lock className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
                   <Input 
                     id="password" 
                     type="password" 
                     placeholder="••••••••" 
-                    className="pl-9 bg-white border-gray-300 text-black"
+                    className="pl-9 bg-white border-border text-black"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -126,17 +126,17 @@ export default function Login() {
               </Button>
             </form>
           </CardContent>
-          <CardFooter className="flex flex-col gap-4 border-t border-gray-200 pt-6">
-            <div className="text-center text-sm text-gray-500">
+          <CardFooter className="flex flex-col gap-4 border-t border-border pt-6">
+            <div className="text-center text-sm text-muted-foreground">
               Don't have an account? <span className="text-black cursor-pointer hover:underline font-medium">Contact Sales</span>
             </div>
             
-            <div className="w-full pt-4 border-t border-gray-200">
-              <p className="text-xs text-center text-gray-400 mb-2">Dev Mode Options</p>
+            <div className="w-full pt-4 border-t border-border">
+              <p className="text-xs text-center text-muted-foreground mb-2">Dev Mode Options</p>
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="w-full border-gray-300 text-black hover:bg-gray-50"
+                className="w-full border-border text-black hover:bg-secondary"
                 onClick={handleDemoLogin}
                 data-testid="button-demo-login"
               >
@@ -147,7 +147,7 @@ export default function Login() {
         </Card>
 
         <div className="mt-8 text-center space-y-2">
-          <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
+          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
             <div className="w-2 h-2 rounded-full bg-muted" />
             <span>System Status: Operational</span>
             <span className="mx-2">•</span>

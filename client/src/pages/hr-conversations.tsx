@@ -637,10 +637,10 @@ export default function HRConversations() {
                           }`}
                         >
                           <div className="flex items-center gap-2">
-                            <code className="text-xs font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-700">
+                            <code className="text-xs font-mono bg-secondary px-2 py-0.5 rounded text-foreground">
                               {req.referenceCode}
                             </code>
-                            <span className="text-gray-700">
+                            <span className="text-foreground">
                               {req.description || DOC_TYPE_OPTIONS.find(d => d.value === req.documentType)?.label || req.documentType}
                             </span>
                           </div>
@@ -677,7 +677,7 @@ export default function HRConversations() {
                             data-testid={`message-${msg.id}`}
                           >
                             {msg.direction === 'inbound' && (
-                              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                              <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
                                 <User className="h-4 w-4 text-gray-600" />
                               </div>
                             )}
@@ -686,7 +686,7 @@ export default function HRConversations() {
                                 ? msg.senderType === 'ai' 
                                   ? 'bg-muted text-foreground' 
                                   : 'bg-muted text-foreground'
-                                : 'bg-gray-100 text-gray-900'
+                                : 'bg-secondary text-foreground'
                             }`}>
                               {msg.senderType === 'ai' && msg.direction === 'outbound' && (
                                 <div className="text-xs text-foreground mb-1 flex items-center gap-1">

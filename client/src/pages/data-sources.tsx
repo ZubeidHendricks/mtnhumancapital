@@ -208,7 +208,7 @@ export default function DataSourcesPage() {
       active: { variant: "default", icon: CheckCircle, color: "text-foreground" },
       pending: { variant: "secondary", icon: Clock, color: "text-foreground" },
       error: { variant: "destructive", icon: XCircle, color: "text-destructive" },
-      inactive: { variant: "outline", icon: AlertCircle, color: "text-gray-400" },
+      inactive: { variant: "outline", icon: AlertCircle, color: "text-muted-foreground" },
     };
     const { variant, icon: Icon, color } = config[status] || config.inactive;
     return (
@@ -250,7 +250,7 @@ export default function DataSourcesPage() {
               <Database className="h-7 w-7 text-foreground" />
               Data Sources Hub
             </h1>
-            <p className="text-gray-400 mt-1">
+            <p className="text-muted-foreground mt-1">
               Connect and manage external data sources for automatic KPI tracking
             </p>
           </div>
@@ -269,7 +269,7 @@ export default function DataSourcesPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-400 text-sm">Total Sources</p>
+                  <p className="text-muted-foreground text-sm">Total Sources</p>
                   <p className="text-2xl font-bold text-foreground" data-testid="stat-total">{stats.total}</p>
                 </div>
                 <div className="p-3 bg-muted/10 rounded-lg">
@@ -283,7 +283,7 @@ export default function DataSourcesPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-400 text-sm">Active</p>
+                  <p className="text-muted-foreground text-sm">Active</p>
                   <p className="text-2xl font-bold text-foreground" data-testid="stat-active">{stats.active}</p>
                 </div>
                 <div className="p-3 bg-muted/10 rounded-lg">
@@ -297,7 +297,7 @@ export default function DataSourcesPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-400 text-sm">Pending Setup</p>
+                  <p className="text-muted-foreground text-sm">Pending Setup</p>
                   <p className="text-2xl font-bold text-foreground" data-testid="stat-pending">{stats.pending}</p>
                 </div>
                 <div className="p-3 bg-muted/10 rounded-lg">
@@ -311,7 +311,7 @@ export default function DataSourcesPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-400 text-sm">Avg Health</p>
+                  <p className="text-muted-foreground text-sm">Avg Health</p>
                   <p className="text-2xl font-bold text-foreground" data-testid="stat-health">{stats.avgHealth}%</p>
                 </div>
                 <div className="p-3 bg-muted/10 rounded-lg">
@@ -341,7 +341,7 @@ export default function DataSourcesPage() {
             </TabsList>
 
             <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search data sources..."
                 value={searchQuery}
@@ -362,7 +362,7 @@ export default function DataSourcesPage() {
                 <CardContent className="py-12 text-center">
                   <Database className="h-12 w-12 text-gray-600 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-foreground mb-2">No data sources found</h3>
-                  <p className="text-gray-400 mb-4">
+                  <p className="text-muted-foreground mb-4">
                     {searchQuery ? "Try adjusting your search" : "Get started by adding your first data source"}
                   </p>
                   {!searchQuery && (
@@ -392,7 +392,7 @@ export default function DataSourcesPage() {
                             <RouterLink href={`/data-sources/${source.id}`}>
                               <div className="cursor-pointer hover:opacity-80">
                                 <CardTitle className="text-foreground text-lg">{source.name}</CardTitle>
-                                <CardDescription className="text-gray-500 capitalize">
+                                <CardDescription className="text-muted-foreground capitalize">
                                   {source.type.replace(/_/g, " ")}
                                 </CardDescription>
                               </div>
@@ -403,18 +403,18 @@ export default function DataSourcesPage() {
                       </CardHeader>
                       <CardContent className="space-y-4">
                         {source.description && (
-                          <p className="text-gray-400 text-sm line-clamp-2">{source.description}</p>
+                          <p className="text-muted-foreground text-sm line-clamp-2">{source.description}</p>
                         )}
 
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-500">Health Score</span>
+                          <span className="text-muted-foreground">Health Score</span>
                           <span className="text-foreground font-medium">{source.healthScore || 0}%</span>
                         </div>
                         <Progress value={source.healthScore || 0} className="h-1" />
 
                         <div className="grid grid-cols-2 gap-2 text-sm">
                           <div>
-                            <span className="text-gray-500">Last Sync</span>
+                            <span className="text-muted-foreground">Last Sync</span>
                             <p className="text-foreground">
                               {source.lastSyncAt
                                 ? formatDistanceToNow(new Date(source.lastSyncAt), { addSuffix: true })
@@ -422,7 +422,7 @@ export default function DataSourcesPage() {
                             </p>
                           </div>
                           <div>
-                            <span className="text-gray-500">Frequency</span>
+                            <span className="text-muted-foreground">Frequency</span>
                             <p className="text-foreground capitalize">{source.refreshSchedule || "Manual"}</p>
                           </div>
                         </div>
@@ -451,7 +451,7 @@ export default function DataSourcesPage() {
                             size="sm"
                             onClick={() => testConnectionMutation.mutate(source.id)}
                             disabled={testingConnection === source.id}
-                            className="flex-1 text-gray-400 hover:text-white hover:bg-gray-800"
+                            className="flex-1 text-muted-foreground hover:text-white hover:bg-gray-800"
                             data-testid={`button-test-${source.id}`}
                           >
                             {testingConnection === source.id ? (
@@ -466,7 +466,7 @@ export default function DataSourcesPage() {
                             size="sm"
                             onClick={() => syncSourceMutation.mutate(source.id)}
                             disabled={syncingSource === source.id || source.status !== "active"}
-                            className="flex-1 text-gray-400 hover:text-white hover:bg-gray-800"
+                            className="flex-1 text-muted-foreground hover:text-white hover:bg-gray-800"
                             data-testid={`button-sync-${source.id}`}
                           >
                             {syncingSource === source.id ? (
@@ -480,7 +480,7 @@ export default function DataSourcesPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleOpenEditDialog(source)}
-                            className="text-gray-400 hover:text-white hover:bg-gray-800"
+                            className="text-muted-foreground hover:text-white hover:bg-gray-800"
                             data-testid={`button-edit-${source.id}`}
                           >
                             <Settings className="h-4 w-4" />
@@ -489,7 +489,7 @@ export default function DataSourcesPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => deleteSourceMutation.mutate(source.id)}
-                            className="text-gray-400 hover:text-destructive hover:bg-gray-800"
+                            className="text-muted-foreground hover:text-destructive hover:bg-gray-800"
                             data-testid={`button-delete-${source.id}`}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -511,7 +511,7 @@ export default function DataSourcesPage() {
                 <Database className="h-5 w-5 text-foreground" />
                 {editingSource ? "Edit Data Source" : "Add Data Source"}
               </DialogTitle>
-              <DialogDescription className="text-gray-400">
+              <DialogDescription className="text-muted-foreground">
                 Connect an external data source to automatically collect KPI data
               </DialogDescription>
             </DialogHeader>
@@ -519,7 +519,7 @@ export default function DataSourcesPage() {
             <div className="space-y-6 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 md:col-span-1">
-                  <Label className="text-gray-300">Name</Label>
+                  <Label className="text-muted-foreground">Name</Label>
                   <Input
                     value={formData.name || ""}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -529,7 +529,7 @@ export default function DataSourcesPage() {
                   />
                 </div>
                 <div className="col-span-2 md:col-span-1">
-                  <Label className="text-gray-300">Sync Frequency</Label>
+                  <Label className="text-muted-foreground">Sync Frequency</Label>
                   <Select
                     value={formData.refreshSchedule || "daily"}
                     onValueChange={(v) => setFormData({ ...formData, refreshSchedule: v })}
@@ -550,7 +550,7 @@ export default function DataSourcesPage() {
               </div>
 
               <div>
-                <Label className="text-gray-300">Description (Optional)</Label>
+                <Label className="text-muted-foreground">Description (Optional)</Label>
                 <Textarea
                   value={formData.description || ""}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -562,7 +562,7 @@ export default function DataSourcesPage() {
               </div>
 
               <div>
-                <Label className="text-gray-300 mb-3 block">Source Type</Label>
+                <Label className="text-muted-foreground mb-3 block">Source Type</Label>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {DATA_SOURCE_TYPES.map((type) => {
                     const TypeIcon = type.icon;
@@ -579,11 +579,11 @@ export default function DataSourcesPage() {
                         }`}
                         data-testid={`button-type-${type.value}`}
                       >
-                        <TypeIcon className={`h-5 w-5 mb-2 ${isSelected ? "text-foreground dark:text-foreground" : "text-gray-400"}`} />
+                        <TypeIcon className={`h-5 w-5 mb-2 ${isSelected ? "text-foreground dark:text-foreground" : "text-muted-foreground"}`} />
                         <p className={`font-medium ${isSelected ? "text-foreground dark:text-foreground" : "text-foreground"}`}>
                           {type.label}
                         </p>
-                        <p className="text-xs text-gray-500 mt-1">{type.description}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{type.description}</p>
                       </button>
                     );
                   })}
@@ -599,7 +599,7 @@ export default function DataSourcesPage() {
 
                   {TYPE_CONFIGS[selectedType].fields.map((field) => (
                     <div key={field.name}>
-                      <Label className="text-gray-300">
+                      <Label className="text-muted-foreground">
                         {field.label}
                         {field.required && <span className="text-destructive ml-1">*</span>}
                       </Label>
@@ -684,7 +684,7 @@ export default function DataSourcesPage() {
                             onChange={(e) => setFormData({ ...formData, [field.name]: e.target.checked })}
                             className="rounded bg-gray-800 border-gray-700"
                           />
-                          <span className="text-gray-400 text-sm">Enable {field.label.toLowerCase()}</span>
+                          <span className="text-muted-foreground text-sm">Enable {field.label.toLowerCase()}</span>
                         </div>
                       ) : (
                         <Input
@@ -705,7 +705,7 @@ export default function DataSourcesPage() {
               <Button
                 variant="outline"
                 onClick={handleCloseDialog}
-                className="border-gray-700 text-gray-300 hover:bg-gray-800"
+                className="border-gray-700 text-muted-foreground hover:bg-gray-800"
                 data-testid="button-cancel"
               >
                 Cancel

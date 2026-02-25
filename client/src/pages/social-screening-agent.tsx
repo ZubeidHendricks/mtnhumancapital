@@ -367,7 +367,7 @@ export default function SocialScreeningAgent() {
       case 'positive': return 'text-foreground';
       case 'neutral': return 'text-foreground dark:text-foreground';
       case 'negative': return 'text-destructive';
-      default: return 'text-gray-400';
+      default: return 'text-muted-foreground';
     }
   };
 
@@ -862,7 +862,7 @@ export default function SocialScreeningAgent() {
                                     step.status === 'processing' ? 'bg-muted/20 text-foreground dark:text-foreground' :
                                     step.status === 'completed' ? 'bg-muted/20 text-foreground' :
                                     step.status === 'failed' ? 'bg-destructive/20 text-destructive' :
-                                    'bg-gray-500/20 text-gray-400'
+                                    'bg-secondary0/20 text-muted-foreground'
                                   }`}
                                 >
                                   {step.status}

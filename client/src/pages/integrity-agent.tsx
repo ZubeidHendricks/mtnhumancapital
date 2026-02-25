@@ -285,7 +285,7 @@ export default function IntegrityAgent() {
       Failed: { bg: "bg-destructive/10", text: "text-destructive" },
     };
     
-    const variant = variants[result] || { bg: "bg-gray-500/10", text: "text-gray-500" };
+    const variant = variants[result] || { bg: "bg-secondary0/10", text: "text-muted-foreground" };
     
     return (
       <Badge className={`${variant.bg} ${variant.text} border-0`}>
@@ -295,7 +295,7 @@ export default function IntegrityAgent() {
   };
 
   const getRiskScoreColor = (score: number | null) => {
-    if (score === null || score === undefined) return "text-gray-500";
+    if (score === null || score === undefined) return "text-muted-foreground";
     if (score === 0) return "text-foreground";
     if (score < 30) return "text-foreground";
     if (score < 70) return "text-foreground";

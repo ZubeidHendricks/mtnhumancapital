@@ -112,12 +112,12 @@ export default function ShortlistedCandidates() {
       "LinkedIn": "text-foreground bg-muted/10",
       "Direct": "text-foreground bg-muted/10"
     };
-    return sourceColors[source] || "text-gray-400 bg-gray-400/10";
+    return sourceColors[source] || "text-muted-foreground bg-muted/10";
   };
 
   // Helper function to get match badge color
   const getMatchColor = (match: number | null | undefined) => {
-    if (!match) return "text-gray-400 bg-gray-400/10";
+    if (!match) return "text-muted-foreground bg-muted/10";
     if (match >= 80) return "text-foreground bg-muted/10";
     if (match >= 60) return "text-foreground bg-muted/10";
     return "text-destructive bg-destructive/10";
@@ -252,7 +252,7 @@ export default function ShortlistedCandidates() {
                     <div className="flex items-center gap-2">
                       <Button 
                         size="sm" 
-                        className="h-8 bg-white text-black hover:bg-gray-200 border-0 gap-1.5 font-medium text-xs px-3"
+                        className="h-8 bg-white text-black hover:bg-secondary border-0 gap-1.5 font-medium text-xs px-3"
                         onClick={() => handleAIContact(candidate)}
                         data-testid={`button-ai-interview-${candidate.id}`}
                       >
@@ -301,7 +301,7 @@ export default function ShortlistedCandidates() {
         <DialogContent className="bg-[#1a1a1a] border-border dark:border-white/10 text-white sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Invite to Voice Interview</DialogTitle>
-            <DialogDescription className="text-gray-400">
+            <DialogDescription className="text-muted-foreground">
               Customize the email invitation for {selectedCandidate?.fullName || 'candidate'}.
             </DialogDescription>
           </DialogHeader>

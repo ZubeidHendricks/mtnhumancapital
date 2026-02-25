@@ -328,7 +328,7 @@ export function Navbar() {
           <ThemeToggle />
 
           <Link href="/login">
-            <Button size="sm" className="bg-black text-white font-semibold hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200">
+            <Button size="sm" className="bg-black text-white font-semibold hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-secondary">
               Sign In
             </Button>
           </Link>

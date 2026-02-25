@@ -297,7 +297,7 @@ export default function ExternalCandidates() {
             {isLoading ? (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {[...Array(6)].map((_, i) => (
-                  <Card key={i} className="bg-gray-100/50 border-border dark:border-white/10">
+                  <Card key={i} className="bg-secondary border-border dark:border-white/10">
                     <CardHeader>
                       <Skeleton className="h-6 w-48" />
                       <Skeleton className="h-4 w-32 mt-2" />
@@ -310,7 +310,7 @@ export default function ExternalCandidates() {
                 ))}
               </div>
             ) : isError ? (
-              <Card className="bg-gray-100/50 border-border dark:border-destructive/30">
+              <Card className="bg-secondary border-border dark:border-destructive/30">
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <AlertCircle className="w-12 h-12 text-destructive mb-4" />
                   <h3 className="text-lg font-semibold text-destructive mb-2">
@@ -351,7 +351,7 @@ export default function ExternalCandidates() {
                       return (
                         <Card 
                           key={profile.id} 
-                          className="bg-gray-100/50 border-border dark:border-white/10 hover:border-border hover:dark:border-white/20 transition-colors"
+                          className="bg-secondary border-border dark:border-white/10 hover:border-border hover:dark:border-white/20 transition-colors"
                           data-testid={`card-profile-${profile.id}`}
                         >
                           <CardHeader className="pb-3">
@@ -395,13 +395,13 @@ export default function ExternalCandidates() {
                                   <Badge 
                                     key={idx} 
                                     variant="secondary" 
-                                    className="text-xs bg-gray-200 border-gray-300 dark:border-zinc-700"
+                                    className="text-xs bg-secondary border-border dark:border-border"
                                   >
                                     {skill}
                                   </Badge>
                                 ))}
                                 {profile.skills.length > 4 && (
-                                  <Badge variant="secondary" className="text-xs bg-gray-200 border-gray-300 dark:border-zinc-700">
+                                  <Badge variant="secondary" className="text-xs bg-secondary border-border dark:border-border">
                                     +{profile.skills.length - 4} more
                                   </Badge>
                                 )}
@@ -450,7 +450,7 @@ export default function ExternalCandidates() {
                 </ScrollArea>
               </>
             ) : (
-              <Card className="bg-gray-100/50 border-border dark:border-white/10">
+              <Card className="bg-secondary border-border dark:border-white/10">
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <Users className="w-12 h-12 text-muted-foreground mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No Profiles Found</h3>

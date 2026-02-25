@@ -154,7 +154,7 @@ export default function DemoShowcase() {
                           ? "bg-muted/10 text-foreground border-border/30" 
                           : product.status === "beta"
                           ? "bg-muted/10 text-foreground dark:text-foreground border-border/30"
-                          : "bg-gray-500/10 text-gray-400 border-gray-500/30"
+                          : "bg-secondary0/10 text-muted-foreground border-gray-500/30"
                       }
                     >
                       {product.status === "live" ? "Live" : product.status === "beta" ? "Beta" : "Coming Soon"}

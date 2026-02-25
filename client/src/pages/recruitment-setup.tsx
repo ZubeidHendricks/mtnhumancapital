@@ -172,7 +172,7 @@ export default function RecruitmentSetup() {
       </div>
 
       <Tabs defaultValue="platforms" className="space-y-6">
-        <TabsList className="bg-gray-200/50">
+        <TabsList className="bg-secondary">
           <TabsTrigger value="platforms">Platforms</TabsTrigger>
           <TabsTrigger value="preferences">Preferences</TabsTrigger>
         </TabsList>
@@ -184,7 +184,7 @@ export default function RecruitmentSetup() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center">
                         <Globe className="h-6 w-6 text-foreground dark:text-foreground" />
                       </div>
                       <div>

@@ -501,7 +501,7 @@ export default function WhatsAppMonitor() {
       case "pending":
         return <Badge variant="outline" className="bg-muted text-foreground border-border">Pending</Badge>;
       case "closed":
-        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Closed</Badge>;
+        return <Badge variant="outline" className="bg-secondary text-foreground border-border">Closed</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -527,13 +527,13 @@ export default function WhatsAppMonitor() {
       case "read":
         return <CheckCircle2 className="h-3 w-3 text-foreground" />;
       case "delivered":
-        return <CheckCircle2 className="h-3 w-3 text-gray-500" />;
+        return <CheckCircle2 className="h-3 w-3 text-muted-foreground" />;
       case "sent":
-        return <Clock className="h-3 w-3 text-gray-400" />;
+        return <Clock className="h-3 w-3 text-muted-foreground" />;
       case "failed":
         return <AlertCircle className="h-3 w-3 text-destructive" />;
       default:
-        return <Clock className="h-3 w-3 text-gray-400" />;
+        return <Clock className="h-3 w-3 text-muted-foreground" />;
     }
   };
 
@@ -777,7 +777,7 @@ export default function WhatsAppMonitor() {
                               <div className={`flex items-center justify-end gap-1 mt-1 text-xs ${
                                 message.direction === 'outbound' && message.senderType !== 'ai'
                                   ? 'text-foreground'
-                                  : 'text-gray-500'
+                                  : 'text-muted-foreground'
                               }`}>
                                 <span>
                                   {format(new Date(message.createdAt), 'HH:mm')}
@@ -970,8 +970,8 @@ export default function WhatsAppMonitor() {
                       </Button>
 
                       {conversationDetail.documentRequests.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">
-                          <FileText className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                        <div className="text-center py-8 text-muted-foreground">
+                          <FileText className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                           <p className="text-sm">No document requests yet</p>
                         </div>
                       ) : (
@@ -981,14 +981,14 @@ export default function WhatsAppMonitor() {
                               <div className="flex items-start justify-between">
                                 <div>
                                   <p className="font-medium text-sm">{doc.documentName}</p>
-                                  <p className="text-xs text-gray-500">{doc.documentType}</p>
+                                  <p className="text-xs text-muted-foreground">{doc.documentType}</p>
                                 </div>
                                 <Badge variant={doc.status === 'received' ? 'default' : 'outline'}>
                                   {doc.status}
                                 </Badge>
                               </div>
                               {doc.dueDate && (
-                                <p className="text-xs text-gray-500 mt-2">
+                                <p className="text-xs text-muted-foreground mt-2">
                                   Due: {format(new Date(doc.dueDate), 'MMM d, yyyy')}
                                 </p>
                               )}
@@ -1011,8 +1011,8 @@ export default function WhatsAppMonitor() {
                       </Button>
 
                       {conversationDetail.appointments.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">
-                          <Calendar className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Calendar className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                           <p className="text-sm">No appointments scheduled</p>
                         </div>
                       ) : (
@@ -1022,7 +1022,7 @@ export default function WhatsAppMonitor() {
                               <div className="flex items-start justify-between">
                                 <div>
                                   <p className="font-medium text-sm">{apt.title}</p>
-                                  <p className="text-xs text-gray-500">
+                                  <p className="text-xs text-muted-foreground">
                                     {format(new Date(apt.scheduledAt), 'MMM d, yyyy HH:mm')}
                                   </p>
                                 </div>
@@ -1031,7 +1031,7 @@ export default function WhatsAppMonitor() {
                                 </Badge>
                               </div>
                               {apt.location && (
-                                <p className="text-xs text-gray-500 mt-2">{apt.location}</p>
+                                <p className="text-xs text-muted-foreground mt-2">{apt.location}</p>
                               )}
                             </Card>
                           ))}
@@ -1042,7 +1042,7 @@ export default function WhatsAppMonitor() {
                 </ScrollArea>
               </Tabs>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full text-gray-500">
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                 <User className="h-12 w-12 mb-3 text-gray-200" />
                 <p className="text-sm">Select a conversation to view details</p>
               </div>

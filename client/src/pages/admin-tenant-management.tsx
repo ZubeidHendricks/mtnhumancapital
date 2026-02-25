@@ -86,7 +86,7 @@ export default function AdminTenantManagement() {
       case "active": return "bg-muted";
       case "suspended": return "bg-destructive";
       case "trial": return "bg-muted";
-      default: return "bg-gray-500";
+      default: return "bg-secondary0";
     }
   };
 

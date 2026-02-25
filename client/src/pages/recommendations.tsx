@@ -79,7 +79,7 @@ export default function Recommendations() {
       case "pipeline": return "bg-muted/10 text-foreground";
       case "reinterview": return "bg-muted/10 text-foreground";
       case "high_potential": return "bg-muted/10 text-foreground";
-      default: return "bg-gray-500/10 text-gray-500";
+      default: return "bg-secondary0/10 text-muted-foreground";
     }
   };
 
@@ -94,7 +94,7 @@ export default function Recommendations() {
   };
 
   const getScoreColor = (score: number | null) => {
-    if (score === null) return "text-gray-400";
+    if (score === null) return "text-muted-foreground";
     if (score >= 80) return "text-foreground";
     if (score >= 60) return "text-foreground";
     return "text-destructive";

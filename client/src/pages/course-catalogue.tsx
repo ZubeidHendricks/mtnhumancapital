@@ -55,7 +55,7 @@ export default function CourseCatalogue() {
       intermediate: "bg-muted text-foreground",
       advanced: "bg-destructive text-destructive",
     };
-    return colors[level as keyof typeof colors] || "bg-gray-100 text-gray-800";
+    return colors[level as keyof typeof colors] || "bg-secondary text-foreground";
   };
 
   return (

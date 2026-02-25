@@ -264,6 +264,20 @@
   .dark input::placeholder, .dark textarea::placeholder {
     color: hsl(0 0% 50%) !important;
   }
+  .dark .bg-muted,
+  .dark .bg-muted\/50,
+  .dark .bg-white\/5 {
+    background-color: hsl(0 0% 12%) !important;
+  }
+  .dark [class*="bg-card"] {
+    background-color: hsl(0 0% 7%) !important;
+  }
+  .dark .text-muted-foreground {
+    color: hsl(0 0% 70%) !important;
+  }
+  .dark .border-border {
+    border-color: hsl(0 0% 22%) !important;
+  }
 }
 
 @layer utilities {

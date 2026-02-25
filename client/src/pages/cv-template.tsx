@@ -363,7 +363,7 @@ export default function CVTemplatePage() {
                   className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
                     dragOver 
                       ? "border-primary bg-primary/5" 
-                      : "border-gray-300 dark:border-gray-700 hover:border-primary"
+                      : "border-border dark:border-gray-700 hover:border-primary"
                   }`}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
@@ -374,7 +374,7 @@ export default function CVTemplatePage() {
                     <div className="flex flex-col items-center gap-2">
                       <FileText className="h-12 w-12 text-primary" />
                       <p className="font-medium">{selectedFile.name}</p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-muted-foreground">
                         {(selectedFile.size / 1024).toFixed(1)} KB
                       </p>
                       <Button
@@ -391,11 +391,11 @@ export default function CVTemplatePage() {
                     </div>
                   ) : (
                     <div className="flex flex-col items-center gap-2">
-                      <Upload className="h-12 w-12 text-gray-400" />
+                      <Upload className="h-12 w-12 text-muted-foreground" />
                       <p className="text-gray-600">
                         Drag & drop a CV file here, or click to browse
                       </p>
-                      <p className="text-sm text-gray-400">PDF files only</p>
+                      <p className="text-sm text-muted-foreground">PDF files only</p>
                     </div>
                   )}
                   <input
@@ -428,7 +428,7 @@ export default function CVTemplatePage() {
                     className="mt-1"
                     data-testid="input-job-title"
                   />
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     Helps the AI better categorize the candidate's application
                   </p>
                 </div>
@@ -482,35 +482,35 @@ export default function CVTemplatePage() {
                           Personal Profile
                         </h3>
                         <div className="grid grid-cols-2 gap-2 text-sm">
-                          <div className="text-gray-500">Full Name:</div>
+                          <div className="text-muted-foreground">Full Name:</div>
                           <div className="font-medium">{previewData.personalProfile.fullName}</div>
                           {previewData.personalProfile.jobApplication && (
                             <>
-                              <div className="text-gray-500">Position:</div>
+                              <div className="text-muted-foreground">Position:</div>
                               <div>{previewData.personalProfile.jobApplication}</div>
                             </>
                           )}
                           {previewData.personalProfile.residentialLocation && (
                             <>
-                              <div className="text-gray-500">Location:</div>
+                              <div className="text-muted-foreground">Location:</div>
                               <div>{previewData.personalProfile.residentialLocation}</div>
                             </>
                           )}
                           {previewData.personalProfile.currentCompany && (
                             <>
-                              <div className="text-gray-500">Current Company:</div>
+                              <div className="text-muted-foreground">Current Company:</div>
                               <div>{previewData.personalProfile.currentCompany}</div>
                             </>
                           )}
                           {previewData.personalProfile.currentPosition && (
                             <>
-                              <div className="text-gray-500">Current Position:</div>
+                              <div className="text-muted-foreground">Current Position:</div>
                               <div>{previewData.personalProfile.currentPosition}</div>
                             </>
                           )}
                           {previewData.personalProfile.noticePeriod && (
                             <>
-                              <div className="text-gray-500">Notice Period:</div>
+                              <div className="text-muted-foreground">Notice Period:</div>
                               <div>{previewData.personalProfile.noticePeriod}</div>
                             </>
                           )}
@@ -525,11 +525,11 @@ export default function CVTemplatePage() {
                           </h3>
                           <div className="space-y-2">
                             {previewData.education.tertiary.map((edu, i) => (
-                              <div key={i} className="p-2 bg-gray-50 rounded text-sm">
+                              <div key={i} className="p-2 bg-secondary rounded text-sm">
                                 <p className="font-medium">{edu.institution}</p>
                                 <p className="text-gray-600">{edu.courses}</p>
                                 {edu.yearCompleted && (
-                                  <p className="text-gray-500 text-xs">{edu.yearCompleted}</p>
+                                  <p className="text-muted-foreground text-xs">{edu.yearCompleted}</p>
                                 )}
                               </div>
                             ))}
@@ -559,7 +559,7 @@ export default function CVTemplatePage() {
                                   </Badge>
                                 </div>
                                 {job.mainResponsibilities && (
-                                  <p className="text-gray-500 mt-2 text-xs line-clamp-2">
+                                  <p className="text-muted-foreground mt-2 text-xs line-clamp-2">
                                     {job.mainResponsibilities}
                                   </p>
                                 )}
@@ -597,7 +597,7 @@ export default function CVTemplatePage() {
             <CardContent className="space-y-4">
               <div className="flex gap-3">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search candidates..."
                     value={searchQuery}
@@ -645,7 +645,7 @@ export default function CVTemplatePage() {
                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
                   </div>
                 ) : filteredCandidates.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-32 text-gray-500">
+                  <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
                     <AlertCircle className="h-8 w-8 mb-2" />
                     <p>No candidates found</p>
                   </div>
@@ -657,7 +657,7 @@ export default function CVTemplatePage() {
                         className={`p-3 border rounded-lg transition-colors ${
                           selectedCandidates.has(candidate.id)
                             ? "border-primary bg-primary/5"
-                            : "hover:border-gray-400"
+                            : "hover:border-border"
                         }`}
                         data-testid={`candidate-card-${candidate.id}`}
                       >
@@ -688,7 +688,7 @@ export default function CVTemplatePage() {
                                 {candidate.role}
                               </p>
                             )}
-                            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 text-xs text-gray-500">
+                            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 text-xs text-muted-foreground">
                               {candidate.email && (
                                 <span className="flex items-center gap-1">
                                   <Mail className="h-3 w-3" />

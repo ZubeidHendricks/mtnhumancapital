@@ -17,9 +17,9 @@ export function DashboardPreview() {
             >
               <h2 className="text-3xl md:text-5xl font-bold mb-8 leading-tight text-black">
                 Control Center for <br />
-                <span className="text-gray-400">Modern Leadership</span>
+                <span className="text-muted-foreground">Modern Leadership</span>
               </h2>
-              <p className="text-lg text-gray-500 mb-8">
+              <p className="text-lg text-muted-foreground mb-8">
                 The AHC Executive Dashboard unifies data from HR, Finance, and Operations into a single source of truth. Receive real-time alerts via WhatsApp integration and monitor contract timelines effortlessly.
               </p>
 
@@ -45,7 +45,7 @@ export function DashboardPreview() {
               whileInView={{ opacity: 1, scale: 1, rotateX: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
-              className="relative rounded-2xl overflow-hidden border border-gray-200 shadow-2xl bg-white group"
+              className="relative rounded-2xl overflow-hidden border border-border shadow-2xl bg-white group"
             >
               <img 
                 src={dashImg} 
@@ -58,12 +58,12 @@ export function DashboardPreview() {
                 initial={{ y: 20, opacity: 0 }}
                 whileInView={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.5 }}
-                className="absolute -bottom-6 -left-6 bg-white border border-gray-200 p-4 rounded-xl shadow-xl hidden md:block"
+                className="absolute -bottom-6 -left-6 bg-white border border-border p-4 rounded-xl shadow-xl hidden md:block"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-3 h-3 rounded-full bg-muted animate-pulse" />
                   <div>
-                    <p className="text-xs text-gray-400">System Status</p>
+                    <p className="text-xs text-muted-foreground">System Status</p>
                     <p className="font-mono text-sm font-bold text-foreground">OPTIMAL</p>
                   </div>
                 </div>
@@ -73,10 +73,10 @@ export function DashboardPreview() {
                 initial={{ y: -20, opacity: 0 }}
                 whileInView={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.7 }}
-                className="absolute -top-6 -right-6 bg-white border border-gray-200 p-4 rounded-xl shadow-xl hidden md:block"
+                className="absolute -top-6 -right-6 bg-white border border-border p-4 rounded-xl shadow-xl hidden md:block"
               >
                 <div className="text-center">
-                  <p className="text-xs text-gray-400">Efficiency Gain</p>
+                  <p className="text-xs text-muted-foreground">Efficiency Gain</p>
                   <p className="font-mono text-2xl font-bold text-black">+245%</p>
                 </div>
               </motion.div>

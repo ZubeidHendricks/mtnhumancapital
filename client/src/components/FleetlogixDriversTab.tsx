@@ -396,7 +396,7 @@ export function FleetlogixDriversTab() {
                 <span className={`px-2 py-1 rounded text-xs ${
                   driver.status === "active" 
                     ? "bg-muted text-foreground" 
-                    : "bg-gray-100 text-gray-800"
+                    : "bg-secondary text-foreground"
                 }`}>
                   {driver.status}
                 </span>

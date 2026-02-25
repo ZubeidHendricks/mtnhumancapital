@@ -87,7 +87,7 @@ function AgentVisualization({ run, onClose }: { run: OrchestratorRun | null; onC
       case 'running': return 'text-foreground dark:text-foreground animate-pulse';
       case 'completed': return 'text-foreground';
       case 'error': return 'text-destructive';
-      default: return 'text-gray-400';
+      default: return 'text-muted-foreground';
     }
   };
   
@@ -96,7 +96,7 @@ function AgentVisualization({ run, onClose }: { run: OrchestratorRun | null; onC
       case 'running': return 'bg-muted/20 border-border/30';
       case 'completed': return 'bg-muted/20 border-border/30';
       case 'error': return 'bg-destructive/20 border-destructive/30';
-      default: return 'bg-gray-500/20 border-gray-500/30';
+      default: return 'bg-secondary0/20 border-gray-500/30';
     }
   };
 
@@ -213,7 +213,7 @@ function AgentVisualization({ run, onClose }: { run: OrchestratorRun | null; onC
                       'text-muted-foreground'
                     }`}
                   >
-                    <span className="text-gray-500 shrink-0">
+                    <span className="text-muted-foreground shrink-0">
                       {new Date(log.timestamp).toLocaleTimeString()}
                     </span>
                     <span className="text-foreground dark:text-foreground shrink-0">[{log.agent}]</span>
@@ -513,7 +513,7 @@ export default function SocialScreening() {
       high: "bg-muted/20 text-foreground dark:text-foreground",
       critical: "bg-destructive/20 text-destructive",
     };
-    return styles[riskLevel] || "bg-gray-500/20 text-gray-400";
+    return styles[riskLevel] || "bg-secondary0/20 text-muted-foreground";
   };
 
   const addLog = (agent: string, message: string, level: AgentLog['level'] = 'info') => {
@@ -649,7 +649,7 @@ export default function SocialScreening() {
       case 'completed': return <CheckCircle2 className="w-4 h-4 text-foreground" />;
       case 'running': return <Loader2 className="w-4 h-4 text-foreground dark:text-foreground animate-spin" />;
       case 'error': return <AlertCircle className="w-4 h-4 text-destructive" />;
-      default: return <Clock className="w-4 h-4 text-gray-400" />;
+      default: return <Clock className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
@@ -1354,7 +1354,7 @@ function PendingReviewCard({
       high: "bg-muted/20 text-foreground dark:text-foreground",
       critical: "bg-destructive/20 text-destructive",
     };
-    return styles[riskLevel] || "bg-gray-500/20 text-gray-400";
+    return styles[riskLevel] || "bg-secondary0/20 text-muted-foreground";
   };
 
   return (

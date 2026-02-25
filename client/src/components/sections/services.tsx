@@ -47,13 +47,13 @@ const services = [
 
 export function Services() {
   return (
-    <section id="solutions" className="py-24 bg-gray-50 relative">
+    <section id="solutions" className="py-24 bg-secondary relative">
       <div className="container mx-auto px-6">
         <div className="mb-16 md:text-center max-w-3xl mx-auto">
           <h2 className="text-3xl md:text-5xl font-bold mb-6 text-black">
             Comprehensive Business Intelligence
           </h2>
-          <p className="text-gray-500 text-lg">
+          <p className="text-muted-foreground text-lg">
             Our suite of advisory services leverages cutting-edge automation and AI to optimize every facet of your organization.
           </p>
         </div>
@@ -67,15 +67,15 @@ export function Services() {
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
             >
-              <Card className="h-full bg-white border-gray-200 hover:border-black/20 transition-all duration-300 hover:shadow-lg group" data-testid={`card-service-${index}`}>
+              <Card className="h-full bg-white border-border hover:border-black/20 transition-all duration-300 hover:shadow-lg group" data-testid={`card-service-${index}`}>
                 <CardHeader>
-                  <div className="w-12 h-12 rounded-xl bg-black/5 flex items-center justify-center mb-4 group-hover:bg-black group-hover:scale-110 transition-all duration-300 border border-gray-200">
+                  <div className="w-12 h-12 rounded-xl bg-black/5 flex items-center justify-center mb-4 group-hover:bg-black group-hover:scale-110 transition-all duration-300 border border-border">
                     <service.icon className="w-6 h-6 text-black group-hover:text-white transition-colors" />
                   </div>
                   <CardTitle className="text-xl text-black">{service.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription className="text-base leading-relaxed text-gray-500">
+                  <CardDescription className="text-base leading-relaxed text-muted-foreground">
                     {service.description}
                   </CardDescription>
                 </CardContent>

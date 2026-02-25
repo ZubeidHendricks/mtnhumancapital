@@ -858,7 +858,7 @@ BENEFITS:
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-foreground font-bold text-foreground font-bold">Open Roles</CardTitle>
-                    <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">
+                    <CardDescription className="text-foreground font-medium text-foreground font-medium">
                       {loadingJobs ? "Loading positions..." : "Active job requisitions and hiring pipelines"}
                     </CardDescription>
                   </div>
@@ -916,7 +916,7 @@ BENEFITS:
                               </Badge>
                             </div>
                             <div className="col-span-2">
-                              <Badge className={`${job.status === 'Active' ? 'bg-muted/20 text-foreground' : 'bg-gray-500/20 text-gray-400'} border-0`}>
+                              <Badge className={`${job.status === 'Active' ? 'bg-muted/20 text-foreground' : 'bg-secondary0/20 text-muted-foreground'} border-0`}>
                                 {job.status}
                               </Badge>
                             </div>
@@ -1008,10 +1008,10 @@ BENEFITS:
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="text-foreground font-bold flex items-center gap-2">
-                        <FileArchive className="h-5 w-5 text-gray-400" />
+                        <FileArchive className="h-5 w-5 text-muted-foreground" />
                         Archived Roles
                       </CardTitle>
-                      <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">
+                      <CardDescription className="text-foreground font-medium text-foreground font-medium">
                         {loadingArchivedJobs ? "Loading archived positions..." : `${archivedJobs.length} archived job${archivedJobs.length !== 1 ? 's' : ''}`}
                       </CardDescription>
                     </div>
@@ -1035,7 +1035,7 @@ BENEFITS:
                         archivedJobs.map((job: any) => (
                           <div key={job.id} className="px-4 py-3 grid grid-cols-12 items-center border-t border-border hover:bg-white/5 transition-colors">
                             <div className="col-span-4">
-                              <div className="font-medium text-gray-400">{job.title}</div>
+                              <div className="font-medium text-muted-foreground">{job.title}</div>
                               <div className="text-xs text-foreground font-semibold mt-0.5">
                                 {job.location || "No location"}
                               </div>
@@ -1088,7 +1088,7 @@ BENEFITS:
                       <Star className="h-5 w-5 text-foreground fill-yellow-400" />
                       Shortlisted Candidates
                     </CardTitle>
-                    <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">
+                    <CardDescription className="text-foreground font-medium text-foreground font-medium">
                       {loadingCandidates ? "Loading..." : "Top talent ready for interviews and offers"}
                     </CardDescription>
                   </div>
@@ -1165,7 +1165,7 @@ BENEFITS:
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-foreground font-bold text-foreground font-bold">Candidate Pipeline</CardTitle>
-                    <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">
+                    <CardDescription className="text-foreground font-medium text-foreground font-medium">
                       {loadingCandidates ? "Fetching data from backend..." : "AI-ranked candidates matched to hiring needs"}
                     </CardDescription>
                   </div>
@@ -1406,7 +1406,7 @@ BENEFITS:
 
           {/* JOBS TAB */}
           <TabsContent value="jobs" className="space-y-6">
-            <Card className="bg-gray-100/50 border-gray-200 dark:border-zinc-800">
+            <Card className="bg-secondary border-border dark:border-border">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
@@ -1414,15 +1414,15 @@ BENEFITS:
                       <Briefcase className="h-5 w-5 text-foreground dark:text-foreground" />
                       Job Specifications Library
                     </CardTitle>
-                    <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Extracted job requirements from uploaded specifications</CardDescription>
+                    <CardDescription className="text-foreground font-medium text-foreground font-medium">Extracted job requirements from uploaded specifications</CardDescription>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center bg-gray-200 rounded-lg p-1">
+                    <div className="flex items-center bg-secondary rounded-lg p-1">
                       <Button
                         variant={jobSpecViewMode === "grid" ? "default" : "ghost"}
                         size="sm"
                         onClick={() => setJobSpecViewMode("grid")}
-                        className={jobSpecViewMode === "grid" ? "bg-muted/20 text-foreground dark:text-foreground" : "text-zinc-400"}
+                        className={jobSpecViewMode === "grid" ? "bg-muted/20 text-foreground dark:text-foreground" : "text-muted-foreground"}
                         data-testid="button-jobs-grid-view"
                       >
                         <Grid3X3 className="h-4 w-4" />
@@ -1431,7 +1431,7 @@ BENEFITS:
                         variant={jobSpecViewMode === "list" ? "default" : "ghost"}
                         size="sm"
                         onClick={() => setJobSpecViewMode("list")}
-                        className={jobSpecViewMode === "list" ? "bg-muted/20 text-foreground dark:text-foreground" : "text-zinc-400"}
+                        className={jobSpecViewMode === "list" ? "bg-muted/20 text-foreground dark:text-foreground" : "text-muted-foreground"}
                         data-testid="button-jobs-list-view"
                       >
                         <List className="h-4 w-4" />
@@ -1476,7 +1476,7 @@ BENEFITS:
                 ) : displayJobs.length === 0 && jobSpecDocuments.length === 0 ? (
                   <div className="text-center py-12">
                     <Briefcase className="h-16 w-16 text-zinc-600 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-zinc-300 mb-2">No jobs yet</h3>
+                    <h3 className="text-lg font-medium text-muted-foreground mb-2">No jobs yet</h3>
                     <p className="text-zinc-500 mb-4">Create a job using the AI assistant or upload job specifications</p>
                     <div className="flex gap-3 justify-center">
                       <Button 
@@ -1519,14 +1519,14 @@ BENEFITS:
                                 {job.department || 'General'}
                               </p>
                             </div>
-                            <Badge className={`${job.status === 'Active' ? 'bg-muted/20 text-foreground' : 'bg-gray-500/20 text-gray-400'} border-0 text-xs`}>
+                            <Badge className={`${job.status === 'Active' ? 'bg-muted/20 text-foreground' : 'bg-secondary0/20 text-muted-foreground'} border-0 text-xs`}>
                               {job.status}
                             </Badge>
                           </div>
 
                           <div className="space-y-1.5 mb-3">
                             {(job.city || job.province || job.location) && (
-                              <div className="flex items-center gap-2 text-xs text-zinc-400">
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                 <MapPin className="h-3 w-3 flex-shrink-0" />
                                 <span className="truncate">
                                   {job.city && job.province ? `${job.city}, ${job.province}` : job.location}
@@ -1534,7 +1534,7 @@ BENEFITS:
                               </div>
                             )}
                             {(job.remuneration || job.salaryMin || job.salaryMax) && (
-                              <div className="flex items-center gap-2 text-xs text-zinc-400">
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                 <span className="truncate">
                                   {job.remuneration || `R${job.salaryMin?.toLocaleString() || '0'} - R${job.salaryMax?.toLocaleString() || job.salaryMin?.toLocaleString() || '0'} ${job.payRateUnit || 'monthly'}`}
                                 </span>
@@ -1542,7 +1542,7 @@ BENEFITS:
                             )}
                           </div>
 
-                          <div className="flex gap-2 pt-2 border-t border-gray-300 dark:border-zinc-700/50">
+                          <div className="flex gap-2 pt-2 border-t border-border dark:border-border/50">
                             <Link href={`/recruitment-agent?jobId=${job.id}`} className="flex-1">
                               <Button 
                                 variant="outline" 
@@ -1558,7 +1558,7 @@ BENEFITS:
                               <Button 
                                 variant="ghost" 
                                 size="sm"
-                                className="text-zinc-400 hover:text-white"
+                                className="text-muted-foreground hover:text-white"
                                 data-testid={`button-view-candidates-grid-${job.id}`}
                               >
                                 <Eye className="h-3 w-3" />
@@ -1599,20 +1599,20 @@ BENEFITS:
 
                             <div className="space-y-1.5 mb-3">
                               {extracted?.location && (
-                                <div className="flex items-center gap-2 text-xs text-zinc-400">
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                   <MapPin className="h-3 w-3 flex-shrink-0" />
                                   <span className="truncate">{extracted.location}</span>
                                 </div>
                               )}
                               {extracted?.department && (
-                                <div className="flex items-center gap-2 text-xs text-zinc-400">
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                   <Building2 className="h-3 w-3 flex-shrink-0" />
                                   <span className="truncate">{extracted.department}</span>
                                 </div>
                               )}
                             </div>
 
-                            <div className="flex gap-2 pt-2 border-t border-gray-300 dark:border-zinc-700/50">
+                            <div className="flex gap-2 pt-2 border-t border-border dark:border-border/50">
                               <Button 
                                 variant="outline" 
                                 size="sm" 
@@ -1634,7 +1634,7 @@ BENEFITS:
                     <div className="overflow-x-auto pb-4">
                       <table className="w-full min-w-[800px]">
                         <thead>
-                          <tr className="border-b border-gray-200 dark:border-zinc-800">
+                          <tr className="border-b border-border dark:border-border">
                             <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">Title</th>
                             <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">Department</th>
                             <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">Location</th>
@@ -1646,7 +1646,7 @@ BENEFITS:
                         <tbody className="divide-y divide-zinc-800/50">
                           {/* AI-Created Jobs */}
                           {displayJobs.map((job: any) => (
-                            <tr key={job.id} className="hover:bg-gray-200/30 transition-colors" data-testid={`row-job-${job.id}`}>
+                            <tr key={job.id} className="hover:bg-secondary transition-colors" data-testid={`row-job-${job.id}`}>
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-3">
                                   <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
@@ -1656,15 +1656,15 @@ BENEFITS:
                                 </div>
                               </td>
                               <td className="px-4 py-3">
-                                <span className="text-zinc-400 text-sm">{job.department || 'General'}</span>
+                                <span className="text-muted-foreground text-sm">{job.department || 'General'}</span>
                               </td>
                               <td className="px-4 py-3">
-                                <span className="text-zinc-400 text-sm">
+                                <span className="text-muted-foreground text-sm">
                                   {job.city && job.province ? `${job.city}, ${job.province}` : (job.location || '-')}
                                 </span>
                               </td>
                               <td className="px-4 py-3">
-                                <Badge className={`${job.status === 'Active' ? 'bg-muted/20 text-foreground' : 'bg-gray-500/20 text-gray-400'} border-0 text-xs`}>
+                                <Badge className={`${job.status === 'Active' ? 'bg-muted/20 text-foreground' : 'bg-secondary0/20 text-muted-foreground'} border-0 text-xs`}>
                                   {job.status}
                                 </Badge>
                               </td>
@@ -1680,7 +1680,7 @@ BENEFITS:
                                     </Button>
                                   </Link>
                                   <Link href={`/candidates-list?jobId=${job.id}`}>
-                                    <Button variant="ghost" size="sm" className="h-7 px-2 text-zinc-400">
+                                    <Button variant="ghost" size="sm" className="h-7 px-2 text-muted-foreground">
                                       <Eye className="h-3.5 w-3.5" />
                                     </Button>
                                   </Link>
@@ -1693,7 +1693,7 @@ BENEFITS:
                           {jobSpecDocuments.map((doc) => {
                             const extracted = doc.extractedData as any;
                             return (
-                              <tr key={doc.id} className="hover:bg-gray-200/30 transition-colors" data-testid={`row-job-spec-${doc.id}`}>
+                              <tr key={doc.id} className="hover:bg-secondary transition-colors" data-testid={`row-job-spec-${doc.id}`}>
                                 <td className="px-4 py-3">
                                   <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
@@ -1705,10 +1705,10 @@ BENEFITS:
                                   </div>
                                 </td>
                                 <td className="px-4 py-3">
-                                  <span className="text-zinc-400 text-sm">{extracted?.department || extracted?.company || '-'}</span>
+                                  <span className="text-muted-foreground text-sm">{extracted?.department || extracted?.company || '-'}</span>
                                 </td>
                                 <td className="px-4 py-3">
-                                  <span className="text-zinc-400 text-sm">{extracted?.location || '-'}</span>
+                                  <span className="text-muted-foreground text-sm">{extracted?.location || '-'}</span>
                                 </td>
                                 <td className="px-4 py-3">
                                   <Badge className="bg-muted/20 text-foreground dark:text-foreground border-0 text-xs">Uploaded</Badge>
@@ -1721,7 +1721,7 @@ BENEFITS:
                                     <Button 
                                       variant="ghost" 
                                       size="sm" 
-                                      className="h-7 px-2 text-zinc-400"
+                                      className="h-7 px-2 text-muted-foreground"
                                       onClick={() => setSelectedJobSpec(doc)}
                                     >
                                       <Eye className="h-3.5 w-3.5" />
@@ -1792,7 +1792,7 @@ BENEFITS:
                     <ShieldCheck className="w-5 h-5 text-foreground dark:text-foreground" />
                     Risk Assessment Overview
                   </CardTitle>
-                  <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">AI-generated risk profiles based on background data</CardDescription>
+                  <CardDescription className="text-foreground font-medium text-foreground font-medium">AI-generated risk profiles based on background data</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {!selectedRiskCandidate ? (
@@ -2093,7 +2093,7 @@ BENEFITS:
                     <Eye className="w-5 h-5 text-foreground dark:text-foreground" />
                     Pending Human Reviews
                   </CardTitle>
-                  <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Social screening findings requiring HR review</CardDescription>
+                  <CardDescription className="text-foreground font-medium text-foreground font-medium">Social screening findings requiring HR review</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {socialPendingReviews.length === 0 ? (
@@ -2270,7 +2270,7 @@ BENEFITS:
                       <Calendar className="w-5 h-5 text-primary" />
                       Active Review Cycles
                     </CardTitle>
-                    <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Current KPI review periods</CardDescription>
+                    <CardDescription className="text-foreground font-medium text-foreground font-medium">Current KPI review periods</CardDescription>
                   </div>
                   <Link href="/kpi-management?tab=cycles&action=new-cycle">
                     <Button className="bg-muted hover:bg-muted text-white font-semibold" data-testid="button-new-cycle">
@@ -2332,7 +2332,7 @@ BENEFITS:
                       <FileCheck className="w-5 h-5 text-primary" />
                       Recent Submissions
                     </CardTitle>
-                    <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Employee KPI review submissions</CardDescription>
+                    <CardDescription className="text-foreground font-medium text-foreground font-medium">Employee KPI review submissions</CardDescription>
                   </div>
                   <Link href="/kpi-hr-dashboard">
                     <Button variant="outline" className="border-border" data-testid="button-view-all-submissions">
@@ -2402,7 +2402,7 @@ BENEFITS:
                       <Target className="w-5 h-5 text-foreground dark:text-foreground" />
                       KPI Assignments
                     </CardTitle>
-                    <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Current quarter performance objectives</CardDescription>
+                    <CardDescription className="text-foreground font-medium text-foreground font-medium">Current quarter performance objectives</CardDescription>
                   </div>
                   <Link href="/kpi-management">
                     <Button variant="outline" className="border-border" data-testid="button-manage-assignments">
@@ -2545,7 +2545,7 @@ BENEFITS:
                       <BookOpen className="w-5 h-5 text-primary" />
                       Active Training Courses
                     </CardTitle>
-                    <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Current learning programs and progress</CardDescription>
+                    <CardDescription className="text-foreground font-medium text-foreground font-medium">Current learning programs and progress</CardDescription>
                   </div>
                   <Link href="/learning-management">
                     <Button className="bg-muted hover:bg-muted text-white font-semibold" data-testid="button-create-course-lms">
@@ -2606,7 +2606,7 @@ BENEFITS:
                   <GraduationCap className="w-5 h-5 text-foreground dark:text-foreground" />
                   Employee Learning Progress
                 </CardTitle>
-                <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Individual training completion status</CardDescription>
+                <CardDescription className="text-foreground font-medium text-foreground font-medium">Individual training completion status</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -2723,7 +2723,7 @@ BENEFITS:
                       <Timer className="w-5 h-5 text-primary" />
                       Today's Attendance
                     </CardTitle>
-                    <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Real-time employee attendance tracking</CardDescription>
+                    <CardDescription className="text-foreground font-medium text-foreground font-medium">Real-time employee attendance tracking</CardDescription>
                   </div>
                   <div className="flex gap-2">
                     <Button variant="outline" className="border-border">
@@ -2791,7 +2791,7 @@ BENEFITS:
                       <Calendar className="w-5 h-5 text-foreground dark:text-foreground" />
                       Pending Leave Requests
                     </CardTitle>
-                    <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Approve or reject employee leave requests</CardDescription>
+                    <CardDescription className="text-foreground font-medium text-foreground font-medium">Approve or reject employee leave requests</CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -2845,7 +2845,7 @@ BENEFITS:
 
       {/* Job Spec Detail Modal */}
       <Dialog open={!!selectedJobSpec} onOpenChange={() => setSelectedJobSpec(null)}>
-        <DialogContent className="max-w-3xl bg-gray-100 border-gray-300 dark:border-zinc-700 max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl bg-secondary border-border dark:border-border max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-foreground flex items-center gap-2">
               <Briefcase className="h-5 w-5 text-foreground dark:text-foreground" />
@@ -2870,7 +2870,7 @@ BENEFITS:
                 return (
                   <>
                     {/* Header with Status */}
-                    <div className="flex items-center justify-between p-4 bg-gray-200/50 rounded-lg">
+                    <div className="flex items-center justify-between p-4 bg-secondary rounded-lg">
                       <div className="flex items-center gap-3">
                         <Badge className={
                           selectedJobSpec.status === "processed" 
@@ -2880,7 +2880,7 @@ BENEFITS:
                           {selectedJobSpec.status === "processed" ? <CheckCircle2 className="h-3 w-3 mr-1" /> : <AlertCircle className="h-3 w-3 mr-1" />}
                           <span className="capitalize">{selectedJobSpec.status}</span>
                         </Badge>
-                        <span className="text-zinc-400 text-sm">{formatFileSize(selectedJobSpec.fileSize || 0)}</span>
+                        <span className="text-muted-foreground text-sm">{formatFileSize(selectedJobSpec.fileSize || 0)}</span>
                       </div>
                       {selectedJobSpec.linkedJobId && (
                         <Badge className="bg-muted/20 text-foreground border-border/30">
@@ -2898,7 +2898,7 @@ BENEFITS:
                             <Briefcase className="h-5 w-5 text-foreground dark:text-foreground" />
                             Job Information
                           </h3>
-                          <div className="grid grid-cols-2 gap-4 p-4 bg-gray-200/30 rounded-lg">
+                          <div className="grid grid-cols-2 gap-4 p-4 bg-secondary rounded-lg">
                             <div>
                               <p className="text-xs text-zinc-500 mb-1">Job Title</p>
                               <p className="text-foreground font-medium">{data.title || data.jobTitle || "N/A"}</p>
@@ -2933,7 +2933,7 @@ BENEFITS:
                               <Clock className="h-5 w-5 text-foreground dark:text-foreground" />
                               Experience Required
                             </h3>
-                            <p className="text-zinc-300 text-sm leading-relaxed p-4 bg-gray-200/30 rounded-lg">
+                            <p className="text-muted-foreground text-sm leading-relaxed p-4 bg-secondary rounded-lg">
                               {data.experienceRequired}
                             </p>
                           </div>
@@ -2946,7 +2946,7 @@ BENEFITS:
                               <FileText className="h-5 w-5 text-foreground dark:text-foreground" />
                               Job Description
                             </h3>
-                            <p className="text-zinc-300 text-sm leading-relaxed p-4 bg-gray-200/30 rounded-lg whitespace-pre-wrap">
+                            <p className="text-muted-foreground text-sm leading-relaxed p-4 bg-secondary rounded-lg whitespace-pre-wrap">
                               {data.description}
                             </p>
                           </div>
@@ -2959,7 +2959,7 @@ BENEFITS:
                               <Award className="h-5 w-5 text-foreground dark:text-foreground" />
                               Required Skills ({data.requiredSkills.length})
                             </h3>
-                            <div className="flex flex-wrap gap-2 p-4 bg-gray-200/30 rounded-lg">
+                            <div className="flex flex-wrap gap-2 p-4 bg-secondary rounded-lg">
                               {data.requiredSkills.map((skill: string, i: number) => (
                                 <Badge key={i} className="bg-muted/20 text-foreground border-border/30">
                                   {skill}
@@ -2976,10 +2976,10 @@ BENEFITS:
                               <Target className="h-5 w-5 text-foreground" />
                               Responsibilities ({data.responsibilities.length})
                             </h3>
-                            <div className="p-4 bg-gray-200/30 rounded-lg">
+                            <div className="p-4 bg-secondary rounded-lg">
                               <ul className="space-y-2">
                                 {data.responsibilities.map((resp: string, i: number) => (
-                                  <li key={i} className="flex items-start gap-2 text-sm text-zinc-300">
+                                  <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
                                     <span className="text-foreground mt-1">•</span>
                                     {resp}
                                   </li>
@@ -2996,10 +2996,10 @@ BENEFITS:
                               <GraduationCap className="h-5 w-5 text-foreground dark:text-foreground" />
                               Qualifications ({data.qualifications.length})
                             </h3>
-                            <div className="p-4 bg-gray-200/30 rounded-lg">
+                            <div className="p-4 bg-secondary rounded-lg">
                               <ul className="space-y-2">
                                 {data.qualifications.map((qual: string, i: number) => (
-                                  <li key={i} className="flex items-start gap-2 text-sm text-zinc-300">
+                                  <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
                                     <span className="text-foreground dark:text-foreground mt-1">•</span>
                                     {qual}
                                   </li>
@@ -3016,7 +3016,7 @@ BENEFITS:
                               <Star className="h-5 w-5 text-foreground" />
                               Benefits ({data.benefits.length})
                             </h3>
-                            <div className="flex flex-wrap gap-2 p-4 bg-gray-200/30 rounded-lg">
+                            <div className="flex flex-wrap gap-2 p-4 bg-secondary rounded-lg">
                               {data.benefits.map((benefit: string, i: number) => (
                                 <Badge key={i} variant="outline" className="text-xs border-border/30 text-foreground">
                                   {benefit}
@@ -3032,10 +3032,10 @@ BENEFITS:
                     {selectedJobSpec.rawText && (
                       <div className="space-y-2">
                         <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-zinc-400" />
+                          <FileText className="h-4 w-4 text-muted-foreground" />
                           Raw Text Preview
                         </h3>
-                        <ScrollArea className="h-40 p-3 bg-gray-200/50 rounded-lg">
+                        <ScrollArea className="h-40 p-3 bg-secondary rounded-lg">
                           <p className="text-xs text-zinc-500 whitespace-pre-wrap">
                             {selectedJobSpec.rawText.slice(0, 2000)}
                             {selectedJobSpec.rawText.length > 2000 && "..."}
@@ -3069,25 +3069,25 @@ BENEFITS:
               {/* Header Info */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {selectedJob.customer && (
-                  <div className="bg-gray-200/50 rounded-lg p-3">
+                  <div className="bg-secondary rounded-lg p-3">
                     <p className="text-xs text-muted-foreground">Customer</p>
                     <p className="font-medium text-foreground">{selectedJob.customer}</p>
                   </div>
                 )}
                 {selectedJob.department && (
-                  <div className="bg-gray-200/50 rounded-lg p-3">
+                  <div className="bg-secondary rounded-lg p-3">
                     <p className="text-xs text-muted-foreground">Department</p>
                     <p className="font-medium text-foreground">{selectedJob.department}</p>
                   </div>
                 )}
-                <div className="bg-gray-200/50 rounded-lg p-3">
+                <div className="bg-secondary rounded-lg p-3">
                   <p className="text-xs text-muted-foreground">Status</p>
-                  <Badge className={`${selectedJob.status === 'Active' ? 'bg-muted/20 text-foreground' : 'bg-gray-500/20 text-gray-400'}`}>
+                  <Badge className={`${selectedJob.status === 'Active' ? 'bg-muted/20 text-foreground' : 'bg-secondary0/20 text-muted-foreground'}`}>
                     {selectedJob.status}
                   </Badge>
                 </div>
                 {(selectedJob.city || selectedJob.province || selectedJob.location) && (
-                  <div className="bg-gray-200/50 rounded-lg p-3">
+                  <div className="bg-secondary rounded-lg p-3">
                     <p className="text-xs text-muted-foreground">Location</p>
                     <p className="font-medium text-foreground flex items-center gap-1">
                       <MapPin className="h-3 w-3" />
@@ -3098,13 +3098,13 @@ BENEFITS:
                   </div>
                 )}
                 {selectedJob.remuneration && (
-                  <div className="bg-gray-200/50 rounded-lg p-3">
+                  <div className="bg-secondary rounded-lg p-3">
                     <p className="text-xs text-muted-foreground">Remuneration</p>
                     <p className="font-medium text-foreground">{selectedJob.remuneration}</p>
                   </div>
                 )}
                 {(selectedJob.salaryMin || selectedJob.salaryMax) && !selectedJob.remuneration && (
-                  <div className="bg-gray-200/50 rounded-lg p-3">
+                  <div className="bg-secondary rounded-lg p-3">
                     <p className="text-xs text-muted-foreground">Salary Range</p>
                     <p className="font-medium text-foreground">
                       R{selectedJob.salaryMin?.toLocaleString() || '0'} - R{selectedJob.salaryMax?.toLocaleString() || '0'}
@@ -3112,7 +3112,7 @@ BENEFITS:
                   </div>
                 )}
                 {selectedJob.gender && (
-                  <div className="bg-gray-200/50 rounded-lg p-3">
+                  <div className="bg-secondary rounded-lg p-3">
                     <p className="text-xs text-muted-foreground">Gender</p>
                     <p className="font-medium text-foreground">{selectedJob.gender}</p>
                   </div>
@@ -3123,7 +3123,7 @@ BENEFITS:
               {selectedJob.introduction && (
                 <div className="space-y-2">
                   <h3 className="text-sm font-semibold text-foreground dark:text-foreground">Introduction</h3>
-                  <p className="text-sm text-muted-foreground bg-gray-200/30 rounded-lg p-3">
+                  <p className="text-sm text-muted-foreground bg-secondary rounded-lg p-3">
                     {selectedJob.introduction}
                   </p>
                 </div>
@@ -3133,7 +3133,7 @@ BENEFITS:
               {selectedJob.description && (
                 <div className="space-y-2">
                   <h3 className="text-sm font-semibold text-foreground dark:text-foreground">Description</h3>
-                  <p className="text-sm text-muted-foreground bg-gray-200/30 rounded-lg p-3">
+                  <p className="text-sm text-muted-foreground bg-secondary rounded-lg p-3">
                     {selectedJob.description}
                   </p>
                 </div>
@@ -3143,7 +3143,7 @@ BENEFITS:
               {selectedJob.duties && selectedJob.duties.length > 0 && (
                 <div className="space-y-2">
                   <h3 className="text-sm font-semibold text-foreground dark:text-foreground">Duties & Responsibilities</h3>
-                  <ul className="space-y-1 bg-gray-200/30 rounded-lg p-3">
+                  <ul className="space-y-1 bg-secondary rounded-lg p-3">
                     {selectedJob.duties.map((duty: string, i: number) => (
                       <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
                         <span className="text-foreground dark:text-foreground mt-1">•</span>
@@ -3158,7 +3158,7 @@ BENEFITS:
               {selectedJob.attributes && selectedJob.attributes.length > 0 && (
                 <div className="space-y-2">
                   <h3 className="text-sm font-semibold text-foreground">Attributes, Skills & Competencies</h3>
-                  <ul className="space-y-1 bg-gray-200/30 rounded-lg p-3">
+                  <ul className="space-y-1 bg-secondary rounded-lg p-3">
                     {selectedJob.attributes.map((attr: string, i: number) => (
                       <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
                         <span className="text-foreground mt-1">•</span>
@@ -3173,7 +3173,7 @@ BENEFITS:
               {selectedJob.qualifications && selectedJob.qualifications.length > 0 && (
                 <div className="space-y-2">
                   <h3 className="text-sm font-semibold text-foreground dark:text-foreground">Qualifications</h3>
-                  <ul className="space-y-1 bg-gray-200/30 rounded-lg p-3">
+                  <ul className="space-y-1 bg-secondary rounded-lg p-3">
                     {selectedJob.qualifications.map((qual: string, i: number) => (
                       <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
                         <span className="text-foreground dark:text-foreground mt-1">•</span>
@@ -3188,7 +3188,7 @@ BENEFITS:
               {selectedJob.ethics && (
                 <div className="space-y-2">
                   <h3 className="text-sm font-semibold text-foreground dark:text-foreground">Ethics & Values</h3>
-                  <p className="text-sm text-muted-foreground bg-gray-200/30 rounded-lg p-3">
+                  <p className="text-sm text-muted-foreground bg-secondary rounded-lg p-3">
                     {selectedJob.ethics}
                   </p>
                 </div>
@@ -3198,7 +3198,7 @@ BENEFITS:
               {selectedJob.requirements && selectedJob.requirements.length > 0 && (
                 <div className="space-y-2">
                   <h3 className="text-sm font-semibold text-foreground dark:text-foreground">Requirements</h3>
-                  <ul className="space-y-1 bg-gray-200/30 rounded-lg p-3">
+                  <ul className="space-y-1 bg-secondary rounded-lg p-3">
                     {selectedJob.requirements.map((req: string, i: number) => (
                       <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
                         <span className="text-foreground dark:text-foreground mt-1">•</span>
@@ -3213,7 +3213,7 @@ BENEFITS:
               {selectedJob.benefits && selectedJob.benefits.length > 0 && (
                 <div className="space-y-2">
                   <h3 className="text-sm font-semibold text-foreground">Benefits</h3>
-                  <div className="flex flex-wrap gap-2 bg-gray-200/30 rounded-lg p-3">
+                  <div className="flex flex-wrap gap-2 bg-secondary rounded-lg p-3">
                     {selectedJob.benefits.map((benefit: string, i: number) => (
                       <Badge key={i} variant="outline" className="text-xs border-border/30 text-foreground">
                         {benefit}

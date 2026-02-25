@@ -334,7 +334,7 @@ AHC Recruiting Team`;
       "LinkedIn": "text-foreground bg-muted/10",
       "Direct": "text-foreground bg-muted/10"
     };
-    return sourceColors[source] || "text-gray-400 bg-gray-400/10";
+    return sourceColors[source] || "text-muted-foreground bg-muted/10";
   };
 
   return (
@@ -977,7 +977,7 @@ AHC Recruiting Team`}
                     <Badge className={
                       profileCandidate?.stage === 'Shortlisted' ? 'bg-muted/20 text-foreground' :
                       profileCandidate?.stage === 'Interview' ? 'bg-muted/20 text-foreground dark:text-foreground' :
-                      'bg-gray-500/20 text-gray-600'
+                      'bg-secondary0/20 text-gray-600'
                     }>
                       {profileCandidate?.stage || 'New'}
                     </Badge>

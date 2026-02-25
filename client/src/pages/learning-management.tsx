@@ -363,7 +363,7 @@ export default function LearningManagement() {
       case "beginner": return "bg-muted/10 text-foreground border-border/20";
       case "intermediate": return "bg-muted/10 text-foreground border-border/20";
       case "advanced": return "bg-destructive/10 text-destructive border-destructive/20";
-      default: return "bg-gray-500/10 text-gray-600 border-gray-500/20";
+      default: return "bg-secondary0/10 text-gray-600 border-gray-500/20";
     }
   };
 
@@ -839,7 +839,7 @@ export default function LearningManagement() {
               <Card className="bg-black/40 border-border dark:border-white/10">
                 <CardHeader>
                   <CardTitle className="text-foreground flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-gray-400" />
+                    <Clock className="w-5 h-5 text-muted-foreground" />
                     Not Started
                   </CardTitle>
                 </CardHeader>
@@ -1030,7 +1030,7 @@ export default function LearningManagement() {
                       >
                         <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold ${
                           index === 0 ? "bg-muted/20 text-foreground" :
-                          index === 1 ? "bg-gray-300/20 text-gray-300" :
+                          index === 1 ? "bg-muted/20 text-muted-foreground" :
                           index === 2 ? "bg-muted/20 text-foreground" :
                           "bg-primary/20 text-primary"
                         }`}>

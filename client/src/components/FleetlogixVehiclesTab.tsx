@@ -281,7 +281,7 @@ export function FleetlogixVehiclesTab() {
                       ? "bg-muted text-foreground" 
                       : vehicle.status === "maintenance"
                       ? "bg-muted text-foreground"
-                      : "bg-gray-100 text-gray-800"
+                      : "bg-secondary text-foreground"
                   }`}>
                     {vehicle.status}
                   </span>

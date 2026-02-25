@@ -134,7 +134,7 @@ export default function TenantRequests() {
       pending: { color: "bg-muted/10 text-foreground border-border/20", icon: Clock },
       approved: { color: "bg-muted/10 text-foreground border-border/20", icon: CheckCircle2 },
       rejected: { color: "bg-destructive/10 text-destructive border-destructive/20", icon: XCircle },
-      cancelled: { color: "bg-gray-500/10 text-gray-500 border-gray-500/20", icon: AlertCircle },
+      cancelled: { color: "bg-secondary0/10 text-muted-foreground border-gray-500/20", icon: AlertCircle },
     };
 
     const variant = variants[status as keyof typeof variants] || variants.pending;

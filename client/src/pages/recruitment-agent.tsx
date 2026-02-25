@@ -271,7 +271,7 @@ export default function RecruitmentAgent() {
 
   // Organize agents by category
   const agentsByCategory = sourcingAgents?.reduce((acc, agent) => {
-    const meta = PLATFORM_META[agent.platform] || { category: "Other", icon: Search, color: "bg-gray-500", description: agent.name };
+    const meta = PLATFORM_META[agent.platform] || { category: "Other", icon: Search, color: "bg-secondary0", description: agent.name };
     const category = meta.category;
     if (!acc[category]) acc[category] = [];
     acc[category].push({ ...agent, ...meta });
@@ -430,7 +430,7 @@ export default function RecruitmentAgent() {
       case "Screening AI": return "bg-muted";
       case "Ranking Engine": return "bg-muted";
       case "System": return "bg-muted";
-      default: return "bg-gray-500";
+      default: return "bg-secondary0";
     }
   };
 
@@ -438,7 +438,7 @@ export default function RecruitmentAgent() {
     if (score >= 85) return 'text-foreground bg-muted/20 border-border/30';
     if (score >= 70) return 'text-foreground bg-muted/20 border-border/30';
     if (score >= 50) return 'text-foreground dark:text-foreground bg-muted/20 border-border/30';
-    return 'text-gray-500 bg-gray-500/20 border-gray-500/30';
+    return 'text-muted-foreground bg-secondary0/20 border-gray-500/30';
   };
 
   const getMatchLabel = (score: number) => {
@@ -467,7 +467,7 @@ export default function RecruitmentAgent() {
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-muted to-background dark:from-muted dark:to-background bg-clip-text text-transparent">
                   AI Recruitment Command Center
                 </h1>
-                <p className="text-gray-500">
+                <p className="text-muted-foreground">
                   Intelligent talent acquisition powered by LLaMA 3.1 70B via Groq
                 </p>
               </div>
@@ -475,16 +475,16 @@ export default function RecruitmentAgent() {
           </div>
 
           {/* Controls Bar - Horizontal */}
-          <Card className="bg-gray-100/50 border-border mb-6">
+          <Card className="bg-secondary border-border mb-6">
             <CardContent className="p-4">
               <div className="flex flex-wrap items-end gap-4">
                 <div className="flex-1 min-w-[200px] max-w-xs">
-                  <Label className="text-gray-500 text-xs mb-1 block">Target Position</Label>
+                  <Label className="text-muted-foreground text-xs mb-1 block">Target Position</Label>
                   <Select value={selectedJobId} onValueChange={setSelectedJobId}>
-                    <SelectTrigger className="bg-gray-200 border-border" data-testid="select-job">
+                    <SelectTrigger className="bg-secondary border-border" data-testid="select-job">
                       <SelectValue placeholder="Select a job..." />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-200 border-border">
+                    <SelectContent className="bg-secondary border-border">
                       {jobsLoading ? (
                         <SelectItem value="loading" disabled>Loading...</SelectItem>
                       ) : jobs?.length ? (
@@ -500,7 +500,7 @@ export default function RecruitmentAgent() {
                   </Select>
                 </div>
                 {selectedJob && (
-                  <div className="hidden md:flex items-center gap-2 text-sm text-gray-500 px-3 py-2 bg-muted/50 rounded-lg border border-border">
+                  <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground px-3 py-2 bg-muted/50 rounded-lg border border-border">
                     <Briefcase className="h-4 w-4 text-foreground dark:text-foreground" />
                     <span className="font-medium text-foreground">{selectedJob.title}</span>
                     {selectedJob.department && <span>• {selectedJob.department}</span>}
@@ -508,22 +508,22 @@ export default function RecruitmentAgent() {
                   </div>
                 )}
                 <div className="w-24">
-                  <Label className="text-gray-500 text-xs mb-1 block">Max</Label>
+                  <Label className="text-muted-foreground text-xs mb-1 block">Max</Label>
                   <Input
                     type="number"
                     value={maxCandidates}
                     onChange={(e) => setMaxCandidates(Number(e.target.value))}
-                    className="bg-gray-200 border-border"
+                    className="bg-secondary border-border"
                     data-testid="input-max-candidates"
                   />
                 </div>
                 <div className="w-24">
-                  <Label className="text-gray-500 text-xs mb-1 block">Min Score</Label>
+                  <Label className="text-muted-foreground text-xs mb-1 block">Min Score</Label>
                   <Input
                     type="number"
                     value={minMatchScore}
                     onChange={(e) => setMinMatchScore(Number(e.target.value))}
-                    className="bg-gray-200 border-border"
+                    className="bg-secondary border-border"
                     data-testid="input-min-match"
                   />
                 </div>
@@ -551,54 +551,54 @@ export default function RecruitmentAgent() {
 
           {/* Stats Row */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <Card className="bg-gray-100/50 border-border">
+            <Card className="bg-secondary border-border">
               <CardContent className="p-4 flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-muted/10">
                   <Activity className="h-5 w-5 text-foreground dark:text-foreground" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-foreground dark:text-foreground">{sessions?.length || 0}</p>
-                  <p className="text-xs text-gray-500">Sessions</p>
+                  <p className="text-xs text-muted-foreground">Sessions</p>
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-gray-100/50 border-border">
+            <Card className="bg-secondary border-border">
               <CardContent className="p-4 flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-muted/10">
                   <Users className="h-5 w-5 text-foreground" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-foreground">{candidates?.length || 0}</p>
-                  <p className="text-xs text-gray-500">Candidates</p>
+                  <p className="text-xs text-muted-foreground">Candidates</p>
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-gray-100/50 border-border">
+            <Card className="bg-secondary border-border">
               <CardContent className="p-4 flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-muted/10">
                   <CheckCircle className="h-5 w-5 text-foreground dark:text-foreground" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-foreground dark:text-foreground">{completedSessions.length}</p>
-                  <p className="text-xs text-gray-500">Completed</p>
+                  <p className="text-xs text-muted-foreground">Completed</p>
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-gray-100/50 border-border">
+            <Card className="bg-secondary border-border">
               <CardContent className="p-4 flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-muted/10">
                   <Star className="h-5 w-5 text-foreground" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-foreground">{topCandidates.length}</p>
-                  <p className="text-xs text-gray-500">Top Matches</p>
+                  <p className="text-xs text-muted-foreground">Top Matches</p>
                 </div>
               </CardContent>
             </Card>
           </div>
 
           {/* Top Matches - Main Content */}
-          <Card className="bg-gray-100/50 border-border mb-6">
+          <Card className="bg-secondary border-border mb-6">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-3">
@@ -616,10 +616,10 @@ export default function RecruitmentAgent() {
                 <div className="flex items-center gap-3">
                   {!displayJobTitle && jobs && jobs.length > 0 && (
                     <Select value={selectedJobId} onValueChange={setSelectedJobId}>
-                      <SelectTrigger className="bg-gray-200 border-border h-8 text-xs w-48">
+                      <SelectTrigger className="bg-secondary border-border h-8 text-xs w-48">
                         <SelectValue placeholder="Filter by job..." />
                       </SelectTrigger>
-                      <SelectContent className="bg-gray-200 border-border">
+                      <SelectContent className="bg-secondary border-border">
                         {jobs.map((job) => (
                           <SelectItem key={job.id} value={job.id} className="text-xs">
                             {job.title}
@@ -654,7 +654,7 @@ export default function RecruitmentAgent() {
                       >
                         {index < 3 && (
                           <div className={`absolute -top-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold shadow-md ${
-                            index === 0 ? 'bg-muted text-black' : index === 1 ? 'bg-gray-400 text-black' : 'bg-muted text-white'
+                            index === 0 ? 'bg-muted text-black' : index === 1 ? 'bg-muted text-black' : 'bg-muted text-white'
                           }`}>
                             {index + 1}
                           </div>
@@ -668,9 +668,9 @@ export default function RecruitmentAgent() {
                           </Avatar>
                           <div className="flex-1 min-w-0">
                             <h3 className="font-semibold text-base truncate">{candidate.fullName}</h3>
-                            <p className="text-sm text-gray-500 truncate">{candidate.role || 'No role specified'}</p>
+                            <p className="text-sm text-muted-foreground truncate">{candidate.role || 'No role specified'}</p>
                             {metadata?.company && (
-                              <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                                 <Building2 className="h-3 w-3" /> {metadata.company}
                               </p>
                             )}
@@ -683,7 +683,7 @@ export default function RecruitmentAgent() {
                         </div>
 
                         {(candidate.location || metadata?.location) && (
-                          <p className="text-xs text-gray-500 flex items-center gap-1 mb-2">
+                          <p className="text-xs text-muted-foreground flex items-center gap-1 mb-2">
                             <MapPin className="h-3 w-3" /> {candidate.location || metadata?.location}
                           </p>
                         )}
@@ -722,7 +722,7 @@ export default function RecruitmentAgent() {
                   })}
                 </div>
               ) : (
-                <div className="text-center py-16 text-gray-500">
+                <div className="text-center py-16 text-muted-foreground">
                   <Bot className="h-16 w-16 mx-auto mb-4 opacity-20" />
                   <h3 className="text-lg font-medium text-foreground mb-1">No candidates yet</h3>
                   <p className="text-sm max-w-md mx-auto">Select a job position above and deploy AI agents to find and rank top candidates automatically.</p>
@@ -733,10 +733,10 @@ export default function RecruitmentAgent() {
 
           {/* Recent Sessions - Compact Horizontal */}
           {sessions && sessions.length > 0 && (
-            <Card className="bg-gray-100/50 border-border">
+            <Card className="bg-secondary border-border">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-gray-500" />
+                  <Clock className="h-4 w-4 text-muted-foreground" />
                   Recent Sessions
                 </CardTitle>
               </CardHeader>
@@ -761,7 +761,7 @@ export default function RecruitmentAgent() {
                             {session.status}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-gray-500">
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
                           <span>{session.candidatesFound} found</span>
                           <span>{session.candidatesAdded} added</span>
                         </div>
@@ -795,7 +795,7 @@ export default function RecruitmentAgent() {
                 </Badge>
               )}
             </DialogTitle>
-            <DialogDescription className="text-gray-500">
+            <DialogDescription className="text-muted-foreground">
               {selectedJob ? `Sourcing candidates for: ${selectedJob.title}` : 'Deploying sourcing agents across platforms'}
             </DialogDescription>
           </DialogHeader>
@@ -813,12 +813,12 @@ export default function RecruitmentAgent() {
                 <div className="p-3 space-y-1.5">
                   {Object.entries(agentsByCategory).length === 0 ? (
                     <div className="text-center py-8">
-                      <Loader2 className="h-6 w-6 text-gray-500 mx-auto animate-spin" />
+                      <Loader2 className="h-6 w-6 text-muted-foreground mx-auto animate-spin" />
                     </div>
                   ) : (
                     Object.entries(agentsByCategory).map(([category, agents]) => (
                       <div key={category}>
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider px-2 py-1.5">{category}</p>
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-2 py-1.5">{category}</p>
                         {agents.map((agent) => {
                           const isActive = effectiveStep === 1;
                           const sessionResult = specialistResultsFromSession.find(
@@ -834,17 +834,17 @@ export default function RecruitmentAgent() {
                               data-testid={`agent-${agent.platform.toLowerCase().replace(/\s+/g, '-')}`}
                             >
                               <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                isActive ? 'bg-muted' : hasResult ? 'bg-muted' : 'bg-gray-300'
+                                isActive ? 'bg-muted' : hasResult ? 'bg-muted' : 'bg-muted'
                               }`}>
                                 {isActive ? (
                                   <Loader2 className="h-3 w-3 animate-spin text-white" />
                                 ) : hasResult ? (
                                   <CheckCircle className="h-3 w-3 text-white" />
                                 ) : (
-                                  <div className="w-2 h-2 rounded-full bg-gray-400" />
+                                  <div className="w-2 h-2 rounded-full bg-muted" />
                                 )}
                               </div>
-                              <span className={`flex-1 text-sm ${isActive ? 'text-foreground' : hasResult ? 'text-gray-700' : 'text-gray-500'}`}>
+                              <span className={`flex-1 text-sm ${isActive ? 'text-foreground' : hasResult ? 'text-foreground' : 'text-muted-foreground'}`}>
                                 {agent.name}
                               </span>
                               {hasResult && (
@@ -873,7 +873,7 @@ export default function RecruitmentAgent() {
               <ScrollArea className="h-[400px]">
                 <div className="p-3 space-y-2">
                   {agentMessages.length === 0 && !isSimulating ? (
-                    <div className="text-center py-12 text-gray-500">
+                    <div className="text-center py-12 text-muted-foreground">
                       <Bot className="h-10 w-10 mx-auto mb-3 opacity-30" />
                       <p className="text-sm">Waiting for agents to start...</p>
                     </div>
@@ -890,8 +890,8 @@ export default function RecruitmentAgent() {
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 bg-muted/50 rounded-lg p-2 border border-border">
-                          <span className="font-medium text-xs text-gray-700">{msg.agent}</span>
-                          <p className="text-xs text-gray-500">{msg.message}</p>
+                          <span className="font-medium text-xs text-foreground">{msg.agent}</span>
+                          <p className="text-xs text-muted-foreground">{msg.message}</p>
                         </div>
                       </div>
                     ))
@@ -930,7 +930,7 @@ export default function RecruitmentAgent() {
                 </Badge>
               )}
             </DialogTitle>
-            <DialogDescription className="text-gray-500">
+            <DialogDescription className="text-muted-foreground">
               {topCandidates.length} candidates ranked by AI based on job requirements and skill matching
             </DialogDescription>
           </DialogHeader>
@@ -972,14 +972,14 @@ export default function RecruitmentAgent() {
                         <div className="flex items-start justify-between gap-4">
                           <div>
                             <h3 className="font-semibold text-lg">{candidate.fullName}</h3>
-                            <p className="text-gray-500">{candidate.role}</p>
+                            <p className="text-muted-foreground">{candidate.role}</p>
                             {metadata?.company && (
-                              <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
+                              <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                                 <Building2 className="h-3 w-3" /> {metadata.company}
                               </p>
                             )}
                             {(candidate.location || metadata?.location) && (
-                              <p className="text-sm text-gray-500 flex items-center gap-1">
+                              <p className="text-sm text-muted-foreground flex items-center gap-1">
                                 <MapPin className="h-3 w-3" /> {candidate.location || metadata?.location}
                               </p>
                             )}
@@ -1002,15 +1002,15 @@ export default function RecruitmentAgent() {
                         {/* Skills */}
                         {candidate.skills && candidate.skills.length > 0 && (
                           <div className="mt-3">
-                            <p className="text-xs text-gray-500 mb-2">Skills</p>
+                            <p className="text-xs text-muted-foreground mb-2">Skills</p>
                             <div className="flex flex-wrap gap-1.5">
                               {(candidate.skills as string[]).slice(0, 8).map((skill, i) => (
-                                <Badge key={i} variant="outline" className="text-xs bg-gray-200 border-border">
+                                <Badge key={i} variant="outline" className="text-xs bg-secondary border-border">
                                   {skill}
                                 </Badge>
                               ))}
                               {(candidate.skills as string[]).length > 8 && (
-                                <Badge variant="outline" className="text-xs bg-gray-200 border-border">
+                                <Badge variant="outline" className="text-xs bg-secondary border-border">
                                   +{(candidate.skills as string[]).length - 8} more
                                 </Badge>
                               )}
@@ -1021,8 +1021,8 @@ export default function RecruitmentAgent() {
                         {/* Experience */}
                         {metadata?.experience && (
                           <div className="mt-3">
-                            <p className="text-xs text-gray-500 mb-1">Experience</p>
-                            <p className="text-sm text-gray-700">{metadata.experience}</p>
+                            <p className="text-xs text-muted-foreground mb-1">Experience</p>
+                            <p className="text-sm text-foreground">{metadata.experience}</p>
                           </div>
                         )}
 
@@ -1032,15 +1032,15 @@ export default function RecruitmentAgent() {
                             <p className="text-xs text-foreground dark:text-foreground mb-1 flex items-center gap-1">
                               <Brain className="h-3 w-3" /> AI Analysis
                             </p>
-                            <p className="text-sm text-gray-700">{metadata.aiReasoning}</p>
+                            <p className="text-sm text-foreground">{metadata.aiReasoning}</p>
                           </div>
                         )}
 
                         {/* Applied For Job */}
                         {candidateJob && (
                           <div className="mt-3 pt-3 border-t border-border">
-                            <p className="text-xs text-gray-500 flex items-center gap-1">
-                              <Briefcase className="h-3 w-3" /> Applied for: <span className="text-gray-700">{candidateJob.title}</span>
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Briefcase className="h-3 w-3" /> Applied for: <span className="text-foreground">{candidateJob.title}</span>
                             </p>
                           </div>
                         )}
