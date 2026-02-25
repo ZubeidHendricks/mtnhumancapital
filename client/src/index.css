@@ -49,18 +49,11 @@
   --radius: 4px;
 }
 
-/* ─── MTN Brand constants (never change between themes) ─── */
 :root {
   --mtn-yellow:       #FFCB00;
-  --mtn-navy:         #002868;
-  --mtn-navy-dark:    #001844;
   --mtn-yellow-hover: #E6B800;
   --mtn-black:        #000000;
   --mtn-white:        #FFFFFF;
-  --mtn-charcoal:     #1A1A1A;
-  --mtn-grey-light:   #F5F5F5;
-  --mtn-grey-mid:     #CCCCCC;
-  --mtn-grey-text:    #666666;
   --mtn-error:        #D0021B;
   --mtn-success:      #2D9C45;
 
@@ -78,95 +71,47 @@
   --shadow-md:  0 2px 12px rgba(0,0,0,0.10);
   --shadow-lg:  0 6px 24px rgba(0,0,0,0.14);
   --shadow-xl:  0 12px 40px rgba(0,0,0,0.18);
-}
 
-/* ─── DARK MODE (default) ─── */
-:root {
-  --background: 220 20% 7%;       /* #0D1117 */
-  --foreground: 210 40% 98%;      /* #F0F6FC */
+  --background: 0 0% 100%;
+  --foreground: 0 0% 0%;
 
-  --card: 220 18% 13%;            /* #161B22 */
-  --card-foreground: 210 40% 98%;
-
-  --popover: 220 18% 13%;
-  --popover-foreground: 210 40% 98%;
-
-  --primary: 48 100% 50%;         /* #FFCB00 MTN Yellow */
-  --primary-foreground: 0 0% 0%;  /* Black text on yellow */
-
-  --secondary: 214 100% 20%;      /* #002868 MTN Navy */
-  --secondary-foreground: 0 0% 100%;
-
-  --muted: 220 14% 16%;           /* #21262D */
-  --muted-foreground: 215 14% 55%; /* #8B949E */
-
-  --accent: 48 100% 50%;          /* MTN Yellow */
-  --accent-foreground: 0 0% 0%;
-
-  --destructive: 354 95% 41%;     /* #D0021B MTN Error Red */
-  --destructive-foreground: 0 0% 100%;
-
-  --border: 215 14% 21%;          /* #30363D */
-  --input: 215 14% 21%;
-  --ring: 48 100% 50%;            /* MTN Yellow focus ring */
-
-  --button-outline: hsl(0 0% 100% / 0.2);
-  --radius: 4px;
-
-  /* Chart Colors - MTN palette */
-  --chart-1: 48 100% 50%;         /* MTN Yellow */
-  --chart-2: 214 100% 50%;        /* Blue */
-  --chart-3: 140 62% 39%;         /* MTN Success Green */
-  --chart-4: 0 0% 92%;            /* Light grey */
-  --chart-5: 199 89% 48%;         /* Cyan */
-}
-
-/* ─── LIGHT MODE ─── */
-.light {
-  --background: 220 14% 96%;      /* #F0F2F5 */
-  --foreground: 220 20% 7%;       /* #0D1117 */
-
-  --card: 0 0% 100%;              /* White cards */
-  --card-foreground: 220 20% 7%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 0%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 220 20% 7%;
+  --popover-foreground: 0 0% 0%;
 
-  --primary: 48 100% 50%;         /* #FFCB00 MTN Yellow */
-  --primary-foreground: 0 0% 0%;  /* Black text on yellow */
+  --primary: 0 0% 0%;
+  --primary-foreground: 0 0% 100%;
 
-  --secondary: 214 100% 20%;      /* #002868 MTN Navy */
-  --secondary-foreground: 0 0% 100%;
+  --secondary: 0 0% 96%;
+  --secondary-foreground: 0 0% 0%;
 
-  --muted: 220 14% 96%;           /* #F5F6F8 */
-  --muted-foreground: 215 14% 34%; /* #4B5563 */
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 45%;
 
-  --accent: 48 100% 50%;          /* MTN Yellow */
+  --accent: 0 0% 96%;
   --accent-foreground: 0 0% 0%;
 
-  --destructive: 354 95% 41%;     /* MTN Error Red */
+  --destructive: 354 95% 41%;
   --destructive-foreground: 0 0% 100%;
 
-  --border: 216 12% 90%;          /* #E5E7EB */
-  --input: 0 0% 100%;
-  --ring: 48 100% 50%;            /* MTN Yellow */
+  --border: 0 0% 90%;
+  --input: 0 0% 90%;
+  --ring: 0 0% 0%;
 
-  --button-outline: hsl(214 32% 85%);
+  --button-outline: hsl(0 0% 80%);
+  --radius: 4px;
 
-  /* Chart Colors for Light Mode */
-  --chart-1: 48 100% 50%;         /* MTN Yellow */
-  --chart-2: 214 100% 40%;        /* Navy-ish blue */
-  --chart-3: 140 62% 39%;         /* MTN Green */
-  --chart-4: 45 90% 48%;          /* Amber */
-  --chart-5: 199 70% 45%;         /* Teal */
+  --chart-1: 0 0% 0%;
+  --chart-2: 0 0% 30%;
+  --chart-3: 140 62% 39%;
+  --chart-4: 0 0% 60%;
+  --chart-5: 0 0% 45%;
 }
 
-/* ══════════════════════════════════════════════════════════
-   SIDEBAR — always MTN Navy regardless of theme
-   ══════════════════════════════════════════════════════════ */
-
 .sidebar-nav {
-  background-color: var(--mtn-navy) !important;
+  background-color: #000000 !important;
   color: #FFFFFF !important;
   border-right: none !important;
 }
@@ -175,7 +120,6 @@
   border-color: rgba(255,255,255,0.08) !important;
 }
 
-/* Section labels */
 .sidebar-nav h3,
 .sidebar-nav .text-foreground\/60 {
   color: rgba(255,255,255,0.35) !important;
@@ -185,7 +129,6 @@
   text-transform: uppercase !important;
 }
 
-/* Nav item text */
 .sidebar-nav span,
 .sidebar-nav .text-muted-foreground {
   color: rgba(255,255,255,0.65) !important;
@@ -193,12 +136,10 @@
   font-weight: 400 !important;
 }
 
-/* Nav item icons */
 .sidebar-nav svg {
   color: rgba(255,255,255,0.5) !important;
 }
 
-/* Hover state */
 .sidebar-nav a:hover span,
 .sidebar-nav a:hover svg,
 .sidebar-nav .hover\:text-foreground:hover {
@@ -210,28 +151,25 @@
   background-color: rgba(255,255,255,0.07) !important;
 }
 
-/* Active state — MTN Yellow accent */
 .sidebar-nav .bg-primary\/10 {
-  background-color: rgba(255, 203, 0, 0.10) !important;
-  border-left: 3px solid var(--mtn-yellow) !important;
+  background-color: rgba(255,255,255,0.10) !important;
+  border-left: 3px solid #FFFFFF !important;
   border-radius: 6px !important;
 }
 
 .sidebar-nav .text-primary {
-  color: var(--mtn-yellow) !important;
+  color: #FFFFFF !important;
 }
 
 .sidebar-nav .text-primary svg,
 .sidebar-nav .bg-primary\/10 svg {
-  color: var(--mtn-yellow) !important;
+  color: #FFFFFF !important;
 }
 
-/* Active indicator bar — yellow */
 .sidebar-nav .bg-primary {
-  background-color: var(--mtn-yellow) !important;
+  background-color: #FFFFFF !important;
 }
 
-/* Sidebar buttons (collapse toggle, theme toggle) */
 .sidebar-nav button {
   color: rgba(255,255,255,0.65) !important;
 }
@@ -241,294 +179,10 @@
   color: #FFFFFF !important;
 }
 
-/* Logo area */
 .sidebar-nav .bg-gray-100,
 .sidebar-nav .dark\:bg-zinc-900 {
   background-color: transparent !important;
 }
-
-/* ══════════════════════════════════════════════════════════
-   LIGHT THEME OVERRIDES
-   ══════════════════════════════════════════════════════════ */
-
-/* Cards in light theme */
-.light .bg-card {
-  box-shadow: var(--shadow-sm);
-}
-
-/* Table styling for light theme */
-.light table {
-  background: hsl(0 0% 100%);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.light thead {
-  background: hsl(220 14% 96%);
-}
-
-.light th {
-  background: transparent;
-  color: hsl(215 14% 34%);
-  font-weight: 600;
-  font-size: 0.75rem;
-  letter-spacing: 0.02em;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid hsl(216 12% 90%);
-}
-
-.light td {
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid hsl(216 12% 93%);
-  color: hsl(220 20% 15%);
-}
-
-.light tbody tr:hover td {
-  background: hsl(220 14% 96%);
-}
-
-.light tbody tr:last-child td {
-  border-bottom: none;
-}
-
-/* Primary button — MTN Yellow bg, black text */
-.light .bg-primary {
-  background: var(--mtn-yellow) !important;
-  color: var(--mtn-black) !important;
-}
-
-.light .bg-primary:hover {
-  background: var(--mtn-yellow-hover) !important;
-}
-
-/* Badge styling */
-.light .bg-primary\/10 {
-  background: rgba(255, 203, 0, 0.12) !important;
-}
-
-.light .text-primary {
-  color: var(--mtn-navy) !important;
-}
-
-/* Status badges - Success */
-.light .bg-green-500\/10,
-.light .bg-emerald-500\/10 {
-  background: rgba(45, 156, 69, 0.15) !important;
-}
-
-.light .text-green-400,
-.light .text-emerald-400 {
-  color: var(--mtn-success) !important;
-}
-
-/* Status badges - Warning */
-.light .bg-yellow-500\/10,
-.light .bg-amber-500\/10,
-.light .bg-yellow-100 {
-  background: rgba(255, 203, 0, 0.15) !important;
-}
-
-.light .text-yellow-500,
-.light .text-yellow-400,
-.light .text-amber-500 {
-  color: #7A6000 !important;
-}
-
-/* Status badges - Error */
-.light .bg-red-500\/10,
-.light .bg-red-100 {
-  background: rgba(208, 2, 27, 0.12) !important;
-}
-
-.light .text-red-500,
-.light .text-red-400 {
-  color: var(--mtn-error) !important;
-}
-
-/* Status badges - Info */
-.light .bg-blue-500\/10,
-.light .bg-blue-100 {
-  background: rgba(0, 40, 104, 0.10) !important;
-}
-
-.light .text-blue-500,
-.light .text-blue-400 {
-  color: var(--mtn-navy) !important;
-}
-
-/* Muted text styling */
-.light .text-muted-foreground {
-  color: hsl(215 14% 34%) !important;
-}
-
-/* Card header titles */
-.light .text-card-foreground {
-  color: var(--mtn-navy) !important;
-}
-
-/* Scroll area */
-.light [data-radix-scroll-area-viewport] {
-  background: transparent;
-}
-
-/* Dropdown menus */
-.light [role="menu"] {
-  background: hsl(0 0% 100%) !important;
-  border: 1px solid hsl(216 12% 90%) !important;
-  box-shadow: var(--shadow-lg) !important;
-}
-
-.light [role="menuitem"] {
-  color: var(--mtn-navy) !important;
-}
-
-.light [role="menuitem"]:hover,
-.light [role="menuitem"]:focus,
-.light [role="menuitem"][data-highlighted] {
-  background: hsl(220 14% 93%) !important;
-  color: var(--mtn-navy) !important;
-}
-
-/* Dark mode menu items */
-[role="menuitem"]:hover,
-[role="menuitem"]:focus,
-[role="menuitem"][data-highlighted] {
-  background: hsl(220 14% 20%) !important;
-  color: hsl(210 40% 98%) !important;
-}
-
-/* Dialog/Modal styling */
-.light [role="dialog"] {
-  background: hsl(0 0% 100%) !important;
-  border: 1px solid hsl(216 12% 90%) !important;
-}
-
-/* Tabs styling */
-.light [role="tablist"] {
-  background: hsl(220 14% 96%);
-  border-radius: 4px;
-}
-
-.light [role="tab"] {
-  color: var(--mtn-grey-text);
-}
-
-.light [role="tab"][data-state="active"] {
-  background: hsl(0 0% 100%);
-  color: var(--mtn-navy);
-  box-shadow: var(--shadow-sm);
-}
-
-/* Avatar/muted backgrounds */
-.light .bg-muted {
-  background: hsl(220 14% 96%) !important;
-}
-
-/* Progress bars */
-.light [data-radix-progress-root] {
-  background: hsl(220 14% 90%);
-}
-
-.light [data-radix-progress-indicator] {
-  background: var(--mtn-yellow);
-}
-
-/* Separator lines */
-.light [data-orientation="horizontal"] {
-  background: hsl(216 12% 90%);
-}
-
-/* Tooltips */
-.light [role="tooltip"] {
-  background: var(--mtn-navy) !important;
-  color: hsl(0 0% 100%) !important;
-}
-
-/* Charts */
-.light .recharts-cartesian-grid-horizontal line,
-.light .recharts-cartesian-grid-vertical line {
-  stroke: hsl(216 12% 90%);
-}
-
-.light .recharts-text {
-  fill: var(--mtn-grey-text);
-}
-
-.light .recharts-tooltip-wrapper .recharts-default-tooltip {
-  background: hsl(0 0% 100%) !important;
-  border: 1px solid hsl(216 12% 90%) !important;
-}
-
-/* Stat card icons */
-.light .rounded-full.bg-primary\/10 {
-  background: rgba(255, 203, 0, 0.12) !important;
-}
-
-/* Form inputs */
-.light input:not([type="checkbox"]):not([type="radio"]) {
-  background: hsl(0 0% 100%);
-  border-color: hsl(216 12% 90%);
-}
-
-.light input:focus:not([type="checkbox"]):not([type="radio"]) {
-  border-color: var(--mtn-yellow);
-  box-shadow: 0 0 0 3px rgba(255, 203, 0, 0.25);
-}
-
-.light input[type="checkbox"],
-.light input[type="radio"] {
-  accent-color: var(--mtn-yellow);
-}
-
-/* Search input */
-.light input[type="search"],
-.light input[placeholder*="Search"] {
-  background: hsl(0 0% 100%);
-  border: 1px solid hsl(216 12% 90%);
-}
-
-/* Select dropdowns */
-.light select,
-.light [role="combobox"] {
-  background: hsl(0 0% 100%);
-  border: 1px solid hsl(216 12% 90%);
-  color: var(--mtn-navy);
-}
-
-/* Textarea */
-.light textarea {
-  background: hsl(0 0% 100%);
-  border: 1px solid hsl(216 12% 90%);
-  color: var(--mtn-navy);
-}
-
-/* Ghost/outline buttons */
-.light .bg-transparent {
-  color: var(--mtn-navy);
-}
-
-.light button[class*="ghost"]:hover {
-  background: hsl(220 14% 93%) !important;
-}
-
-/* Icon colors in light mode */
-.light svg.text-muted-foreground {
-  color: hsl(215 14% 45%) !important;
-}
-
-/* ══════════════════════════════════════════════════════════
-   TOP BAR — follows theme
-   ══════════════════════════════════════════════════════════ */
-
-/* Yellow accent bar under top header */
-.light header,
-.light .top-header {
-  border-bottom-color: hsl(216 12% 90%) !important;
-}
-
-/* ══════════════════════════════════════════════════════════
-   BASE STYLES
-   ══════════════════════════════════════════════════════════ */
 
 @layer base {
   * {
@@ -543,9 +197,6 @@
     @apply font-display tracking-tight;
     font-weight: 700;
     color: hsl(var(--foreground));
-  }
-  .light h1, .light h2, .light h3, .light h4, .light h5, .light h6 {
-    color: var(--mtn-navy);
   }
   strong, b {
     font-weight: 700;
@@ -562,48 +213,36 @@
     text-transform: uppercase;
     letter-spacing: 0.3px;
   }
-  .light label {
-    color: var(--mtn-navy);
-  }
 }
-
-/* ══════════════════════════════════════════════════════════
-   UTILITY CLASSES
-   ══════════════════════════════════════════════════════════ */
 
 @layer utilities {
   .glass-panel {
-    @apply bg-muted/50 dark:bg-white/5 backdrop-blur-md border border-border dark:border-white/10;
+    @apply bg-muted/50 backdrop-blur-md border border-border;
   }
 
   .text-gradient {
     @apply bg-clip-text text-transparent bg-linear-to-r;
-    background-image: linear-gradient(to right, var(--mtn-yellow), #E6B800);
+    background-image: linear-gradient(to right, #000, #333);
   }
 
   .glow-effect {
-    box-shadow: 0 0 20px -5px rgba(255, 203, 0, 0.5);
+    box-shadow: 0 0 20px -5px rgba(0, 0, 0, 0.3);
   }
 
-  /* MTN card accent — yellow top border */
   .card-accent {
-    border-top: 4px solid var(--mtn-yellow);
+    border-top: 4px solid #000000;
   }
 }
 
-/* ══════════════════════════════════════════════════════════
-   HIGHLIGHT ANIMATION (AI Support Guidance)
-   ══════════════════════════════════════════════════════════ */
-
 @keyframes highlight-pulse {
   0%, 100% {
-    box-shadow: 0 0 0 4px rgba(255, 203, 0, 0.3), 0 0 20px 8px rgba(255, 203, 0, 0.2);
-    outline: 3px solid var(--mtn-yellow);
+    box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.2), 0 0 20px 8px rgba(0, 0, 0, 0.1);
+    outline: 3px solid #000000;
     outline-offset: 2px;
   }
   50% {
-    box-shadow: 0 0 0 8px rgba(255, 203, 0, 0.1), 0 0 30px 12px rgba(255, 203, 0, 0.3);
-    outline: 3px solid rgba(255, 203, 0, 0.7);
+    box-shadow: 0 0 0 8px rgba(0, 0, 0, 0.05), 0 0 30px 12px rgba(0, 0, 0, 0.15);
+    outline: 3px solid rgba(0, 0, 0, 0.5);
     outline-offset: 4px;
   }
 }
