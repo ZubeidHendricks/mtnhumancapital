@@ -111,38 +111,38 @@
 }
 
 .dark {
-  --background: 0 0% 7%;
-  --foreground: 0 0% 95%;
+  --background: 0 0% 5%;
+  --foreground: 0 0% 96%;
 
-  --card: 0 0% 10%;
-  --card-foreground: 0 0% 95%;
+  --card: 0 0% 9%;
+  --card-foreground: 0 0% 96%;
 
-  --popover: 0 0% 10%;
-  --popover-foreground: 0 0% 95%;
+  --popover: 0 0% 9%;
+  --popover-foreground: 0 0% 96%;
 
-  --primary: 0 0% 100%;
+  --primary: 48 100% 50%;
   --primary-foreground: 0 0% 0%;
 
-  --secondary: 0 0% 15%;
-  --secondary-foreground: 0 0% 95%;
+  --secondary: 0 0% 14%;
+  --secondary-foreground: 0 0% 96%;
 
-  --muted: 0 0% 15%;
-  --muted-foreground: 0 0% 60%;
+  --muted: 0 0% 14%;
+  --muted-foreground: 0 0% 65%;
 
-  --accent: 0 0% 15%;
-  --accent-foreground: 0 0% 95%;
+  --accent: 0 0% 14%;
+  --accent-foreground: 0 0% 96%;
 
   --destructive: 354 95% 50%;
   --destructive-foreground: 0 0% 100%;
 
-  --border: 0 0% 18%;
-  --input: 0 0% 18%;
-  --ring: 0 0% 80%;
+  --border: 0 0% 20%;
+  --input: 0 0% 20%;
+  --ring: 48 100% 50%;
 
-  --chart-1: 0 0% 100%;
+  --chart-1: 48 100% 50%;
   --chart-2: 0 0% 70%;
   --chart-3: 140 62% 50%;
-  --chart-4: 0 0% 40%;
+  --chart-4: 0 0% 45%;
   --chart-5: 0 0% 55%;
 }
 
@@ -188,18 +188,18 @@
 }
 
 .sidebar-nav .bg-primary\/10 {
-  background-color: rgba(255,255,255,0.10) !important;
-  border-left: 3px solid #FFFFFF !important;
+  background-color: rgba(255,203,0,0.10) !important;
+  border-left: 3px solid #FFCB00 !important;
   border-radius: 6px !important;
 }
 
 .sidebar-nav .text-primary {
-  color: #FFFFFF !important;
+  color: #FFCB00 !important;
 }
 
 .sidebar-nav .text-primary svg,
 .sidebar-nav .bg-primary\/10 svg {
-  color: #FFFFFF !important;
+  color: #FFCB00 !important;
 }
 
 .sidebar-nav .bg-primary {
@@ -234,6 +234,9 @@
     font-weight: 700;
     color: hsl(var(--foreground));
   }
+  .dark h1, .dark h2 {
+    color: #FFCB00;
+  }
   strong, b {
     font-weight: 700;
   }
@@ -248,6 +251,18 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.3px;
+  }
+  .dark label {
+    color: #FFCB00;
+  }
+  .dark input, .dark select, .dark textarea,
+  .dark [role="combobox"], .dark [role="listbox"] {
+    background-color: hsl(0 0% 12%) !important;
+    color: hsl(0 0% 96%) !important;
+    border-color: hsl(0 0% 25%) !important;
+  }
+  .dark input::placeholder, .dark textarea::placeholder {
+    color: hsl(0 0% 50%) !important;
   }
 }
 

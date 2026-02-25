@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, candidateService, jobsService } from "@/lib/api";
+import { candidateService, jobsService } from "@/lib/api";
 import { useTenantQueryKey } from "@/hooks/useTenant";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,8 +15,7 @@ import {
   Check, 
   MoreHorizontal, 
   Filter, 
-  ChevronDown,
-  ChevronUp,
+  ChevronDown, 
   Mail, 
   Phone, 
   Linkedin, 
@@ -28,8 +27,7 @@ import {
   Copy,
   Loader2,
   Briefcase,
-  MessageSquare,
-  CheckCircle
+  MessageSquare
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link, useLocation } from "wouter";
@@ -38,7 +36,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { InterviewInviteDialog } from "@/components/interview-invite-dialog";
 
 // Helper to extract unique values from candidates
 function extractUniqueSkills(candidates: any[]): string[] {
@@ -66,7 +63,7 @@ function extractUniqueLocations(candidates: any[]): string[] {
 }
 
 export default function CandidatesList() {
-  const [location, setLocation] = useLocation();
+  const [location] = useLocation();
   const urlParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
   const jobIdFromUrl = urlParams.get('jobId');
   const candidateIdFromUrl = urlParams.get('candidateId');
@@ -78,6 +75,9 @@ export default function CandidatesList() {
   // Invite Dialog State
   const [inviteOpen, setInviteOpen] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
+  const [inviteLink, setInviteLink] = useState("");
+  const [inviteChannel, setInviteChannel] = useState<"email" | "whatsapp">("email");
+  const [sendingInvite, setSendingInvite] = useState(false);
   
   // Profile Dialog State
   const [profileOpen, setProfileOpen] = useState(false);
@@ -251,7 +251,75 @@ export default function CandidatesList() {
 
   const handleAIContact = (candidate: any) => {
     setSelectedCandidate(candidate);
+    setInviteLink(`${window.location.origin}/interview/voice?candidate=${encodeURIComponent(candidate.fullName || 'candidate')}`);
+    // Default to WhatsApp if phone available, otherwise email
+    if (candidate.phone || (candidate.metadata as any)?.phone) {
+      setInviteChannel("whatsapp");
+    } else if (candidate.email) {
+      setInviteChannel("email");
+    }
     setInviteOpen(true);
+  };
+
+  const handleSendInvite = async () => {
+    if (inviteChannel === "email") {
+      if (!selectedCandidate?.email) {
+        toast.error(`Cannot send invitation: No email address on file for ${selectedCandidate?.fullName || 'this candidate'}`);
+        return;
+      }
+      setInviteOpen(false);
+      toast.success(`Interview invitation sent to ${selectedCandidate.email}`);
+    } else {
+      // WhatsApp
+      const phone = selectedCandidate?.phone || (selectedCandidate?.metadata as any)?.phone;
+      if (!phone) {
+        toast.error(`Cannot send invitation: No phone number on file for ${selectedCandidate?.fullName || 'this candidate'}`);
+        return;
+      }
+      
+      setSendingInvite(true);
+      try {
+        // Create or get conversation for candidate
+        const convResponse = await fetch(`/api/whatsapp/candidates/${selectedCandidate.id}/conversation`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            phone: phone.replace(/\D/g, ''),
+            name: selectedCandidate.fullName 
+          })
+        });
+        
+        if (!convResponse.ok) throw new Error('Failed to create conversation');
+        const conversation = await convResponse.json();
+        
+        // Send the message
+        const message = `Dear ${selectedCandidate.fullName || 'Candidate'},
+
+We are impressed with your profile and would like to invite you to an initial voice interview with our AI interview system.
+
+Please click the link below to start the session:
+${inviteLink}
+
+Best regards,
+AHC Recruiting Team`;
+
+        const msgResponse = await fetch(`/api/whatsapp/conversations/${conversation.id}/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ body: message })
+        });
+        
+        if (!msgResponse.ok) throw new Error('Failed to send message');
+        
+        setInviteOpen(false);
+        toast.success(`Interview invitation sent via WhatsApp to ${phone}`);
+      } catch (error: any) {
+        console.error('WhatsApp invite error:', error);
+        toast.error('Failed to send WhatsApp invitation. Please try again.');
+      } finally {
+        setSendingInvite(false);
+      }
+    }
   };
 
   // Use real filtered candidates from API based on active tab
@@ -737,7 +805,6 @@ export default function CandidatesList() {
       </div>
 
       {/* Interview Invitation Dialog */}
-<<<<<<< HEAD
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
         <DialogContent className="bg-card border-border sm:max-w-[500px]">
             <DialogHeader>
@@ -848,14 +915,6 @@ AHC Recruiting Team`}
             </DialogFooter>
         </DialogContent>
       </Dialog>
-=======
-      <InterviewInviteDialog
-        open={inviteOpen}
-        onOpenChange={setInviteOpen}
-        candidate={selectedCandidate}
-        job={currentJob}
-      />
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
 
       {/* Candidate Profile Dialog */}
       <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
