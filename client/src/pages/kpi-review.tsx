@@ -92,7 +92,7 @@ function StarRating({
               sizeClasses[size],
               "transition-colors",
               (hovered !== null ? star <= hovered : star <= value)
-                ? "fill-yellow-400 text-yellow-600 dark:text-yellow-400"
+                ? "fill-yellow-400 text-foreground"
                 : "fill-muted text-muted-foreground"
             )}
           />
@@ -123,7 +123,7 @@ function KpiScoreCard({
         <div className="flex items-start justify-between">
           <div>
             <CardTitle className="text-lg text-foreground flex items-center gap-2">
-              <Target className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <Target className="w-5 h-5 text-foreground dark:text-foreground" />
               {assignment.template?.name || "Unnamed KPI"}
             </CardTitle>
             <CardDescription className="mt-1">
@@ -187,7 +187,7 @@ function KpiScoreCard({
                     disabled
                     size="lg"
                   />
-                  <span className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  <span className="text-2xl font-bold text-foreground">
                     {assignment.score?.managerScore || "-"}
                   </span>
                 </div>
@@ -375,7 +375,7 @@ export default function KPIReviewPage() {
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3" data-testid="page-title">
-            <Target className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+            <Target className="w-8 h-8 text-foreground dark:text-foreground" />
             My KPI Review
           </h1>
           <p className="text-muted-foreground mt-2">
@@ -403,7 +403,7 @@ export default function KPIReviewPage() {
                   onClick={() => setSelectedCycleId(cycle.id)}
                   className={cn(
                     selectedCycleId === cycle.id 
-                      ? "bg-blue-600 hover:bg-blue-700" 
+                      ? "bg-muted hover:bg-muted" 
                       : "border-border text-muted-foreground"
                   )}
                   data-testid={`cycle-button-${cycle.id}`}
@@ -415,7 +415,7 @@ export default function KPIReviewPage() {
             </div>
 
             {selectedCycle && (
-              <Card className="bg-gradient-to-r from-blue-500/10 to-blue-500/10 dark:from-blue-900/20 dark:to-blue-900/20 border-border mb-6">
+              <Card className="bg-gradient-to-r from-muted/10 to-background/10 dark:from-muted/20 dark:to-background/20 border-border mb-6">
                 <CardContent className="py-4">
                   <div className="flex items-center justify-between flex-wrap gap-4">
                     <div className="flex items-center gap-6">
@@ -434,7 +434,7 @@ export default function KPIReviewPage() {
                     </div>
                     
                     {isSubmitted && (
-                      <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                      <div className="flex items-center gap-2 text-foreground">
                         <CheckCircle className="w-5 h-5" />
                         <span>Self-Assessment Completed</span>
                       </div>
@@ -446,7 +446,7 @@ export default function KPIReviewPage() {
 
             {loadingAssignments ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600 dark:text-blue-400" />
+                <Loader2 className="w-8 h-8 animate-spin text-foreground dark:text-foreground" />
               </div>
             ) : assignments.length === 0 ? (
               <Card className="bg-card border-border">
@@ -518,7 +518,7 @@ export default function KPIReviewPage() {
                         <Button
                           onClick={() => submitReviewMutation.mutate()}
                           disabled={!allScored || submitReviewMutation.isPending}
-                          className="bg-green-600 hover:bg-green-700"
+                          className="bg-muted hover:bg-muted"
                           data-testid="submit-review-button"
                         >
                           {submitReviewMutation.isPending ? (
@@ -531,7 +531,7 @@ export default function KPIReviewPage() {
                       </div>
                       
                       {!allScored && (
-                        <p className="text-sm text-amber-600 dark:text-amber-400 text-right">
+                        <p className="text-sm text-foreground dark:text-foreground text-right">
                           Please score all KPIs before submitting
                         </p>
                       )}
@@ -540,9 +540,9 @@ export default function KPIReviewPage() {
                 )}
 
                 {isSubmitted && currentSubmission?.managerReviewStatus === "pending" && (
-                  <Card className="bg-amber-500/10 dark:bg-amber-900/20 border-amber-500/30">
+                  <Card className="bg-muted/10 dark:bg-muted/20 border-border/30">
                     <CardContent className="py-6 text-center">
-                      <Clock className="w-8 h-8 text-amber-600 dark:text-amber-400 mx-auto mb-3" />
+                      <Clock className="w-8 h-8 text-foreground dark:text-foreground mx-auto mb-3" />
                       <h3 className="text-lg font-semibold text-foreground mb-1">Awaiting Manager Review</h3>
                       <p className="text-muted-foreground">
                         Your self-assessment has been submitted and is waiting for manager approval.
@@ -552,10 +552,10 @@ export default function KPIReviewPage() {
                 )}
 
                 {isSubmitted && currentSubmission?.managerReviewStatus === "completed" && (
-                  <Card className="bg-green-500/10 dark:bg-green-900/20 border-green-500/30">
+                  <Card className="bg-muted/10/20 border-border/30">
                     <CardContent className="py-6">
                       <div className="flex items-center gap-3 mb-4">
-                        <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+                        <CheckCircle className="w-8 h-8 text-foreground" />
                         <div>
                           <h3 className="text-lg font-semibold text-foreground">Review Completed</h3>
                           <p className="text-muted-foreground">Your manager has completed the review</p>
@@ -565,7 +565,7 @@ export default function KPIReviewPage() {
                       {currentSubmission.finalScore && (
                         <div className="bg-muted p-4 rounded-lg">
                           <p className="text-sm text-muted-foreground mb-1">Final Score</p>
-                          <p className="text-3xl font-bold text-green-600 dark:text-green-400">
+                          <p className="text-3xl font-bold text-foreground">
                             {currentSubmission.finalScore}
                           </p>
                         </div>

@@ -208,7 +208,7 @@ export function FleetlogixDriversTab() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center p-8 space-y-4">
-        <div className="text-red-500 font-semibold">Unable to load drivers</div>
+        <div className="text-destructive font-semibold">Unable to load drivers</div>
         <div className="text-sm text-muted-foreground">
           Please make sure you're logged in. If you are logged in, try refreshing the page.
         </div>
@@ -395,7 +395,7 @@ export function FleetlogixDriversTab() {
               <TableCell>
                 <span className={`px-2 py-1 rounded text-xs ${
                   driver.status === "active" 
-                    ? "bg-green-100 text-green-800" 
+                    ? "bg-muted text-foreground" 
                     : "bg-gray-100 text-gray-800"
                 }`}>
                   {driver.status}

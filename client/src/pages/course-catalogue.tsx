@@ -51,9 +51,9 @@ export default function CourseCatalogue() {
 
   const getDifficultyColor = (level: string) => {
     const colors = {
-      beginner: "bg-green-100 text-green-800",
-      intermediate: "bg-yellow-100 text-yellow-800",
-      advanced: "bg-red-100 text-red-800",
+      beginner: "bg-muted text-foreground",
+      intermediate: "bg-muted text-foreground",
+      advanced: "bg-destructive text-destructive",
     };
     return colors[level as keyof typeof colors] || "bg-gray-100 text-gray-800";
   };
@@ -109,7 +109,7 @@ export default function CourseCatalogue() {
                     <p className="text-sm text-muted-foreground">In Progress</p>
                     <p className="text-2xl font-bold">0</p>
                   </div>
-                  <TrendingUp className="h-8 w-8 text-blue-500 opacity-50" />
+                  <TrendingUp className="h-8 w-8 text-foreground opacity-50" />
                 </div>
               </CardContent>
             </Card>
@@ -120,7 +120,7 @@ export default function CourseCatalogue() {
                     <p className="text-sm text-muted-foreground">Completed</p>
                     <p className="text-2xl font-bold">0</p>
                   </div>
-                  <Users className="h-8 w-8 text-green-500 opacity-50" />
+                  <Users className="h-8 w-8 text-foreground opacity-50" />
                 </div>
               </CardContent>
             </Card>
@@ -133,7 +133,7 @@ export default function CourseCatalogue() {
                       {courses.reduce((sum, c) => sum + (c.durationHours || 0), 0)}
                     </p>
                   </div>
-                  <Clock className="h-8 w-8 text-blue-500 opacity-50" />
+                  <Clock className="h-8 w-8 text-foreground opacity-50" />
                 </div>
               </CardContent>
             </Card>

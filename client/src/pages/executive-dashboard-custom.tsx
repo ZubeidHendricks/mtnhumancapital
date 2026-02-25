@@ -820,7 +820,7 @@ export default function ExecutiveDashboardCustom() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <Card className="border-blue-200 dark:border-blue-700">
+        <Card className="border-border dark:border-border">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <Users className="w-4 h-4" />
@@ -828,10 +828,10 @@ export default function ExecutiveDashboardCustom() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-blue-500">{totalCandidates}</div>
+            <div className="text-3xl font-bold text-foreground">{totalCandidates}</div>
           </CardContent>
         </Card>
-        <Card className="border-green-200 dark:border-green-700">
+        <Card className="border-border dark:border-border">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <Briefcase className="w-4 h-4" />
@@ -839,10 +839,10 @@ export default function ExecutiveDashboardCustom() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-500">{totalJobs}</div>
+            <div className="text-3xl font-bold text-foreground">{totalJobs}</div>
           </CardContent>
         </Card>
-        <Card className="border-blue-200 dark:border-blue-700">
+        <Card className="border-border dark:border-border">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <Building2 className="w-4 h-4" />
@@ -850,7 +850,7 @@ export default function ExecutiveDashboardCustom() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-blue-500">{totalEmployees}</div>
+            <div className="text-3xl font-bold text-foreground">{totalEmployees}</div>
           </CardContent>
         </Card>
       </div>
@@ -916,7 +916,7 @@ export default function ExecutiveDashboardCustom() {
                           onClick={() => handleDeleteChart(chart.id)}
                           data-testid={`button-delete-${chart.id}`}
                         >
-                          <Trash2 className="w-4 h-4 text-red-500" />
+                          <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>
                       </div>
                     </CardHeader>

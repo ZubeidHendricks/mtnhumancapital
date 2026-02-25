@@ -142,7 +142,7 @@ export function DataSourceForm({
             onClick={() => setMode("select")}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
               mode === "select" 
-                ? "bg-blue-600 text-white" 
+                ? "bg-muted text-white" 
                 : "text-gray-400 hover:text-white"
             }`}
             data-testid="tab-select-source"
@@ -154,7 +154,7 @@ export function DataSourceForm({
             onClick={() => setMode("create")}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
               mode === "create" 
-                ? "bg-blue-600 text-white" 
+                ? "bg-muted text-white" 
                 : "text-gray-400 hover:text-white"
             }`}
             data-testid="tab-create-source"
@@ -177,7 +177,7 @@ export function DataSourceForm({
                   onClick={() => onSelectSource?.(source.id)}
                   className={`p-4 rounded-lg border cursor-pointer transition-all ${
                     isSelected 
-                      ? "border-blue-500 bg-blue-500/10" 
+                      ? "border-border bg-muted/10" 
                       : "border-gray-700 bg-gray-800/50 hover:border-gray-600"
                   }`}
                   data-testid={`card-source-${source.id}`}
@@ -193,7 +193,7 @@ export function DataSourceForm({
                       </div>
                     </div>
                     {isSelected && (
-                      <CheckCircle className="h-5 w-5 text-blue-500" />
+                      <CheckCircle className="h-5 w-5 text-foreground" />
                     )}
                   </div>
                 </div>
@@ -204,7 +204,7 @@ export function DataSourceForm({
           {selectedSourceId && (
             <Button 
               onClick={() => onSourceCreated(selectedSourceId)}
-              className="w-full bg-blue-600 hover:bg-blue-700"
+              className="w-full bg-muted hover:bg-muted"
               data-testid="button-use-selected"
             >
               Use Selected Source
@@ -272,13 +272,13 @@ export function DataSourceForm({
                     onClick={() => setSelectedType(type.value)}
                     className={`p-4 rounded-lg border text-left transition-all ${
                       isSelected
-                        ? "border-blue-500 bg-blue-500/10"
+                        ? "border-border bg-muted/10"
                         : "border-gray-700 bg-gray-800/50 hover:border-gray-600"
                     }`}
                     data-testid={`card-type-${type.value}`}
                   >
-                    <TypeIcon className={`h-6 w-6 mb-2 ${isSelected ? "text-blue-600 dark:text-blue-400" : "text-gray-400"}`} />
-                    <p className={`font-medium text-sm ${isSelected ? "text-blue-600 dark:text-blue-400" : "text-white"}`}>
+                    <TypeIcon className={`h-6 w-6 mb-2 ${isSelected ? "text-foreground dark:text-foreground" : "text-gray-400"}`} />
+                    <p className={`font-medium text-sm ${isSelected ? "text-foreground dark:text-foreground" : "text-white"}`}>
                       {type.label}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">{type.description}</p>
@@ -383,7 +383,7 @@ export function DataSourceForm({
           <Button 
             onClick={handleSubmit}
             disabled={!canSubmit || creating}
-            className="w-full bg-blue-600 hover:bg-blue-700"
+            className="w-full bg-muted hover:bg-muted"
             data-testid="button-create-source"
           >
             {creating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}

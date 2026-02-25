@@ -118,11 +118,11 @@ export default function ExecutiveDashboard() {
           <div>
             <div className="flex items-center gap-3 mb-2">
                <h1 className="text-3xl font-bold tracking-tight">Executive Overview</h1>
-               <Badge variant="outline" className="bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30 text-xs flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+               <Badge variant="outline" className="bg-muted/10 text-foreground border-border/30 text-xs flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-muted animate-pulse" />
                   Live: DigitalOcean
                </Badge>
-               <Badge variant="outline" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30 text-xs">
+               <Badge variant="outline" className="bg-muted/10 text-foreground dark:text-foreground border-border/30 text-xs">
                   Groq LLaMA 3.1 70B
                </Badge>
             </div>
@@ -135,7 +135,7 @@ export default function ExecutiveDashboard() {
             <Button variant="outline" className="border-border dark:border-white/10">
               <Download className="w-4 h-4 mr-2" /> Export Report
             </Button>
-            <Button className="bg-green-600 hover:bg-green-500 text-white">
+            <Button className="bg-muted hover:bg-muted text-white">
               <Smartphone className="w-4 h-4 mr-2" /> Connect WhatsApp
             </Button>
           </div>
@@ -158,7 +158,7 @@ export default function ExecutiveDashboard() {
             trend="+3" 
             trendUp={true} 
             icon={Briefcase} 
-            color="text-blue-600 dark:text-blue-400" 
+            color="text-foreground dark:text-foreground" 
             chartData={[20, 22, 21, 24, 23, 25, 25]}
           />
           <StatsCard 
@@ -167,7 +167,7 @@ export default function ExecutiveDashboard() {
             trend={`${recruitmentData.find(d => d.name === "Shortlisted")?.value || 0} shortlisted`} 
             trendUp={true} 
             icon={Users} 
-            color="text-blue-600 dark:text-blue-400" 
+            color="text-foreground dark:text-foreground" 
             chartData={[0, 0, 0, 0, 0, 0, candidates?.length || 0]}
           />
           <StatsCard 
@@ -176,7 +176,7 @@ export default function ExecutiveDashboard() {
             trend="-2" 
             trendUp={true} // technically down is good for risk, but green means good here
             icon={AlertTriangle} 
-            color="text-amber-600 dark:text-amber-400" 
+            color="text-foreground dark:text-foreground" 
             chartData={[8, 6, 5, 7, 4, 5, 3]}
           />
         </div>
@@ -305,7 +305,7 @@ export default function ExecutiveDashboard() {
           <Card className="bg-card/20 border-border dark:border-white/10 backdrop-blur-sm">
              <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-amber-500" />
+                <AlertTriangle className="w-5 h-5 text-foreground" />
                 Operational Risks
               </CardTitle>
               <CardDescription>Prioritized alerts & warnings</CardDescription>
@@ -315,9 +315,9 @@ export default function ExecutiveDashboard() {
                 {riskAlerts.map((alert) => (
                   <div key={alert.id} className="p-3 rounded-lg bg-white/5 border border-border dark:border-white/5 flex items-start gap-3">
                     <div className={`w-2 h-2 mt-2 rounded-full shrink-0 ${
-                      alert.severity === "high" ? "bg-red-500" : 
-                      alert.severity === "medium" ? "bg-amber-500" : 
-                      "bg-blue-500"
+                      alert.severity === "high" ? "bg-destructive" : 
+                      alert.severity === "medium" ? "bg-muted" : 
+                      "bg-muted"
                     }`} />
                     <div className="flex-1">
                       <p className="text-sm font-medium">{alert.message}</p>
@@ -333,14 +333,14 @@ export default function ExecutiveDashboard() {
           </Card>
 
           {/* WhatsApp Integration */}
-          <Card className="bg-green-900/10 border-green-500/20 backdrop-blur-sm">
+          <Card className="bg-muted/10 border-border/20 backdrop-blur-sm">
             <CardHeader className="pb-2">
               <div className="flex justify-between items-center">
-                <CardTitle className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                <CardTitle className="flex items-center gap-2 text-foreground">
                   <Smartphone className="w-5 h-5" />
                   Live WhatsApp Feed
                 </CardTitle>
-                <Badge variant="outline" className="border-green-500/50 text-green-600 dark:text-green-400 bg-green-500/10 animate-pulse">
+                <Badge variant="outline" className="border-border/50 text-foreground bg-muted/10 animate-pulse">
                   ONLINE
                 </Badge>
               </div>
@@ -349,12 +349,12 @@ export default function ExecutiveDashboard() {
               <div className="space-y-4 mt-2">
                 {whatsappFeed.map((msg) => (
                   <div key={msg.id} className="flex gap-3 text-sm">
-                    <div className="w-8 h-8 rounded-full bg-green-800/50 flex items-center justify-center shrink-0 border border-green-500/30">
-                      <span className="text-xs font-bold text-green-600 dark:text-green-400">{msg.user[0]}</span>
+                    <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center shrink-0 border border-border/30">
+                      <span className="text-xs font-bold text-foreground">{msg.user[0]}</span>
                     </div>
                     <div className="bg-card/50 p-2 rounded-lg rounded-tl-none border border-border dark:border-white/5 flex-1">
                       <div className="flex justify-between items-center mb-1">
-                        <span className="font-bold text-xs text-green-300">{msg.user}</span>
+                        <span className="font-bold text-xs text-foreground">{msg.user}</span>
                         <span className="text-[10px] text-muted-foreground">{msg.time}</span>
                       </div>
                       <p className="text-foreground/90 text-xs">{msg.message}</p>
@@ -367,9 +367,9 @@ export default function ExecutiveDashboard() {
                       <input 
                         type="text" 
                         placeholder="Type a message to exec group..." 
-                        className="w-full bg-black/30 border border-green-500/30 rounded-full px-4 py-2 text-xs focus:outline-none focus:border-green-500"
+                        className="w-full bg-black/30 border border-border/30 rounded-full px-4 py-2 text-xs focus:outline-none focus:border-border"
                       />
-                      <Button size="icon" className="absolute right-1 top-1 h-6 w-6 rounded-full bg-green-600 hover:bg-green-500">
+                      <Button size="icon" className="absolute right-1 top-1 h-6 w-6 rounded-full bg-muted hover:bg-muted">
                         <ArrowUpRight className="w-3 h-3" />
                       </Button>
                    </div>
@@ -400,7 +400,7 @@ function StatsCard({ title, value, trend, trendUp, icon: Icon, color, chartData 
         </div>
         
         <div className="flex items-end justify-between">
-          <div className={`flex items-center gap-1 text-sm font-medium ${trendUp ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+          <div className={`flex items-center gap-1 text-sm font-medium ${trendUp ? 'text-foreground' : 'text-destructive'}`}>
             {trendUp ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
             {trend}
           </div>

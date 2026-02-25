@@ -61,10 +61,10 @@ export function DashboardPreview() {
                 className="absolute -bottom-6 -left-6 bg-white border border-gray-200 p-4 rounded-xl shadow-xl hidden md:block"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+                  <div className="w-3 h-3 rounded-full bg-muted animate-pulse" />
                   <div>
                     <p className="text-xs text-gray-400">System Status</p>
-                    <p className="font-mono text-sm font-bold text-green-600">OPTIMAL</p>
+                    <p className="font-mono text-sm font-bold text-foreground">OPTIMAL</p>
                   </div>
                 </div>
               </motion.div>

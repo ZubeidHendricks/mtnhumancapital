@@ -62,7 +62,7 @@ export function VoiceInterviewerModal() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-gradient-to-r from-blue-500 to-pink-600 text-white hover:from-blue-600 hover:to-pink-700 border-0 shadow-lg shadow-blue-500/20 gap-2">
+        <Button className="bg-gradient-to-r from-muted to-background text-white hover:from-muted hover:to-background border-0 shadow-lg shadow-blue-500/20 gap-2">
           <Mic className="w-4 h-4" /> Start Voice Interview
         </Button>
       </DialogTrigger>
@@ -71,7 +71,7 @@ export function VoiceInterviewerModal() {
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10 bg-white/5">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            <div className="w-2 h-2 rounded-full bg-muted animate-pulse" />
             <span className="font-medium text-sm tracking-wide">Roleplay Practice</span>
           </div>
           <div className="flex items-center gap-2">
@@ -108,7 +108,7 @@ export function VoiceInterviewerModal() {
           <Button variant="outline" size="icon" className="h-12 w-12 rounded-full border-white/10 bg-white/5 hover:bg-white/10">
             <MicOff className="w-5 h-5" />
           </Button>
-          <Button size="icon" className="h-14 w-14 rounded-full bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/20" onClick={() => setIsOpen(false)}>
+          <Button size="icon" className="h-14 w-14 rounded-full bg-destructive hover:bg-destructive shadow-lg shadow-red-500/20" onClick={() => setIsOpen(false)}>
             <X className="w-6 h-6" />
           </Button>
           <Button variant="outline" size="icon" className="h-12 w-12 rounded-full border-white/10 bg-white/5 hover:bg-white/10">

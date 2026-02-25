@@ -39,25 +39,25 @@ export default function PlatformDocumentation() {
       icon: Users,
       title: "Multi-Tenant Architecture",
       description: "Complete tenant isolation with subdomain routing and branded workspaces",
-      color: "text-blue-500",
+      color: "text-foreground",
     },
     {
       icon: DollarSign,
       title: "Payment Tracking",
       description: "Record and monitor all tenant payments with complete transaction history",
-      color: "text-green-500",
+      color: "text-foreground",
     },
     {
       icon: Settings,
       title: "Subscription Management",
       description: "Four-tier subscription system with trial period and status tracking",
-      color: "text-blue-500",
+      color: "text-foreground",
     },
     {
       icon: ToggleLeft,
       title: "Module Control",
       description: "Enable/disable features per tenant based on subscription and payment",
-      color: "text-teal-600",
+      color: "text-foreground",
     },
   ];
 
@@ -76,7 +76,7 @@ export default function PlatformDocumentation() {
       period: "/month",
       modules: ["Recruitment", "Integrity", "Onboarding"],
       limits: ["100 candidates", "20 jobs", "5 users"],
-      color: "border-blue-500",
+      color: "border-border",
       popular: true,
     },
     {
@@ -85,7 +85,7 @@ export default function PlatformDocumentation() {
       period: "/month",
       modules: ["All Modules"],
       limits: ["Unlimited candidates", "Unlimited jobs", "20 users"],
-      color: "border-blue-500",
+      color: "border-border",
     },
     {
       name: "Enterprise",
@@ -93,7 +93,7 @@ export default function PlatformDocumentation() {
       period: "pricing",
       modules: ["All + Custom"],
       limits: ["Unlimited everything", "Custom integrations", "White-label"],
-      color: "border-teal-600",
+      color: "border-border",
     },
   ];
 
@@ -147,10 +147,10 @@ export default function PlatformDocumentation() {
             Complete guide to the multi-tenant SaaS platform with payment tracking and subscription management
           </p>
           <div className="flex items-center justify-center gap-2">
-            <Badge variant="outline" className="bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20">
+            <Badge variant="outline" className="bg-muted/10 text-foreground border-border/20">
               Version 1.0.0
             </Badge>
-            <Badge variant="outline" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20">
+            <Badge variant="outline" className="bg-muted/10 text-foreground dark:text-foreground border-border/20">
               Production Ready
             </Badge>
           </div>
@@ -247,7 +247,7 @@ export default function PlatformDocumentation() {
                       "Branded workspaces with custom subdomains",
                     ].map((capability) => (
                       <div key={capability} className="flex items-center gap-2 text-muted-foreground">
-                        <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                        <CheckCircle2 className="w-4 h-4 text-foreground shrink-0" />
                         <span>{capability}</span>
                       </div>
                     ))}
@@ -263,30 +263,30 @@ export default function PlatformDocumentation() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="p-6 rounded-lg bg-gradient-to-br from-blue-500/10 to-blue-500/10 border border-border dark:border-white/5">
+                  <div className="p-6 rounded-lg bg-gradient-to-br from-muted/10 to-background/10 border border-border dark:border-white/5">
                     <div className="text-center space-y-6">
                       <div className="inline-block p-4 rounded-lg bg-black/40">
-                        <Users className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                        <Users className="w-8 h-8 text-foreground dark:text-foreground" />
                         <p className="text-foreground mt-2 font-semibold">Multiple Tenants</p>
                       </div>
                       <div className="text-2xl text-foreground">↓</div>
                       <div className="inline-block p-4 rounded-lg bg-black/40">
-                        <Shield className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                        <Shield className="w-8 h-8 text-foreground dark:text-foreground" />
                         <p className="text-foreground mt-2 font-semibold">Tenant Middleware</p>
                         <p className="text-xs text-muted-foreground">Resolves subdomain</p>
                       </div>
                       <div className="text-2xl text-foreground">↓</div>
                       <div className="grid grid-cols-3 gap-4">
                         <div className="p-4 rounded-lg bg-black/40">
-                          <Database className="w-6 h-6 text-green-600 dark:text-green-400 mx-auto" />
+                          <Database className="w-6 h-6 text-foreground mx-auto" />
                           <p className="text-foreground mt-2 text-sm">Isolated Data</p>
                         </div>
                         <div className="p-4 rounded-lg bg-black/40">
-                          <Settings className="w-6 h-6 text-teal-700 dark:text-teal-400 mx-auto" />
+                          <Settings className="w-6 h-6 text-foreground dark:text-foreground mx-auto" />
                           <p className="text-foreground mt-2 text-sm">Module Access</p>
                         </div>
                         <div className="p-4 rounded-lg bg-black/40">
-                          <TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400 mx-auto" />
+                          <TrendingUp className="w-6 h-6 text-foreground dark:text-foreground mx-auto" />
                           <p className="text-foreground mt-2 text-sm">Analytics</p>
                         </div>
                       </div>
@@ -310,7 +310,7 @@ export default function PlatformDocumentation() {
                       className={`p-6 rounded-lg bg-black/20 border-2 ${tier.color} relative`}
                     >
                       {tier.popular && (
-                        <Badge className="absolute top-2 right-2 bg-blue-500">Popular</Badge>
+                        <Badge className="absolute top-2 right-2 bg-muted">Popular</Badge>
                       )}
                       <h3 className="text-xl font-bold text-foreground mb-2">{tier.name}</h3>
                       <div className="mb-4">
@@ -331,7 +331,7 @@ export default function PlatformDocumentation() {
                           <p className="text-sm font-semibold text-foreground mb-2">Limits:</p>
                           {tier.limits.map((limit) => (
                             <div key={limit} className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <CheckCircle2 className="w-3 h-3 text-green-500" />
+                              <CheckCircle2 className="w-3 h-3 text-foreground" />
                               {limit}
                             </div>
                           ))}
@@ -361,7 +361,7 @@ export default function PlatformDocumentation() {
                   <AccordionItem value="payment" className="border border-border dark:border-white/10 rounded-lg px-4 bg-black/20">
                     <AccordionTrigger className="text-foreground hover:no-underline">
                       <div className="flex items-center gap-2">
-                        <DollarSign className="w-5 h-5 text-green-500" />
+                        <DollarSign className="w-5 h-5 text-foreground" />
                         <span>Payment Tracking</span>
                       </div>
                     </AccordionTrigger>
@@ -369,28 +369,28 @@ export default function PlatformDocumentation() {
                       <p>Complete payment transaction management system for tracking all tenant payments.</p>
                       <div className="space-y-2">
                         <div className="flex items-start gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-1 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-foreground mt-1 shrink-0" />
                           <div>
                             <p className="text-foreground text-sm">Record Manual Payments</p>
                             <p className="text-xs">Bank transfers, invoices, card payments</p>
                           </div>
                         </div>
                         <div className="flex items-start gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-1 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-foreground mt-1 shrink-0" />
                           <div>
                             <p className="text-foreground text-sm">Payment Status Tracking</p>
                             <p className="text-xs">Pending, completed, failed, refunded</p>
                           </div>
                         </div>
                         <div className="flex items-start gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-1 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-foreground mt-1 shrink-0" />
                           <div>
                             <p className="text-foreground text-sm">Transaction History</p>
                             <p className="text-xs">Complete audit trail with amounts and dates</p>
                           </div>
                         </div>
                         <div className="flex items-start gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-1 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-foreground mt-1 shrink-0" />
                           <div>
                             <p className="text-foreground text-sm">Revenue Calculation</p>
                             <p className="text-xs">Automatic total revenue per tenant</p>
@@ -403,7 +403,7 @@ export default function PlatformDocumentation() {
                   <AccordionItem value="subscription" className="border border-border dark:border-white/10 rounded-lg px-4 bg-black/20">
                     <AccordionTrigger className="text-foreground hover:no-underline">
                       <div className="flex items-center gap-2">
-                        <CreditCard className="w-5 h-5 text-blue-500" />
+                        <CreditCard className="w-5 h-5 text-foreground" />
                         <span>Subscription Management</span>
                       </div>
                     </AccordionTrigger>
@@ -411,28 +411,28 @@ export default function PlatformDocumentation() {
                       <p>Control tenant subscriptions with flexible tier-based access.</p>
                       <div className="space-y-2">
                         <div className="flex items-start gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-1 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-foreground mt-1 shrink-0" />
                           <div>
                             <p className="text-foreground text-sm">Four Subscription Tiers</p>
                             <p className="text-xs">Free Trial, Basic (R499), Professional (R999), Enterprise (Custom)</p>
                           </div>
                         </div>
                         <div className="flex items-start gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-1 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-foreground mt-1 shrink-0" />
                           <div>
                             <p className="text-foreground text-sm">Status Management</p>
                             <p className="text-xs">Trial, Active, Suspended, Cancelled</p>
                           </div>
                         </div>
                         <div className="flex items-start gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-1 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-foreground mt-1 shrink-0" />
                           <div>
                             <p className="text-foreground text-sm">Trial Period Tracking</p>
                             <p className="text-xs">30-day automatic trial with end date tracking</p>
                           </div>
                         </div>
                         <div className="flex items-start gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-1 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-foreground mt-1 shrink-0" />
                           <div>
                             <p className="text-foreground text-sm">Payment Date Management</p>
                             <p className="text-xs">Track next payment date and billing cycle</p>
@@ -445,7 +445,7 @@ export default function PlatformDocumentation() {
                   <AccordionItem value="modules" className="border border-border dark:border-white/10 rounded-lg px-4 bg-black/20">
                     <AccordionTrigger className="text-foreground hover:no-underline">
                       <div className="flex items-center gap-2">
-                        <ToggleLeft className="w-5 h-5 text-teal-600" />
+                        <ToggleLeft className="w-5 h-5 text-foreground" />
                         <span>Module Control</span>
                       </div>
                     </AccordionTrigger>
@@ -453,28 +453,28 @@ export default function PlatformDocumentation() {
                       <p>Enable or disable specific modules per tenant based on their subscription.</p>
                       <div className="space-y-2">
                         <div className="flex items-start gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-1 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-foreground mt-1 shrink-0" />
                           <div>
                             <p className="text-foreground text-sm">Real-Time Toggle</p>
                             <p className="text-xs">Instant module activation/deactivation</p>
                           </div>
                         </div>
                         <div className="flex items-start gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-1 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-foreground mt-1 shrink-0" />
                           <div>
                             <p className="text-foreground text-sm">Four Core Modules</p>
                             <p className="text-xs">Recruitment, Integrity, Onboarding, HR Management</p>
                           </div>
                         </div>
                         <div className="flex items-start gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-1 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-foreground mt-1 shrink-0" />
                           <div>
                             <p className="text-foreground text-sm">Instant Effect</p>
                             <p className="text-xs">Changes reflect immediately in tenant's workspace</p>
                           </div>
                         </div>
                         <div className="flex items-start gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-1 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-foreground mt-1 shrink-0" />
                           <div>
                             <p className="text-foreground text-sm">UI Integration</p>
                             <p className="text-xs">Navbar and menus update automatically</p>
@@ -487,7 +487,7 @@ export default function PlatformDocumentation() {
                   <AccordionItem value="tenant-switching" className="border border-border dark:border-white/10 rounded-lg px-4 bg-black/20">
                     <AccordionTrigger className="text-foreground hover:no-underline">
                       <div className="flex items-center gap-2">
-                        <Eye className="w-5 h-5 text-blue-500" />
+                        <Eye className="w-5 h-5 text-foreground" />
                         <span>Admin Tenant Switching</span>
                       </div>
                     </AccordionTrigger>
@@ -495,28 +495,28 @@ export default function PlatformDocumentation() {
                       <p>View any tenant's workspace as an admin for support and debugging.</p>
                       <div className="space-y-2">
                         <div className="flex items-start gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-1 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-foreground mt-1 shrink-0" />
                           <div>
                             <p className="text-foreground text-sm">One-Click Switching</p>
                             <p className="text-xs">Instantly switch to any tenant's view</p>
                           </div>
                         </div>
                         <div className="flex items-start gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-1 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-foreground mt-1 shrink-0" />
                           <div>
                             <p className="text-foreground text-sm">Visual Indicator</p>
                             <p className="text-xs">"Viewing" badge shows when impersonating</p>
                           </div>
                         </div>
                         <div className="flex items-start gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-1 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-foreground mt-1 shrink-0" />
                           <div>
                             <p className="text-foreground text-sm">Easy Exit</p>
                             <p className="text-xs">Return to own workspace with one click</p>
                           </div>
                         </div>
                         <div className="flex items-start gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-green-500 mt-1 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-foreground mt-1 shrink-0" />
                           <div>
                             <p className="text-foreground text-sm">Persistent Session</p>
                             <p className="text-xs">Selection persists across page reloads</p>
@@ -570,9 +570,9 @@ export default function PlatformDocumentation() {
                 <div>
                   <h3 className="text-lg font-semibold text-foreground mb-4">Admin Actions Quick Reference</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-lg bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20">
+                    <div className="p-4 rounded-lg bg-gradient-to-br from-muted/10 to-background/5 border border-border/20">
                       <h4 className="text-foreground font-semibold mb-2 flex items-center gap-2">
-                        <DollarSign className="w-4 h-4 text-green-500" />
+                        <DollarSign className="w-4 h-4 text-foreground" />
                         Record Payment
                       </h4>
                       <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
@@ -584,9 +584,9 @@ export default function PlatformDocumentation() {
                       </ol>
                     </div>
 
-                    <div className="p-4 rounded-lg bg-gradient-to-br from-red-500/10 to-red-500/5 border border-red-500/20">
+                    <div className="p-4 rounded-lg bg-gradient-to-br from-destructive/10 to-background/5 border border-destructive/20">
                       <h4 className="text-foreground font-semibold mb-2 flex items-center gap-2">
-                        <Shield className="w-4 h-4 text-red-500" />
+                        <Shield className="w-4 h-4 text-destructive" />
                         Suspend Tenant
                       </h4>
                       <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
@@ -598,9 +598,9 @@ export default function PlatformDocumentation() {
                       </ol>
                     </div>
 
-                    <div className="p-4 rounded-lg bg-gradient-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/20">
+                    <div className="p-4 rounded-lg bg-gradient-to-br from-muted/10 to-background/5 border border-border/20">
                       <h4 className="text-foreground font-semibold mb-2 flex items-center gap-2">
-                        <ToggleLeft className="w-4 h-4 text-blue-500" />
+                        <ToggleLeft className="w-4 h-4 text-foreground" />
                         Toggle Modules
                       </h4>
                       <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
@@ -612,9 +612,9 @@ export default function PlatformDocumentation() {
                       </ol>
                     </div>
 
-                    <div className="p-4 rounded-lg bg-gradient-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/20">
+                    <div className="p-4 rounded-lg bg-gradient-to-br from-muted/10 to-background/5 border border-border/20">
                       <h4 className="text-foreground font-semibold mb-2 flex items-center gap-2">
-                        <Eye className="w-4 h-4 text-blue-500" />
+                        <Eye className="w-4 h-4 text-foreground" />
                         Switch Tenant View
                       </h4>
                       <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
@@ -698,10 +698,10 @@ export default function PlatformDocumentation() {
                           variant={api.method === "GET" ? "default" : "secondary"}
                           className={
                             api.method === "GET"
-                              ? "bg-blue-500"
+                              ? "bg-muted"
                               : api.method === "POST"
-                              ? "bg-green-500"
-                              : "bg-teal-600"
+                              ? "bg-muted"
+                              : "bg-muted"
                           }
                         >
                           {api.method}
@@ -744,12 +744,12 @@ export default function PlatformDocumentation() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                <div className="p-4 rounded-lg bg-muted/10 border border-border/20">
                   <div className="flex items-start gap-3">
-                    <Bell className="w-5 h-5 text-yellow-500 mt-1 shrink-0" />
+                    <Bell className="w-5 h-5 text-foreground mt-1 shrink-0" />
                     <div>
-                      <p className="text-yellow-300 font-semibold">Migration Required</p>
-                      <p className="text-yellow-200/80 mt-1 text-sm">
+                      <p className="text-foreground font-semibold">Migration Required</p>
+                      <p className="text-foreground/80 mt-1 text-sm">
                         You must run the database migration before using the payment and subscription features.
                       </p>
                     </div>
@@ -760,7 +760,7 @@ export default function PlatformDocumentation() {
                   <div>
                     <h3 className="text-foreground font-semibold mb-2">Step 1: Run Migration Script</h3>
                     <div className="p-4 rounded-lg bg-black/40 border border-border dark:border-white/10">
-                      <code className="text-green-600 dark:text-green-400 text-sm">
+                      <code className="text-foreground text-sm">
                         psql -U postgres -d your_database -f migrations/add-subscription-tracking.sql
                       </code>
                     </div>
@@ -770,7 +770,7 @@ export default function PlatformDocumentation() {
                     <h3 className="text-foreground font-semibold mb-2">Step 2: Verify Tables Created</h3>
                     <div className="p-4 rounded-lg bg-black/40 border border-border dark:border-white/10 space-y-2">
                       <p className="text-muted-foreground text-sm">Check these tables exist:</p>
-                      <ul className="list-disc list-inside text-green-600 dark:text-green-400 text-sm space-y-1">
+                      <ul className="list-disc list-inside text-foreground text-sm space-y-1">
                         <li>tenant_payments</li>
                         <li>subscription_plans</li>
                         <li>tenant_config (with new columns)</li>
@@ -828,13 +828,13 @@ export default function PlatformDocumentation() {
               <CardContent>
                 <div className="space-y-3">
                   <div className="p-3 rounded-lg bg-black/20 border border-border dark:border-white/5">
-                    <code className="text-green-600 dark:text-green-400">ADMIN_API_KEY</code>
+                    <code className="text-foreground">ADMIN_API_KEY</code>
                     <p className="text-sm text-muted-foreground mt-1">
                       Required for admin endpoint authentication. Set to a strong random key.
                     </p>
                   </div>
                   <div className="p-3 rounded-lg bg-black/20 border border-border dark:border-white/5">
-                    <code className="text-green-600 dark:text-green-400">DATABASE_URL</code>
+                    <code className="text-foreground">DATABASE_URL</code>
                     <p className="text-sm text-muted-foreground mt-1">
                       PostgreSQL database connection string.
                     </p>
@@ -846,7 +846,7 @@ export default function PlatformDocumentation() {
         </Tabs>
 
         {/* Footer */}
-        <Card className="bg-gradient-to-br from-primary/20 to-blue-500/20 border-primary/30">
+        <Card className="bg-gradient-to-br from-primary/20 to-background/20 border-primary/30">
           <CardContent className="p-6 text-center">
             <h3 className="text-2xl font-bold text-foreground mb-2">Ready to Get Started?</h3>
             <p className="text-muted-foreground mb-4">

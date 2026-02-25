@@ -74,15 +74,15 @@ export default function InterviewVideo() {
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <header className="h-16 border-b border-border dark:border-white/10 flex items-center justify-between px-6 bg-card/50 backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
-            <Video className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          <div className="w-8 h-8 rounded-lg bg-muted/20 flex items-center justify-center">
+            <Video className="w-4 h-4 text-foreground dark:text-foreground" />
           </div>
           <span className="font-semibold text-sm">Final Round Interview - {candidateName}</span>
         </div>
         <div className="flex items-center gap-4">
           {isSessionActive && (
             <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full border border-border dark:border-white/10">
-              <div className="w-2 h-2 rounded-full bg-green-500" />
+              <div className="w-2 h-2 rounded-full bg-muted" />
               <span className="text-xs text-muted-foreground">Connected to Tavus</span>
             </div>
           )}
@@ -97,8 +97,8 @@ export default function InterviewVideo() {
           <div className="flex-1 relative">
             {!isSessionActive ? (
               <div className="w-full h-full rounded-2xl border border-border dark:border-white/10 bg-card/30 flex flex-col items-center justify-center gap-6 p-8">
-                <div className="w-20 h-20 rounded-full bg-indigo-500/20 flex items-center justify-center animate-pulse">
-                  <Video className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+                <div className="w-20 h-20 rounded-full bg-muted/20 flex items-center justify-center animate-pulse">
+                  <Video className="w-8 h-8 text-foreground dark:text-foreground" />
                 </div>
                 <div className="text-center space-y-2">
                   <h2 className="text-2xl font-bold">Ready for your interview practice?</h2>
@@ -151,7 +151,7 @@ export default function InterviewVideo() {
                   size="lg" 
                   onClick={handleStartSession}
                   disabled={createSessionMutation.isPending}
-                  className="bg-indigo-500 hover:bg-indigo-600 text-white"
+                  className="bg-muted hover:bg-muted text-white"
                   data-testid="button-start-video"
                 >
                   {createSessionMutation.isPending ? (
@@ -164,7 +164,7 @@ export default function InterviewVideo() {
                   )}
                 </Button>
                 {createSessionMutation.isError && (
-                  <p className="text-red-600 dark:text-red-400 text-sm">
+                  <p className="text-destructive text-sm">
                     Failed to create session. Please check your Tavus API configuration.
                   </p>
                 )}
@@ -178,7 +178,7 @@ export default function InterviewVideo() {
               />
             ) : (
               <div className="w-full h-full rounded-2xl border border-border dark:border-white/10 bg-card/30 flex items-center justify-center">
-                <Loader2 className="w-12 h-12 animate-spin text-indigo-600 dark:text-indigo-400" />
+                <Loader2 className="w-12 h-12 animate-spin text-foreground dark:text-foreground" />
               </div>
             )}
           </div>
@@ -202,7 +202,7 @@ export default function InterviewVideo() {
         <div className="w-80 space-y-4">
           <div className="bg-card/30 border border-border dark:border-white/10 rounded-xl p-4">
             <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <Video className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <Video className="w-4 h-4 text-foreground dark:text-foreground" />
               Interview Details
             </h3>
             <div className="space-y-2 text-sm">
@@ -248,8 +248,8 @@ export default function InterviewVideo() {
           </div>
 
           {isSessionActive && (
-            <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
-              <p className="text-sm text-green-600 dark:text-green-400">
+            <div className="bg-muted/10 border border-border/20 rounded-xl p-4">
+              <p className="text-sm text-foreground">
                 The AI interviewer is actively listening and will adapt questions based on your responses.
               </p>
             </div>

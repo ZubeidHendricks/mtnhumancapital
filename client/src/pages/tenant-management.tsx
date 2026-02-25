@@ -208,7 +208,7 @@ export default function TenantManagementPage() {
               <CardTitle className="text-foreground text-sm font-medium">Active Subscriptions</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-green-500">
+              <p className="text-3xl font-bold text-foreground">
                 {tenants.filter(t => t.subscriptionStatus === "active").length}
               </p>
             </CardContent>
@@ -219,7 +219,7 @@ export default function TenantManagementPage() {
               <CardTitle className="text-foreground text-sm font-medium">Trials</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-yellow-500">
+              <p className="text-3xl font-bold text-foreground">
                 {tenants.filter(t => t.subscriptionStatus === "trial").length}
               </p>
             </CardContent>
@@ -426,7 +426,7 @@ export default function TenantManagementPage() {
                       >
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <DollarSign className="w-4 h-4 text-green-500" />
+                            <DollarSign className="w-4 h-4 text-foreground" />
                             <span className="text-foreground font-medium">
                               {formatCurrency(payment.amount)}
                             </span>

@@ -117,11 +117,11 @@ export default function InterviewFaceToFace() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "scheduled":
-        return <Badge className="bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30">Scheduled</Badge>;
+        return <Badge className="bg-muted/20 text-foreground dark:text-foreground border-border/30">Scheduled</Badge>;
       case "completed":
-        return <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30">Completed</Badge>;
+        return <Badge className="bg-muted/20 text-foreground border-border/30">Completed</Badge>;
       case "cancelled":
-        return <Badge className="bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30">Cancelled</Badge>;
+        return <Badge className="bg-destructive/20 text-destructive border-destructive/30">Cancelled</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -237,32 +237,32 @@ export default function InterviewFaceToFace() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <Card className="border-blue-200 dark:border-blue-700">
+        <Card className="border-border dark:border-border">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Scheduled</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-blue-500">
+            <div className="text-3xl font-bold text-foreground">
               {interviews.filter(i => i.status === "scheduled").length}
             </div>
           </CardContent>
         </Card>
-        <Card className="border-green-200 dark:border-green-700">
+        <Card className="border-border dark:border-border">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Completed</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-500">
+            <div className="text-3xl font-bold text-foreground">
               {interviews.filter(i => i.status === "completed").length}
             </div>
           </CardContent>
         </Card>
-        <Card className="border-red-200 dark:border-red-700">
+        <Card className="border-destructive dark:border-destructive">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Cancelled</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-red-500">
+            <div className="text-3xl font-bold text-destructive">
               {interviews.filter(i => i.status === "cancelled").length}
             </div>
           </CardContent>

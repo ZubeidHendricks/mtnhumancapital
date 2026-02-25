@@ -131,9 +131,9 @@ export default function TenantRequests() {
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      pending: { color: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20", icon: Clock },
-      approved: { color: "bg-green-500/10 text-green-500 border-green-500/20", icon: CheckCircle2 },
-      rejected: { color: "bg-red-500/10 text-red-500 border-red-500/20", icon: XCircle },
+      pending: { color: "bg-muted/10 text-foreground border-border/20", icon: Clock },
+      approved: { color: "bg-muted/10 text-foreground border-border/20", icon: CheckCircle2 },
+      rejected: { color: "bg-destructive/10 text-destructive border-destructive/20", icon: XCircle },
       cancelled: { color: "bg-gray-500/10 text-gray-500 border-gray-500/20", icon: AlertCircle },
     };
 
@@ -251,8 +251,8 @@ export default function TenantRequests() {
                       )}
 
                       {request.adminNotes && (
-                        <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                          <p className="text-sm text-blue-600 dark:text-blue-400 mb-1">Admin Notes:</p>
+                        <div className="mb-4 p-3 bg-muted/10 border border-border/20 rounded-lg">
+                          <p className="text-sm text-foreground dark:text-foreground mb-1">Admin Notes:</p>
                           <p className="text-sm">{request.adminNotes}</p>
                         </div>
                       )}
@@ -261,7 +261,7 @@ export default function TenantRequests() {
                         <div className="flex gap-2">
                           <Button 
                             onClick={() => handleApprove(request)} 
-                            className="bg-green-600 hover:bg-green-700"
+                            className="bg-muted hover:bg-muted"
                             data-testid={`button-approve-${request.id}`}
                           >
                             <CheckCircle2 className="w-4 h-4 mr-2" />
@@ -333,7 +333,7 @@ export default function TenantRequests() {
             </Button>
             <Button
               onClick={() => handleConfirmReview(true)}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-muted hover:bg-muted"
               disabled={updateRequestMutation.isPending}
               data-testid="button-confirm-approve"
             >

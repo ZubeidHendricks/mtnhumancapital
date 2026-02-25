@@ -121,11 +121,11 @@ export default function WeighbridgeDashboard() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "verified":
-        return "bg-green-500";
+        return "bg-muted";
       case "processed":
-        return "bg-blue-500";
+        return "bg-muted";
       case "pending":
-        return "bg-yellow-500";
+        return "bg-muted";
       default:
         return "bg-gray-500";
     }
@@ -179,7 +179,7 @@ export default function WeighbridgeDashboard() {
               <CardTitle className="text-3xl">{stats.processed}</CardTitle>
             </CardHeader>
             <CardContent>
-              <CheckCircle className="w-4 h-4 text-blue-500" />
+              <CheckCircle className="w-4 h-4 text-foreground" />
             </CardContent>
           </Card>
           <Card>
@@ -188,7 +188,7 @@ export default function WeighbridgeDashboard() {
               <CardTitle className="text-3xl">{stats.verified}</CardTitle>
             </CardHeader>
             <CardContent>
-              <CheckCircle className="w-4 h-4 text-green-500" />
+              <CheckCircle className="w-4 h-4 text-foreground" />
             </CardContent>
           </Card>
           <Card>

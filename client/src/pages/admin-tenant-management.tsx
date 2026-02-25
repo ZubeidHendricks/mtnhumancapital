@@ -83,9 +83,9 @@ export default function AdminTenantManagement() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "active": return "bg-green-500";
-      case "suspended": return "bg-red-500";
-      case "trial": return "bg-yellow-500";
+      case "active": return "bg-muted";
+      case "suspended": return "bg-destructive";
+      case "trial": return "bg-muted";
       default: return "bg-gray-500";
     }
   };
@@ -109,7 +109,7 @@ export default function AdminTenantManagement() {
                   <p className="text-sm text-muted-foreground">Total Tenants</p>
                   <p className="text-2xl font-bold">{tenants.length}</p>
                 </div>
-                <Building2 className="h-8 w-8 text-blue-500" />
+                <Building2 className="h-8 w-8 text-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -120,7 +120,7 @@ export default function AdminTenantManagement() {
                   <p className="text-sm text-muted-foreground">Active</p>
                   <p className="text-2xl font-bold">{tenants.filter(t => t.paymentStatus === "active").length}</p>
                 </div>
-                <Activity className="h-8 w-8 text-green-500" />
+                <Activity className="h-8 w-8 text-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -133,7 +133,7 @@ export default function AdminTenantManagement() {
                     R{tenants.reduce((sum, t) => sum + (t.totalRevenue || 0), 0).toLocaleString()}
                   </p>
                 </div>
-                <DollarSign className="h-8 w-8 text-green-500" />
+                <DollarSign className="h-8 w-8 text-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -146,7 +146,7 @@ export default function AdminTenantManagement() {
                     {tenants.reduce((sum, t) => sum + (t.activeUsers || 0), 0)}
                   </p>
                 </div>
-                <Users className="h-8 w-8 text-blue-500" />
+                <Users className="h-8 w-8 text-foreground" />
               </div>
             </CardContent>
           </Card>

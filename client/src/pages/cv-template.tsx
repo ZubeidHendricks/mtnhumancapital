@@ -340,7 +340,7 @@ export default function CVTemplatePage() {
             <FileOutput className="h-8 w-8 text-primary" />
             CV Template Generator
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
+          <p className="text-gray-600 mt-2">
             Convert CVs to the MTN - Human Capital standardized format
           </p>
         </div>
@@ -391,7 +391,7 @@ export default function CVTemplatePage() {
                   ) : (
                     <div className="flex flex-col items-center gap-2">
                       <Upload className="h-12 w-12 text-gray-400" />
-                      <p className="text-gray-600 dark:text-gray-400">
+                      <p className="text-gray-600">
                         Drag & drop a CV file here, or click to browse
                       </p>
                       <p className="text-sm text-gray-400">PDF files only</p>
@@ -468,7 +468,7 @@ export default function CVTemplatePage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-amber-500" />
+                    <Sparkles className="h-5 w-5 text-foreground" />
                     Extracted Data Preview
                   </CardTitle>
                 </CardHeader>
@@ -524,7 +524,7 @@ export default function CVTemplatePage() {
                           </h3>
                           <div className="space-y-2">
                             {previewData.education.tertiary.map((edu, i) => (
-                              <div key={i} className="p-2 bg-gray-50 dark:bg-gray-800 rounded text-sm">
+                              <div key={i} className="p-2 bg-gray-50 rounded text-sm">
                                 <p className="font-medium">{edu.institution}</p>
                                 <p className="text-gray-600">{edu.courses}</p>
                                 {edu.yearCompleted && (
@@ -744,8 +744,8 @@ export default function CVTemplatePage() {
                 </div>
               </div>
               <div className="flex gap-3">
-                <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
-                  <GraduationCap className="h-5 w-5 text-amber-500" />
+                <div className="h-10 w-10 rounded-lg bg-muted/10 flex items-center justify-center shrink-0">
+                  <GraduationCap className="h-5 w-5 text-foreground" />
                 </div>
                 <div>
                   <h4 className="font-medium">Education</h4>
@@ -755,8 +755,8 @@ export default function CVTemplatePage() {
                 </div>
               </div>
               <div className="flex gap-3">
-                <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center shrink-0">
-                  <Briefcase className="h-5 w-5 text-green-500" />
+                <div className="h-10 w-10 rounded-lg bg-muted/10 flex items-center justify-center shrink-0">
+                  <Briefcase className="h-5 w-5 text-foreground" />
                 </div>
                 <div>
                   <h4 className="font-medium">Employment History</h4>

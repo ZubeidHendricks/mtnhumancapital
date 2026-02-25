@@ -313,7 +313,7 @@ export function FleetlogixWeighbridgeTab() {
                     </TableCell>
                     <TableCell>
                       {slip.linkedLoadId ? (
-                        <Badge variant="outline" className="text-green-600">
+                        <Badge variant="outline" className="text-foreground">
                           <LinkIcon className="h-3 w-3 mr-1" />
                           Linked
                         </Badge>

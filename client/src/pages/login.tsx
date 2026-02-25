@@ -148,7 +148,7 @@ export default function Login() {
 
         <div className="mt-8 text-center space-y-2">
           <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
-            <div className="w-2 h-2 rounded-full bg-green-500" />
+            <div className="w-2 h-2 rounded-full bg-muted" />
             <span>System Status: Operational</span>
             <span className="mx-2">•</span>
             <span>v1.2.0 (Production)</span>

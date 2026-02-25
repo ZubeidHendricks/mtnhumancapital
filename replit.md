@@ -2,7 +2,7 @@
 
 ## Overview
 
-MTN Human Capital is a comprehensive, multi-tenant SaaS platform for human resources management, built for the South African market. It covers the entire employee lifecycle — recruitment, integrity checks, onboarding, HR management, fleet logistics, learning management, KPI performance tracking, and more. The platform is branded under MTN's design system (Y'ello yellow, navy, etc.) and supports AI-powered features like candidate screening, interview simulations, and document automation.
+MTN Human Capital is a comprehensive, multi-tenant SaaS platform for human resources management, built for the South African market. It covers the entire employee lifecycle — recruitment, integrity checks, onboarding, HR management, fleet logistics, learning management, KPI performance tracking, and more. The platform uses a black/white/gray design system with dark mode support and MTN yellow (#FFCB00) only in the hero section and logo. AI-powered features include candidate screening, interview simulations, and document automation.
 
 The application consists of 12 core modules that can be enabled/disabled per tenant:
 - **Recruitment** — AI-powered candidate sourcing, screening, job description generation

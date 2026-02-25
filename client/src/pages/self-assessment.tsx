@@ -79,7 +79,7 @@ function StarRating({
             className={cn(
               "w-8 h-8 transition-colors",
               (hovered !== null ? star <= hovered : star <= value)
-                ? "fill-yellow-400 text-yellow-600 dark:text-yellow-400"
+                ? "fill-yellow-400 text-foreground"
                 : "fill-gray-200 text-gray-300"
             )}
           />
@@ -182,7 +182,7 @@ export default function SelfAssessment() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-blue-500 mx-auto mb-4" />
+          <Loader2 className="w-12 h-12 animate-spin text-foreground mx-auto mb-4" />
           <p className="text-gray-600">Loading your assessment...</p>
         </div>
       </div>
@@ -194,7 +194,7 @@ export default function SelfAssessment() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
-            <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <AlertCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Unable to Load Assessment</h2>
             <p className="text-gray-600">{(error as Error).message}</p>
           </CardContent>
@@ -208,7 +208,7 @@ export default function SelfAssessment() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
-            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+            <CheckCircle className="w-16 h-16 text-foreground mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Thank You!</h2>
             <p className="text-gray-600">
               Your self-assessment has been submitted successfully. Your manager will review your responses.

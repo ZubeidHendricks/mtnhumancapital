@@ -30,7 +30,7 @@ const products: ProductCard[] = [
     description: "AI-powered fleet and logistics management system with real-time tracking, driver management, weighbridge integration, and automated salary calculations.",
     url: "https://aifleetmanager.co.za/dashboard/executive",
     icon: Truck,
-    color: "from-teal-600 to-amber-500",
+    color: "from-muted to-background",
     features: ["Fleet Tracking", "Driver Management", "Weighbridge AI", "Load Reconciliation", "Salary Automation"],
     status: "live"
   },
@@ -39,7 +39,7 @@ const products: ProductCard[] = [
     description: "Job search and recruitment platform connecting candidates with opportunities. Features AI-powered job matching and application tracking.",
     url: "https://wefindjobs.co.za/",
     icon: Briefcase,
-    color: "from-blue-500 to-indigo-500",
+    color: "from-muted to-background",
     features: ["Job Search", "CV Upload", "Application Tracking", "Job Alerts", "Company Profiles"],
     status: "live"
   },
@@ -48,7 +48,7 @@ const products: ProductCard[] = [
     description: "Advanced data analytics and automation platform for business intelligence. Transform raw data into actionable insights with AI-driven analytics.",
     url: "https://data-vision-automation-fresh-xvyx9.ondigitalocean.app/",
     icon: BarChart3,
-    color: "from-blue-500 to-pink-500",
+    color: "from-muted to-background",
     features: ["Data Analytics", "AI Insights", "Automated Reports", "Dashboard Builder", "Data Integration"],
     status: "live"
   },
@@ -57,7 +57,7 @@ const products: ProductCard[] = [
     description: "Comprehensive time and attendance management system. Track employee hours, manage leave, and generate payroll-ready reports.",
     url: "https://carta-ta-ji5og.ondigitalocean.app/auth/login",
     icon: Clock,
-    color: "from-green-500 to-emerald-500",
+    color: "from-muted to-background",
     features: ["Clock In/Out", "Leave Management", "Shift Scheduling", "Payroll Integration", "Attendance Reports"],
     status: "live"
   },
@@ -66,7 +66,7 @@ const products: ProductCard[] = [
     description: "Enterprise LMS for employee training and development. Create courses, track progress, issue certificates, and measure learning outcomes.",
     url: "http://165.227.113.197/",
     icon: GraduationCap,
-    color: "from-cyan-500 to-blue-500",
+    color: "from-muted to-background",
     features: ["Course Creation", "Progress Tracking", "Certificates", "Assessments", "Leaderboards"],
     status: "live"
   }
@@ -83,7 +83,7 @@ export default function DemoShowcase() {
             <span className="text-sm font-medium">D8taVision Product Suite</span>
           </div>
           
-          <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-primary via-blue-500 to-pink-500 bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-primary via-blue-500 to-background bg-clip-text text-transparent">
             Intelligent Software Solutions
           </h1>
           
@@ -94,22 +94,22 @@ export default function DemoShowcase() {
 
           <div className="flex flex-wrap justify-center gap-4 mb-8">
             <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-card border border-border">
-              <Cpu className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <Cpu className="w-5 h-5 text-foreground dark:text-foreground" />
               <span className="text-sm">AI-Powered</span>
             </div>
             <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-card border border-border">
-              <Globe className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <Globe className="w-5 h-5 text-foreground dark:text-foreground" />
               <span className="text-sm">Cloud-Native</span>
             </div>
             <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-card border border-border">
-              <Zap className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              <Zap className="w-5 h-5 text-foreground dark:text-foreground" />
               <span className="text-sm">Enterprise-Ready</span>
             </div>
           </div>
         </div>
 
         {/* About D8taVision */}
-        <Card className="mb-12 bg-gradient-to-br from-primary/5 to-blue-500/5 border-primary/20">
+        <Card className="mb-12 bg-gradient-to-br from-primary/5 to-background/5 border-primary/20">
           <CardHeader>
             <CardTitle className="text-2xl">About D8taVision</CardTitle>
             <CardDescription className="text-base">
@@ -151,9 +151,9 @@ export default function DemoShowcase() {
                       variant="outline" 
                       className={
                         product.status === "live" 
-                          ? "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30" 
+                          ? "bg-muted/10 text-foreground border-border/30" 
                           : product.status === "beta"
-                          ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                          ? "bg-muted/10 text-foreground dark:text-foreground border-border/30"
                           : "bg-gray-500/10 text-gray-400 border-gray-500/30"
                       }
                     >
@@ -205,7 +205,7 @@ export default function DemoShowcase() {
         </div>
 
         {/* Contact Section */}
-        <Card className="bg-gradient-to-r from-primary/10 via-blue-500/10 to-pink-500/10 border-primary/20">
+        <Card className="bg-gradient-to-r from-primary/10 via-blue-500/10 to-background/10 border-primary/20">
           <CardContent className="py-8 text-center">
             <h3 className="text-2xl font-bold mb-3">Interested in Our Solutions?</h3>
             <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">

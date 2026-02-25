@@ -42,7 +42,7 @@ export default function MyCertificates() {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <Award className="h-5 w-5 text-yellow-500" />
+                    <Award className="h-5 w-5 text-foreground" />
                     {item.course?.title || "Certificate"}
                   </CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">

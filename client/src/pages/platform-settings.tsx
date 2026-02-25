@@ -32,7 +32,7 @@ const PLATFORMS: Omit<PlatformConfig, "isConfigured">[] = [
     name: "LinkedIn Recruiter",
     description: "Access LinkedIn's talent pool and professional network data",
     icon: Linkedin,
-    color: "bg-blue-600",
+    color: "bg-muted",
     apiKeyEnvVar: "LINKEDIN_API_KEY",
     docsUrl: "https://developer.linkedin.com/",
     requiredKeys: [
@@ -45,7 +45,7 @@ const PLATFORMS: Omit<PlatformConfig, "isConfigured">[] = [
     name: "PNet Recruiter",
     description: "Connect to South Africa's largest recruitment platform",
     icon: FileSearch,
-    color: "bg-green-600",
+    color: "bg-muted",
     apiKeyEnvVar: "PNET_API_KEY",
     docsUrl: "https://www.pnet.co.za/",
     requiredKeys: [
@@ -58,7 +58,7 @@ const PLATFORMS: Omit<PlatformConfig, "isConfigured">[] = [
     name: "Indeed Employer",
     description: "Access Indeed's resume database and job seeker profiles",
     icon: Search,
-    color: "bg-blue-600",
+    color: "bg-muted",
     apiKeyEnvVar: "INDEED_API_KEY",
     docsUrl: "https://developer.indeed.com/",
     requiredKeys: [
@@ -95,11 +95,11 @@ export default function PlatformSettings() {
         <div className="container mx-auto px-4 max-w-4xl">
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-teal-600 to-red-500">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-muted to-background">
                 <Settings className="h-8 w-8" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-400 to-red-400 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-muted to-background bg-clip-text text-transparent">
                   Platform Settings
                 </h1>
                 <p className="text-zinc-400">
@@ -109,10 +109,10 @@ export default function PlatformSettings() {
             </div>
           </div>
 
-          <Card className="bg-gray-100 dark:bg-zinc-900/50 border-gray-200 dark:border-zinc-800 mb-6">
+          <Card className="bg-gray-100/50 border-gray-200 dark:border-zinc-800 mb-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                <Shield className="h-5 w-5 text-foreground dark:text-foreground" />
                 Security Notice
               </CardTitle>
               <CardDescription>
@@ -128,7 +128,7 @@ export default function PlatformSettings() {
               const isConfigured = getPlatformStatus(platform.platform);
               
               return (
-                <Card key={platform.platform} className="bg-gray-100 dark:bg-zinc-900/50 border-gray-200 dark:border-zinc-800" data-testid={`card-platform-${platform.platform}`}>
+                <Card key={platform.platform} className="bg-gray-100/50 border-gray-200 dark:border-zinc-800" data-testid={`card-platform-${platform.platform}`}>
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
@@ -143,7 +143,7 @@ export default function PlatformSettings() {
                       <Badge 
                         variant="outline" 
                         className={isConfigured 
-                          ? "border-green-500 text-green-600 dark:text-green-400" 
+                          ? "border-border text-foreground" 
                           : "border-zinc-600 text-zinc-400"
                         }
                         data-testid={`status-${platform.platform}`}
@@ -165,7 +165,7 @@ export default function PlatformSettings() {
                         <div key={keyConfig.key} className="space-y-2">
                           <div className="flex items-center justify-between">
                             <Label className="text-zinc-300">{keyConfig.label}</Label>
-                            <code className="text-xs text-zinc-500 bg-gray-200 dark:bg-zinc-800 px-2 py-1 rounded">
+                            <code className="text-xs text-zinc-500 bg-gray-200 px-2 py-1 rounded">
                               {keyConfig.key}
                             </code>
                           </div>
@@ -175,7 +175,7 @@ export default function PlatformSettings() {
                               <Input
                                 type={showKeys[keyConfig.key] ? "text" : "password"}
                                 placeholder={isConfigured ? "••••••••••••••••" : "Enter API key..."}
-                                className="bg-gray-200 dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 pr-10"
+                                className="bg-gray-200 border-gray-300 dark:border-zinc-700 pr-10"
                                 disabled={isConfigured}
                                 data-testid={`input-${keyConfig.key.toLowerCase()}`}
                               />
@@ -205,7 +205,7 @@ export default function PlatformSettings() {
                         href={platform.docsUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 flex items-center gap-1"
+                        className="text-sm text-foreground dark:text-foreground hover:text-foreground dark:hover:text-foreground flex items-center gap-1"
                       >
                         <ExternalLink className="h-3 w-3" />
                         View API Documentation
@@ -224,7 +224,7 @@ export default function PlatformSettings() {
                         ) : (
                           <Button 
                             size="sm"
-                            className="bg-gradient-to-r from-blue-600 to-blue-600"
+                            className="bg-gradient-to-r from-muted to-background"
                             data-testid={`button-save-${platform.platform}`}
                           >
                             <Save className="h-4 w-4 mr-2" />
@@ -239,10 +239,10 @@ export default function PlatformSettings() {
             })}
           </div>
 
-          <Card className="bg-gray-100 dark:bg-zinc-900/50 border-gray-200 dark:border-zinc-800 mt-6">
+          <Card className="bg-gray-100/50 border-gray-200 dark:border-zinc-800 mt-6">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Key className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                <Key className="h-5 w-5 text-foreground" />
                 How to Configure API Keys
               </CardTitle>
             </CardHeader>
@@ -259,7 +259,7 @@ export default function PlatformSettings() {
                 <p>
                   <strong className="text-zinc-300">3. Required Variables:</strong>
                 </p>
-                <div className="bg-gray-200 dark:bg-zinc-800 rounded-lg p-4 font-mono text-xs space-y-1">
+                <div className="bg-gray-200 rounded-lg p-4 font-mono text-xs space-y-1">
                   <p># LinkedIn</p>
                   <p>LINKEDIN_API_KEY=your_linkedin_api_key</p>
                   <p>LINKEDIN_API_SECRET=your_linkedin_secret</p>
@@ -270,7 +270,7 @@ export default function PlatformSettings() {
                   <p>INDEED_API_KEY=your_indeed_api_key</p>
                   <p>INDEED_EMPLOYER_ID=your_employer_id</p>
                 </div>
-                <p className="text-yellow-600 dark:text-yellow-400/80">
+                <p className="text-foreground/80">
                   Note: Currently, the sourcing specialists use AI to simulate candidate searches. 
                   Real API integration will be enabled once credentials are configured.
                 </p>

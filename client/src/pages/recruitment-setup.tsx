@@ -163,7 +163,7 @@ export default function RecruitmentSetup() {
     <div className="container mx-auto py-8 px-4 max-w-6xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-          <Settings className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+          <Settings className="h-8 w-8 text-foreground dark:text-foreground" />
           Recruitment Setup
         </h1>
         <p className="text-muted-foreground mt-2">
@@ -172,7 +172,7 @@ export default function RecruitmentSetup() {
       </div>
 
       <Tabs defaultValue="platforms" className="space-y-6">
-        <TabsList className="bg-gray-200 dark:bg-zinc-800/50">
+        <TabsList className="bg-gray-200/50">
           <TabsTrigger value="platforms">Platforms</TabsTrigger>
           <TabsTrigger value="preferences">Preferences</TabsTrigger>
         </TabsList>
@@ -184,14 +184,14 @@ export default function RecruitmentSetup() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-lg bg-gray-200 dark:bg-zinc-800 flex items-center justify-center">
-                        <Globe className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                      <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center">
+                        <Globe className="h-6 w-6 text-foreground dark:text-foreground" />
                       </div>
                       <div>
                         <h3 className="font-semibold text-foreground flex items-center gap-2">
                           {platform.name}
                           {platform.connected && (
-                            <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-0">
+                            <Badge className="bg-muted/20 text-foreground border-0">
                               <CheckCircle2 className="h-3 w-3 mr-1" />
                               Connected
                             </Badge>
@@ -221,7 +221,7 @@ export default function RecruitmentSetup() {
                           size="sm"
                           onClick={() => handleDisconnect(platform.id)}
                           disabled={disconnectPlatformMutation.isPending}
-                          className="border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-500/10"
+                          className="border-destructive/30 text-destructive hover:bg-destructive/10"
                           data-testid={`button-disconnect-${platform.id}`}
                         >
                           <XCircle className="h-4 w-4 mr-1" />
@@ -232,7 +232,7 @@ export default function RecruitmentSetup() {
                           variant="outline" 
                           size="sm"
                           onClick={() => handleConnect(platform.id)}
-                          className="border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10"
+                          className="border-border/30 text-foreground dark:text-foreground hover:bg-muted/10"
                           data-testid={`button-connect-${platform.id}`}
                         >
                           <Key className="h-4 w-4 mr-1" />
@@ -285,7 +285,7 @@ export default function RecruitmentSetup() {
           <Card className="w-full max-w-md bg-card border-border">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Key className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                <Key className="h-5 w-5 text-foreground dark:text-foreground" />
                 Connect {platforms.find(p => p.id === selectedPlatform)?.name}
               </CardTitle>
               <CardDescription>Enter your API credentials to connect this platform</CardDescription>
@@ -331,7 +331,7 @@ export default function RecruitmentSetup() {
                   Cancel
                 </Button>
                 <Button 
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                  className="flex-1 bg-muted hover:bg-muted"
                   onClick={handleSaveCredentials}
                   disabled={connectPlatformMutation.isPending}
                   data-testid="button-save-credentials"

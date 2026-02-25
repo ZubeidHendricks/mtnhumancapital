@@ -18,9 +18,9 @@ export function HumeVisualizer({ state }: { state: "listening" | "speaking" | "p
           ease: "easeInOut"
         }}
         className={`relative z-10 w-32 h-32 rounded-full blur-xl transition-colors duration-1000 ${
-          state === "listening" ? "bg-cyan-400/60" :
-          state === "speaking" ? "bg-blue-500/60" :
-          state === "processing" ? "bg-amber-400/60" :
+          state === "listening" ? "bg-muted/60" :
+          state === "speaking" ? "bg-muted/60" :
+          state === "processing" ? "bg-muted/60" :
           "bg-white/20"
         }`}
       />
@@ -38,8 +38,8 @@ export function HumeVisualizer({ state }: { state: "listening" | "speaking" | "p
           delay: 0.5
         }}
         className={`absolute w-48 h-48 rounded-full mix-blend-screen filter blur-2xl transition-colors duration-1000 ${
-           state === "listening" ? "bg-blue-500/40" :
-           state === "speaking" ? "bg-pink-500/40" :
+           state === "listening" ? "bg-muted/40" :
+           state === "speaking" ? "bg-muted/40" :
            "bg-white/5"
         }`}
       />

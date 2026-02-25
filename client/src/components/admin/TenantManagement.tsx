@@ -66,10 +66,10 @@ export function TenantManagement() {
 
   const getPaymentStatusBadge = (status?: string) => {
     const badges = {
-      trial: <Badge variant="outline" className="bg-blue-50">Trial</Badge>,
-      active: <Badge variant="outline" className="bg-green-50"><CheckCircle2 className="h-3 w-3 mr-1" />Active</Badge>,
-      suspended: <Badge variant="outline" className="bg-yellow-50"><AlertCircle className="h-3 w-3 mr-1" />Suspended</Badge>,
-      cancelled: <Badge variant="outline" className="bg-red-50"><XCircle className="h-3 w-3 mr-1" />Cancelled</Badge>,
+      trial: <Badge variant="outline" className="bg-muted">Trial</Badge>,
+      active: <Badge variant="outline" className="bg-muted"><CheckCircle2 className="h-3 w-3 mr-1" />Active</Badge>,
+      suspended: <Badge variant="outline" className="bg-muted"><AlertCircle className="h-3 w-3 mr-1" />Suspended</Badge>,
+      cancelled: <Badge variant="outline" className="bg-destructive"><XCircle className="h-3 w-3 mr-1" />Cancelled</Badge>,
     };
     return badges[status as keyof typeof badges] || <Badge variant="outline">Unknown</Badge>;
   };

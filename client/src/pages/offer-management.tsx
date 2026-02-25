@@ -148,13 +148,13 @@ export default function OfferManagement() {
   const getStatusBadge = (status: Candidate["status"]) => {
     switch (status) {
       case "pending":
-        return <Badge className="bg-gray-500/20 text-gray-600 dark:text-gray-400 border-0"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
+        return <Badge className="bg-gray-500/20 text-gray-600 border-0"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
       case "sent":
-        return <Badge className="bg-blue-500/20 text-blue-600 dark:text-blue-400 border-0"><Send className="h-3 w-3 mr-1" />Sent</Badge>;
+        return <Badge className="bg-muted/20 text-foreground dark:text-foreground border-0"><Send className="h-3 w-3 mr-1" />Sent</Badge>;
       case "accepted":
-        return <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-0"><CheckCircle2 className="h-3 w-3 mr-1" />Accepted</Badge>;
+        return <Badge className="bg-muted/20 text-foreground border-0"><CheckCircle2 className="h-3 w-3 mr-1" />Accepted</Badge>;
       case "declined":
-        return <Badge className="bg-red-500/20 text-red-600 dark:text-red-400 border-0"><XCircle className="h-3 w-3 mr-1" />Declined</Badge>;
+        return <Badge className="bg-destructive/20 text-destructive border-0"><XCircle className="h-3 w-3 mr-1" />Declined</Badge>;
     }
   };
 
@@ -162,7 +162,7 @@ export default function OfferManagement() {
     <div className="container mx-auto py-8 px-4 max-w-6xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-          <FileText className="h-8 w-8 text-green-600 dark:text-green-400" />
+          <FileText className="h-8 w-8 text-foreground" />
           Offer Management
         </h1>
         <p className="text-muted-foreground mt-2">
@@ -174,7 +174,7 @@ export default function OfferManagement() {
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Send className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <Send className="h-5 w-5 text-foreground dark:text-foreground" />
               Send New Offer
             </CardTitle>
             <CardDescription>Create and send an offer letter to a candidate</CardDescription>
@@ -250,7 +250,7 @@ export default function OfferManagement() {
                 Download Template
               </Button>
               <Button 
-                className="flex-1 bg-green-600 hover:bg-green-700"
+                className="flex-1 bg-muted hover:bg-muted"
                 onClick={handleSendOffer}
                 data-testid="button-send-offer"
               >
@@ -264,7 +264,7 @@ export default function OfferManagement() {
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <FileText className="h-5 w-5 text-foreground dark:text-foreground" />
               Recent Offers
             </CardTitle>
             <CardDescription>Track the status of sent offer letters</CardDescription>
@@ -273,13 +273,13 @@ export default function OfferManagement() {
             {candidates.map((candidate) => (
               <div 
                 key={candidate.id}
-                className="p-4 rounded-lg bg-gray-200 dark:bg-zinc-800/50 border border-gray-300 dark:border-zinc-700/50"
+                className="p-4 rounded-lg bg-gray-200/50 border border-gray-300 dark:border-zinc-700/50"
                 data-testid={`offer-item-${candidate.id}`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                      <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <div className="w-10 h-10 rounded-full bg-muted/20 flex items-center justify-center">
+                      <User className="h-5 w-5 text-foreground dark:text-foreground" />
                     </div>
                     <div>
                       <h4 className="font-medium text-foreground">{candidate.name}</h4>
@@ -302,7 +302,7 @@ export default function OfferManagement() {
       <Card className="mt-6 bg-card border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Download className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            <Download className="h-5 w-5 text-foreground dark:text-foreground" />
             Offer Letter Templates
           </CardTitle>
           <CardDescription>Download and customize offer letter templates</CardDescription>
@@ -315,7 +315,7 @@ export default function OfferManagement() {
               data-testid="button-template-standard"
               onClick={() => openGenerateDialog("offer_letter")}
             >
-              <FileText className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              <FileText className="h-8 w-8 text-foreground dark:text-foreground" />
               <span>Standard Offer</span>
               <span className="text-xs text-muted-foreground">Permanent position</span>
             </Button>
@@ -325,7 +325,7 @@ export default function OfferManagement() {
               data-testid="button-template-contract"
               onClick={() => openGenerateDialog("employment_contract")}
             >
-              <FileText className="h-8 w-8 text-amber-600 dark:text-amber-400" />
+              <FileText className="h-8 w-8 text-foreground dark:text-foreground" />
               <span>Contract Offer</span>
               <span className="text-xs text-muted-foreground">Fixed-term contract</span>
             </Button>
@@ -335,7 +335,7 @@ export default function OfferManagement() {
               data-testid="button-template-executive"
               onClick={() => openGenerateDialog("offer_letter")}
             >
-              <FileText className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              <FileText className="h-8 w-8 text-foreground dark:text-foreground" />
               <span>Executive Offer</span>
               <span className="text-xs text-muted-foreground">Senior management</span>
             </Button>

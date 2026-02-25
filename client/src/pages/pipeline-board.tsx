@@ -32,15 +32,15 @@ import type { Candidate, Job } from "@shared/schema";
 
 const PIPELINE_STAGES = [
   { key: "sourcing", name: "Sourcing", color: "from-slate-500 to-slate-600", bgColor: "bg-slate-500/10", borderColor: "border-slate-500/30" },
-  { key: "screening", name: "Screening", color: "from-blue-500 to-blue-600", bgColor: "bg-blue-500/10", borderColor: "border-blue-500/30" },
-  { key: "shortlisted", name: "Shortlisted", color: "from-yellow-500 to-amber-500", bgColor: "bg-yellow-500/10", borderColor: "border-yellow-500/30" },
-  { key: "interviewing", name: "Interviewing", color: "from-blue-500 to-blue-600", bgColor: "bg-blue-500/10", borderColor: "border-blue-500/30" },
-  { key: "offer_pending", name: "Offer Pending", color: "from-amber-500 to-teal-600", bgColor: "bg-amber-500/10", borderColor: "border-amber-500/30" },
-  { key: "offer_accepted", name: "Offer Accepted", color: "from-green-500 to-emerald-500", bgColor: "bg-green-500/10", borderColor: "border-green-500/30" },
-  { key: "integrity_checks", name: "Integrity", color: "from-blue-600 to-indigo-600", bgColor: "bg-blue-600/10", borderColor: "border-blue-600/30" },
-  { key: "integrity_passed", name: "Checks Passed", color: "from-emerald-500 to-teal-500", bgColor: "bg-emerald-500/10", borderColor: "border-emerald-500/30" },
-  { key: "onboarding", name: "Onboarding", color: "from-teal-500 to-cyan-500", bgColor: "bg-teal-500/10", borderColor: "border-teal-500/30" },
-  { key: "hired", name: "Hired", color: "from-emerald-600 to-green-600", bgColor: "bg-emerald-600/10", borderColor: "border-emerald-600/30" },
+  { key: "screening", name: "Screening", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
+  { key: "shortlisted", name: "Shortlisted", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
+  { key: "interviewing", name: "Interviewing", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
+  { key: "offer_pending", name: "Offer Pending", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
+  { key: "offer_accepted", name: "Offer Accepted", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
+  { key: "integrity_checks", name: "Integrity", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
+  { key: "integrity_passed", name: "Checks Passed", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
+  { key: "onboarding", name: "Onboarding", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
+  { key: "hired", name: "Hired", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
 ];
 
 export default function PipelineBoard() {
@@ -209,7 +209,7 @@ export default function PipelineBoard() {
                   <Badge variant="outline" className="bg-primary/10 border-primary/30">
                     {selectedJob.department}
                   </Badge>
-                  <Badge variant="outline" className="bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400">
+                  <Badge variant="outline" className="bg-muted/10 border-border/30 text-foreground">
                     {selectedJob.status}
                   </Badge>
                 </div>
@@ -283,8 +283,8 @@ export default function PipelineBoard() {
                                     
                                     {candidate.match !== null && candidate.match !== undefined && (
                                       <div className="flex items-center gap-1 mb-2 ml-6">
-                                        <Star className="h-3 w-3 text-yellow-600 dark:text-yellow-400" />
-                                        <span className="text-xs text-yellow-600 dark:text-yellow-400">{candidate.match}% match</span>
+                                        <Star className="h-3 w-3 text-foreground" />
+                                        <span className="text-xs text-foreground">{candidate.match}% match</span>
                                       </div>
                                     )}
 
@@ -303,7 +303,7 @@ export default function PipelineBoard() {
                                       {!isLastStage && (
                                         <Button
                                           size="sm"
-                                          className="flex-1 h-7 text-xs bg-gradient-to-r from-primary/80 to-blue-500/80 hover:from-primary hover:to-blue-500"
+                                          className="flex-1 h-7 text-xs bg-gradient-to-r from-primary/80 to-background/80 hover:from-primary hover:to-background"
                                           onClick={() => handleAdvanceCandidate(candidate)}
                                           disabled={advancingCandidate === candidate.id}
                                           data-testid={`button-advance-${candidate.id}`}
@@ -321,7 +321,7 @@ export default function PipelineBoard() {
                                     </div>
 
                                     {isLastStage && (
-                                      <div className="flex items-center justify-center gap-1 text-green-600 dark:text-green-400 text-xs mt-2 ml-6">
+                                      <div className="flex items-center justify-center gap-1 text-foreground text-xs mt-2 ml-6">
                                         <CheckCircle2 className="h-3 w-3" />
                                         Completed
                                       </div>
@@ -410,8 +410,8 @@ export default function PipelineBoard() {
                   </div>
                   {selectedCandidate.match !== null && selectedCandidate.match !== undefined && (
                     <div className="flex items-center gap-2 text-sm">
-                      <Star className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-                      <span className="text-yellow-600 dark:text-yellow-400">{selectedCandidate.match}% match</span>
+                      <Star className="h-4 w-4 text-foreground" />
+                      <span className="text-foreground">{selectedCandidate.match}% match</span>
                     </div>
                   )}
                   <div className="flex items-center gap-2 text-sm">

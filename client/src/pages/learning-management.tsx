@@ -360,19 +360,19 @@ export default function LearningManagement() {
 
   const getDifficultyColor = (difficulty: string | null) => {
     switch (difficulty) {
-      case "beginner": return "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20";
-      case "intermediate": return "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20";
-      case "advanced": return "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20";
-      default: return "bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20";
+      case "beginner": return "bg-muted/10 text-foreground border-border/20";
+      case "intermediate": return "bg-muted/10 text-foreground border-border/20";
+      case "advanced": return "bg-destructive/10 text-destructive border-destructive/20";
+      default: return "bg-gray-500/10 text-gray-600 border-gray-500/20";
     }
   };
 
   const getRarityColor = (rarity: string) => {
     switch (rarity) {
       case "common": return "border-gray-500";
-      case "rare": return "border-blue-500";
-      case "epic": return "border-blue-500";
-      case "legendary": return "border-yellow-500";
+      case "rare": return "border-border";
+      case "epic": return "border-border";
+      case "legendary": return "border-border";
       default: return "border-gray-500";
     }
   };
@@ -608,7 +608,7 @@ export default function LearningManagement() {
                   const progress = getProgressForCourse(course.id);
                   return (
                     <Card key={course.id} className="bg-black/40 border-border dark:border-white/10 overflow-hidden group hover:border-primary/50 transition-all" data-testid={`card-course-${course.id}`}>
-                      <div className="relative h-48 bg-gradient-to-br from-primary/20 to-blue-500/20 overflow-hidden">
+                      <div className="relative h-48 bg-gradient-to-br from-primary/20 to-background/20 overflow-hidden">
                         <div className="absolute inset-0 flex items-center justify-center">
                           <BookOpen className="w-16 h-16 text-primary/50" />
                         </div>
@@ -625,7 +625,7 @@ export default function LearningManagement() {
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <CardTitle className="text-foreground text-lg line-clamp-2">{course.title}</CardTitle>
                           {progress === 100 && (
-                            <Award className="w-5 h-5 text-yellow-500 shrink-0" />
+                            <Award className="w-5 h-5 text-foreground shrink-0" />
                           )}
                         </div>
                         <CardDescription className="line-clamp-2">{course.description || "No description"}</CardDescription>
@@ -782,7 +782,7 @@ export default function LearningManagement() {
             <Card className="bg-black/40 border-border dark:border-white/10">
               <CardHeader>
                 <CardTitle className="text-foreground flex items-center gap-2">
-                  <Target className="w-5 h-5 text-yellow-500" />
+                  <Target className="w-5 h-5 text-foreground" />
                   In Progress
                 </CardTitle>
               </CardHeader>
@@ -815,7 +815,7 @@ export default function LearningManagement() {
               <Card className="bg-black/40 border-border dark:border-white/10">
                 <CardHeader>
                   <CardTitle className="text-foreground flex items-center gap-2">
-                    <Award className="w-5 h-5 text-green-500" />
+                    <Award className="w-5 h-5 text-foreground" />
                     Completed Courses
                   </CardTitle>
                 </CardHeader>
@@ -824,12 +824,12 @@ export default function LearningManagement() {
                     <p className="text-muted-foreground text-center py-4">No completed courses yet.</p>
                   ) : (
                     allProgress.filter(p => p.status === "completed").map((progress, idx) => (
-                      <div key={`completed-${idx}`} className="flex items-center justify-between p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                      <div key={`completed-${idx}`} className="flex items-center justify-between p-3 bg-muted/10 rounded-lg border border-border/20">
                         <div>
                           <p className="text-foreground font-medium">{progress.userName}</p>
                           <p className="text-sm text-muted-foreground">{progress.courseTitle}</p>
                         </div>
-                        <Badge className="bg-green-500 text-white">100%</Badge>
+                        <Badge className="bg-muted text-white">100%</Badge>
                       </div>
                     ))
                   )}
@@ -894,7 +894,7 @@ export default function LearningManagement() {
                             <td className="p-3">
                               <Badge 
                                 variant={progress.status === "completed" ? "default" : progress.status === "in_progress" ? "secondary" : "outline"}
-                                className={progress.status === "completed" ? "bg-green-500" : ""}
+                                className={progress.status === "completed" ? "bg-muted" : ""}
                               >
                                 {progress.status === "completed" ? "Completed" : progress.status === "in_progress" ? "In Progress" : "Not Started"}
                               </Badge>
@@ -903,7 +903,7 @@ export default function LearningManagement() {
                               <div className="flex items-center gap-2">
                                 <div className="w-20 h-2 bg-white/10 rounded-full overflow-hidden">
                                   <div
-                                    className={`h-full transition-all ${progress.status === "completed" ? "bg-green-500" : "bg-primary"}`}
+                                    className={`h-full transition-all ${progress.status === "completed" ? "bg-muted" : "bg-primary"}`}
                                     style={{ width: `${progress.progress}%` }}
                                   />
                                 </div>
@@ -937,29 +937,29 @@ export default function LearningManagement() {
 
           <TabsContent value="gamification" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="bg-gradient-to-br from-primary/20 to-blue-500/20 border-primary/30">
+              <Card className="bg-gradient-to-br from-primary/20 to-background/20 border-primary/30">
                 <CardHeader>
                   <CardDescription>Total Points</CardDescription>
                   <CardTitle className="text-4xl text-foreground flex items-center gap-2">
-                    <Trophy className="w-8 h-8 text-yellow-500" />
+                    <Trophy className="w-8 h-8 text-foreground" />
                     {stats.totalPoints || 0}
                   </CardTitle>
                 </CardHeader>
               </Card>
-              <Card className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border-blue-500/30">
+              <Card className="bg-gradient-to-br from-muted/20 to-background/20 border-border/30">
                 <CardHeader>
                   <CardDescription>Current Level</CardDescription>
                   <CardTitle className="text-4xl text-foreground flex items-center gap-2">
-                    <Star className="w-8 h-8 text-blue-500" />
+                    <Star className="w-8 h-8 text-foreground" />
                     {stats.level || 1}
                   </CardTitle>
                 </CardHeader>
               </Card>
-              <Card className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-green-500/30">
+              <Card className="bg-gradient-to-br from-muted/20 to-background/20 border-border/30">
                 <CardHeader>
                   <CardDescription>Global Rank</CardDescription>
                   <CardTitle className="text-4xl text-foreground flex items-center gap-2">
-                    <TrendingUp className="w-8 h-8 text-green-500" />
+                    <TrendingUp className="w-8 h-8 text-foreground" />
                     #{stats.rank || "-"}
                   </CardTitle>
                 </CardHeader>
@@ -1029,14 +1029,14 @@ export default function LearningManagement() {
                         data-testid={`leaderboard-entry-${entry.userId}`}
                       >
                         <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold ${
-                          index === 0 ? "bg-yellow-500/20 text-yellow-500" :
+                          index === 0 ? "bg-muted/20 text-foreground" :
                           index === 1 ? "bg-gray-300/20 text-gray-300" :
-                          index === 2 ? "bg-amber-600/20 text-amber-600" :
+                          index === 2 ? "bg-muted/20 text-foreground" :
                           "bg-primary/20 text-primary"
                         }`}>
                           {entry.rank || index + 1}
                         </div>
-                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-primary to-blue-500 text-foreground font-semibold">
+                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-primary to-background text-foreground font-semibold">
                           {entry.userName?.substring(0, 2).toUpperCase() || "??"}
                         </div>
                         <div className="flex-1">

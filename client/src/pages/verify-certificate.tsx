@@ -30,10 +30,10 @@ export default function VerifyCertificate() {
 
   if (error || !verification?.certificate) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-pink-50">
-        <Card className="w-full max-w-md border-red-200">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-destructive to-pink-50">
+        <Card className="w-full max-w-md border-destructive">
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <XCircle className="h-16 w-16 text-red-500 mb-4" />
+            <XCircle className="h-16 w-16 text-destructive mb-4" />
             <h2 className="text-2xl font-bold mb-2">Certificate Not Found</h2>
             <p className="text-muted-foreground text-center">
               The certificate number <span className="font-mono">{certificateNumber}</span> could not be verified.
@@ -48,15 +48,15 @@ export default function VerifyCertificate() {
   const data = certificate.certificateData as any;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50 p-4">
-      <Card className="w-full max-w-2xl border-green-200 shadow-2xl">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-muted to-emerald-50 p-4">
+      <Card className="w-full max-w-2xl border-border shadow-2xl">
         <CardContent className="p-8 space-y-6">
           <div className="flex items-center justify-center mb-6">
-            <CheckCircle2 className="h-20 w-20 text-green-500" />
+            <CheckCircle2 className="h-20 w-20 text-foreground" />
           </div>
 
           <div className="text-center space-y-2">
-            <Badge className="bg-green-500 hover:bg-green-600 text-white px-4 py-1">
+            <Badge className="bg-muted hover:bg-muted text-white px-4 py-1">
               VERIFIED CERTIFICATE
             </Badge>
             <h1 className="text-3xl font-bold mt-4">Certificate Verified</h1>

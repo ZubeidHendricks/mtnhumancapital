@@ -136,20 +136,20 @@ export default function InterviewConsole() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "completed": return "bg-green-500/10 text-green-500";
-      case "started": return "bg-blue-500/10 text-blue-500";
-      case "pending": return "bg-yellow-500/10 text-yellow-500";
-      case "expired": return "bg-red-500/10 text-red-500";
+      case "completed": return "bg-muted/10 text-foreground";
+      case "started": return "bg-muted/10 text-foreground";
+      case "pending": return "bg-muted/10 text-foreground";
+      case "expired": return "bg-destructive/10 text-destructive";
       default: return "bg-gray-500/10 text-gray-500";
     }
   };
 
   const getDecisionColor = (decision: string | null) => {
     switch (decision) {
-      case "accepted": return "bg-green-500 text-white";
-      case "rejected": return "bg-red-500 text-white";
-      case "pipeline": return "bg-blue-500 text-white";
-      case "needs_review": return "bg-yellow-500 text-white";
+      case "accepted": return "bg-muted text-white";
+      case "rejected": return "bg-destructive text-white";
+      case "pipeline": return "bg-muted text-white";
+      case "needs_review": return "bg-muted text-white";
       default: return "bg-gray-500/10 text-gray-500";
     }
   };
@@ -165,8 +165,8 @@ export default function InterviewConsole() {
 
   const getSentimentColor = (sentiment: string | null) => {
     switch (sentiment) {
-      case "positive": return "text-green-500";
-      case "negative": return "text-red-500";
+      case "positive": return "text-foreground";
+      case "negative": return "text-destructive";
       default: return "text-gray-500";
     }
   };
@@ -239,9 +239,9 @@ export default function InterviewConsole() {
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
                           {session.interviewType === "video" ? (
-                            <Video className="h-4 w-4 text-blue-500" />
+                            <Video className="h-4 w-4 text-foreground" />
                           ) : (
-                            <Mic className="h-4 w-4 text-blue-500" />
+                            <Mic className="h-4 w-4 text-foreground" />
                           )}
                           <span className="font-medium text-sm">{session.candidateName || "Unknown"}</span>
                         </div>
@@ -344,7 +344,7 @@ export default function InterviewConsole() {
 
                         <div className="grid md:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <h4 className="font-semibold text-green-600 flex items-center gap-2">
+                            <h4 className="font-semibold text-foreground flex items-center gap-2">
                               <ThumbsUp className="h-4 w-4" />
                               Strengths
                             </h4>
@@ -355,7 +355,7 @@ export default function InterviewConsole() {
                             </ul>
                           </div>
                           <div className="space-y-2">
-                            <h4 className="font-semibold text-red-600 flex items-center gap-2">
+                            <h4 className="font-semibold text-destructive flex items-center gap-2">
                               <ThumbsDown className="h-4 w-4" />
                               Weaknesses
                             </h4>
@@ -392,13 +392,13 @@ export default function InterviewConsole() {
 
                         {latestFeedback.flaggedConcerns && latestFeedback.flaggedConcerns.length > 0 && (
                           <div className="space-y-2 border-t pt-4">
-                            <h4 className="font-semibold text-amber-600 flex items-center gap-2">
+                            <h4 className="font-semibold text-foreground flex items-center gap-2">
                               <AlertCircle className="h-4 w-4" />
                               Flagged Concerns
                             </h4>
                             <ul className="list-disc list-inside text-sm space-y-1">
                               {latestFeedback.flaggedConcerns.map((concern, i) => (
-                                <li key={i} className="text-amber-600">{concern}</li>
+                                <li key={i} className="text-foreground">{concern}</li>
                               ))}
                             </ul>
                           </div>
@@ -423,8 +423,8 @@ export default function InterviewConsole() {
                               data-testid={`transcript-segment-${segment.segmentIndex}`}
                               className={`p-3 rounded-lg ${
                                 segment.speakerRole === "candidate"
-                                  ? "bg-blue-50 dark:bg-blue-950/20 ml-0 mr-8"
-                                  : "bg-gray-50 dark:bg-gray-950/20 ml-8 mr-0"
+                                  ? "bg-muted/20 ml-0 mr-8"
+                                  : "bg-gray-50/20 ml-8 mr-0"
                               }`}
                             >
                               <div className="flex items-center justify-between mb-1">
@@ -466,9 +466,9 @@ export default function InterviewConsole() {
                           >
                             <div className="flex items-center gap-3">
                               {recording.recordingType === "video" ? (
-                                <Video className="h-8 w-8 text-blue-500" />
+                                <Video className="h-8 w-8 text-foreground" />
                               ) : (
-                                <Mic className="h-8 w-8 text-blue-500" />
+                                <Mic className="h-8 w-8 text-foreground" />
                               )}
                               <div>
                                 <p className="font-medium capitalize">{recording.recordingType} Recording</p>
@@ -501,7 +501,7 @@ export default function InterviewConsole() {
                             <Button
                               size="lg"
                               variant={latestFeedback.decision === "accepted" ? "default" : "outline"}
-                              className={latestFeedback.decision === "accepted" ? "bg-green-600 hover:bg-green-700" : ""}
+                              className={latestFeedback.decision === "accepted" ? "bg-muted hover:bg-muted" : ""}
                               onClick={() => handleDecision("accepted")}
                               disabled={latestFeedback.isFinalized === 1}
                               data-testid="button-decision-accept"
@@ -512,7 +512,7 @@ export default function InterviewConsole() {
                             <Button
                               size="lg"
                               variant={latestFeedback.decision === "pipeline" ? "default" : "outline"}
-                              className={latestFeedback.decision === "pipeline" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                              className={latestFeedback.decision === "pipeline" ? "bg-muted hover:bg-muted" : ""}
                               onClick={() => handleDecision("pipeline")}
                               disabled={latestFeedback.isFinalized === 1}
                               data-testid="button-decision-pipeline"
@@ -534,7 +534,7 @@ export default function InterviewConsole() {
 
                           {latestFeedback.isFinalized === 1 && (
                             <div className="text-center text-muted-foreground bg-muted p-4 rounded-lg">
-                              <CheckCircle className="h-6 w-6 mx-auto mb-2 text-green-500" />
+                              <CheckCircle className="h-6 w-6 mx-auto mb-2 text-foreground" />
                               <p>Decision finalized on {latestFeedback.finalizedAt ? format(new Date(latestFeedback.finalizedAt), "MMM d, yyyy HH:mm") : "unknown"}</p>
                             </div>
                           )}
@@ -568,9 +568,9 @@ export default function InterviewConsole() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {pendingDecision === "accepted" && <ThumbsUp className="h-5 w-5 text-green-500" />}
-              {pendingDecision === "rejected" && <ThumbsDown className="h-5 w-5 text-red-500" />}
-              {pendingDecision === "pipeline" && <Clock3 className="h-5 w-5 text-blue-500" />}
+              {pendingDecision === "accepted" && <ThumbsUp className="h-5 w-5 text-foreground" />}
+              {pendingDecision === "rejected" && <ThumbsDown className="h-5 w-5 text-destructive" />}
+              {pendingDecision === "pipeline" && <Clock3 className="h-5 w-5 text-foreground" />}
               Confirm Decision: {pendingDecision?.charAt(0).toUpperCase()}{pendingDecision?.slice(1)}
             </DialogTitle>
             <DialogDescription>
@@ -595,9 +595,9 @@ export default function InterviewConsole() {
               disabled={updateDecisionMutation.isPending}
               data-testid="button-confirm-decision"
               className={
-                pendingDecision === "accepted" ? "bg-green-600 hover:bg-green-700" :
-                pendingDecision === "rejected" ? "bg-red-600 hover:bg-red-700" :
-                "bg-blue-600 hover:bg-blue-700"
+                pendingDecision === "accepted" ? "bg-muted hover:bg-muted" :
+                pendingDecision === "rejected" ? "bg-destructive hover:bg-destructive" :
+                "bg-muted hover:bg-muted"
               }
             >
               {updateDecisionMutation.isPending ? (
@@ -615,9 +615,9 @@ export default function InterviewConsole() {
 function ScoreCard({ label, value }: { label: string; value: number | null }) {
   const getScoreColor = (score: number | null) => {
     if (score === null) return "text-gray-400";
-    if (score >= 80) return "text-green-500";
-    if (score >= 60) return "text-yellow-500";
-    return "text-red-500";
+    if (score >= 80) return "text-foreground";
+    if (score >= 60) return "text-foreground";
+    return "text-destructive";
   };
 
   return (

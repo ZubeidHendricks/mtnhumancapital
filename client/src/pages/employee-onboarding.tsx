@@ -169,11 +169,11 @@ export default function EmployeeOnboarding() {
   const getStatusBadge = (status: NewEmployee["onboardingStatus"]) => {
     switch (status) {
       case "pending":
-        return <Badge className="bg-gray-500/20 text-gray-600 dark:text-gray-400 border-0">Pending</Badge>;
+        return <Badge className="bg-gray-500/20 text-gray-600 border-0">Pending</Badge>;
       case "in_progress":
-        return <Badge className="bg-blue-500/20 text-blue-600 dark:text-blue-400 border-0">In Progress</Badge>;
+        return <Badge className="bg-muted/20 text-foreground dark:text-foreground border-0">In Progress</Badge>;
       case "completed":
-        return <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-0"><CheckCircle2 className="h-3 w-3 mr-1" />Completed</Badge>;
+        return <Badge className="bg-muted/20 text-foreground border-0"><CheckCircle2 className="h-3 w-3 mr-1" />Completed</Badge>;
     }
   };
 
@@ -181,7 +181,7 @@ export default function EmployeeOnboarding() {
     <div className="container mx-auto py-8 px-4 max-w-6xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-          <Building2 className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+          <Building2 className="h-8 w-8 text-foreground dark:text-foreground" />
           Employee Onboarding
         </h1>
         <p className="text-muted-foreground mt-2">
@@ -193,7 +193,7 @@ export default function EmployeeOnboarding() {
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <Package className="h-5 w-5 text-foreground dark:text-foreground" />
               Send Onboarding Pack
             </CardTitle>
             <CardDescription>Prepare and send onboarding documents to a new employee</CardDescription>
@@ -287,7 +287,7 @@ export default function EmployeeOnboarding() {
                 Request IT Setup
               </Button>
               <Button 
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                className="flex-1 bg-muted hover:bg-muted"
                 onClick={handleSendOnboardingPack}
                 data-testid="button-send-pack"
               >
@@ -301,7 +301,7 @@ export default function EmployeeOnboarding() {
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <User className="h-5 w-5 text-foreground" />
               New Employees
             </CardTitle>
             <CardDescription>Track onboarding progress for new hires</CardDescription>
@@ -310,13 +310,13 @@ export default function EmployeeOnboarding() {
             {employees.map((employee) => (
               <div 
                 key={employee.id}
-                className="p-4 rounded-lg bg-gray-200 dark:bg-zinc-800/50 border border-gray-300 dark:border-zinc-700/50"
+                className="p-4 rounded-lg bg-gray-200/50 border border-gray-300 dark:border-zinc-700/50"
                 data-testid={`employee-item-${employee.id}`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                      <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <div className="w-10 h-10 rounded-full bg-muted/20 flex items-center justify-center">
+                      <User className="h-5 w-5 text-foreground dark:text-foreground" />
                     </div>
                     <div>
                       <h4 className="font-medium text-foreground">{employee.name}</h4>
@@ -337,7 +337,7 @@ export default function EmployeeOnboarding() {
       <Card className="mt-6 bg-card border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Download className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            <Download className="h-5 w-5 text-foreground dark:text-foreground" />
             Onboarding Documents
           </CardTitle>
           <CardDescription>Download templates and documents for new employees</CardDescription>
@@ -350,7 +350,7 @@ export default function EmployeeOnboarding() {
               onClick={handleDownloadWelcomeLetter}
               data-testid="button-download-welcome"
             >
-              <Mail className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              <Mail className="h-8 w-8 text-foreground dark:text-foreground" />
               <span>Welcome Letter</span>
               <span className="text-xs text-muted-foreground">Template</span>
             </Button>
@@ -360,7 +360,7 @@ export default function EmployeeOnboarding() {
               onClick={handleDownloadHandbook}
               data-testid="button-download-handbook"
             >
-              <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              <BookOpen className="h-8 w-8 text-foreground dark:text-foreground" />
               <span>Employee Handbook</span>
               <span className="text-xs text-muted-foreground">PDF Document</span>
             </Button>
@@ -370,7 +370,7 @@ export default function EmployeeOnboarding() {
               data-testid="button-download-policies"
               onClick={() => openGenerateDialog("employee_handbook")}
             >
-              <FileText className="h-8 w-8 text-green-600 dark:text-green-400" />
+              <FileText className="h-8 w-8 text-foreground" />
               <span>Company Policies</span>
               <span className="text-xs text-muted-foreground">PDF Document</span>
             </Button>
@@ -380,7 +380,7 @@ export default function EmployeeOnboarding() {
               data-testid="button-download-checklist"
               onClick={() => openGenerateDialog("welcome_letter")}
             >
-              <CheckCircle2 className="h-8 w-8 text-amber-600 dark:text-amber-400" />
+              <CheckCircle2 className="h-8 w-8 text-foreground dark:text-foreground" />
               <span>Onboarding Checklist</span>
               <span className="text-xs text-muted-foreground">Template</span>
             </Button>

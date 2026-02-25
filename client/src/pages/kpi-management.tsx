@@ -221,7 +221,7 @@ export default function KpiManagement() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2" data-testid="page-title">
-              <Target className="h-7 w-7 text-blue-500" />
+              <Target className="h-7 w-7 text-foreground" />
               KPI Management
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
@@ -244,19 +244,19 @@ export default function KpiManagement() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="bg-muted border border-border">
-            <TabsTrigger value="templates" className="data-[state=active]:bg-blue-600" data-testid="tab-templates">
+            <TabsTrigger value="templates" className="data-[state=active]:bg-muted" data-testid="tab-templates">
               <FileText className="h-4 w-4 mr-2" />
               KPI Templates
             </TabsTrigger>
-            <TabsTrigger value="cycles" className="data-[state=active]:bg-blue-600" data-testid="tab-cycles">
+            <TabsTrigger value="cycles" className="data-[state=active]:bg-muted" data-testid="tab-cycles">
               <Calendar className="h-4 w-4 mr-2" />
               Review Cycles
             </TabsTrigger>
-            <TabsTrigger value="assignments" className="data-[state=active]:bg-blue-600" data-testid="tab-assignments">
+            <TabsTrigger value="assignments" className="data-[state=active]:bg-muted" data-testid="tab-assignments">
               <Users className="h-4 w-4 mr-2" />
               Assignments
             </TabsTrigger>
-            <TabsTrigger value="reviews" className="data-[state=active]:bg-blue-600" data-testid="tab-reviews">
+            <TabsTrigger value="reviews" className="data-[state=active]:bg-muted" data-testid="tab-reviews">
               <BarChart3 className="h-4 w-4 mr-2" />
               Reviews
             </TabsTrigger>
@@ -277,7 +277,7 @@ export default function KpiManagement() {
 
             {templatesLoading ? (
               <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                <Loader2 className="h-8 w-8 animate-spin text-foreground" />
               </div>
             ) : filteredTemplates.length === 0 ? (
               <Card className="bg-card border-border">
@@ -300,7 +300,7 @@ export default function KpiManagement() {
                     ? template.ownerDepartment || "Not assigned"
                       : template.ownerDivision || "Not assigned";
                   return (
-                  <Card key={template.id} className="bg-card border-border hover:border-blue-500/50 transition-colors" data-testid={`card-template-${template.id}`}>
+                  <Card key={template.id} className="bg-card border-border hover:border-border/50 transition-colors" data-testid={`card-template-${template.id}`}>
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -356,7 +356,7 @@ export default function KpiManagement() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="text-red-600 dark:text-red-400 hover:text-red-300"
+                          className="text-destructive hover:text-destructive"
                           onClick={() => deleteTemplateMutation.mutate(template.id)}
                           data-testid={`button-delete-template-${template.id}`}
                         >
@@ -386,7 +386,7 @@ export default function KpiManagement() {
 
             {cyclesLoading ? (
               <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                <Loader2 className="h-8 w-8 animate-spin text-foreground" />
               </div>
             ) : cycles.length === 0 ? (
               <Card className="bg-card border-border">
@@ -409,8 +409,8 @@ export default function KpiManagement() {
                     <CardContent className="py-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className="p-3 bg-blue-600/20 rounded-lg">
-                            <Calendar className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                          <div className="p-3 bg-muted/20 rounded-lg">
+                            <Calendar className="h-6 w-6 text-foreground dark:text-foreground" />
                           </div>
                           <div>
                             <h3 className="font-medium text-foreground">{cycle.name}</h3>
@@ -433,7 +433,7 @@ export default function KpiManagement() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="text-red-600 dark:text-red-400 hover:text-red-300"
+                              className="text-destructive hover:text-destructive"
                               onClick={() => deleteCycleMutation.mutate(cycle.id)}
                               data-testid={`button-delete-cycle-${cycle.id}`}
                             >
@@ -499,8 +499,8 @@ export default function KpiManagement() {
                       <CardContent className="py-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 bg-blue-600/20 rounded-full flex items-center justify-center">
-                              <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                            <div className="h-10 w-10 bg-muted/20 rounded-full flex items-center justify-center">
+                              <User className="h-5 w-5 text-foreground dark:text-foreground" />
                             </div>
                             <div>
                               <p className="font-medium text-foreground">{employee?.fullName || "Unknown"}</p>
@@ -565,8 +565,8 @@ export default function KpiManagement() {
                       <CardContent className="py-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
-                            <div className="h-12 w-12 bg-blue-600/20 rounded-full flex items-center justify-center">
-                              <User className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                            <div className="h-12 w-12 bg-muted/20 rounded-full flex items-center justify-center">
+                              <User className="h-6 w-6 text-foreground dark:text-foreground" />
                             </div>
                             <div>
                               <h3 className="font-medium text-foreground">{employee?.fullName || "Unknown"}</h3>
@@ -590,7 +590,7 @@ export default function KpiManagement() {
                                     <Star
                                       key={star}
                                       className={`h-4 w-4 ${
-                                        star <= submission.finalScore! ? "text-yellow-600 dark:text-yellow-400 fill-yellow-400" : "text-muted-foreground"
+                                        star <= submission.finalScore! ? "text-foreground fill-yellow-400" : "text-muted-foreground"
                                       }`}
                                     />
                                   ))}
@@ -830,13 +830,13 @@ function TemplateDialog({
         </DialogHeader>
         
         <div className="flex items-center gap-2 mb-4">
-          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${step >= 1 ? 'bg-blue-600 text-white' : 'bg-muted text-muted-foreground'}`}>1</div>
-          <div className={`flex-1 h-1 ${step >= 2 ? 'bg-blue-600' : 'bg-muted'}`} />
-          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${step >= 2 ? 'bg-blue-600 text-white' : 'bg-muted text-muted-foreground'}`}>2</div>
-          <div className={`flex-1 h-1 ${step >= 3 ? 'bg-blue-600' : 'bg-muted'}`} />
-          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${step >= 3 ? 'bg-blue-600 text-white' : 'bg-muted text-muted-foreground'}`}>3</div>
-          <div className={`flex-1 h-1 ${step >= 4 ? 'bg-blue-600' : 'bg-muted'}`} />
-          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${step >= 4 ? 'bg-blue-600 text-white' : 'bg-muted text-muted-foreground'}`}>4</div>
+          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${step >= 1 ? 'bg-muted text-white' : 'bg-muted text-muted-foreground'}`}>1</div>
+          <div className={`flex-1 h-1 ${step >= 2 ? 'bg-muted' : 'bg-muted'}`} />
+          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${step >= 2 ? 'bg-muted text-white' : 'bg-muted text-muted-foreground'}`}>2</div>
+          <div className={`flex-1 h-1 ${step >= 3 ? 'bg-muted' : 'bg-muted'}`} />
+          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${step >= 3 ? 'bg-muted text-white' : 'bg-muted text-muted-foreground'}`}>3</div>
+          <div className={`flex-1 h-1 ${step >= 4 ? 'bg-muted' : 'bg-muted'}`} />
+          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${step >= 4 ? 'bg-muted text-white' : 'bg-muted text-muted-foreground'}`}>4</div>
         </div>
 
         {step === 1 && (
@@ -1010,7 +1010,7 @@ function TemplateDialog({
 
         {step === 3 && (
           <div className="space-y-4">
-            <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+            <div className="p-4 bg-muted/10 border border-border/20 rounded-lg">
               <p className="text-sm text-muted-foreground">
                 Assign this KPI to a review cycle and select employees. You can skip this step and assign later.
               </p>
@@ -1049,8 +1049,8 @@ function TemplateDialog({
                         className="rounded border-border"
                         data-testid={`checkbox-assign-employee-${employee.id}`}
                       />
-                      <div className="h-8 w-8 bg-blue-600/20 rounded-full flex items-center justify-center">
-                        <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <div className="h-8 w-8 bg-muted/20 rounded-full flex items-center justify-center">
+                        <User className="h-4 w-4 text-foreground dark:text-foreground" />
                       </div>
                       <span className="text-foreground">{employee.fullName}</span>
                     </label>
@@ -1064,7 +1064,7 @@ function TemplateDialog({
 
         {step === 4 && (
           <div className="space-y-4">
-            <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+            <div className="p-4 bg-muted/10 border border-border/20 rounded-lg">
               <p className="text-sm text-muted-foreground">
                 Review your KPI configuration before creating.
               </p>
@@ -1410,8 +1410,8 @@ function AssignDialog({
                     className="rounded border-border"
                     data-testid={`checkbox-employee-${employee.id}`}
                   />
-                  <div className="h-8 w-8 bg-blue-600/20 rounded-full flex items-center justify-center">
-                    <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <div className="h-8 w-8 bg-muted/20 rounded-full flex items-center justify-center">
+                    <User className="h-4 w-4 text-foreground dark:text-foreground" />
                   </div>
                   <span className="text-foreground">{employee.fullName}</span>
                 </label>
@@ -1499,14 +1499,14 @@ function SubmissionDetailDialog({
           </div>
 
           {submission.finalScore && (
-            <div className="p-4 bg-blue-900/20 border border-blue-700/30 rounded-lg">
+            <div className="p-4 bg-muted/20 border border-border/30 rounded-lg">
               <p className="text-sm text-muted-foreground mb-2">Final Score</p>
               <div className="flex items-center gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Star
                     key={star}
                     className={`h-6 w-6 ${
-                      star <= submission.finalScore! ? "text-yellow-600 dark:text-yellow-400 fill-yellow-400" : "text-muted-foreground"
+                      star <= submission.finalScore! ? "text-foreground fill-yellow-400" : "text-muted-foreground"
                     }`}
                   />
                 ))}

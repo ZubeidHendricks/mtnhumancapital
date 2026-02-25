@@ -233,27 +233,27 @@ export default function RecruitmentDashboard() {
   };
 
   const kpiCards = [
-    { key: "revenue", label: "Total Revenue YTD", value: `R${(totalRevenue / 1000000).toFixed(2)}m`, icon: DollarSign, color: "text-emerald-600 dark:text-emerald-400", bgGradient: "from-emerald-500/10 to-emerald-500/5", borderColor: "border-emerald-500/20" },
-    { key: "jobs", label: "Active Job Searches", value: loadingJobs ? "—" : String(activeJobs.length), icon: Briefcase, color: "text-blue-600 dark:text-blue-400", bgGradient: "from-blue-500/10 to-blue-500/5", borderColor: "border-blue-500/20" },
-    { key: "candidates", label: "Total Candidates", value: String(totalCandidates), icon: Users, color: "text-cyan-600 dark:text-cyan-400", bgGradient: "from-cyan-500/10 to-cyan-500/5", borderColor: "border-cyan-500/20" },
-    { key: "shortlisted", label: "Total Shortlisted", value: String(totalShortlisted), icon: Target, color: "text-teal-600 dark:text-teal-400", bgGradient: "from-teal-500/10 to-teal-500/5", borderColor: "border-teal-500/20" },
-    { key: "placements", label: "Total Placements", value: String(totalHired), icon: UserCheck, color: "text-green-600 dark:text-green-400", bgGradient: "from-green-500/10 to-green-500/5", borderColor: "border-green-500/20" },
-    { key: "lost", label: "Total Lost", value: String(totalLost), icon: XCircle, color: "text-red-600 dark:text-red-400", bgGradient: "from-red-500/10 to-red-500/5", borderColor: "border-red-500/20" },
+    { key: "revenue", label: "Total Revenue YTD", value: `R${(totalRevenue / 1000000).toFixed(2)}m`, icon: DollarSign, color: "text-foreground dark:text-foreground", bgGradient: "from-muted/10 to-background/5", borderColor: "border-border/20" },
+    { key: "jobs", label: "Active Job Searches", value: loadingJobs ? "—" : String(activeJobs.length), icon: Briefcase, color: "text-foreground dark:text-foreground", bgGradient: "from-muted/10 to-background/5", borderColor: "border-border/20" },
+    { key: "candidates", label: "Total Candidates", value: String(totalCandidates), icon: Users, color: "text-foreground dark:text-foreground", bgGradient: "from-muted/10 to-background/5", borderColor: "border-border/20" },
+    { key: "shortlisted", label: "Total Shortlisted", value: String(totalShortlisted), icon: Target, color: "text-foreground dark:text-foreground", bgGradient: "from-muted/10 to-background/5", borderColor: "border-border/20" },
+    { key: "placements", label: "Total Placements", value: String(totalHired), icon: UserCheck, color: "text-foreground", bgGradient: "from-muted/10 to-background/5", borderColor: "border-border/20" },
+    { key: "lost", label: "Total Lost", value: String(totalLost), icon: XCircle, color: "text-destructive", bgGradient: "from-destructive/10 to-background/5", borderColor: "border-destructive/20" },
   ];
 
   return (
-    <div className="min-h-screen bg-background text-gray-900 dark:text-gray-100">
+    <div className="min-h-screen bg-background text-gray-900">
       
       <main className="pt-24 pb-12 px-6 container mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-               <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50" data-testid="text-page-title">Recruitment Command Center</h1>
-               <Badge variant="outline" className="bg-teal-500/10 text-teal-700 dark:text-teal-400 border-teal-500/30 text-xs">
+               <h1 className="text-3xl font-bold tracking-tight text-gray-900" data-testid="text-page-title">Recruitment Command Center</h1>
+               <Badge variant="outline" className="bg-muted/10 text-foreground dark:text-foreground border-border/30 text-xs">
                   Live Data
                </Badge>
             </div>
-            <p className="text-gray-500 dark:text-gray-400">Comprehensive recruitment performance metrics and pipeline analytics</p>
+            <p className="text-gray-500">Comprehensive recruitment performance metrics and pipeline analytics</p>
           </div>
         </div>
 
@@ -269,7 +269,7 @@ export default function RecruitmentDashboard() {
               >
                 <CardHeader className="pb-2 pt-4 px-4">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-xs font-medium text-gray-500 dark:text-gray-400">{kpi.label}</CardTitle>
+                    <CardTitle className="text-xs font-medium text-gray-500">{kpi.label}</CardTitle>
                     <Icon className={`h-4 w-4 ${kpi.color}`} />
                   </div>
                 </CardHeader>
@@ -284,8 +284,8 @@ export default function RecruitmentDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
-                <TrendingUp className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+              <CardTitle className="flex items-center gap-2 text-gray-900">
+                <TrendingUp className="h-5 w-5 text-foreground dark:text-foreground" />
                 Monthly Placements & Revenue
               </CardTitle>
               <CardDescription>
@@ -329,8 +329,8 @@ export default function RecruitmentDashboard() {
 
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
-                <Filter className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+              <CardTitle className="flex items-center gap-2 text-gray-900">
+                <Filter className="h-5 w-5 text-foreground dark:text-foreground" />
                 Job Search Health
               </CardTitle>
               <CardDescription>
@@ -366,63 +366,63 @@ export default function RecruitmentDashboard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
+          <Card className="bg-gradient-to-br from-muted/10 to-background/5 border-border/20">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">On Track</CardTitle>
-                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <CardTitle className="text-sm font-medium text-gray-600">On Track</CardTitle>
+                <CheckCircle2 className="h-4 w-4 text-foreground" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-green-600 dark:text-green-400">{jobHealthData[0].value}</div>
-              <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Jobs progressing well</p>
+              <div className="text-3xl font-bold text-foreground">{jobHealthData[0].value}</div>
+              <p className="text-xs text-gray-500 mt-1">Jobs progressing well</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20">
+          <Card className="bg-gradient-to-br from-muted/10 to-background/5 border-border/20">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">At Risk</CardTitle>
-                <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <CardTitle className="text-sm font-medium text-gray-600">At Risk</CardTitle>
+                <AlertTriangle className="h-4 w-4 text-foreground dark:text-foreground" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">{jobHealthData[1].value}</div>
-              <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Require attention</p>
+              <div className="text-3xl font-bold text-foreground dark:text-foreground">{jobHealthData[1].value}</div>
+              <p className="text-xs text-gray-500 mt-1">Require attention</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-red-500/10 to-red-500/5 border-red-500/20">
+          <Card className="bg-gradient-to-br from-destructive/10 to-background/5 border-destructive/20">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">Lost</CardTitle>
-                <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                <CardTitle className="text-sm font-medium text-gray-600">Lost</CardTitle>
+                <XCircle className="h-4 w-4 text-destructive" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-red-600 dark:text-red-400">{jobHealthData[2].value}</div>
-              <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Opportunities missed</p>
+              <div className="text-3xl font-bold text-destructive">{jobHealthData[2].value}</div>
+              <p className="text-xs text-gray-500 mt-1">Opportunities missed</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
+          <Card className="bg-gradient-to-br from-muted/10 to-background/5 border-border/20">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">Completed</CardTitle>
-                <Briefcase className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <CardTitle className="text-sm font-medium text-gray-600">Completed</CardTitle>
+                <Briefcase className="h-4 w-4 text-foreground dark:text-foreground" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{jobHealthData[3].value}</div>
-              <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Successfully filled</p>
+              <div className="text-3xl font-bold text-foreground dark:text-foreground">{jobHealthData[3].value}</div>
+              <p className="text-xs text-gray-500 mt-1">Successfully filled</p>
             </CardContent>
           </Card>
         </div>
 
         <Card className="bg-card border-border mb-8">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
-              <Users className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+            <CardTitle className="flex items-center gap-2 text-gray-900">
+              <Users className="h-5 w-5 text-foreground dark:text-foreground" />
               Talent Pipeline (Live Data)
             </CardTitle>
             <CardDescription>
@@ -452,7 +452,7 @@ export default function RecruitmentDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-gray-900 dark:text-gray-100">Employer Type Share</CardTitle>
+              <CardTitle className="text-gray-900">Employer Type Share</CardTitle>
               <CardDescription>Distribution of placements by industry sector</CardDescription>
             </CardHeader>
             <CardContent>
@@ -482,7 +482,7 @@ export default function RecruitmentDashboard() {
 
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-gray-900 dark:text-gray-100">Fit Scores</CardTitle>
+              <CardTitle className="text-gray-900">Fit Scores</CardTitle>
               <CardDescription>
                 Candidate suitability ratings
               </CardDescription>
@@ -507,7 +507,7 @@ export default function RecruitmentDashboard() {
         <div className="mb-8">
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-xl text-gray-900 dark:text-gray-100">Custom Analytics</CardTitle>
+              <CardTitle className="text-xl text-gray-900">Custom Analytics</CardTitle>
               <CardDescription>
                 Build your own charts by selecting data sources and fields
               </CardDescription>
@@ -527,25 +527,25 @@ export default function RecruitmentDashboard() {
       <Dialog open={selectedModal === 'revenue'} onOpenChange={() => setSelectedModal(null)}>
         <DialogContent className="bg-card border-border max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="text-gray-900 dark:text-gray-100">Revenue Details</DialogTitle>
+            <DialogTitle className="text-gray-900">Revenue Details</DialogTitle>
             <DialogDescription>
               Monthly revenue breakdown
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-4 text-sm font-semibold border-b border-border pb-2 text-gray-700 dark:text-gray-300">
+            <div className="grid grid-cols-3 gap-4 text-sm font-semibold border-b border-border pb-2 text-gray-700">
               <div>Month</div>
               <div>Placements</div>
               <div>Revenue</div>
             </div>
             {monthlyData.map((month) => (
-              <div key={month.month} className="grid grid-cols-3 gap-4 text-sm text-gray-600 dark:text-gray-400">
+              <div key={month.month} className="grid grid-cols-3 gap-4 text-sm text-gray-600">
                 <div>{month.month}</div>
                 <div>{month.placements}</div>
                 <div>R{(month.revenue / 1000).toFixed(0)}k</div>
               </div>
             ))}
-            <div className="pt-4 border-t border-border font-bold text-gray-900 dark:text-gray-100">
+            <div className="pt-4 border-t border-border font-bold text-gray-900">
               <div className="grid grid-cols-3 gap-4">
                 <div>Total</div>
                 <div>{totalPlacements}</div>
@@ -559,7 +559,7 @@ export default function RecruitmentDashboard() {
       <Dialog open={selectedModal === 'jobs'} onOpenChange={() => setSelectedModal(null)}>
         <DialogContent className="bg-card border-border max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-gray-900 dark:text-gray-100">Active Job Searches</DialogTitle>
+            <DialogTitle className="text-gray-900">Active Job Searches</DialogTitle>
             <DialogDescription>
               {activeJobs.length} active job openings
             </DialogDescription>
@@ -568,16 +568,16 @@ export default function RecruitmentDashboard() {
             {activeJobs.length > 0 ? (
               activeJobs.map((job) => (
                 <div key={job.id} className="p-4 bg-muted/50 rounded-lg border border-border">
-                  <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">{job.title}</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{job.location || 'Location not specified'}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{job.department} &bull; {job.status}</p>
+                  <h3 className="font-semibold text-lg text-gray-900">{job.title}</h3>
+                  <p className="text-sm text-gray-500 mt-1">{job.location || 'Location not specified'}</p>
+                  <p className="text-sm text-gray-500">{job.department} &bull; {job.status}</p>
                   {job.description && (
-                    <p className="text-sm mt-2 text-gray-600 dark:text-gray-300 line-clamp-2">{job.description}</p>
+                    <p className="text-sm mt-2 text-gray-600 line-clamp-2">{job.description}</p>
                   )}
                 </div>
               ))
             ) : (
-              <p className="text-gray-500 dark:text-gray-400 text-center py-8">No active jobs found</p>
+              <p className="text-gray-500 text-center py-8">No active jobs found</p>
             )}
           </div>
         </DialogContent>
@@ -586,7 +586,7 @@ export default function RecruitmentDashboard() {
       <Dialog open={selectedModal === 'candidates'} onOpenChange={() => setSelectedModal(null)}>
         <DialogContent className="bg-card border-border max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-gray-900 dark:text-gray-100">All Candidates</DialogTitle>
+            <DialogTitle className="text-gray-900">All Candidates</DialogTitle>
             <DialogDescription>
               {totalCandidates} candidates in the system
             </DialogDescription>
@@ -597,14 +597,14 @@ export default function RecruitmentDashboard() {
                 <div key={candidate.id} className="p-4 bg-muted/50 rounded-lg border border-border">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 dark:text-gray-100">{candidate.fullName}</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{candidate.email}</p>
-                      {candidate.phone && <p className="text-sm text-gray-500 dark:text-gray-400">{candidate.phone}</p>}
+                      <h3 className="font-semibold text-gray-900">{candidate.fullName}</h3>
+                      <p className="text-sm text-gray-500">{candidate.email}</p>
+                      {candidate.phone && <p className="text-sm text-gray-500">{candidate.phone}</p>}
                       {candidate.role && <p className="text-sm text-gray-500 mt-1">{candidate.role}</p>}
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <Badge className="bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/20">{candidate.stage}</Badge>
+                        <Badge className="bg-muted/15 text-foreground dark:text-foreground border-border/20">{candidate.stage}</Badge>
                         <p className="text-xs text-gray-500 mt-1">{candidate.status}</p>
                       </div>
                       <Link href={`/candidates/${candidate.id}`}>
@@ -623,7 +623,7 @@ export default function RecruitmentDashboard() {
                 </div>
               ))
             ) : (
-              <p className="text-gray-500 dark:text-gray-400 text-center py-8">No candidates found</p>
+              <p className="text-gray-500 text-center py-8">No candidates found</p>
             )}
           </div>
         </DialogContent>
@@ -632,7 +632,7 @@ export default function RecruitmentDashboard() {
       <Dialog open={selectedModal === 'shortlisted'} onOpenChange={() => setSelectedModal(null)}>
         <DialogContent className="bg-card border-border max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-gray-900 dark:text-gray-100">Shortlisted Candidates</DialogTitle>
+            <DialogTitle className="text-gray-900">Shortlisted Candidates</DialogTitle>
             <DialogDescription>
               {totalShortlisted} candidates in shortlist stage
             </DialogDescription>
@@ -642,13 +642,13 @@ export default function RecruitmentDashboard() {
               <div key={candidate.id} className="p-4 bg-muted/50 rounded-lg border border-border">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">{candidate.fullName}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{candidate.email}</p>
-                    {candidate.phone && <p className="text-sm text-gray-500 dark:text-gray-400">{candidate.phone}</p>}
+                    <h3 className="font-semibold text-gray-900">{candidate.fullName}</h3>
+                    <p className="text-sm text-gray-500">{candidate.email}</p>
+                    {candidate.phone && <p className="text-sm text-gray-500">{candidate.phone}</p>}
                     {candidate.role && <p className="text-sm text-gray-500 mt-1">{candidate.role}</p>}
                   </div>
                   <div className="flex items-center gap-3">
-                    <Badge className="bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/20">{candidate.status}</Badge>
+                    <Badge className="bg-muted/15 text-foreground dark:text-foreground border-border/20">{candidate.status}</Badge>
                     <Link href={`/candidates/${candidate.id}`}>
                       <Button 
                         size="sm" 
@@ -665,7 +665,7 @@ export default function RecruitmentDashboard() {
               </div>
             ))}
             {totalShortlisted === 0 && (
-              <p className="text-gray-500 dark:text-gray-400 text-center py-8">No shortlisted candidates</p>
+              <p className="text-gray-500 text-center py-8">No shortlisted candidates</p>
             )}
           </div>
         </DialogContent>
@@ -674,7 +674,7 @@ export default function RecruitmentDashboard() {
       <Dialog open={selectedModal === 'placements'} onOpenChange={() => setSelectedModal(null)}>
         <DialogContent className="bg-card border-border max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-gray-900 dark:text-gray-100">Successful Placements</DialogTitle>
+            <DialogTitle className="text-gray-900">Successful Placements</DialogTitle>
             <DialogDescription>
               {totalHired} candidates successfully hired
             </DialogDescription>
@@ -684,12 +684,12 @@ export default function RecruitmentDashboard() {
               <div key={candidate.id} className="p-4 bg-muted/50 rounded-lg border border-border">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">{candidate.fullName}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{candidate.email}</p>
+                    <h3 className="font-semibold text-gray-900">{candidate.fullName}</h3>
+                    <p className="text-sm text-gray-500">{candidate.email}</p>
                     {candidate.role && <p className="text-sm text-gray-500 mt-1">{candidate.role}</p>}
                   </div>
                   <div className="flex items-center gap-3">
-                    <Badge className="bg-green-500/15 text-green-700 dark:text-green-300 border-green-500/20">Hired</Badge>
+                    <Badge className="bg-muted/15 text-foreground border-border/20">Hired</Badge>
                     <Link href={`/candidates/${candidate.id}`}>
                       <Button 
                         size="sm" 
@@ -706,7 +706,7 @@ export default function RecruitmentDashboard() {
               </div>
             ))}
             {totalHired === 0 && (
-              <p className="text-gray-500 dark:text-gray-400 text-center py-8">No placements yet</p>
+              <p className="text-gray-500 text-center py-8">No placements yet</p>
             )}
           </div>
         </DialogContent>
@@ -715,7 +715,7 @@ export default function RecruitmentDashboard() {
       <Dialog open={selectedModal === 'lost'} onOpenChange={() => setSelectedModal(null)}>
         <DialogContent className="bg-card border-border max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-gray-900 dark:text-gray-100">Lost Candidates</DialogTitle>
+            <DialogTitle className="text-gray-900">Lost Candidates</DialogTitle>
             <DialogDescription>
               {totalLost} candidates marked as lost or rejected
             </DialogDescription>
@@ -725,13 +725,13 @@ export default function RecruitmentDashboard() {
               <div key={candidate.id} className="p-4 bg-muted/50 rounded-lg border border-border">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">{candidate.fullName}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{candidate.email}</p>
+                    <h3 className="font-semibold text-gray-900">{candidate.fullName}</h3>
+                    <p className="text-sm text-gray-500">{candidate.email}</p>
                     {candidate.role && <p className="text-sm text-gray-500 mt-1">{candidate.role}</p>}
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-right">
-                      <Badge className="bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/20">{candidate.stage}</Badge>
+                      <Badge className="bg-destructive/15 text-destructive border-destructive/20">{candidate.stage}</Badge>
                       <p className="text-xs text-gray-500 mt-1">{candidate.status}</p>
                     </div>
                     <Link href={`/candidates/${candidate.id}`}>
@@ -750,7 +750,7 @@ export default function RecruitmentDashboard() {
               </div>
             ))}
             {totalLost === 0 && (
-              <p className="text-gray-500 dark:text-gray-400 text-center py-8">No lost candidates</p>
+              <p className="text-gray-500 text-center py-8">No lost candidates</p>
             )}
           </div>
         </DialogContent>

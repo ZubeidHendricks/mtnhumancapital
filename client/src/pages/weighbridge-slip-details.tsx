@@ -34,7 +34,7 @@ export default function WeighbridgeSlipDetails() {
         <div className="max-w-7xl mx-auto">
           <Card>
             <CardContent className="p-8 text-center">
-              <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+              <AlertTriangle className="h-12 w-12 text-foreground mx-auto mb-4" />
               <h2 className="text-xl font-semibold mb-2">Slip Not Found</h2>
               <p className="text-muted-foreground mb-4">The weighbridge slip you're looking for doesn't exist.</p>
               <Button onClick={() => setLocation("/weighbridge")}>
@@ -102,19 +102,19 @@ export default function WeighbridgeSlipDetails() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
                 <div className="text-sm text-muted-foreground">Gross Weight</div>
-                <div className="text-2xl font-bold text-blue-600">
+                <div className="text-2xl font-bold text-foreground">
                   {slip.grossWeight ? `${slip.grossWeight.toLocaleString()} kg` : "N/A"}
                 </div>
               </div>
               <div className="space-y-2">
                 <div className="text-sm text-muted-foreground">Tare Weight</div>
-                <div className="text-2xl font-bold text-green-600">
+                <div className="text-2xl font-bold text-foreground">
                   {slip.tareWeight ? `${slip.tareWeight.toLocaleString()} kg` : "N/A"}
                 </div>
               </div>
               <div className="space-y-2">
                 <div className="text-sm text-muted-foreground">Net Weight</div>
-                <div className="text-2xl font-bold text-blue-600">
+                <div className="text-2xl font-bold text-foreground">
                   {slip.netWeight ? `${slip.netWeight.toLocaleString()} kg` : "N/A"}
                 </div>
               </div>
@@ -266,7 +266,7 @@ export default function WeighbridgeSlipDetails() {
                             <td className="py-3 px-4 font-medium">{item.plateNumber}</td>
                             <td className="py-3 px-4 text-right">{item.firstWeight?.toLocaleString()}</td>
                             <td className="py-3 px-4 text-right">{item.finalWeight?.toLocaleString()}</td>
-                            <td className={`py-3 px-4 text-right font-semibold ${item.netWeight < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                            <td className={`py-3 px-4 text-right font-semibold ${item.netWeight < 0 ? 'text-destructive' : 'text-foreground'}`}>
                               {item.netWeight?.toLocaleString()}
                             </td>
                           </tr>

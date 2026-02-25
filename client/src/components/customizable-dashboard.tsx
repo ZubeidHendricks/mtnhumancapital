@@ -676,7 +676,7 @@ export function CustomizableDashboard({
                           onClick={() => handleDeleteChart(chart.id)}
                           data-testid={`button-delete-custom-${chart.id}`}
                         >
-                          <Trash2 className="w-4 h-4 text-red-500" />
+                          <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>
                       </div>
                     </CardHeader>

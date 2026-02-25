@@ -92,15 +92,15 @@ function getDocTypeLabel(docType: string): string {
 function getStatusBadge(status: string) {
   switch (status) {
     case 'pending':
-      return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pending</Badge>;
+      return <Badge variant="outline" className="bg-muted text-foreground border-border">Pending</Badge>;
     case 'requested':
-      return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Requested</Badge>;
+      return <Badge variant="outline" className="bg-muted text-foreground border-border">Requested</Badge>;
     case 'received':
-      return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Received</Badge>;
+      return <Badge variant="outline" className="bg-muted text-foreground border-border">Received</Badge>;
     case 'verified':
-      return <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">Verified</Badge>;
+      return <Badge variant="outline" className="bg-muted text-foreground border-border">Verified</Badge>;
     case 'rejected':
-      return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Rejected</Badge>;
+      return <Badge variant="outline" className="bg-destructive text-destructive border-destructive">Rejected</Badge>;
     case 'expired':
       return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Expired</Badge>;
     default:
@@ -777,7 +777,7 @@ export default function CandidateDetail() {
                     href={candidate.linkedinUrl} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-sm text-blue-600 hover:underline block"
+                    className="text-sm text-foreground hover:underline block"
                   >
                     View Profile
                   </a>
@@ -895,7 +895,7 @@ export default function CandidateDetail() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Mic className="h-5 w-5 text-blue-500" />
+                <Mic className="h-5 w-5 text-foreground" />
                 Voice Interviews
               </CardTitle>
               <CardDescription>
@@ -917,10 +917,10 @@ export default function CandidateDetail() {
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
                                 <div className={`w-3 h-3 rounded-full ${
-                                  session.status === 'completed' ? 'bg-green-500' :
-                                  session.status === 'started' ? 'bg-yellow-500' :
+                                  session.status === 'completed' ? 'bg-muted' :
+                                  session.status === 'started' ? 'bg-muted' :
                                   session.status === 'expired' ? 'bg-gray-500' :
-                                  'bg-blue-500'
+                                  'bg-muted'
                                 }`} />
                                 <div>
                                   <p className="font-medium text-sm">
@@ -946,7 +946,7 @@ export default function CandidateDetail() {
                                   {session.status}
                                 </Badge>
                                 {session.overallScore && (
-                                  <Badge variant="secondary" className="bg-blue-500/20 text-blue-600 dark:text-blue-400">
+                                  <Badge variant="secondary" className="bg-muted/20 text-foreground dark:text-foreground">
                                     Score: {session.overallScore}%
                                   </Badge>
                                 )}
@@ -998,8 +998,8 @@ export default function CandidateDetail() {
                                       className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                                     >
                                       {msg.role !== 'user' && (
-                                        <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                                          <Bot className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                                        <div className="w-6 h-6 rounded-full bg-muted/20 flex items-center justify-center flex-shrink-0">
+                                          <Bot className="h-3 w-3 text-foreground dark:text-foreground" />
                                         </div>
                                       )}
                                       <div className={`max-w-[80%] rounded-lg px-3 py-2 ${
@@ -1048,7 +1048,7 @@ export default function CandidateDetail() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
-                  <FileCheck className="h-5 w-5 text-blue-500" />
+                  <FileCheck className="h-5 w-5 text-foreground" />
                   Document Tracking
                 </CardTitle>
                 <CardDescription>
@@ -1121,7 +1121,7 @@ export default function CandidateDetail() {
               {/* Pending Requirements */}
               <div>
                 <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 text-yellow-500" />
+                  <AlertCircle className="h-4 w-4 text-foreground" />
                   Pending Requirements ({documentRequirements.filter(r => r.status === 'pending' || r.status === 'requested').length})
                 </h4>
                 {documentRequirements.filter(r => r.status === 'pending' || r.status === 'requested').length > 0 ? (
@@ -1186,7 +1186,7 @@ export default function CandidateDetail() {
               {/* Collected Documents */}
               <div>
                 <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <CheckCircle className="h-4 w-4 text-foreground" />
                   Collected Documents ({collectedDocuments.length})
                 </h4>
                 {collectedDocuments.length > 0 ? (
@@ -1229,7 +1229,7 @@ export default function CandidateDetail() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="text-blue-600"
+                                className="text-foreground"
                                 onClick={async () => {
                                   try {
                                     const response = await fetch(`/api/candidate-documents/${doc.id}/download`);
@@ -1260,7 +1260,7 @@ export default function CandidateDetail() {
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className="text-green-600"
+                                    className="text-foreground"
                                     onClick={() => handleVerifyDocument(doc.id, true)}
                                     data-testid={`button-verify-${doc.id}`}
                                   >
@@ -1269,7 +1269,7 @@ export default function CandidateDetail() {
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className="text-red-600"
+                                    className="text-destructive"
                                     onClick={() => handleVerifyDocument(doc.id, false)}
                                     data-testid={`button-reject-${doc.id}`}
                                   >
@@ -1296,7 +1296,7 @@ export default function CandidateDetail() {
                   <Separator />
                   <div>
                     <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-emerald-500" />
+                      <FileText className="h-4 w-4 text-foreground" />
                       Completed Requirements ({documentRequirements.filter(r => r.status === 'received' || r.status === 'verified').length})
                     </h4>
                     <div className="flex flex-wrap gap-2">
@@ -1306,7 +1306,7 @@ export default function CandidateDetail() {
                           <Badge
                             key={req.id}
                             variant="outline"
-                            className="bg-green-50 text-green-700 border-green-200"
+                            className="bg-muted text-foreground border-border"
                             data-testid={`badge-completed-${req.id}`}
                           >
                             <CheckCircle className="h-3 w-3 mr-1" />
@@ -1328,7 +1328,7 @@ export default function CandidateDetail() {
           <DialogHeader className="px-6 py-4 border-b">
             <div className="flex items-center justify-between">
               <DialogTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5 text-green-500" />
+                <MessageSquare className="h-5 w-5 text-foreground" />
                 WhatsApp Conversations - {candidate.fullName}
               </DialogTitle>
               {activeConversation && (
@@ -1377,11 +1377,11 @@ export default function CandidateDetail() {
 
           {/* Reference Codes Panel */}
           {documentRequirements.filter(r => r.status === 'pending' || r.status === 'requested').length > 0 && (
-            <div className="px-4 py-3 bg-amber-50 border-b border-amber-200">
+            <div className="px-4 py-3 bg-muted border-b border-border">
               <div className="flex items-center gap-2 mb-2">
-                <FileUp className="h-4 w-4 text-amber-600" />
-                <span className="text-sm font-medium text-amber-800">Active Document Requests</span>
-                <Badge variant="outline" className="text-xs bg-amber-100 text-amber-700 border-amber-300">
+                <FileUp className="h-4 w-4 text-foreground" />
+                <span className="text-sm font-medium text-foreground">Active Document Requests</span>
+                <Badge variant="outline" className="text-xs bg-muted text-foreground border-border">
                   {documentRequirements.filter(r => r.status === 'pending' || r.status === 'requested').length} pending
                 </Badge>
               </div>
@@ -1391,7 +1391,7 @@ export default function CandidateDetail() {
                   .map((req) => (
                     <div 
                       key={req.id}
-                      className="flex items-center justify-between px-3 py-2 rounded-md text-sm bg-white border border-amber-200"
+                      className="flex items-center justify-between px-3 py-2 rounded-md text-sm bg-white border border-border"
                     >
                       <div className="flex items-center gap-2">
                         <code className="text-xs font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-700">
@@ -1402,7 +1402,7 @@ export default function CandidateDetail() {
                         </span>
                       </div>
                       {req.dueDate && (
-                        <span className="text-xs text-amber-600">
+                        <span className="text-xs text-foreground">
                           Due: {format(new Date(req.dueDate), 'MMM d')}
                         </span>
                       )}
@@ -1474,17 +1474,17 @@ export default function CandidateDetail() {
                         <div className={`max-w-[70%] rounded-lg px-4 py-2 ${
                           msg.direction === 'outbound'
                             ? msg.senderType === 'ai' 
-                              ? 'bg-blue-100 text-blue-900' 
-                              : 'bg-blue-100 text-blue-900'
+                              ? 'bg-muted text-foreground' 
+                              : 'bg-muted text-foreground'
                             : 'bg-gray-100 text-gray-900'
                         }`}>
                           {msg.senderType === 'ai' && msg.direction === 'outbound' && (
-                            <div className="text-xs text-blue-600 mb-1 flex items-center gap-1">
+                            <div className="text-xs text-foreground mb-1 flex items-center gap-1">
                               <Bot className="h-3 w-3" /> AI
                             </div>
                           )}
                           {msg.senderType === 'human' && msg.direction === 'outbound' && (
-                            <div className="text-xs text-blue-600 mb-1 flex items-center gap-1">
+                            <div className="text-xs text-foreground mb-1 flex items-center gap-1">
                               <UserCheck className="h-3 w-3" /> HR
                             </div>
                           )}
@@ -1515,12 +1515,12 @@ export default function CandidateDetail() {
                         </div>
                         {msg.direction === 'outbound' && (
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                            msg.senderType === 'ai' ? 'bg-blue-200' : 'bg-blue-200'
+                            msg.senderType === 'ai' ? 'bg-muted' : 'bg-muted'
                           }`}>
                             {msg.senderType === 'ai' ? (
-                              <Bot className="h-4 w-4 text-blue-600" />
+                              <Bot className="h-4 w-4 text-foreground" />
                             ) : (
-                              <UserCheck className="h-4 w-4 text-blue-600" />
+                              <UserCheck className="h-4 w-4 text-foreground" />
                             )}
                           </div>
                         )}

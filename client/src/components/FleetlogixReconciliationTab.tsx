@@ -305,8 +305,8 @@ export function FleetlogixReconciliationTab() {
                         <span>Variance:</span>
                         <span className={`font-bold ${
                           (parseFloat(formData.actualAmount) - (parseFloat(formData.distance) * parseFloat(formData.normalRate))) > 0
-                            ? "text-red-600"
-                            : "text-green-600"
+                            ? "text-destructive"
+                            : "text-foreground"
                         }`}>
                           R {(parseFloat(formData.actualAmount) - (parseFloat(formData.distance) * parseFloat(formData.normalRate))).toFixed(2)}
                         </span>
@@ -355,7 +355,7 @@ export function FleetlogixReconciliationTab() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pending Review</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-yellow-500" />
+            <AlertTriangle className="h-4 w-4 text-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{pendingCount}</div>
@@ -365,7 +365,7 @@ export function FleetlogixReconciliationTab() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Approved</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
+            <CheckCircle className="h-4 w-4 text-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{approvedCount}</div>
@@ -378,7 +378,7 @@ export function FleetlogixReconciliationTab() {
             <FileCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${totalVariance > 0 ? "text-red-600" : "text-green-600"}`}>
+            <div className={`text-2xl font-bold ${totalVariance > 0 ? "text-destructive" : "text-foreground"}`}>
               R {totalVariance.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">For {selectedMonth}</p>
@@ -429,23 +429,23 @@ export function FleetlogixReconciliationTab() {
                     <TableCell className="text-right">R {Number(item.calculatedAmount).toFixed(2)}</TableCell>
                     <TableCell className="text-right">R {Number(item.actualAmount).toFixed(2)}</TableCell>
                     <TableCell className={`text-right font-semibold ${
-                      Number(item.variance) > 0 ? "text-red-600" : "text-green-600"
+                      Number(item.variance) > 0 ? "text-destructive" : "text-foreground"
                     }`}>
                       R {Number(item.variance).toFixed(2)}
                     </TableCell>
                     <TableCell>
                       {item.reconciliationStatus === "approved" ? (
-                        <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-green-100 text-green-800">
+                        <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-muted text-foreground">
                           <CheckCircle className="mr-1 h-3 w-3" />
                           Approved
                         </span>
                       ) : item.reconciliationStatus === "rejected" ? (
-                        <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-red-100 text-red-800">
+                        <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-destructive text-destructive">
                           <XCircle className="mr-1 h-3 w-3" />
                           Rejected
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-yellow-100 text-yellow-800">
+                        <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-muted text-foreground">
                           <AlertTriangle className="mr-1 h-3 w-3" />
                           Pending
                         </span>

@@ -303,17 +303,17 @@ export default function SystemDocs() {
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="p-4 border rounded-lg text-center">
-                        <Trophy className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
+                        <Trophy className="h-8 w-8 text-foreground mx-auto mb-2" />
                         <h4 className="font-semibold">Leaderboards</h4>
                         <p className="text-sm text-muted-foreground">Top performers by points</p>
                       </div>
                       <div className="p-4 border rounded-lg text-center">
-                        <Award className="h-8 w-8 text-blue-500 mx-auto mb-2" />
+                        <Award className="h-8 w-8 text-foreground mx-auto mb-2" />
                         <h4 className="font-semibold">Badges</h4>
                         <p className="text-sm text-muted-foreground">Achievement unlocks</p>
                       </div>
                       <div className="p-4 border rounded-lg text-center">
-                        <Zap className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                        <Zap className="h-8 w-8 text-foreground mx-auto mb-2" />
                         <h4 className="font-semibold">Streaks</h4>
                         <p className="text-sm text-muted-foreground">Learning consistency</p>
                       </div>
@@ -471,15 +471,15 @@ export default function SystemDocs() {
                     </p>
                     <ul className="space-y-2">
                       <li className="flex items-start gap-2">
-                        <div className="h-2 w-2 rounded-full bg-red-500 mt-2" />
+                        <div className="h-2 w-2 rounded-full bg-destructive mt-2" />
                         <div>Change payment status to "Suspended"</div>
                       </li>
                       <li className="flex items-start gap-2">
-                        <div className="h-2 w-2 rounded-full bg-red-500 mt-2" />
+                        <div className="h-2 w-2 rounded-full bg-destructive mt-2" />
                         <div>Disable specific modules (e.g., turn off LMS)</div>
                       </li>
                       <li className="flex items-start gap-2">
-                        <div className="h-2 w-2 rounded-full bg-red-500 mt-2" />
+                        <div className="h-2 w-2 rounded-full bg-destructive mt-2" />
                         <div>Downgrade subscription tier</div>
                       </li>
                     </ul>

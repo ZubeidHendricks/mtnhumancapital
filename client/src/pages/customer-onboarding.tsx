@@ -300,7 +300,7 @@ export default function CustomerOnboarding() {
                        </div>
                        <div className="flex items-center justify-between text-xs text-muted-foreground bg-black/20 p-2 rounded">
                           <span>Status:</span>
-                          <span className="text-green-600 dark:text-green-400 flex items-center gap-1"><div className="w-2 h-2 bg-green-500 rounded-full"/> Connected</span>
+                          <span className="text-foreground flex items-center gap-1"><div className="w-2 h-2 bg-muted rounded-full"/> Connected</span>
                        </div>
                     </div>
 
@@ -334,7 +334,7 @@ export default function CustomerOnboarding() {
 
                     <div className="p-4 rounded-lg border border-border dark:border-white/10 bg-white/5 space-y-4">
                        <div className="flex items-center gap-3">
-                         <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center font-bold text-white">Z</div>
+                         <div className="w-8 h-8 bg-muted rounded flex items-center justify-center font-bold text-white">Z</div>
                          <div className="flex-1">
                            <h4 className="text-sm font-medium">Zoho Finance</h4>
                            <p className="text-xs text-muted-foreground">For payroll & expense sync</p>
@@ -371,7 +371,7 @@ export default function CustomerOnboarding() {
                 <Button 
                   onClick={handleLaunchTenant}
                   disabled={saveTenantMutation.isPending || !formData.companyName}
-                  className="bg-green-600 hover:bg-green-500 text-white shadow-[0_0_20px_-5px_rgba(22,163,74,0.5)]"
+                  className="bg-muted hover:bg-muted text-white shadow-[0_0_20px_-5px_rgba(22,163,74,0.5)]"
                 >
                   {saveTenantMutation.isPending ? (
                     <>

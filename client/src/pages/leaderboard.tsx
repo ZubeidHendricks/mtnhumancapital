@@ -33,19 +33,19 @@ export default function Leaderboard() {
   });
 
   const getRankIcon = (rank: number) => {
-    if (rank === 1) return <Trophy className="h-6 w-6 text-yellow-500" />;
+    if (rank === 1) return <Trophy className="h-6 w-6 text-foreground" />;
     if (rank === 2) return <Medal className="h-6 w-6 text-gray-400" />;
-    if (rank === 3) return <Medal className="h-6 w-6 text-teal-400" />;
+    if (rank === 3) return <Medal className="h-6 w-6 text-foreground" />;
     return <span className="text-lg font-bold text-muted-foreground">#{rank}</span>;
   };
 
   const getAchievementIcon = (type: string) => {
     const icons = {
-      badge: <Badge className="h-8 w-8 text-blue-500" />,
-      award: <Award className="h-8 w-8 text-blue-500" />,
-      milestone: <Star className="h-8 w-8 text-yellow-500" />,
+      badge: <Badge className="h-8 w-8 text-foreground" />,
+      award: <Award className="h-8 w-8 text-foreground" />,
+      milestone: <Star className="h-8 w-8 text-foreground" />,
     };
-    return icons[type as keyof typeof icons] || <Zap className="h-8 w-8 text-green-500" />;
+    return icons[type as keyof typeof icons] || <Zap className="h-8 w-8 text-foreground" />;
   };
 
   return (
@@ -165,8 +165,8 @@ export default function Leaderboard() {
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-full bg-blue-100">
-                    <Trophy className="h-6 w-6 text-blue-600" />
+                  <div className="p-3 rounded-full bg-muted">
+                    <Trophy className="h-6 w-6 text-foreground" />
                   </div>
                   <div>
                     <p className="text-2xl font-bold">
@@ -181,8 +181,8 @@ export default function Leaderboard() {
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-full bg-blue-100">
-                    <Award className="h-6 w-6 text-blue-600" />
+                  <div className="p-3 rounded-full bg-muted">
+                    <Award className="h-6 w-6 text-foreground" />
                   </div>
                   <div>
                     <p className="text-2xl font-bold">
@@ -197,8 +197,8 @@ export default function Leaderboard() {
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-full bg-yellow-100">
-                    <Star className="h-6 w-6 text-yellow-600" />
+                  <div className="p-3 rounded-full bg-muted">
+                    <Star className="h-6 w-6 text-foreground" />
                   </div>
                   <div>
                     <p className="text-2xl font-bold">

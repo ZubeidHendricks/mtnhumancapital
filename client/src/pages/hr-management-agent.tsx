@@ -185,7 +185,7 @@ export default function HRManagementAgent() {
                       >
                         <div className="flex items-start gap-3">
                           <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 bg-background ${
-                            step.status === "completed" ? "border-green-500 text-green-500" : 
+                            step.status === "completed" ? "border-border text-foreground" : 
                             step.status === "processing" ? "border-primary text-primary animate-pulse" : 
                             "border-muted text-muted-foreground"
                           }`}>
@@ -225,7 +225,7 @@ export default function HRManagementAgent() {
               <CardHeader className="border-b border-border dark:border-white/5 py-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                    <div className="w-2 h-2 rounded-full bg-muted animate-pulse" />
                     <div>
                       <CardTitle className="text-base">HR Management Agent</CardTitle>
                       <CardDescription className="text-xs">Performance, Payroll & Analytics Engine</CardDescription>
@@ -336,15 +336,15 @@ export default function HRManagementAgent() {
                               <span className="font-bold text-foreground">{metric.value}%</span>
                             </div>
                             <Progress value={metric.value} className={`h-2 ${
-                              metric.category === "performance" ? "text-indigo-500" : 
-                              metric.category === "satisfaction" ? "text-pink-500" : 
-                              "text-amber-500"
+                              metric.category === "performance" ? "text-foreground" : 
+                              metric.category === "satisfaction" ? "text-foreground" : 
+                              "text-foreground"
                             }`} />
                             <div className="text-xs flex justify-end">
                               {metric.trend === "up" ? (
-                                <span className="text-green-600 dark:text-green-400 flex items-center gap-1">Trending Up <TrendingUp className="w-3 h-3" /></span>
+                                <span className="text-foreground flex items-center gap-1">Trending Up <TrendingUp className="w-3 h-3" /></span>
                               ) : metric.trend === "down" ? (
-                                <span className="text-red-600 dark:text-red-400 flex items-center gap-1">Needs Attention <TrendingUp className="w-3 h-3 rotate-180" /></span>
+                                <span className="text-destructive flex items-center gap-1">Needs Attention <TrendingUp className="w-3 h-3 rotate-180" /></span>
                               ) : (
                                 <span className="text-muted-foreground">Stable</span>
                               )}

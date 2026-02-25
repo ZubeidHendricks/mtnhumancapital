@@ -106,11 +106,11 @@ export default function ShortlistedCandidates() {
   // Helper function to get source color
   const getSourceColor = (source: string) => {
     const sourceColors: Record<string, string> = {
-      "Recruited": "text-blue-600 dark:text-blue-400 bg-blue-400/10",
-      "Uploaded": "text-green-600 dark:text-green-400 bg-green-400/10",
-      "Referral": "text-blue-600 dark:text-blue-400 bg-blue-400/10",
-      "LinkedIn": "text-blue-500 bg-blue-500/10",
-      "Direct": "text-yellow-600 dark:text-yellow-400 bg-yellow-400/10"
+      "Recruited": "text-foreground dark:text-foreground bg-muted/10",
+      "Uploaded": "text-foreground bg-muted/10",
+      "Referral": "text-foreground dark:text-foreground bg-muted/10",
+      "LinkedIn": "text-foreground bg-muted/10",
+      "Direct": "text-foreground bg-muted/10"
     };
     return sourceColors[source] || "text-gray-400 bg-gray-400/10";
   };
@@ -118,9 +118,9 @@ export default function ShortlistedCandidates() {
   // Helper function to get match badge color
   const getMatchColor = (match: number | null | undefined) => {
     if (!match) return "text-gray-400 bg-gray-400/10";
-    if (match >= 80) return "text-green-600 dark:text-green-400 bg-green-400/10";
-    if (match >= 60) return "text-yellow-600 dark:text-yellow-400 bg-yellow-400/10";
-    return "text-red-600 dark:text-red-400 bg-red-400/10";
+    if (match >= 80) return "text-foreground bg-muted/10";
+    if (match >= 60) return "text-foreground bg-muted/10";
+    return "text-destructive bg-destructive/10";
   };
 
   return (
@@ -138,7 +138,7 @@ export default function ShortlistedCandidates() {
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
-              <div className="h-10 w-10 bg-yellow-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+              <div className="h-10 w-10 bg-muted rounded-lg flex items-center justify-center text-white font-bold text-lg">
                 <Star className="h-6 w-6" />
               </div>
               <div>
@@ -205,7 +205,7 @@ export default function ShortlistedCandidates() {
                     {/* Left: Avatar & Info */}
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <Avatar className="h-10 w-10 border-2 border-border dark:border-white/20">
-                        <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-blue-600 text-white font-semibold">
+                        <AvatarFallback className="bg-gradient-to-br from-muted to-background text-white font-semibold">
                           {candidate.fullName?.split(' ')?.map((n: string) => n[0])?.join('')?.toUpperCase() || '?'}
                         </AvatarFallback>
                       </Avatar>
@@ -232,7 +232,7 @@ export default function ShortlistedCandidates() {
                           {candidate.match}% Match
                         </Badge>
                       )}
-                      <Star className="h-4 w-4 text-yellow-600 dark:text-yellow-400 fill-yellow-400" />
+                      <Star className="h-4 w-4 text-foreground fill-yellow-400" />
                     </div>
 
                     {/* Right: Contact Icons & Actions */}
@@ -349,7 +349,7 @@ MTN - Human Capital Team`}
             <Button variant="outline" className="border-border dark:border-white/10" onClick={() => setInviteOpen(false)}>
               Cancel
             </Button>
-            <Button className="bg-indigo-600 hover:bg-indigo-500" onClick={handleSendInvite}>
+            <Button className="bg-muted hover:bg-muted" onClick={handleSendInvite}>
               <Send className="h-4 w-4 mr-2" />
               Send Invitation
             </Button>

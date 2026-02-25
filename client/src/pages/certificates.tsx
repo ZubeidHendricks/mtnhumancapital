@@ -233,8 +233,8 @@ export default function CertificateManager() {
                       className="flex items-center justify-between p-4 rounded-lg border bg-card"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-full bg-green-100">
-                          <CheckCircle className="h-6 w-6 text-green-600" />
+                        <div className="p-3 rounded-full bg-muted">
+                          <CheckCircle className="h-6 w-6 text-foreground" />
                         </div>
                         <div>
                           <p className="font-medium">{cert.courseName || "Course Certificate"}</p>

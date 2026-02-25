@@ -102,7 +102,7 @@ This is an initial screening interview to assess the candidate's potential fit f
         <BackButton />
         
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-3 bg-blue-500 rounded-lg">
+          <div className="p-3 bg-muted rounded-lg">
             <Sparkles className="h-6 w-6 text-white" />
           </div>
           <div>
@@ -112,9 +112,9 @@ This is an initial screening interview to assess the candidate's potential fit f
         </div>
 
         {createdPersona && (
-          <Alert className="mb-6 border-green-500/30 bg-green-500/10" data-testid="alert-persona-created">
-            <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-            <AlertDescription className="text-green-100">
+          <Alert className="mb-6 border-border/30 bg-muted/10" data-testid="alert-persona-created">
+            <CheckCircle2 className="h-4 w-4 text-foreground" />
+            <AlertDescription className="text-foreground">
               <div className="flex items-center justify-between">
                 <div>
                   <strong>Persona Created Successfully!</strong>
@@ -158,7 +158,7 @@ This is an initial screening interview to assess the candidate's potential fit f
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
               ) : personasError ? (
-                <div className="text-amber-600 dark:text-amber-400 text-sm">
+                <div className="text-foreground dark:text-foreground text-sm">
                   <p>Could not load personas. Please check your Tavus API key in settings.</p>
                 </div>
               ) : personasData?.personas && personasData.personas.length > 0 ? (
@@ -246,7 +246,7 @@ This is an initial screening interview to assess the candidate's potential fit f
 
                 <div className="space-y-2">
                   <Label htmlFor="systemPrompt" className="text-foreground">
-                    System Prompt <span className="text-red-500">*</span>
+                    System Prompt <span className="text-destructive">*</span>
                   </Label>
                   <Textarea
                     id="systemPrompt"

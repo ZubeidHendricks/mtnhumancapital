@@ -135,17 +135,17 @@ function StatCard({
   color?: "blue" | "green" | "amber" | "rose";
 }) {
   const colorClasses = {
-    blue: "from-blue-900/20 to-blue-800/10 border-blue-500/30",
-    green: "from-green-900/20 to-green-800/10 border-green-500/30",
-    amber: "from-amber-900/20 to-amber-800/10 border-amber-500/30",
-    rose: "from-rose-900/20 to-rose-800/10 border-rose-500/30",
+    blue: "from-muted/20 to-background/10 border-border/30",
+    green: "from-muted/20 to-background/10 border-border/30",
+    amber: "from-muted/20 to-background/10 border-border/30",
+    rose: "from-muted/20 to-background/10 border-border/30",
   };
 
   const iconColors = {
-    blue: "text-blue-600 dark:text-blue-400",
-    green: "text-green-600 dark:text-green-400",
-    amber: "text-amber-600 dark:text-amber-400",
-    rose: "text-rose-600 dark:text-rose-400",
+    blue: "text-foreground dark:text-foreground",
+    green: "text-foreground",
+    amber: "text-foreground dark:text-foreground",
+    rose: "text-foreground dark:text-foreground",
   };
 
   return (
@@ -159,7 +159,7 @@ function StatCard({
             {trend && (
               <div className={cn(
                 "flex items-center gap-1 mt-2 text-sm",
-                trend.positive ? "text-green-600 dark:text-green-400" : "text-rose-600 dark:text-rose-400"
+                trend.positive ? "text-foreground" : "text-foreground dark:text-foreground"
               )}>
                 {trend.positive ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
                 <span>{trend.value}% vs last cycle</span>
@@ -251,7 +251,7 @@ HR Team`);
       <DialogContent className="max-w-2xl bg-gray-900 border-border dark:border-white/10">
         <DialogHeader>
           <DialogTitle className="text-xl text-white flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <MessageSquare className="w-5 h-5 text-foreground dark:text-foreground" />
             Send Review Reminders
           </DialogTitle>
           <DialogDescription>
@@ -281,7 +281,7 @@ HR Team`);
                 variant={channel === "whatsapp" ? "default" : "outline"}
                 className={cn(
                   "flex items-center gap-2",
-                  channel === "whatsapp" ? "bg-green-600 hover:bg-green-700" : "border-gray-700"
+                  channel === "whatsapp" ? "bg-muted hover:bg-muted" : "border-gray-700"
                 )}
                 onClick={() => setChannel("whatsapp")}
                 data-testid="channel-whatsapp"
@@ -294,7 +294,7 @@ HR Team`);
                 variant={channel === "teams" ? "default" : "outline"}
                 className={cn(
                   "flex items-center gap-2",
-                  channel === "teams" ? "bg-blue-600 hover:bg-blue-700" : "border-gray-700"
+                  channel === "teams" ? "bg-muted hover:bg-muted" : "border-gray-700"
                 )}
                 onClick={() => setChannel("teams")}
                 data-testid="channel-teams"
@@ -320,7 +320,7 @@ HR Team`);
               ))}
             </div>
             {employeesWithContact.length < selectedEmployees.length && (
-              <p className="text-amber-600 dark:text-amber-400 text-xs mt-2">
+              <p className="text-foreground dark:text-foreground text-xs mt-2">
                 {selectedEmployees.length - employeesWithContact.length} employee(s) don't have {channel} contact info
               </p>
             )}
@@ -404,7 +404,7 @@ function EmployeeDetailDialog({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gray-900 border-border dark:border-white/10">
         <DialogHeader>
           <DialogTitle className="text-xl text-white flex items-center gap-2">
-            <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <User className="w-5 h-5 text-foreground dark:text-foreground" />
             {submission.employee?.name || `Employee #${submission.employeeId}`}
           </DialogTitle>
           <DialogDescription>
@@ -420,10 +420,10 @@ function EmployeeDetailDialog({
                 <p className={cn(
                   "text-3xl font-bold mt-1",
                   submission.finalScore && parseFloat(submission.finalScore) >= 80 
-                    ? "text-green-600 dark:text-green-400" 
+                    ? "text-foreground" 
                     : submission.finalScore && parseFloat(submission.finalScore) >= 60
-                    ? "text-amber-600 dark:text-amber-400"
-                    : "text-rose-600 dark:text-rose-400"
+                    ? "text-foreground dark:text-foreground"
+                    : "text-foreground dark:text-foreground"
                 )}>
                   {submission.finalScore ? `${submission.finalScore}%` : "-"}
                 </p>
@@ -451,7 +451,7 @@ function EmployeeDetailDialog({
             <h3 className="text-lg font-semibold text-white mb-3">KPI Breakdown</h3>
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-blue-600 dark:text-blue-400" />
+                <Loader2 className="w-6 h-6 animate-spin text-foreground dark:text-foreground" />
               </div>
             ) : assignments.length === 0 ? (
               <p className="text-gray-400 text-center py-4">No KPIs assigned</p>
@@ -481,13 +481,13 @@ function EmployeeDetailDialog({
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
-                          <Star className="w-4 h-4 text-yellow-600 dark:text-yellow-400 fill-yellow-400" />
+                          <Star className="w-4 h-4 text-foreground fill-yellow-400" />
                           <span className="text-white">{assignment.score?.selfScore || "-"}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
-                          <Star className="w-4 h-4 text-green-600 dark:text-green-400 fill-green-400" />
+                          <Star className="w-4 h-4 text-foreground fill-green-400" />
                           <span className="text-white">{assignment.score?.managerScore || "-"}</span>
                         </div>
                       </TableCell>
@@ -788,7 +788,7 @@ export default function KPIHRDashboard() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-3" data-testid="page-title">
-              <BarChart3 className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+              <BarChart3 className="w-8 h-8 text-foreground dark:text-foreground" />
               HR Performance Dashboard
             </h1>
             <p className="text-gray-400 mt-2">
@@ -957,7 +957,7 @@ export default function KPIHRDashboard() {
           <CardContent>
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600 dark:text-blue-400" />
+                <Loader2 className="w-8 h-8 animate-spin text-foreground dark:text-foreground" />
               </div>
             ) : filteredSubmissions.length === 0 ? (
               <div className="text-center py-12">
@@ -994,7 +994,7 @@ export default function KPIHRDashboard() {
                       key={submission.id} 
                       className={cn(
                         "border-border dark:border-white/10 cursor-pointer hover:bg-white/5",
-                        selectedEmployeeIds.has(submission.id) && "bg-blue-500/10"
+                        selectedEmployeeIds.has(submission.id) && "bg-muted/10"
                       )}
                       data-testid={`employee-row-${submission.id}`}
                     >
@@ -1007,8 +1007,8 @@ export default function KPIHRDashboard() {
                       </TableCell>
                       <TableCell onClick={() => setSelectedSubmission(submission)}>
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
-                            <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                          <div className="w-8 h-8 rounded-full bg-muted/20 flex items-center justify-center">
+                            <User className="w-4 h-4 text-foreground dark:text-foreground" />
                           </div>
                           <div>
                             <p className="font-medium text-foreground">
@@ -1044,10 +1044,10 @@ export default function KPIHRDashboard() {
                           <span className={cn(
                             "text-lg font-bold",
                             parseFloat(submission.finalScore) >= 80 
-                              ? "text-green-600 dark:text-green-400" 
+                              ? "text-foreground" 
                               : parseFloat(submission.finalScore) >= 60
-                              ? "text-amber-600 dark:text-amber-400"
-                              : "text-rose-600 dark:text-rose-400"
+                              ? "text-foreground dark:text-foreground"
+                              : "text-foreground dark:text-foreground"
                           )}>
                             {submission.finalScore}%
                           </span>
@@ -1070,7 +1070,7 @@ export default function KPIHRDashboard() {
                                 });
                               }}
                               disabled={sendingLinkFor === submission.id}
-                              className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300"
+                              className="text-foreground dark:text-foreground hover:text-foreground dark:hover:text-foreground"
                               data-testid={`send-link-${submission.id}`}
                             >
                               {sendingLinkFor === submission.id ? (

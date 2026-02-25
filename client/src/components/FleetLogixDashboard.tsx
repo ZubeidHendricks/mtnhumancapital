@@ -15,10 +15,10 @@ export function FleetLogixDashboard() {
   const { theme, setTheme, actualTheme } = useTheme();
   
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
+    <div className="min-h-screen bg-white">
       <div className="container mx-auto p-6 space-y-6">
         {/* Header with Logo and Theme Toggle */}
-        <div className="flex items-center justify-between bg-teal-600 dark:bg-teal-700 rounded-lg shadow-lg p-6">
+        <div className="flex items-center justify-between bg-muted dark:bg-muted rounded-lg shadow-lg p-6">
           <div className="flex items-center gap-4">
             <img 
               src="/uploads/fleetlogix-logo.png" 
@@ -38,63 +38,63 @@ export function FleetLogixDashboard() {
             variant="outline"
             size="icon"
             onClick={() => setTheme(actualTheme === "dark" ? "light" : "dark")}
-            className="bg-white border-white hover:bg-teal-100"
+            className="bg-white border-white hover:bg-muted"
           >
             {actualTheme === "dark" ? (
-              <Sun className="h-5 w-5 text-teal-600" />
+              <Sun className="h-5 w-5 text-foreground" />
             ) : (
-              <Moon className="h-5 w-5 text-teal-700" />
+              <Moon className="h-5 w-5 text-foreground" />
             )}
           </Button>
         </div>
 
         <Tabs defaultValue="loads" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7 bg-white dark:bg-gray-800 border-2 border-teal-200 dark:border-teal-700 p-1">
+          <TabsList className="grid w-full grid-cols-7 bg-white border-2 border-border dark:border-border p-1">
             <TabsTrigger 
               value="loads" 
-              className="flex items-center gap-2 text-gray-900 dark:text-gray-100 font-semibold data-[state=active]:bg-teal-600 data-[state=active]:text-white"
+              className="flex items-center gap-2 text-gray-900 font-semibold data-[state=active]:bg-muted data-[state=active]:text-white"
             >
               <Package className="h-4 w-4" />
               <span className="hidden sm:inline">Loads</span>
             </TabsTrigger>
             <TabsTrigger 
               value="drivers" 
-              className="flex items-center gap-2 text-gray-900 dark:text-gray-100 font-semibold data-[state=active]:bg-teal-600 data-[state=active]:text-white"
+              className="flex items-center gap-2 text-gray-900 font-semibold data-[state=active]:bg-muted data-[state=active]:text-white"
             >
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Drivers</span>
             </TabsTrigger>
             <TabsTrigger 
               value="vehicles" 
-              className="flex items-center gap-2 text-gray-900 dark:text-gray-100 font-semibold data-[state=active]:bg-teal-600 data-[state=active]:text-white"
+              className="flex items-center gap-2 text-gray-900 font-semibold data-[state=active]:bg-muted data-[state=active]:text-white"
             >
               <Truck className="h-4 w-4" />
               <span className="hidden sm:inline">Vehicles</span>
             </TabsTrigger>
             <TabsTrigger 
               value="routes" 
-              className="flex items-center gap-2 text-gray-900 dark:text-gray-100 font-semibold data-[state=active]:bg-teal-600 data-[state=active]:text-white"
+              className="flex items-center gap-2 text-gray-900 font-semibold data-[state=active]:bg-muted data-[state=active]:text-white"
             >
               <Route className="h-4 w-4" />
               <span className="hidden sm:inline">Routes</span>
             </TabsTrigger>
             <TabsTrigger 
               value="salaries" 
-              className="flex items-center gap-2 text-gray-900 dark:text-gray-100 font-semibold data-[state=active]:bg-teal-600 data-[state=active]:text-white"
+              className="flex items-center gap-2 text-gray-900 font-semibold data-[state=active]:bg-muted data-[state=active]:text-white"
             >
               <DollarSign className="h-4 w-4" />
               <span className="hidden sm:inline">Salaries</span>
             </TabsTrigger>
             <TabsTrigger 
               value="reconciliation" 
-              className="flex items-center gap-2 text-gray-900 dark:text-gray-100 font-semibold data-[state=active]:bg-teal-600 data-[state=active]:text-white"
+              className="flex items-center gap-2 text-gray-900 font-semibold data-[state=active]:bg-muted data-[state=active]:text-white"
             >
               <FileCheck className="h-4 w-4" />
               <span className="hidden sm:inline">Reconciliation</span>
             </TabsTrigger>
             <TabsTrigger 
               value="weighbridge" 
-              className="flex items-center gap-2 text-gray-900 dark:text-gray-100 font-semibold data-[state=active]:bg-teal-600 data-[state=active]:text-white"
+              className="flex items-center gap-2 text-gray-900 font-semibold data-[state=active]:bg-muted data-[state=active]:text-white"
             >
               <Scale className="h-4 w-4" />
               <span className="hidden sm:inline">Weighbridge</span>
@@ -102,10 +102,10 @@ export function FleetLogixDashboard() {
           </TabsList>
 
         <TabsContent value="loads" className="space-y-4">
-          <Card className="border-2 border-teal-200 dark:border-teal-700 shadow-md bg-white dark:bg-gray-800">
-            <CardHeader className="border-b-2 border-teal-200 dark:border-teal-700 bg-teal-50 dark:bg-gray-700">
+          <Card className="border-2 border-border dark:border-border shadow-md bg-white">
+            <CardHeader className="border-b-2 border-border dark:border-border bg-muted">
               <CardTitle className="text-gray-900 dark:text-white font-bold text-xl">Load Management</CardTitle>
-              <CardDescription className="text-gray-700 dark:text-gray-300 font-semibold">Track and manage all fleet loads</CardDescription>
+              <CardDescription className="text-gray-700 font-semibold">Track and manage all fleet loads</CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
               <FleetlogixLoadsTab />
@@ -114,10 +114,10 @@ export function FleetLogixDashboard() {
         </TabsContent>
 
         <TabsContent value="drivers" className="space-y-4">
-          <Card className="border-2 border-teal-200 dark:border-teal-700 shadow-md bg-white dark:bg-gray-800">
-            <CardHeader className="border-b-2 border-teal-200 dark:border-teal-700 bg-teal-50 dark:bg-gray-700">
+          <Card className="border-2 border-border dark:border-border shadow-md bg-white">
+            <CardHeader className="border-b-2 border-border dark:border-border bg-muted">
               <CardTitle className="text-gray-900 dark:text-white font-bold text-xl">Driver Management</CardTitle>
-              <CardDescription className="text-gray-700 dark:text-gray-300 font-semibold">Manage driver information and performance</CardDescription>
+              <CardDescription className="text-gray-700 font-semibold">Manage driver information and performance</CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
               <FleetlogixDriversTab />
@@ -126,10 +126,10 @@ export function FleetLogixDashboard() {
         </TabsContent>
 
         <TabsContent value="vehicles" className="space-y-4">
-          <Card className="border-2 border-teal-200 dark:border-teal-700 shadow-md bg-white dark:bg-gray-800">
-            <CardHeader className="border-b-2 border-teal-200 dark:border-teal-700 bg-teal-50 dark:bg-gray-700">
+          <Card className="border-2 border-border dark:border-border shadow-md bg-white">
+            <CardHeader className="border-b-2 border-border dark:border-border bg-muted">
               <CardTitle className="text-gray-900 dark:text-white font-bold text-xl">Vehicle Management</CardTitle>
-              <CardDescription className="text-gray-700 dark:text-gray-300 font-semibold">Track and maintain fleet vehicles</CardDescription>
+              <CardDescription className="text-gray-700 font-semibold">Track and maintain fleet vehicles</CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
               <FleetlogixVehiclesTab />
@@ -138,10 +138,10 @@ export function FleetLogixDashboard() {
         </TabsContent>
 
         <TabsContent value="routes" className="space-y-4">
-          <Card className="border-2 border-teal-200 dark:border-teal-700 shadow-md bg-white dark:bg-gray-800">
-            <CardHeader className="border-b-2 border-teal-200 dark:border-teal-700 bg-teal-50 dark:bg-gray-700">
+          <Card className="border-2 border-border dark:border-border shadow-md bg-white">
+            <CardHeader className="border-b-2 border-border dark:border-border bg-muted">
               <CardTitle className="text-gray-900 dark:text-white font-bold text-xl">Route Management</CardTitle>
-              <CardDescription className="text-gray-700 dark:text-gray-300 font-semibold">Define and manage delivery routes</CardDescription>
+              <CardDescription className="text-gray-700 font-semibold">Define and manage delivery routes</CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
               <FleetlogixRoutesTab />
@@ -150,10 +150,10 @@ export function FleetLogixDashboard() {
         </TabsContent>
 
         <TabsContent value="salaries" className="space-y-4">
-          <Card className="border-2 border-teal-200 dark:border-teal-700 shadow-md bg-white dark:bg-gray-800">
-            <CardHeader className="border-b-2 border-teal-200 dark:border-teal-700 bg-teal-50 dark:bg-gray-700">
+          <Card className="border-2 border-border dark:border-border shadow-md bg-white">
+            <CardHeader className="border-b-2 border-border dark:border-border bg-muted">
               <CardTitle className="text-gray-900 dark:text-white font-bold text-xl">Driver Salaries</CardTitle>
-              <CardDescription className="text-gray-700 dark:text-gray-300 font-semibold">Calculate and manage driver compensation</CardDescription>
+              <CardDescription className="text-gray-700 font-semibold">Calculate and manage driver compensation</CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
               <FleetlogixSalariesTab />
@@ -162,10 +162,10 @@ export function FleetLogixDashboard() {
         </TabsContent>
 
         <TabsContent value="reconciliation" className="space-y-4">
-          <Card className="border-2 border-teal-200 dark:border-teal-700 shadow-md bg-white dark:bg-gray-800">
-            <CardHeader className="border-b-2 border-teal-200 dark:border-teal-700 bg-teal-50 dark:bg-gray-700">
+          <Card className="border-2 border-border dark:border-border shadow-md bg-white">
+            <CardHeader className="border-b-2 border-border dark:border-border bg-muted">
               <CardTitle className="text-gray-900 dark:text-white font-bold text-xl">Load Reconciliation</CardTitle>
-              <CardDescription className="text-gray-700 dark:text-gray-300 font-semibold">Review and reconcile load records</CardDescription>
+              <CardDescription className="text-gray-700 font-semibold">Review and reconcile load records</CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
               <FleetlogixReconciliationTab />
@@ -174,10 +174,10 @@ export function FleetLogixDashboard() {
         </TabsContent>
 
         <TabsContent value="weighbridge" className="space-y-4">
-          <Card className="border-2 border-teal-200 dark:border-teal-700 shadow-md bg-white dark:bg-gray-800">
-            <CardHeader className="border-b-2 border-teal-200 dark:border-teal-700 bg-teal-50 dark:bg-gray-700">
+          <Card className="border-2 border-border dark:border-border shadow-md bg-white">
+            <CardHeader className="border-b-2 border-border dark:border-border bg-muted">
               <CardTitle className="text-gray-900 dark:text-white font-bold text-xl">Weighbridge Management</CardTitle>
-              <CardDescription className="text-gray-700 dark:text-gray-300 font-semibold">Upload and link weighbridge slips to loads</CardDescription>
+              <CardDescription className="text-gray-700 font-semibold">Upload and link weighbridge slips to loads</CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
               <FleetlogixWeighbridgeTab />

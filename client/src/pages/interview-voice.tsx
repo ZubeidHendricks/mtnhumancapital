@@ -229,7 +229,7 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
     return (
       <div className="min-h-screen bg-black text-foreground flex items-center justify-center">
         <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold text-red-600 dark:text-red-400">Connection Error</h2>
+          <h2 className="text-2xl font-bold text-destructive">Connection Error</h2>
           <p className="text-foreground/70">Unable to connect to Hume AI. Please check your configuration.</p>
           <Link href="/hr-dashboard">
             <Button variant="outline">Return to Dashboard</Button>
@@ -246,7 +246,7 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
       <header className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center z-20">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-white/5 border border-border dark:border-white/10 flex items-center justify-center">
-            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`} />
+            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-muted animate-pulse' : 'bg-gray-500'}`} />
           </div>
           <div>
             <h1 className="font-medium text-sm text-foreground/90">Voice Interview Session</h1>
@@ -310,7 +310,7 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
                     className={`text-xl md:text-2xl font-medium leading-relaxed ${
                       transcripts[transcripts.length - 1].role === "ai" 
                         ? "text-foreground" 
-                        : "text-blue-300"
+                        : "text-foreground"
                     }`}
                   >
                     {transcripts[transcripts.length - 1].text}
@@ -352,7 +352,7 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
           </h3>
           <div className="space-y-2">
             {transcripts.map((t, i) => (
-              <div key={i} className={`text-xs ${t.role === "ai" ? "text-white/70" : "text-blue-300/70"}`}>
+              <div key={i} className={`text-xs ${t.role === "ai" ? "text-white/70" : "text-foreground/70"}`}>
                 <span className="font-bold">{t.role === "ai" ? "AI:" : "You:"}</span> {t.text}
               </div>
             ))}

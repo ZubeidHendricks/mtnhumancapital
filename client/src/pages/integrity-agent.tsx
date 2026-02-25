@@ -268,10 +268,10 @@ export default function IntegrityAgent() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "Completed": return <CheckCircle2 className="w-4 h-4 text-green-500" />;
-      case "Pending": return <Clock className="w-4 h-4 text-yellow-500" />;
-      case "Failed": return <XCircle className="w-4 h-4 text-red-500" />;
-      default: return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />;
+      case "Completed": return <CheckCircle2 className="w-4 h-4 text-foreground" />;
+      case "Pending": return <Clock className="w-4 h-4 text-foreground" />;
+      case "Failed": return <XCircle className="w-4 h-4 text-destructive" />;
+      default: return <Loader2 className="w-4 h-4 text-foreground animate-spin" />;
     }
   };
 
@@ -279,10 +279,10 @@ export default function IntegrityAgent() {
     if (!result) return null;
     
     const variants: Record<string, { bg: string; text: string }> = {
-      Clear: { bg: "bg-green-500/10", text: "text-green-500" },
-      Verified: { bg: "bg-green-500/10", text: "text-green-500" },
-      Flagged: { bg: "bg-yellow-500/10", text: "text-yellow-500" },
-      Failed: { bg: "bg-red-500/10", text: "text-red-500" },
+      Clear: { bg: "bg-muted/10", text: "text-foreground" },
+      Verified: { bg: "bg-muted/10", text: "text-foreground" },
+      Flagged: { bg: "bg-muted/10", text: "text-foreground" },
+      Failed: { bg: "bg-destructive/10", text: "text-destructive" },
     };
     
     const variant = variants[result] || { bg: "bg-gray-500/10", text: "text-gray-500" };
@@ -296,10 +296,10 @@ export default function IntegrityAgent() {
 
   const getRiskScoreColor = (score: number | null) => {
     if (score === null || score === undefined) return "text-gray-500";
-    if (score === 0) return "text-green-500";
-    if (score < 30) return "text-yellow-500";
-    if (score < 70) return "text-teal-600";
-    return "text-red-500";
+    if (score === 0) return "text-foreground";
+    if (score < 30) return "text-foreground";
+    if (score < 70) return "text-foreground";
+    return "text-destructive";
   };
 
   const overallRiskScore = candidateChecks.length > 0
@@ -421,20 +421,20 @@ export default function IntegrityAgent() {
                 <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
                   <div>
                     <div className="text-xs text-muted-foreground">Pending</div>
-                    <div className="text-2xl font-bold text-yellow-500" data-testid="text-pending-checks">
+                    <div className="text-2xl font-bold text-foreground" data-testid="text-pending-checks">
                       {allChecks.filter(c => c.status === "Pending").length}
                     </div>
                   </div>
-                  <Clock className="w-8 h-8 text-yellow-500 opacity-50" />
+                  <Clock className="w-8 h-8 text-foreground opacity-50" />
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
                   <div>
                     <div className="text-xs text-muted-foreground">Completed</div>
-                    <div className="text-2xl font-bold text-green-500" data-testid="text-completed-checks">
+                    <div className="text-2xl font-bold text-foreground" data-testid="text-completed-checks">
                       {allChecks.filter(c => c.status === "Completed").length}
                     </div>
                   </div>
-                  <CheckCircle2 className="w-8 h-8 text-green-500 opacity-50" />
+                  <CheckCircle2 className="w-8 h-8 text-foreground opacity-50" />
                 </div>
               </CardContent>
             </Card>
@@ -476,9 +476,9 @@ export default function IntegrityAgent() {
                             >
                               <div className="flex items-start gap-3">
                                 <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 bg-background transition-all ${
-                                  step.status === "completed" ? "border-green-500 text-green-500" : 
+                                  step.status === "completed" ? "border-border text-foreground" : 
                                   step.status === "processing" ? "border-primary text-primary animate-pulse" : 
-                                  step.status === "failed" ? "border-red-500 text-red-500" :
+                                  step.status === "failed" ? "border-destructive text-destructive" :
                                   "border-muted text-muted-foreground"
                                 }`}>
                                   {step.status === "completed" ? <CheckCircle2 className="w-5 h-5" /> : 
@@ -489,8 +489,8 @@ export default function IntegrityAgent() {
                                 <div className="flex-1 pt-1">
                                   <h4 className={`text-sm font-bold transition-colors ${
                                     step.status === "processing" ? "text-primary" : 
-                                    step.status === "completed" ? "text-green-500" :
-                                    step.status === "failed" ? "text-red-500" :
+                                    step.status === "completed" ? "text-foreground" :
+                                    step.status === "failed" ? "text-destructive" :
                                     "text-foreground"
                                   }`}>
                                     {step.label}
@@ -569,8 +569,8 @@ export default function IntegrityAgent() {
                               className="min-w-0"
                             >
                               <Card className={`bg-white/5 border transition-colors overflow-hidden ${
-                                check.result === "Flagged" ? "border-yellow-500/30" :
-                                check.result === "Clear" || check.result === "Verified" ? "border-green-500/30" :
+                                check.result === "Flagged" ? "border-border/30" :
+                                check.result === "Clear" || check.result === "Verified" ? "border-border/30" :
                                 "border-border dark:border-white/10"
                               }`}>
                                 <CardHeader className="pb-2">
@@ -636,12 +636,12 @@ export default function IntegrityAgent() {
                                                     
                                                     {/* Missing Documents Alert */}
                                                     {checkData.missingDocuments && checkData.missingDocuments.length > 0 && (
-                                                      <div className="mt-2 p-2 rounded bg-yellow-500/10 border border-yellow-500/30 overflow-hidden">
-                                                        <div className="flex items-center gap-1 text-yellow-500 mb-1">
+                                                      <div className="mt-2 p-2 rounded bg-muted/10 border border-border/30 overflow-hidden">
+                                                        <div className="flex items-center gap-1 text-foreground mb-1">
                                                           <FileWarning className="w-3 h-3 shrink-0" />
                                                           <span className="text-[10px] font-semibold">Missing Documents:</span>
                                                         </div>
-                                                        <ul className="text-[10px] text-yellow-500/80 space-y-0.5 ml-4 break-words">
+                                                        <ul className="text-[10px] text-foreground/80 space-y-0.5 ml-4 break-words">
                                                           {checkData.missingDocuments.map((doc: string, idx: number) => (
                                                             <li key={idx} className="list-disc break-words">{doc}</li>
                                                           ))}
@@ -651,12 +651,12 @@ export default function IntegrityAgent() {
                                                     
                                                     {/* Follow-Up Required Alert */}
                                                     {checkData.requiresFollowUp && (
-                                                      <div className="mt-2 p-2 rounded bg-teal-600/10 border border-teal-600/30 overflow-hidden">
-                                                        <div className="flex items-center gap-1 text-teal-600 mb-1">
+                                                      <div className="mt-2 p-2 rounded bg-muted/10 border border-border/30 overflow-hidden">
+                                                        <div className="flex items-center gap-1 text-foreground mb-1">
                                                           <Bell className="w-3 h-3 shrink-0" />
                                                           <span className="text-[10px] font-semibold">HR Follow-Up Required:</span>
                                                         </div>
-                                                        <div className="text-[10px] text-teal-600/80" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                                                        <div className="text-[10px] text-foreground/80" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                                                           {checkData.followUpReason || 'Manual verification needed'}
                                                         </div>
                                                       </div>

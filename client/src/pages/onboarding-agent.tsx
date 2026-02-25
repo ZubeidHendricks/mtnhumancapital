@@ -225,7 +225,7 @@ export default function OnboardingAgent() {
                       >
                         <div className="flex items-start gap-3">
                           <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 bg-background ${
-                            step.status === "completed" ? "border-green-500 text-green-500" : 
+                            step.status === "completed" ? "border-border text-foreground" : 
                             step.status === "processing" ? "border-primary text-primary animate-pulse" : 
                             "border-muted text-muted-foreground"
                           }`}>
@@ -265,7 +265,7 @@ export default function OnboardingAgent() {
               <CardHeader className="border-b border-border dark:border-white/5 py-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                    <div className="w-2 h-2 rounded-full bg-muted animate-pulse" />
                     <div>
                       <CardTitle className="text-base">Onboarding Agent</CardTitle>
                       <CardDescription className="text-xs">Employee Integration & Provisioning</CardDescription>
@@ -413,13 +413,13 @@ export default function OnboardingAgent() {
                           >
                             <div className={`p-3 rounded-lg bg-white/5 border transition-colors group cursor-pointer ${
                               doc.status === "pending" ? "border-border dark:border-white/10 border-dashed" : 
-                              "border-border dark:border-white/5 hover:border-green-500/30"
+                              "border-border dark:border-white/5 hover:border-border/30"
                             }`}>
                               <div className="flex items-start justify-between mb-1">
                                 <div className="flex items-center gap-2">
-                                  {doc.type === "document" ? <FileSignature className="w-3 h-3 text-blue-600 dark:text-blue-400" /> : 
-                                   doc.type === "asset" ? <Laptop className="w-3 h-3 text-amber-600 dark:text-amber-400" /> : 
-                                   <Mail className="w-3 h-3 text-blue-600 dark:text-blue-400" />}
+                                  {doc.type === "document" ? <FileSignature className="w-3 h-3 text-foreground dark:text-foreground" /> : 
+                                   doc.type === "asset" ? <Laptop className="w-3 h-3 text-foreground dark:text-foreground" /> : 
+                                   <Mail className="w-3 h-3 text-foreground dark:text-foreground" />}
                                   <Badge variant="secondary" className="text-[10px] h-4 px-1 bg-white/10">{doc.type}</Badge>
                                 </div>
                                 {doc.status === "pending" ? (
@@ -427,7 +427,7 @@ export default function OnboardingAgent() {
                                     <Loader2 className="w-3 h-3 animate-spin" /> PENDING
                                   </span>
                                 ) : (
-                                  <span className="text-[10px] text-green-600 dark:text-green-400 font-mono flex items-center gap-1 uppercase">
+                                  <span className="text-[10px] text-foreground font-mono flex items-center gap-1 uppercase">
                                     <CheckCircle2 className="w-3 h-3" /> {doc.status}
                                   </span>
                                 )}

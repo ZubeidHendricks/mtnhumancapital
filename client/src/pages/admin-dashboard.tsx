@@ -195,7 +195,7 @@ export default function AdminDashboard() {
         {!isEditing && currentValue ? (
           <div className="flex items-center justify-between">
             <p className="text-sm text-foreground flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-green-500" />
+              <CheckCircle2 className="w-4 h-4 text-foreground" />
               {currentValue}
             </p>
             <Button 
@@ -280,7 +280,7 @@ export default function AdminDashboard() {
               <TenantSelector currentTenant={currentTenant} />
               <Button 
                 onClick={() => navigate("/persona-management")}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-muted hover:bg-muted"
                 data-testid="button-persona-management"
               >
                 <Sparkles className="w-4 h-4 mr-2" />
@@ -381,7 +381,7 @@ export default function AdminDashboard() {
                     </Button>
                   </div>
                   {getSetting("reminder_default_interval_hours") && (
-                    <p className="text-xs text-green-500 mt-2">
+                    <p className="text-xs text-foreground mt-2">
                       Current: {getSetting("reminder_default_interval_hours")} hours
                     </p>
                   )}
@@ -427,12 +427,12 @@ export default function AdminDashboard() {
                   testId="hr-admin-email"
                 />
 
-                <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 mt-4">
+                <div className="p-4 rounded-lg bg-muted/10 border border-border/20 mt-4">
                   <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+                    <AlertCircle className="w-5 h-5 text-foreground dark:text-foreground mt-0.5 shrink-0" />
                     <div className="text-sm">
-                      <p className="text-blue-300 font-semibold">Email Service Integration</p>
-                      <p className="text-blue-200/80 mt-1">
+                      <p className="text-foreground font-semibold">Email Service Integration</p>
+                      <p className="text-foreground/80 mt-1">
                         For production email delivery, connect SendGrid or Resend via the Secrets tab. 
                         Currently using console logging for notifications.
                       </p>
@@ -473,7 +473,7 @@ export default function AdminDashboard() {
                       <div className="flex items-center gap-2">
                         <h3 className="text-sm font-semibold text-foreground">{module.label}</h3>
                         {tenantConfig.modulesEnabled?.[module.key] && (
-                          <Badge variant="outline" className="bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20">
+                          <Badge variant="outline" className="bg-muted/10 text-foreground border-border/20">
                             Active
                           </Badge>
                         )}
@@ -496,12 +496,12 @@ export default function AdminDashboard() {
                   </div>
                 ))}
                 
-                <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20 mt-4">
+                <div className="p-4 rounded-lg bg-muted/10 border border-border/20 mt-4">
                   <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 shrink-0" />
+                    <AlertCircle className="w-5 h-5 text-foreground mt-0.5 shrink-0" />
                     <div className="text-sm">
-                      <p className="text-yellow-300 font-semibold">Module Visibility</p>
-                      <p className="text-yellow-200/80 mt-1">
+                      <p className="text-foreground font-semibold">Module Visibility</p>
+                      <p className="text-foreground/80 mt-1">
                         Disabled modules will be hidden from navigation and customer views. Enable only modules included in the customer's subscription.
                       </p>
                     </div>
@@ -552,12 +552,12 @@ export default function AdminDashboard() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                <div className="p-4 rounded-lg bg-muted/10 border border-border/20">
                   <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+                    <AlertCircle className="w-5 h-5 text-foreground dark:text-foreground mt-0.5 shrink-0" />
                     <div className="text-sm">
-                      <p className="text-blue-300 font-semibold">Secure Secret Management</p>
-                      <p className="text-blue-200/80 mt-1">
+                      <p className="text-foreground font-semibold">Secure Secret Management</p>
+                      <p className="text-foreground/80 mt-1">
                         API keys and secrets are managed securely through Replit's environment variable system. 
                         Never store sensitive keys in the database. Click the "Secrets" tab in the left sidebar to add or update keys.
                       </p>

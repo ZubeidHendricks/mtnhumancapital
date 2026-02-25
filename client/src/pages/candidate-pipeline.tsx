@@ -78,21 +78,21 @@ const DOCUMENT_DEFINITIONS = [
 
 const PIPELINE_STAGES = [
   { key: "sourcing", name: "Sourcing", color: "bg-slate-400", section: "recruitment" },
-  { key: "screening", name: "Screening", color: "bg-blue-400", section: "recruitment" },
-  { key: "shortlisted", name: "Shortlisted", color: "bg-yellow-500", section: "recruitment" },
-  { key: "interviewing", name: "Interviewing", color: "bg-blue-500", section: "recruitment" },
-  { key: "offer_pending", name: "Offer Pending", color: "bg-amber-500", section: "recruitment" },
-  { key: "offer_accepted", name: "Offer Accepted", color: "bg-green-500", section: "recruitment" },
-  { key: "integrity_checks", name: "Integrity Checks", color: "bg-blue-600", section: "integrity" },
-  { key: "integrity_passed", name: "Checks Passed", color: "bg-emerald-500", section: "integrity" },
-  { key: "onboarding", name: "Onboarding", color: "bg-teal-500", section: "onboarding" },
-  { key: "hired", name: "Hired", color: "bg-emerald-600", section: "onboarding" },
+  { key: "screening", name: "Screening", color: "bg-muted", section: "recruitment" },
+  { key: "shortlisted", name: "Shortlisted", color: "bg-muted", section: "recruitment" },
+  { key: "interviewing", name: "Interviewing", color: "bg-muted", section: "recruitment" },
+  { key: "offer_pending", name: "Offer Pending", color: "bg-muted", section: "recruitment" },
+  { key: "offer_accepted", name: "Offer Accepted", color: "bg-muted", section: "recruitment" },
+  { key: "integrity_checks", name: "Integrity Checks", color: "bg-muted", section: "integrity" },
+  { key: "integrity_passed", name: "Checks Passed", color: "bg-muted", section: "integrity" },
+  { key: "onboarding", name: "Onboarding", color: "bg-muted", section: "onboarding" },
+  { key: "hired", name: "Hired", color: "bg-muted", section: "onboarding" },
 ];
 
 const STAGE_SECTIONS = [
-  { key: "recruitment", name: "Recruitment", color: "bg-gradient-to-r from-blue-500 to-blue-500" },
-  { key: "integrity", name: "Integrity", color: "bg-gradient-to-r from-blue-600 to-emerald-500" },
-  { key: "onboarding", name: "Onboarding", color: "bg-gradient-to-r from-teal-500 to-emerald-600" },
+  { key: "recruitment", name: "Recruitment", color: "bg-gradient-to-r from-muted to-background" },
+  { key: "integrity", name: "Integrity", color: "bg-gradient-to-r from-muted to-background" },
+  { key: "onboarding", name: "Onboarding", color: "bg-gradient-to-r from-muted to-background" },
 ];
 
 export default function CandidatePipeline() {
@@ -271,19 +271,19 @@ export default function CandidatePipeline() {
   const getStatusIcon = (status: DocumentStatus) => {
     switch (status) {
       case "complete":
-        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+        return <CheckCircle2 className="h-4 w-4 text-foreground" />;
       case "pending":
-        return <Clock className="h-4 w-4 text-yellow-500" />;
+        return <Clock className="h-4 w-4 text-foreground" />;
       case "missing":
-        return <XCircle className="h-4 w-4 text-red-500" />;
+        return <XCircle className="h-4 w-4 text-destructive" />;
     }
   };
 
   const getStatusBadge = (status: DocumentStatus) => {
     const styles = {
-      complete: "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30",
-      pending: "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/30",
-      missing: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30",
+      complete: "bg-muted/10 text-foreground border-border/30",
+      pending: "bg-muted/10 text-foreground border-border/30",
+      missing: "bg-destructive/10 text-destructive border-destructive/30",
     };
     return styles[status];
   };
@@ -319,12 +319,12 @@ export default function CandidatePipeline() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Docs Complete</p>
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  <p className="text-2xl font-bold text-foreground">
                     {totalDocsComplete}
                   </p>
                 </div>
-                <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
-                  <FileCheck className="h-6 w-6 text-green-500" />
+                <div className="w-12 h-12 rounded-full bg-muted/10 flex items-center justify-center">
+                  <FileCheck className="h-6 w-6 text-foreground" />
                 </div>
               </div>
             </CardContent>
@@ -335,12 +335,12 @@ export default function CandidatePipeline() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Docs Pending</p>
-                  <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                  <p className="text-2xl font-bold text-foreground">
                     {totalDocsPending}
                   </p>
                 </div>
-                <div className="w-12 h-12 rounded-full bg-yellow-500/10 flex items-center justify-center">
-                  <Clock className="h-6 w-6 text-yellow-500" />
+                <div className="w-12 h-12 rounded-full bg-muted/10 flex items-center justify-center">
+                  <Clock className="h-6 w-6 text-foreground" />
                 </div>
               </div>
             </CardContent>
@@ -351,12 +351,12 @@ export default function CandidatePipeline() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Docs Missing</p>
-                  <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                  <p className="text-2xl font-bold text-destructive">
                     {totalDocsMissing}
                   </p>
                 </div>
-                <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
-                  <AlertCircle className="h-6 w-6 text-red-500" />
+                <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
+                  <AlertCircle className="h-6 w-6 text-destructive" />
                 </div>
               </div>
             </CardContent>
@@ -405,16 +405,16 @@ export default function CandidatePipeline() {
                     </div>
                     
                     {/* Contact Details - Prominently Displayed */}
-                    <div className="mt-3 p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
-                      <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-2 uppercase tracking-wide">Contact Details</p>
+                    <div className="mt-3 p-3 rounded-lg bg-muted/10 border border-border/30">
+                      <p className="text-xs font-medium text-foreground dark:text-foreground mb-2 uppercase tracking-wide">Contact Details</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {candidate.email ? (
                           <a 
                             href={`mailto:${candidate.email}`} 
-                            className="flex items-center gap-2 text-sm text-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                            className="flex items-center gap-2 text-sm text-foreground hover:text-foreground dark:hover:text-foreground transition-colors"
                             data-testid={`email-${candidate.id}`}
                           >
-                            <Mail className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                            <Mail className="h-4 w-4 text-foreground dark:text-foreground flex-shrink-0" />
                             <span className="truncate">{candidate.email}</span>
                           </a>
                         ) : (
@@ -426,10 +426,10 @@ export default function CandidatePipeline() {
                         {candidate.phone ? (
                           <a 
                             href={`tel:${candidate.phone}`} 
-                            className="flex items-center gap-2 text-sm text-foreground hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                            className="flex items-center gap-2 text-sm text-foreground hover:text-foreground dark:hover:text-foreground transition-colors"
                             data-testid={`phone-${candidate.id}`}
                           >
-                            <Phone className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                            <Phone className="h-4 w-4 text-foreground flex-shrink-0" />
                             <span>{candidate.phone}</span>
                           </a>
                         ) : (
@@ -483,9 +483,9 @@ export default function CandidatePipeline() {
                       <div className="flex items-center justify-between mb-3">
                         <p className="text-xs font-medium text-muted-foreground">REQUIRED DOCUMENTS</p>
                         <div className="flex items-center gap-2 text-xs">
-                          <span className="text-green-600 dark:text-green-400">{stats.complete} ✓</span>
-                          <span className="text-yellow-600 dark:text-yellow-400">{stats.pending} ⏱</span>
-                          <span className="text-red-600 dark:text-red-400">{stats.missing} ✗</span>
+                          <span className="text-foreground">{stats.complete} ✓</span>
+                          <span className="text-foreground">{stats.pending} ⏱</span>
+                          <span className="text-destructive">{stats.missing} ✗</span>
                         </div>
                       </div>
                       
@@ -524,15 +524,15 @@ export default function CandidatePipeline() {
 
                     {/* Blockers Display */}
                     {candidateBlockers[candidate.id]?.length > 0 && (
-                      <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30">
+                      <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30">
                         <div className="flex items-center gap-2 mb-2">
-                          <Ban className="h-4 w-4 text-red-600 dark:text-red-400" />
-                          <p className="text-sm font-medium text-red-600 dark:text-red-400">Cannot Advance</p>
+                          <Ban className="h-4 w-4 text-destructive" />
+                          <p className="text-sm font-medium text-destructive">Cannot Advance</p>
                         </div>
                         <ul className="space-y-1">
                           {candidateBlockers[candidate.id].map((blocker, i) => (
-                            <li key={i} className="text-xs text-red-300 flex items-start gap-1">
-                              <span className="text-red-600 dark:text-red-400 mt-0.5">•</span>
+                            <li key={i} className="text-xs text-destructive flex items-start gap-1">
+                              <span className="text-destructive mt-0.5">•</span>
                               {blocker}
                             </li>
                           ))}
@@ -565,7 +565,7 @@ export default function CandidatePipeline() {
                       <Button 
                         size="sm" 
                         variant="outline"
-                        className="bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400 hover:bg-green-500/20"
+                        className="bg-muted/10 border-border/30 text-foreground hover:bg-muted/20"
                         onClick={() => handleOpenWhatsApp(candidate)}
                         disabled={openingWhatsApp === candidate.id}
                         data-testid={`button-whatsapp-${candidate.id}`}
@@ -578,7 +578,7 @@ export default function CandidatePipeline() {
                       </Button>
                       <Button 
                         size="sm" 
-                        className="flex-1 bg-teal-600 hover:bg-teal-700 !text-white"
+                        className="flex-1 bg-muted hover:bg-muted !text-white"
                         onClick={() => handleViewProfile(candidate)}
                         data-testid={`button-view-profile-${candidate.id}`}
                       >
@@ -590,7 +590,7 @@ export default function CandidatePipeline() {
                     {getNextStage(candidate.stage || 'sourcing') && (
                       <Button 
                         size="sm" 
-                        className="w-full bg-gradient-to-r from-blue-600 to-blue-600 hover:from-blue-500 hover:to-blue-500 mt-2 !text-white"
+                        className="w-full bg-gradient-to-r from-muted to-background hover:from-muted hover:to-background mt-2 !text-white"
                         onClick={() => handleAdvanceStage(candidate)}
                         disabled={advancingCandidate === candidate.id}
                         data-testid={`button-advance-stage-${candidate.id}`}

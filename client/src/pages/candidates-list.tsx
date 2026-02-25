@@ -328,11 +328,11 @@ AHC Recruiting Team`;
   // Helper function to get source color based on source type
   const getSourceColor = (source: string) => {
     const sourceColors: Record<string, string> = {
-      "Recruited": "text-blue-600 dark:text-blue-400 bg-blue-400/10",
-      "Uploaded": "text-green-600 dark:text-green-400 bg-green-400/10",
-      "Referral": "text-blue-600 dark:text-blue-400 bg-blue-400/10",
-      "LinkedIn": "text-blue-500 bg-blue-500/10",
-      "Direct": "text-yellow-600 dark:text-yellow-400 bg-yellow-400/10"
+      "Recruited": "text-foreground dark:text-foreground bg-muted/10",
+      "Uploaded": "text-foreground bg-muted/10",
+      "Referral": "text-foreground dark:text-foreground bg-muted/10",
+      "LinkedIn": "text-foreground bg-muted/10",
+      "Direct": "text-foreground bg-muted/10"
     };
     return sourceColors[source] || "text-gray-400 bg-gray-400/10";
   };
@@ -356,7 +356,7 @@ AHC Recruiting Team`;
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 ) : currentJob ? (
                   <>
-                    <div className="h-10 w-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+                    <div className="h-10 w-10 bg-muted rounded-lg flex items-center justify-center text-white font-bold text-lg">
                         {currentJob.title.charAt(0).toUpperCase()}
                     </div>
                     <div>
@@ -366,7 +366,7 @@ AHC Recruiting Team`;
                   </>
                 ) : (
                   <>
-                    <div className="h-10 w-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+                    <div className="h-10 w-10 bg-muted rounded-lg flex items-center justify-center text-white font-bold text-lg">
                         A
                     </div>
                     <h1 className="text-xl font-bold text-foreground">All Candidates</h1>
@@ -380,10 +380,10 @@ AHC Recruiting Team`;
                 {/* Feasibility Score */}
                 <div className="space-y-3">
                     <div className="flex justify-between items-center text-sm">
-                        <span className="text-yellow-600 dark:text-yellow-400 font-medium">Feasible to hire</span>
+                        <span className="text-foreground font-medium">Feasible to hire</span>
                     </div>
                     <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                        <div className="h-full bg-yellow-400 w-3/4 rounded-full"></div>
+                        <div className="h-full bg-muted w-3/4 rounded-full"></div>
                     </div>
                     <div className="flex justify-between text-xs text-muted-foreground">
                         <span>EXPECTED SALARY</span>
@@ -404,11 +404,11 @@ AHC Recruiting Team`;
                 </div>
 
                 {/* Status Box */}
-                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 space-y-1">
-                    <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-medium text-sm">
+                <div className="bg-muted/10 border border-border/20 rounded-lg p-4 space-y-1">
+                    <div className="flex items-center gap-2 text-foreground dark:text-foreground font-medium text-sm">
                         <Briefcase className="h-4 w-4" /> {currentJob.status}
                     </div>
-                    <p className="text-xs text-blue-600/80 dark:text-blue-400/80">
+                    <p className="text-xs text-foreground/80 dark:text-foreground/80">
                         Showing candidates matched to this role.
                     </p>
                 </div>
@@ -517,7 +517,7 @@ AHC Recruiting Team`;
                               onClick={() => setActiveCriteria(prev => [...prev, skill])}
                               data-testid={`button-add-skill-${i}`}
                             >
-                                {skill} <Plus className="h-3 w-3 ml-1 text-blue-600 dark:text-blue-400" />
+                                {skill} <Plus className="h-3 w-3 ml-1 text-foreground dark:text-foreground" />
                             </Badge>
                           ))}
                      </div>
@@ -546,10 +546,10 @@ AHC Recruiting Team`;
                   </TabsTrigger>
                   <TabsTrigger 
                     value="shortlisted" 
-                    className="h-14 rounded-none border-b-2 border-transparent data-[state=active]:border-yellow-400 data-[state=active]:bg-transparent px-2 text-sm font-medium text-muted-foreground data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                    className="h-14 rounded-none border-b-2 border-transparent data-[state=active]:border-border data-[state=active]:bg-transparent px-2 text-sm font-medium text-muted-foreground data-[state=active]:text-foreground data-[state=active]:shadow-none"
                   >
                     Shortlisted
-                    <span className="ml-2 text-xs bg-yellow-400/20 px-1.5 py-0.5 rounded-full text-yellow-600 dark:text-yellow-400">
+                    <span className="ml-2 text-xs bg-muted/20 px-1.5 py-0.5 rounded-full text-foreground">
                       {loadingCandidates ? '...' : shortlistedCandidates.length}
                     </span>
                   </TabsTrigger>
@@ -568,7 +568,7 @@ AHC Recruiting Team`;
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <span className="text-muted-foreground">Match:</span>
-                          <span className="text-green-600 dark:text-green-400 font-medium flex items-center gap-1 cursor-pointer">
+                          <span className="text-foreground font-medium flex items-center gap-1 cursor-pointer">
                               All <ChevronDown className="h-3 w-3" />
                           </span>
                       </div>
@@ -607,7 +607,7 @@ AHC Recruiting Team`;
                             {/* Candidate Info */}
                             <Link href={`/candidates/${candidate.id}`} className="flex items-center gap-4 w-[30%] cursor-pointer">
                                 <Avatar className="h-10 w-10 border border-border">
-                                    <AvatarFallback className="bg-blue-600 text-white text-xs">
+                                    <AvatarFallback className="bg-muted text-white text-xs">
                                         {candidate.fullName?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || 'NA'}
                                     </AvatarFallback>
                                 </Avatar>
@@ -650,7 +650,7 @@ AHC Recruiting Team`;
                                 </Button>
                                 <Button 
                                     size="sm" 
-                                    className="h-8 bg-blue-600 hover:bg-blue-500 text-white border-0 gap-1.5 font-medium text-xs px-3"
+                                    className="h-8 bg-muted hover:bg-muted text-white border-0 gap-1.5 font-medium text-xs px-3"
                                     onClick={() => handleShortlist(candidate.id)}
                                 >
                                     <ThumbsUp className="h-3 w-3" />
@@ -693,7 +693,7 @@ AHC Recruiting Team`;
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <span className="text-muted-foreground">Match:</span>
-                            <span className="text-green-600 dark:text-green-400 font-medium flex items-center gap-1 cursor-pointer">
+                            <span className="text-foreground font-medium flex items-center gap-1 cursor-pointer">
                                 All <ChevronDown className="h-3 w-3" />
                             </span>
                         </div>
@@ -732,7 +732,7 @@ AHC Recruiting Team`;
                               {/* Candidate Info */}
                               <Link href={`/candidates/${candidate.id}`} className="flex items-center gap-4 w-[30%] cursor-pointer">
                                   <Avatar className="h-10 w-10 border border-border">
-                                      <AvatarFallback className="bg-blue-600 text-white text-xs">
+                                      <AvatarFallback className="bg-muted text-white text-xs">
                                           {candidate.fullName?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || 'NA'}
                                       </AvatarFallback>
                                   </Avatar>
@@ -820,7 +820,7 @@ AHC Recruiting Team`;
                 onClick={() => setInviteChannel("email")}
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   inviteChannel === "email" 
-                    ? "bg-blue-600 text-white" 
+                    ? "bg-muted text-white" 
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
                 }`}
                 data-testid="button-channel-email"
@@ -832,7 +832,7 @@ AHC Recruiting Team`;
                 onClick={() => setInviteChannel("whatsapp")}
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   inviteChannel === "whatsapp" 
-                    ? "bg-green-600 text-white" 
+                    ? "bg-muted text-white" 
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
                 }`}
                 data-testid="button-channel-whatsapp"
@@ -854,7 +854,7 @@ AHC Recruiting Team`;
                           placeholder={!selectedCandidate?.email ? "No email on file" : undefined}
                         />
                         {!selectedCandidate?.email && (
-                          <p className="text-xs text-yellow-600 dark:text-yellow-400">This candidate has no email address on file.</p>
+                          <p className="text-xs text-foreground">This candidate has no email address on file.</p>
                         )}
                     </div>
                     
@@ -873,7 +873,7 @@ AHC Recruiting Team`;
                         placeholder={!(selectedCandidate?.phone || (selectedCandidate?.metadata as any)?.phone) ? "No phone on file" : undefined}
                       />
                       {!(selectedCandidate?.phone || (selectedCandidate?.metadata as any)?.phone) && (
-                        <p className="text-xs text-yellow-600 dark:text-yellow-400">This candidate has no phone number on file.</p>
+                        <p className="text-xs text-foreground">This candidate has no phone number on file.</p>
                       )}
                   </div>
                 )}
@@ -901,7 +901,7 @@ AHC Recruiting Team`}
                 <Button 
                   onClick={handleSendInvite} 
                   disabled={sendingInvite || (inviteChannel === "email" && !selectedCandidate?.email) || (inviteChannel === "whatsapp" && !(selectedCandidate?.phone || (selectedCandidate?.metadata as any)?.phone))}
-                  className={`gap-2 ${inviteChannel === "whatsapp" ? "bg-green-600 hover:bg-green-500" : "bg-blue-600 hover:bg-blue-500"} text-white`}
+                  className={`gap-2 ${inviteChannel === "whatsapp" ? "bg-muted hover:bg-muted" : "bg-muted hover:bg-muted"} text-white`}
                 >
                     {sendingInvite ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -921,7 +921,7 @@ AHC Recruiting Team`}
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden bg-card border-border" data-testid="dialog-candidate-profile">
           <DialogHeader className="border-b border-border pb-4">
             <DialogTitle className="text-xl flex items-center gap-3">
-              <Avatar className="h-12 w-12 bg-gradient-to-br from-blue-500 to-blue-600">
+              <Avatar className="h-12 w-12 bg-gradient-to-br from-muted to-background">
                 <AvatarFallback className="text-white text-lg font-bold bg-transparent">
                   {profileCandidate?.fullName?.split(' ').map((n: string) => n[0]).join('') || '?'}
                 </AvatarFallback>
@@ -937,12 +937,12 @@ AHC Recruiting Team`}
             <div className="space-y-6 py-4">
               {/* Match Score */}
               {profileCandidate?.match && (
-                <div className="flex items-center gap-4 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                  <div className="text-3xl font-bold text-blue-600 dark:text-blue-400" data-testid="text-profile-match">
+                <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/10 border border-border/20">
+                  <div className="text-3xl font-bold text-foreground dark:text-foreground" data-testid="text-profile-match">
                     {profileCandidate.match}%
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-blue-600 dark:text-blue-400">AI Match Score</p>
+                    <p className="text-sm font-medium text-foreground dark:text-foreground">AI Match Score</p>
                     <p className="text-xs text-muted-foreground">Based on job requirements and skill matching</p>
                   </div>
                 </div>
@@ -975,9 +975,9 @@ AHC Recruiting Team`}
                   <p className="text-xs text-muted-foreground mb-1">Stage</p>
                   <p className="text-sm" data-testid="text-profile-stage">
                     <Badge className={
-                      profileCandidate?.stage === 'Shortlisted' ? 'bg-green-500/20 text-green-600 dark:text-green-400' :
-                      profileCandidate?.stage === 'Interview' ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400' :
-                      'bg-gray-500/20 text-gray-600 dark:text-gray-400'
+                      profileCandidate?.stage === 'Shortlisted' ? 'bg-muted/20 text-foreground' :
+                      profileCandidate?.stage === 'Interview' ? 'bg-muted/20 text-foreground dark:text-foreground' :
+                      'bg-gray-500/20 text-gray-600'
                     }>
                       {profileCandidate?.stage || 'New'}
                     </Badge>
@@ -1011,8 +1011,8 @@ AHC Recruiting Team`}
 
               {/* AI Reasoning */}
               {(profileCandidate?.metadata as any)?.aiReasoning && (
-                <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                  <p className="text-xs text-blue-600 dark:text-blue-400 mb-2">AI Analysis</p>
+                <div className="p-4 rounded-lg bg-muted/10 border border-border/20">
+                  <p className="text-xs text-foreground dark:text-foreground mb-2">AI Analysis</p>
                   <p className="text-sm text-foreground" data-testid="text-profile-ai-reasoning">
                     {(profileCandidate.metadata as any).aiReasoning}
                   </p>
@@ -1040,7 +1040,7 @@ AHC Recruiting Team`}
                 handleAIContact(profileCandidate);
                 setProfileOpen(false);
               }} 
-              className="bg-blue-600 hover:bg-blue-500 text-white gap-2"
+              className="bg-muted hover:bg-muted text-white gap-2"
             >
               <Bot className="h-4 w-4" /> Invite to Interview
             </Button>

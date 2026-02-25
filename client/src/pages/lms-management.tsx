@@ -142,7 +142,7 @@ export default function LMSManagement() {
                   <p className="text-sm text-muted-foreground">Total Courses</p>
                   <p className="text-2xl font-bold">{courses.length}</p>
                 </div>
-                <BookOpen className="h-8 w-8 text-blue-500" />
+                <BookOpen className="h-8 w-8 text-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -153,7 +153,7 @@ export default function LMSManagement() {
                   <p className="text-sm text-muted-foreground">Active Learners</p>
                   <p className="text-2xl font-bold">{courses.reduce((sum, c) => sum + (c.enrolledCount || 0), 0)}</p>
                 </div>
-                <Users className="h-8 w-8 text-green-500" />
+                <Users className="h-8 w-8 text-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -164,7 +164,7 @@ export default function LMSManagement() {
                   <p className="text-sm text-muted-foreground">Assessments</p>
                   <p className="text-2xl font-bold">{assessments.length}</p>
                 </div>
-                <FileText className="h-8 w-8 text-blue-500" />
+                <FileText className="h-8 w-8 text-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -175,7 +175,7 @@ export default function LMSManagement() {
                   <p className="text-sm text-muted-foreground">Certificates</p>
                   <p className="text-2xl font-bold">{certificates.length}</p>
                 </div>
-                <Award className="h-8 w-8 text-yellow-500" />
+                <Award className="h-8 w-8 text-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -394,7 +394,7 @@ export default function LMSManagement() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Card>
                     <CardContent className="pt-6 text-center">
-                      <Trophy className="h-12 w-12 mx-auto mb-4 text-yellow-500" />
+                      <Trophy className="h-12 w-12 mx-auto mb-4 text-foreground" />
                       <h3 className="font-semibold mb-2">Badges</h3>
                       <p className="text-sm text-muted-foreground mb-4">Award badges for achievements</p>
                       <Button size="sm">Manage Badges</Button>
@@ -402,7 +402,7 @@ export default function LMSManagement() {
                   </Card>
                   <Card>
                     <CardContent className="pt-6 text-center">
-                      <Target className="h-12 w-12 mx-auto mb-4 text-blue-500" />
+                      <Target className="h-12 w-12 mx-auto mb-4 text-foreground" />
                       <h3 className="font-semibold mb-2">Leaderboard</h3>
                       <p className="text-sm text-muted-foreground mb-4">View top performers</p>
                       <Button size="sm">View Leaderboard</Button>
@@ -410,7 +410,7 @@ export default function LMSManagement() {
                   </Card>
                   <Card>
                     <CardContent className="pt-6 text-center">
-                      <Award className="h-12 w-12 mx-auto mb-4 text-blue-500" />
+                      <Award className="h-12 w-12 mx-auto mb-4 text-foreground" />
                       <h3 className="font-semibold mb-2">Awards</h3>
                       <p className="text-sm text-muted-foreground mb-4">Distribute learning awards</p>
                       <Button size="sm">Manage Awards</Button>

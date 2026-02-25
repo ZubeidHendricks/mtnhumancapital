@@ -59,7 +59,7 @@ const linkifyText = (text: string) => {
           href={part}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-600 dark:text-blue-400 hover:text-blue-300 underline break-all"
+          className="text-foreground dark:text-foreground hover:text-foreground underline break-all"
         >
           {part}
         </a>
@@ -497,9 +497,9 @@ export default function WhatsAppMonitor() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "active":
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Active</Badge>;
+        return <Badge variant="outline" className="bg-muted text-foreground border-border">Active</Badge>;
       case "pending":
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pending</Badge>;
+        return <Badge variant="outline" className="bg-muted text-foreground border-border">Pending</Badge>;
       case "closed":
         return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Closed</Badge>;
       default:
@@ -510,11 +510,11 @@ export default function WhatsAppMonitor() {
   const getTypeBadge = (type: string) => {
     switch (type) {
       case "recruitment":
-        return <Badge className="bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/20">Recruitment</Badge>;
+        return <Badge className="bg-muted/20 text-foreground dark:text-foreground border-border/20">Recruitment</Badge>;
       case "document_request":
-        return <Badge className="bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/20">Documents</Badge>;
+        return <Badge className="bg-muted/20 text-foreground dark:text-foreground border-border/20">Documents</Badge>;
       case "appointment":
-        return <Badge className="bg-teal-600/20 text-teal-700 dark:text-teal-400 border-teal-600/20">Appointment</Badge>;
+        return <Badge className="bg-muted/20 text-foreground dark:text-foreground border-border/20">Appointment</Badge>;
       case "general":
       default:
         return <Badge className="bg-white/10 text-muted-foreground border-border dark:border-white/10">General</Badge>;
@@ -525,13 +525,13 @@ export default function WhatsAppMonitor() {
     if (message.direction === 'inbound') return null;
     switch (message.status) {
       case "read":
-        return <CheckCircle2 className="h-3 w-3 text-blue-500" />;
+        return <CheckCircle2 className="h-3 w-3 text-foreground" />;
       case "delivered":
         return <CheckCircle2 className="h-3 w-3 text-gray-500" />;
       case "sent":
         return <Clock className="h-3 w-3 text-gray-400" />;
       case "failed":
-        return <AlertCircle className="h-3 w-3 text-red-500" />;
+        return <AlertCircle className="h-3 w-3 text-destructive" />;
       default:
         return <Clock className="h-3 w-3 text-gray-400" />;
     }
@@ -547,16 +547,16 @@ export default function WhatsAppMonitor() {
               <p className="text-muted-foreground mt-1">Manage candidate conversations and AI interactions</p>
             </div>
             <div className="flex items-center gap-3">
-              <Badge variant="outline" className="bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20">
-                <span className="w-2 h-2 rounded-full bg-green-400 mr-2 animate-pulse"></span>
+              <Badge variant="outline" className="bg-muted/10 text-foreground border-border/20">
+                <span className="w-2 h-2 rounded-full bg-muted mr-2 animate-pulse"></span>
                 {conversations.length} Active
               </Badge>
             </div>
           </div>
           {whatsappStatus && !whatsappStatus.configured && (
-            <div className="mt-4 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg flex items-center gap-3">
-              <AlertCircle className="h-5 w-5 text-yellow-500" />
-              <p className="text-yellow-600 dark:text-yellow-400">WhatsApp API is not configured. Messages will be stored but not sent.</p>
+            <div className="mt-4 p-4 bg-muted/10 border border-border/20 rounded-lg flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-foreground" />
+              <p className="text-foreground">WhatsApp API is not configured. Messages will be stored but not sent.</p>
             </div>
           )}
         </div>
@@ -620,7 +620,7 @@ export default function WhatsAppMonitor() {
                       >
                         <div className="flex items-start gap-3">
                           <Avatar>
-                            <AvatarFallback className="bg-green-500/20 text-green-600 dark:text-green-400">
+                            <AvatarFallback className="bg-muted/20 text-foreground">
                               {(conv.profileName || conv.phone).charAt(0).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
@@ -630,7 +630,7 @@ export default function WhatsAppMonitor() {
                                 {conv.profileName || conv.phone}
                               </span>
                               {conv.unreadCount > 0 && (
-                                <Badge className="bg-green-500 text-white ml-2">{conv.unreadCount}</Badge>
+                                <Badge className="bg-muted text-white ml-2">{conv.unreadCount}</Badge>
                               )}
                             </div>
                             <p className="text-sm text-muted-foreground truncate mt-0.5">
@@ -669,7 +669,7 @@ export default function WhatsAppMonitor() {
                         <ChevronLeft className="h-5 w-5" />
                       </Button>
                       <Avatar>
-                        <AvatarFallback className="bg-green-500/20 text-green-600 dark:text-green-400">
+                        <AvatarFallback className="bg-muted/20 text-foreground">
                           {(conversationDetail.conversation.profileName || conversationDetail.conversation.phone).charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
@@ -752,7 +752,7 @@ export default function WhatsAppMonitor() {
                               className={`max-w-[80%] rounded-2xl px-4 py-2 ${
                                 message.direction === 'outbound'
                                   ? message.senderType === 'ai'
-                                    ? 'bg-blue-500/20 text-blue-200'
+                                    ? 'bg-muted/20 text-foreground'
                                     : 'bg-primary text-primary-foreground'
                                   : 'bg-white/10 text-foreground'
                               }`}
@@ -776,7 +776,7 @@ export default function WhatsAppMonitor() {
                               )}
                               <div className={`flex items-center justify-end gap-1 mt-1 text-xs ${
                                 message.direction === 'outbound' && message.senderType !== 'ai'
-                                  ? 'text-blue-100'
+                                  ? 'text-foreground'
                                   : 'text-gray-500'
                               }`}>
                                 <span>
@@ -895,7 +895,7 @@ export default function WhatsAppMonitor() {
                           <Card className="p-3 bg-white/5 border-border dark:border-white/10">
                             <div className="flex items-center gap-3">
                               <Avatar className="h-10 w-10">
-                                <AvatarFallback className="bg-blue-500/20 text-blue-600 dark:text-blue-400">
+                                <AvatarFallback className="bg-muted/20 text-foreground dark:text-foreground">
                                   {conversationDetail.candidate.fullName.charAt(0)}
                                 </AvatarFallback>
                               </Avatar>
@@ -936,7 +936,7 @@ export default function WhatsAppMonitor() {
                           {calendlyConfig?.configured && (
                             <Button
                               variant="outline"
-                              className="w-full justify-start border-border dark:border-white/10 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400"
+                              className="w-full justify-start border-border dark:border-white/10 bg-muted/10 hover:bg-muted/20 text-foreground dark:text-foreground"
                               onClick={openCalendlyInNewWindow}
                               data-testid="btn-calendly"
                             >
@@ -1271,7 +1271,7 @@ export default function WhatsAppMonitor() {
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Mic className="h-5 w-5 text-blue-500" />
+                <Mic className="h-5 w-5 text-foreground" />
                 Send Voice Interview Invite
               </DialogTitle>
               <DialogDescription>
@@ -1301,9 +1301,9 @@ export default function WhatsAppMonitor() {
                     {linkifyText(interviewInvitePreview.messagePreview)}
                   </div>
                 </div>
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                  <p className="text-xs text-amber-600">
+                <div className="bg-muted/10 border border-border/20 rounded-lg p-3 flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-foreground mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-foreground">
                     The interview link will be valid for 7 days. The candidate will need microphone access to complete the voice interview.
                   </p>
                 </div>
@@ -1322,7 +1322,7 @@ export default function WhatsAppMonitor() {
               <Button
                 onClick={sendInterviewInvite}
                 disabled={isSendingInterviewInvite}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-muted hover:bg-muted"
                 data-testid="btn-send-interview-invite"
               >
                 {isSendingInterviewInvite ? (
