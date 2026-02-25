@@ -10,26 +10,29 @@ export function Hero() {
   const [showDemo, setShowDemo] = useState(false);
 
   return (
-    <section className="relative min-h-screen flex items-center pt-20 overflow-hidden bg-white">
-      <div className="absolute inset-0 z-0">
-        <div className="absolute bottom-0 left-0 right-0 h-[60%] bg-gradient-to-t from-gray-50 to-transparent" />
-      </div>
-
+    <section className="relative min-h-screen flex items-center pt-20 overflow-hidden" style={{ backgroundColor: '#FFCB00' }}>
       <div className="container mx-auto px-6 relative z-10">
-        <div className="max-w-4xl mx-auto text-center">
+        <div className="max-w-5xl mx-auto text-center">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6 }}
             className="flex flex-col items-center"
           >
             <img 
-              src="/logos/mtn-new-logo.svg" 
-              alt="MTN - Human Capital" 
-              className="h-24 sm:h-32 md:h-40 lg:h-48 w-auto object-contain mb-8"
+              src="/logos/mtn-hero-logo.svg" 
+              alt="MTN" 
+              className="w-[280px] sm:w-[360px] md:w-[450px] lg:w-[550px] h-auto object-contain mb-10"
               data-testid="img-hero-logo"
             />
-            <span className="inline-block py-1.5 px-4 rounded-full bg-black/5 border border-black/10 text-black text-xs font-medium tracking-wide mb-6">
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <span className="inline-block py-1.5 px-4 rounded-full bg-black/10 text-black text-xs font-medium tracking-wide mb-6">
               NEXT GEN ADVISORY SERVICES
             </span>
           </motion.div>
@@ -37,18 +40,18 @@ export function Hero() {
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
             className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-6 text-black"
           >
             Operational Excellence <br />
-            <span className="text-gray-400">Powered by Intelligence</span>
+            <span className="text-black/40">Powered by Intelligence</span>
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-xl text-gray-500 mb-10 max-w-2xl mx-auto"
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="text-xl text-black/60 mb-10 max-w-2xl mx-auto"
           >
             Unify your HR, Finance, and Operations with our AI-driven advisory platform. 
             Automate compliance, streamline workflows, and visualize success.
@@ -57,7 +60,7 @@ export function Hero() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
             <Link href="/login">
@@ -68,7 +71,7 @@ export function Hero() {
             <Button 
               size="lg" 
               variant="outline" 
-              className="h-12 px-8 text-base border-black/20 text-black hover:bg-black/5"
+              className="h-12 px-8 text-base border-black/30 text-black hover:bg-black/10 bg-transparent"
               onClick={() => setShowDemo(true)}
               data-testid="button-watch-demo"
             >
