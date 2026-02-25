@@ -5,8 +5,6 @@ import { CheckCircle2 } from "lucide-react";
 export function DashboardPreview() {
   return (
     <section id="platform" className="py-24 relative overflow-hidden bg-white">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#FFCB00]/5 rounded-full blur-[120px] pointer-events-none" />
-
       <div className="container mx-auto px-6 relative z-10">
         <div className="flex flex-col lg:flex-row items-center gap-16">
           
@@ -17,11 +15,11 @@ export function DashboardPreview() {
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
             >
-              <h2 className="text-3xl md:text-5xl font-bold mb-8 leading-tight text-[#002868]">
+              <h2 className="text-3xl md:text-5xl font-bold mb-8 leading-tight text-black">
                 Control Center for <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FFCB00] to-[#E6B800]">Modern Leadership</span>
+                <span className="text-gray-400">Modern Leadership</span>
               </h2>
-              <p className="text-lg text-gray-600 mb-8">
+              <p className="text-lg text-gray-500 mb-8">
                 The AHC Executive Dashboard unifies data from HR, Finance, and Operations into a single source of truth. Receive real-time alerts via WhatsApp integration and monitor contract timelines effortlessly.
               </p>
 
@@ -32,8 +30,8 @@ export function DashboardPreview() {
                   "AI-Driven Risk & Compliance Notifications",
                   "Unified Document & Tender Management"
                 ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-3 text-[#002868]" data-testid={`text-feature-${i}`}>
-                    <CheckCircle2 className="w-5 h-5 text-[#FFCB00] shrink-0" />
+                  <li key={i} className="flex items-center gap-3 text-black" data-testid={`text-feature-${i}`}>
+                    <CheckCircle2 className="w-5 h-5 text-black shrink-0" />
                     {item}
                   </li>
                 ))}
@@ -49,7 +47,6 @@ export function DashboardPreview() {
               transition={{ duration: 0.8 }}
               className="relative rounded-2xl overflow-hidden border border-gray-200 shadow-2xl bg-white group"
             >
-              <div className="absolute inset-0 bg-gradient-to-tr from-[#FFCB00]/10 to-[#002868]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <img 
                 src={dashImg} 
                 alt="Executive Dashboard Interface" 
@@ -66,7 +63,7 @@ export function DashboardPreview() {
                 <div className="flex items-center gap-3">
                   <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
                   <div>
-                    <p className="text-xs text-gray-500">System Status</p>
+                    <p className="text-xs text-gray-400">System Status</p>
                     <p className="font-mono text-sm font-bold text-green-600">OPTIMAL</p>
                   </div>
                 </div>
@@ -79,8 +76,8 @@ export function DashboardPreview() {
                 className="absolute -top-6 -right-6 bg-white border border-gray-200 p-4 rounded-xl shadow-xl hidden md:block"
               >
                 <div className="text-center">
-                  <p className="text-xs text-gray-500">Efficiency Gain</p>
-                  <p className="font-mono text-2xl font-bold text-[#FFCB00]">+245%</p>
+                  <p className="text-xs text-gray-400">Efficiency Gain</p>
+                  <p className="font-mono text-2xl font-bold text-black">+245%</p>
                 </div>
               </motion.div>
 

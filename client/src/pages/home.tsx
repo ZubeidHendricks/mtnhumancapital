@@ -9,61 +9,59 @@ import { Link } from "wouter";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-white text-gray-900 overflow-x-hidden">
+    <div className="min-h-screen bg-white text-black overflow-x-hidden">
       <main>
         <Hero />
         
         <AHCFeatures />
 
-        <section className="py-24 bg-[#F8F8F8] border-y border-gray-200 relative overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,203,0,0.05)_0%,rgba(0,0,0,0)_60%)]" />
-          
+        <section className="py-24 bg-gray-50 border-y border-gray-200 relative overflow-hidden">
           <div className="container mx-auto px-6 relative z-10">
             <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-3xl md:text-5xl font-bold mb-6 text-[#002868]">
-                The <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FFCB00] to-[#E6B800]">AI Interview Suite</span>
+              <h2 className="text-3xl md:text-5xl font-bold mb-6 text-black">
+                The AI Interview Suite
               </h2>
-              <p className="text-gray-600 text-lg">
+              <p className="text-gray-500 text-lg">
                 Revolutionize your hiring process with our dual-stage AI assessment platform.
                 From voice-first screening to personalized video interviews.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-              <Card className="bg-white border-gray-200 hover:border-[#002868]/30 transition-all group" data-testid="card-voice-interview">
+              <Card className="bg-white border-gray-200 hover:border-black/20 transition-all group" data-testid="card-voice-interview">
                 <CardHeader>
-                  <div className="w-12 h-12 rounded-xl bg-[#002868]/10 flex items-center justify-center mb-4 border border-[#002868]/20 group-hover:scale-110 transition-transform">
-                    <Mic className="w-6 h-6 text-[#002868]" />
+                  <div className="w-12 h-12 rounded-xl bg-black/5 flex items-center justify-center mb-4 border border-gray-200 group-hover:bg-black group-hover:scale-110 transition-all">
+                    <Mic className="w-6 h-6 text-black group-hover:text-white transition-colors" />
                   </div>
-                  <CardTitle className="text-2xl text-[#002868]">AI Voice Interview</CardTitle>
-                  <CardDescription className="text-gray-600">Stage 1: Interactive Roleplay Practice</CardDescription>
+                  <CardTitle className="text-2xl text-black">AI Voice Interview</CardTitle>
+                  <CardDescription className="text-gray-500">Stage 1: Interactive Roleplay Practice</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <p className="text-gray-600">
+                  <p className="text-gray-500">
                     Practice with an AI that transforms into any interviewer character you need. Get real-time feedback on your performance with empathic voice technology.
                   </p>
                   <Link href="/interview/voice">
-                    <Button className="w-full bg-[#002868] hover:bg-[#001844] text-white group-hover:shadow-lg group-hover:shadow-[#002868]/20" data-testid="button-voice-demo">
+                    <Button className="w-full bg-black hover:bg-gray-800 text-white group-hover:shadow-lg" data-testid="button-voice-demo">
                       Try Voice Demo <ArrowRight className="ml-2 w-4 h-4" />
                     </Button>
                   </Link>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border-gray-200 hover:border-[#FFCB00]/50 transition-all group" data-testid="card-video-interview">
+              <Card className="bg-white border-gray-200 hover:border-black/20 transition-all group" data-testid="card-video-interview">
                 <CardHeader>
-                  <div className="w-12 h-12 rounded-xl bg-[#FFCB00]/10 flex items-center justify-center mb-4 border border-[#FFCB00]/30 group-hover:scale-110 transition-transform">
-                    <Video className="w-6 h-6 text-[#002868]" />
+                  <div className="w-12 h-12 rounded-xl bg-black/5 flex items-center justify-center mb-4 border border-gray-200 group-hover:bg-black group-hover:scale-110 transition-all">
+                    <Video className="w-6 h-6 text-black group-hover:text-white transition-colors" />
                   </div>
-                  <CardTitle className="text-2xl text-[#002868]">Cloned Video Interview</CardTitle>
-                  <CardDescription className="text-gray-600">Stage 2: Deep Dive</CardDescription>
+                  <CardTitle className="text-2xl text-black">Cloned Video Interview</CardTitle>
+                  <CardDescription className="text-gray-500">Stage 2: Deep Dive</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <p className="text-gray-600">
+                  <p className="text-gray-500">
                     Conduct personalized video interviews using digital twin technology. Cloned avatars ask role-specific questions with human-like presence.
                   </p>
                   <Link href="/interview/video">
-                    <Button className="w-full bg-[#FFCB00] hover:bg-[#E6B800] text-black font-semibold group-hover:shadow-lg group-hover:shadow-[#FFCB00]/20" data-testid="button-video-demo">
+                    <Button className="w-full bg-black hover:bg-gray-800 text-white group-hover:shadow-lg" data-testid="button-video-demo">
                       Try Video Demo <ArrowRight className="ml-2 w-4 h-4" />
                     </Button>
                   </Link>
@@ -76,20 +74,20 @@ export default function Home() {
         <Services />
         <DashboardPreview />
 
-        <section className="py-24 border-t border-gray-200 bg-gradient-to-b from-white to-[#F8F8F8]">
+        <section className="py-24 border-t border-gray-200 bg-gray-50">
           <div className="container mx-auto px-6 text-center">
-            <h2 className="text-4xl font-bold mb-6 text-[#002868]">Ready to Transform Your Operations?</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto mb-10 text-lg">
+            <h2 className="text-4xl font-bold mb-6 text-black">Ready to Transform Your Operations?</h2>
+            <p className="text-gray-500 max-w-2xl mx-auto mb-10 text-lg">
               Join the future of human capital and operational management with MTN - Human Capital's intelligent advisory solutions.
             </p>
             <form className="max-w-md mx-auto flex gap-2">
               <input 
                 type="email" 
                 placeholder="Enter your email address" 
-                className="flex-1 bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FFCB00]/50 focus:border-[#FFCB00]"
+                className="flex-1 bg-white border border-gray-300 rounded-lg px-4 py-3 text-black focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black"
                 data-testid="input-email-cta"
               />
-              <button className="bg-[#FFCB00] text-black font-semibold px-6 py-3 rounded-lg hover:bg-[#E6B800] transition-colors" data-testid="button-get-started">
+              <button className="bg-black text-white font-semibold px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors" data-testid="button-get-started">
                 Get Started
               </button>
             </form>
@@ -97,7 +95,7 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="bg-[#002868] text-white py-12">
+      <footer className="bg-black text-white py-12">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
             
@@ -110,25 +108,25 @@ export default function Home() {
                   data-testid="img-footer-logo"
                 />
               </div>
-              <p className="text-white/60 max-w-xs">
+              <p className="text-white/50 max-w-xs">
                 MTN - Human Capital. <br/>
                 Pioneering the intersection of human potential and artificial intelligence.
               </p>
             </div>
 
             <div>
-              <h3 className="font-bold mb-4 text-[#FFCB00]">Solutions</h3>
-              <ul className="space-y-2 text-white/60 text-sm">
-                <li><a href="#" className="hover:text-[#FFCB00] transition-colors">Executive Dashboard</a></li>
-                <li><a href="#" className="hover:text-[#FFCB00] transition-colors">Finance Automation</a></li>
-                <li><a href="#" className="hover:text-[#FFCB00] transition-colors">AI Recruitment</a></li>
-                <li><a href="#" className="hover:text-[#FFCB00] transition-colors">Integrity Checks</a></li>
+              <h3 className="font-bold mb-4 text-white">Solutions</h3>
+              <ul className="space-y-2 text-white/50 text-sm">
+                <li><a href="#" className="hover:text-white transition-colors">Executive Dashboard</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Finance Automation</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">AI Recruitment</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Integrity Checks</a></li>
               </ul>
             </div>
 
             <div>
-              <h3 className="font-bold mb-4 text-[#FFCB00]">Contact</h3>
-              <ul className="space-y-3 text-white/60 text-sm">
+              <h3 className="font-bold mb-4 text-white">Contact</h3>
+              <ul className="space-y-3 text-white/50 text-sm">
                 <li className="flex items-center gap-2"><Mail className="w-4 h-4" /> contact@mtn-gpt.com</li>
                 <li className="flex items-center gap-2"><Phone className="w-4 h-4" /> +27 (0) 83 123 4567</li>
                 <li className="flex items-center gap-2"><MapPin className="w-4 h-4" /> Johannesburg, South Africa</li>
@@ -136,7 +134,7 @@ export default function Home() {
             </div>
           </div>
           
-          <div className="border-t border-white/10 mt-12 pt-8 text-center text-sm text-white/40">
+          <div className="border-t border-white/10 mt-12 pt-8 text-center text-sm text-white/30">
             © {new Date().getFullYear()} MTN - Human Capital. All rights reserved.
           </div>
         </div>

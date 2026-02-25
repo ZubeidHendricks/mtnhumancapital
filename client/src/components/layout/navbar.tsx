@@ -50,7 +50,7 @@ export function Navbar() {
             <a 
               key={link.name} 
               href={link.href}
-              className="text-sm font-medium text-gray-600 hover:text-[#002868] transition-colors"
+              className="text-sm font-medium text-gray-600 hover:text-black transition-colors"
             >
               {link.name}
             </a>
@@ -61,7 +61,7 @@ export function Navbar() {
           {/* Features Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-gray-600 hover:text-[#002868] hover:bg-[#FFCB00]/10 gap-1">
+              <Button variant="ghost" size="sm" className="text-gray-600 hover:text-black hover:bg-black/5 gap-1">
                 Features <ChevronDown className="w-3 h-3" />
               </Button>
             </DropdownMenuTrigger>
@@ -329,7 +329,7 @@ export function Navbar() {
           <ThemeToggle />
 
           <Link href="/login">
-            <Button size="sm" className="bg-[#FFCB00] text-black font-semibold hover:bg-[#E6B800] shadow-[0_0_20px_-5px_rgba(255,203,0,0.5)]">
+            <Button size="sm" className="bg-black text-white font-semibold hover:bg-gray-800">
               Sign In
             </Button>
           </Link>
@@ -456,7 +456,7 @@ export function Navbar() {
               <div className="h-px bg-border my-2" />
               
               <Link href="/login">
-                <Button className="w-full bg-[#FFCB00] text-black font-semibold hover:bg-[#E6B800]">Sign In</Button>
+                <Button className="w-full bg-black text-white font-semibold hover:bg-gray-800">Sign In</Button>
               </Link>
             </div>
           </motion.div>

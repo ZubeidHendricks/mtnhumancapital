@@ -12,8 +12,7 @@ export function Hero() {
   return (
     <section className="relative min-h-screen flex items-center pt-20 overflow-hidden bg-white">
       <div className="absolute inset-0 z-0">
-        <div className="absolute bottom-0 left-0 right-0 h-[60%] bg-gradient-to-t from-[#FFCB00]/10 to-transparent" />
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#FFCB00]/5 rounded-full blur-[120px]" />
+        <div className="absolute bottom-0 left-0 right-0 h-[60%] bg-gradient-to-t from-gray-50 to-transparent" />
       </div>
 
       <div className="container mx-auto px-6 relative z-10">
@@ -30,7 +29,7 @@ export function Hero() {
               className="h-24 sm:h-32 md:h-40 lg:h-48 w-auto object-contain mb-8"
               data-testid="img-hero-logo"
             />
-            <span className="inline-block py-1.5 px-4 rounded-full bg-[#FFCB00]/15 border border-[#FFCB00]/30 text-[#002868] text-xs font-medium tracking-wide mb-6">
+            <span className="inline-block py-1.5 px-4 rounded-full bg-black/5 border border-black/10 text-black text-xs font-medium tracking-wide mb-6">
               NEXT GEN ADVISORY SERVICES
             </span>
           </motion.div>
@@ -39,17 +38,17 @@ export function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-6 text-[#002868]"
+            className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-6 text-black"
           >
             Operational Excellence <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FFCB00] to-[#E6B800]">Powered by Intelligence</span>
+            <span className="text-gray-400">Powered by Intelligence</span>
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto"
+            className="text-xl text-gray-500 mb-10 max-w-2xl mx-auto"
           >
             Unify your HR, Finance, and Operations with our AI-driven advisory platform. 
             Automate compliance, streamline workflows, and visualize success.
@@ -62,14 +61,14 @@ export function Hero() {
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
             <Link href="/login">
-              <Button size="lg" className="h-12 px-8 text-base shadow-lg shadow-[#FFCB00]/25 bg-[#FFCB00] text-black font-semibold hover:bg-[#E6B800]" data-testid="button-start-transformation">
+              <Button size="lg" className="h-12 px-8 text-base shadow-lg bg-black text-white font-semibold hover:bg-gray-800" data-testid="button-start-transformation">
                 Start Transformation <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </Link>
             <Button 
               size="lg" 
               variant="outline" 
-              className="h-12 px-8 text-base border-[#002868]/20 text-[#002868] hover:bg-[#002868]/5"
+              className="h-12 px-8 text-base border-black/20 text-black hover:bg-black/5"
               onClick={() => setShowDemo(true)}
               data-testid="button-watch-demo"
             >
