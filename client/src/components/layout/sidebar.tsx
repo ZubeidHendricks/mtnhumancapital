@@ -126,7 +126,7 @@ export function Sidebar() {
               <img
                 src="/logos/mtn-new-logo.svg"
                 alt="MTN"
-                className="h-8 w-auto object-contain"
+                className="h-12 w-auto object-contain"
               />
             </div>
           </Link>
