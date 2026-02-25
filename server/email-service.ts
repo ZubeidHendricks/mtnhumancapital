@@ -1,47 +1,10 @@
-import { Resend } from 'resend';
+import nodemailer from "nodemailer";
 import type { IStorage } from "./storage";
 
-// Resend integration - credentials managed by Replit connector
-let connectionSettings: any;
-
-async function getCredentials() {
-  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
-  const xReplitToken = process.env.REPL_IDENTITY
-    ? 'repl ' + process.env.REPL_IDENTITY
-    : process.env.WEB_REPL_RENEWAL
-    ? 'depl ' + process.env.WEB_REPL_RENEWAL
-    : null;
-
-  if (!xReplitToken) {
-    throw new Error('Resend connector token not available');
-  }
-
-  connectionSettings = await fetch(
-    'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=resend',
-    {
-      headers: {
-        'Accept': 'application/json',
-        'X_REPLIT_TOKEN': xReplitToken
-      }
-    }
-  ).then(res => res.json()).then(data => data.items?.[0]);
-
-  if (!connectionSettings || !connectionSettings.settings.api_key) {
-    throw new Error('Resend not connected');
-  }
-
-  return {
-    apiKey: connectionSettings.settings.api_key,
-    fromEmail: connectionSettings.settings.from_email
-  };
-}
-
-async function getResendClient() {
-  const { apiKey, fromEmail } = await getCredentials();
-  return {
-    client: new Resend(apiKey),
-    fromEmail
-  };
+interface EmailAttachment {
+  filename: string;
+  content: Buffer;
+  contentType?: string;
 }
 
 interface EmailOptions {
@@ -49,13 +12,35 @@ interface EmailOptions {
   subject: string;
   body: string;
   html?: string;
+  attachments?: EmailAttachment[];
 }
 
 export class EmailService {
   private storage: IStorage;
+  private transporter: nodemailer.Transporter | null = null;
 
   constructor(storage: IStorage) {
     this.storage = storage;
+
+    const smtpHost = process.env.SMTP_HOST;
+    const smtpPort = process.env.SMTP_PORT;
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPassword = process.env.SMTP_PASSWORD;
+
+    if (smtpHost && smtpUser && smtpPassword) {
+      this.transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: parseInt(smtpPort || "587", 10),
+        secure: parseInt(smtpPort || "587", 10) === 465,
+        auth: {
+          user: smtpUser,
+          pass: smtpPassword,
+        },
+      });
+      console.log(`[EmailService] SMTP configured: ${smtpHost}:${smtpPort || 587}`);
+    } else {
+      console.log("[EmailService] SMTP not configured - emails will be logged to console only");
+    }
   }
 
   async getITEmail(): Promise<string | null> {
@@ -68,24 +53,52 @@ export class EmailService {
     return setting?.value || null;
   }
 
+  async getBuildingAccessEmail(): Promise<string | null> {
+    const setting = await this.storage.getSystemSetting("building_access_email");
+    return setting?.value || null;
+  }
+
+  async getDefaultEquipmentList(): Promise<string[]> {
+    const setting = await this.storage.getSystemSetting("default_equipment_list");
+    if (setting?.value) {
+      return setting.value.split(",").map((s: string) => s.trim()).filter(Boolean);
+    }
+    return ["Laptop", "External Monitor", "Keyboard & Mouse"];
+  }
+
   async sendEmail(options: EmailOptions): Promise<boolean> {
     try {
-      const { client, fromEmail } = await getResendClient();
-
-      const result = await client.emails.send({
-        from: fromEmail || 'MTN Human Capital <onboarding@resend.dev>',
-        to: options.to,
-        subject: options.subject,
-        html: options.html || options.body.replace(/\n/g, '<br>'),
-        text: options.body,
-      });
-
-      if (result.error) {
-        console.error("Resend error:", result.error);
-        return false;
+      const actualTo = process.env.DEV_TEST_EMAIL || options.to;
+      if (process.env.DEV_TEST_EMAIL && process.env.DEV_TEST_EMAIL !== options.to) {
+        console.log(`[EmailService] DEV_TEST_EMAIL override: ${options.to} -> ${actualTo}`);
       }
 
-      console.log(`Email sent successfully to ${options.to} (ID: ${result.data?.id})`);
+      if (this.transporter) {
+        const mailOptions: any = {
+          from: process.env.SMTP_FROM || process.env.SMTP_USER || "noreply@mtn-gpt.com",
+          to: actualTo,
+          subject: options.subject,
+          text: options.body,
+          html: options.html,
+        };
+        if (options.attachments?.length) {
+          mailOptions.attachments = options.attachments.map(a => ({
+            filename: a.filename,
+            content: a.content,
+            contentType: a.contentType,
+          }));
+        }
+        await this.transporter.sendMail(mailOptions);
+        console.log(`[EmailService] Email sent to ${actualTo}: ${options.subject}${options.attachments?.length ? ` (${options.attachments.length} attachment(s))` : ''}`);
+      } else {
+        console.log("\n=== EMAIL NOTIFICATION (console only - SMTP not configured) ===");
+        console.log(`To: ${actualTo}`);
+        console.log(`Subject: ${options.subject}`);
+        console.log(`Body:\n${options.body}`);
+        if (options.html) console.log(`HTML: (included)`);
+        console.log("========================\n");
+      }
+
       return true;
     } catch (error) {
       console.error("Error sending email:", error);
