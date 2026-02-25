@@ -31,7 +31,7 @@ export function Navbar() {
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/95 backdrop-blur-md">
+    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur-md">
       <div className="container mx-auto px-4 md:px-6 flex items-center justify-between h-16 md:h-20">
         {/* Logo - Brand guideline: 20mm minimum height with clearspace = height/2 */}
         <Link href="/">
@@ -50,18 +50,18 @@ export function Navbar() {
             <a 
               key={link.name} 
               href={link.href}
-              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+              className="text-sm font-medium text-gray-600 hover:text-[#002868] transition-colors"
             >
               {link.name}
             </a>
           ))}
           
-          <div className="h-6 w-px bg-border mx-2" />
+          <div className="h-6 w-px bg-gray-300 mx-2" />
 
           {/* Features Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground hover:bg-accent gap-1">
+              <Button variant="ghost" size="sm" className="text-gray-600 hover:text-[#002868] hover:bg-[#FFCB00]/10 gap-1">
                 Features <ChevronDown className="w-3 h-3" />
               </Button>
             </DropdownMenuTrigger>
@@ -329,7 +329,7 @@ export function Navbar() {
           <ThemeToggle />
 
           <Link href="/login">
-            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_20px_-5px_hsl(var(--primary)/0.5)]">
+            <Button size="sm" className="bg-[#FFCB00] text-black font-semibold hover:bg-[#E6B800] shadow-[0_0_20px_-5px_rgba(255,203,0,0.5)]">
               Sign In
             </Button>
           </Link>
@@ -456,7 +456,7 @@ export function Navbar() {
               <div className="h-px bg-border my-2" />
               
               <Link href="/login">
-                <Button className="w-full bg-primary text-primary-foreground">Sign In</Button>
+                <Button className="w-full bg-[#FFCB00] text-black font-semibold hover:bg-[#E6B800]">Sign In</Button>
               </Link>
             </div>
           </motion.div>
