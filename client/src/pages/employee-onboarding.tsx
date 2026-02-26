@@ -33,7 +33,8 @@ import {
   ClipboardList,
   Settings2,
   Eye,
-  Download
+  Download,
+  RefreshCw
 } from "lucide-react";
 import { renderAsync } from "docx-preview";
 import { toast } from "@/hooks/use-toast";
@@ -66,6 +67,12 @@ function WorkflowDetail({ workflowId, onViewDocument }: { workflowId: string; on
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingRequestId, setUploadingRequestId] = useState<string | null>(null);
   const [remindingRequestId, setRemindingRequestId] = useState<string | null>(null);
+  const [reviewDoc, setReviewDoc] = useState<any | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [reviewBlob, setReviewBlob] = useState<Blob | null>(null);
+  const [reviewMime, setReviewMime] = useState("");
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const reviewDocxRef = useRef<HTMLDivElement | null>(null);
   const workflowsKey = useTenantQueryKey(['onboarding-workflows']);
   const workflowKey = useTenantQueryKey(['onboarding-workflow', workflowId]);
   const docRequestsKey = useTenantQueryKey(['onboarding-doc-requests', workflowId]);
@@ -154,6 +161,50 @@ function WorkflowDetail({ workflowId, onViewDocument }: { workflowId: string; on
       toast({ title: "Failed", description: "Could not verify document.", variant: "destructive" });
     },
   });
+
+  const rejectMutation = useMutation({
+    mutationFn: ({ requestId, reason }: { requestId: string; reason: string }) =>
+      api.post(`/onboarding/document-requests/${requestId}/rejected`, { reason }).then(r => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: docRequestsKey });
+      queryClient.invalidateQueries({ queryKey: agentLogsKey });
+      toast({ title: "Document Rejected", description: "Document has been rejected and candidate notified." });
+    },
+    onError: () => {
+      toast({ title: "Failed", description: "Could not reject document.", variant: "destructive" });
+    },
+  });
+
+  // Fetch the uploaded file as a blob when review dialog opens
+  useEffect(() => {
+    if (!reviewDoc?.receivedDocumentId) {
+      setReviewBlob(null);
+      setReviewMime("");
+      return;
+    }
+    let cancelled = false;
+    setReviewLoading(true);
+    (async () => {
+      try {
+        // First get the document metadata to find the file path
+        const meta = await api.get(`/documents/${reviewDoc.receivedDocumentId}`);
+        const filePath = meta.data.filePath;
+        const mime = meta.data.mimeType || "";
+        if (cancelled) return;
+        // Fetch the actual file as a blob
+        const res = await fetch(`/${filePath}`);
+        const blob = await res.blob();
+        if (cancelled) return;
+        setReviewBlob(blob);
+        setReviewMime(mime);
+      } catch (err) {
+        console.error("Failed to load document for review:", err);
+      } finally {
+        if (!cancelled) setReviewLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [reviewDoc?.receivedDocumentId]);
 
   const sendReminderMutation = useMutation({
     mutationFn: (requestId: string) => {
@@ -333,11 +384,10 @@ function WorkflowDetail({ workflowId, onViewDocument }: { workflowId: string; on
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="h-5 text-[10px] px-1.5 text-green-600"
-                        onClick={() => verifyMutation.mutate(doc.id)}
-                        disabled={verifyMutation.isPending}
+                        className="h-5 text-[10px] px-1.5 text-blue-600"
+                        onClick={() => { setReviewDoc(doc); setRejectionReason(""); }}
                       >
-                        {verifyMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <><CheckCircle2 className="h-3 w-3 mr-0.5" />Verify</>}
+                        <Eye className="h-3 w-3 mr-0.5" />Review
                       </Button>
                     )}
                     {doc.status === "overdue" && (
@@ -518,6 +568,145 @@ function WorkflowDetail({ workflowId, onViewDocument }: { workflowId: string; on
           </ScrollArea>
         )}
       </div>
+
+      {/* Document Review Dialog */}
+      <Dialog open={!!reviewDoc} onOpenChange={() => setReviewDoc(null)}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="shrink-0">
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-4 w-4" />
+              Review: {reviewDoc?.documentName}
+            </DialogTitle>
+          </DialogHeader>
+          {reviewDoc && (
+            <div className="space-y-4 min-h-0 flex flex-col flex-1">
+              {/* Document preview */}
+              <div className="rounded-lg border overflow-auto bg-muted/30 min-h-[200px] flex-1" style={{ maxHeight: "60vh" }}>
+                {reviewLoading ? (
+                  <div className="flex flex-col items-center justify-center p-8 gap-2">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Loading document...</p>
+                  </div>
+                ) : reviewBlob ? (
+                  (() => {
+                    if (reviewMime.startsWith("image/")) {
+                      const url = URL.createObjectURL(reviewBlob);
+                      return (
+                        <div className="flex justify-center p-4 max-h-[400px] overflow-auto">
+                          <img src={url} alt={reviewDoc.documentName} className="max-w-full max-h-[380px] object-contain rounded" onLoad={() => URL.revokeObjectURL(url)} />
+                        </div>
+                      );
+                    }
+                    if (reviewMime === "application/pdf") {
+                      const url = URL.createObjectURL(reviewBlob);
+                      return <iframe src={url} className="w-full h-[400px]" title={reviewDoc.documentName} />;
+                    }
+                    if (reviewMime.includes("wordprocessingml") || reviewMime.includes("msword")) {
+                      return (
+                        <div
+                          ref={(node) => {
+                            if (node && reviewBlob) {
+                              node.innerHTML = '<p class="text-center text-muted-foreground py-8">Rendering document...</p>';
+                              renderAsync(reviewBlob, node, undefined, {
+                                className: "docx-preview",
+                                inWrapper: true,
+                                ignoreWidth: true,
+                                ignoreHeight: false,
+                                ignoreFonts: false,
+                                breakPages: true,
+                              }).catch(() => {
+                                node.innerHTML = '<p class="text-center text-muted-foreground py-8">Failed to render document.</p>';
+                              });
+                            }
+                          }}
+                        />
+                      );
+                    }
+                    // Fallback: download link
+                    const url = URL.createObjectURL(reviewBlob);
+                    return (
+                      <div className="flex flex-col items-center justify-center p-8 gap-3">
+                        <FileText className="w-10 h-10 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">Preview not available for this file type</p>
+                        <a href={url} download={reviewDoc.documentName}>
+                          <Button size="sm" variant="outline" className="gap-1.5">
+                            <Download className="h-3 w-3" />Download to review
+                          </Button>
+                        </a>
+                      </div>
+                    );
+                  })()
+                ) : (
+                  <div className="flex flex-col items-center justify-center p-8 gap-2">
+                    <FileText className="h-6 w-6 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">No document uploaded yet</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Info row */}
+              <div className="flex gap-3 text-xs shrink-0">
+                <div className="flex-1 bg-muted/30 rounded-lg p-2.5 border">
+                  <p className="text-muted-foreground mb-0.5">Type</p>
+                  <p className="font-medium">{reviewDoc.documentName}</p>
+                </div>
+                <div className="flex-1 bg-muted/30 rounded-lg p-2.5 border">
+                  <p className="text-muted-foreground mb-0.5">Received</p>
+                  <p className="font-medium">{reviewDoc.receivedAt ? new Date(reviewDoc.receivedAt).toLocaleDateString() : "N/A"}</p>
+                </div>
+              </div>
+
+              {/* Rejection reason */}
+              <div className="shrink-0">
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                  Rejection reason (only required if rejecting)
+                </label>
+                <textarea
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="e.g. Document is expired, image is blurry..."
+                  rows={2}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm resize-none"
+                />
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex justify-end gap-2 pt-1 shrink-0">
+                <Button variant="outline" size="sm" onClick={() => setReviewDoc(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-red-600 border-red-200 hover:bg-red-50 dark:border-red-500/30 dark:hover:bg-red-500/10 dark:text-red-400"
+                  disabled={!rejectionReason.trim() || rejectMutation.isPending}
+                  onClick={() => {
+                    if (reviewDoc && rejectionReason.trim()) {
+                      rejectMutation.mutate({ requestId: reviewDoc.id, reason: rejectionReason.trim() });
+                      setReviewDoc(null);
+                    }
+                  }}
+                >
+                  {rejectMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <><AlertCircle className="h-3 w-3 mr-1" />Reject</>}
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  disabled={verifyMutation.isPending}
+                  onClick={() => {
+                    if (reviewDoc) {
+                      verifyMutation.mutate(reviewDoc.id);
+                      setReviewDoc(null);
+                    }
+                  }}
+                >
+                  {verifyMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <><CheckCircle2 className="h-3 w-3 mr-1" />Accept</>}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -579,6 +768,7 @@ export default function EmployeeOnboarding() {
 
   // Generate All Previews state
   const [generatedPreviews, setGeneratedPreviews] = useState<{docId: string; blob: Blob; filename: string}[]>([]);
+  const [generatedBatchId, setGeneratedBatchId] = useState<string | null>(null);
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
   const [generateProgress, setGenerateProgress] = useState(0);
 
@@ -636,33 +826,45 @@ export default function EmployeeOnboarding() {
     [previewBlob]
   );
 
-  // Generate all selected document previews
+  // Generate all selected documents with real candidate data
   const handleGenerateAllPreviews = async () => {
-    if (selectedDocuments.length === 0) return;
+    if (selectedDocuments.length === 0 || !selectedEmployee) return;
     setIsGeneratingAll(true);
     setGenerateProgress(0);
-    const results: {docId: string; blob: Blob; filename: string}[] = [];
-    for (let i = 0; i < selectedDocuments.length; i++) {
-      const docId = selectedDocuments[i];
-      try {
-        const response = await api.get(`/documents/preview/${docId}`, { responseType: "blob" });
-        const disposition = response.headers["content-disposition"] || "";
-        const match = disposition.match(/filename="?([^";\n]+)"?/);
-        const filename = match?.[1] || `${docId}-preview.docx`;
-        results.push({ docId, blob: response.data, filename });
-      } catch {
-        const docName = ONBOARDING_DOCUMENTS.find(d => d.id === docId)?.name || docId;
-        toast({ title: "Preview Failed", description: `Could not generate preview for ${docName}.`, variant: "destructive" });
+    setGeneratedBatchId(null);
+    try {
+      // Generate all documents server-side in one call with real candidate data
+      const response = await api.post("/onboarding/generate-documents", {
+        candidateId: selectedEmployee,
+        selectedDocuments,
+        startDate: startDate || undefined,
+      });
+      const { batchId, documents } = response.data as { batchId: string; documents: { docType: string; filename: string; filePath: string }[] };
+      setGeneratedBatchId(batchId);
+
+      // Download each generated document for preview display
+      const results: {docId: string; blob: Blob; filename: string}[] = [];
+      for (let i = 0; i < documents.length; i++) {
+        try {
+          const doc = documents[i];
+          const blobResponse = await api.get(`/onboarding/generated-document/${batchId}/${doc.docType}`, { responseType: "blob" });
+          results.push({ docId: doc.docType, blob: blobResponse.data, filename: doc.filename });
+        } catch {
+          // Individual download failure is non-critical
+        }
+        setGenerateProgress(i + 1);
       }
-      setGenerateProgress(i + 1);
+      setGeneratedPreviews(results);
+    } catch (err: any) {
+      toast({ title: "Generation Failed", description: err?.response?.data?.message || "Could not generate documents.", variant: "destructive" });
     }
-    setGeneratedPreviews(results);
     setIsGeneratingAll(false);
   };
 
   // Clear generated previews when selected documents change
   const clearPreviews = useCallback(() => {
     setGeneratedPreviews([]);
+    setGeneratedBatchId(null);
   }, []);
 
   // Watch selectedDocuments changes to clear previews
@@ -701,13 +903,14 @@ export default function EmployeeOnboarding() {
 
   // Trigger onboarding mutation
   const triggerOnboarding = useMutation({
-    mutationFn: (params: { candidateId: string; requirements: { itSetup: boolean; buildingAccess: boolean; equipment: boolean }; equipmentList?: string[]; startDate?: string; files?: File[]; selectedDocuments?: string[] }) =>
+    mutationFn: (params: { candidateId: string; requirements: { itSetup: boolean; buildingAccess: boolean; equipment: boolean }; equipmentList?: string[]; startDate?: string; files?: File[]; selectedDocuments?: string[]; generatedBatchId?: string }) =>
       onboardingService.triggerOnboarding(params.candidateId, {
         requirements: params.requirements,
         equipmentList: params.equipmentList,
         startDate: params.startDate,
         files: params.files,
         selectedDocuments: params.selectedDocuments,
+        generatedBatchId: params.generatedBatchId,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: workflowsKey });
@@ -719,6 +922,7 @@ export default function EmployeeOnboarding() {
       setStartDate("");
       setSelectedDocuments(["welcome_letter", "employee_handbook", "company_policies"]);
       setGeneratedPreviews([]);
+      setGeneratedBatchId(null);
     },
     onError: (error: any) => {
       toast({
@@ -768,20 +972,10 @@ export default function EmployeeOnboarding() {
       equipmentList: requiresEquipment ? selectedEquipment : [],
       startDate,
       selectedDocuments,
+      generatedBatchId: generatedBatchId || undefined,
     });
   };
 
-<<<<<<< HEAD
-  const getStatusBadge = (status: NewEmployee["onboardingStatus"]) => {
-    switch (status) {
-      case "pending":
-        return <Badge className="bg-gray-500/20 text-gray-600 border-0">Pending</Badge>;
-      case "in_progress":
-        return <Badge className="bg-muted/20 text-foreground dark:text-foreground border-0">In Progress</Badge>;
-      case "completed":
-        return <Badge className="bg-muted/20 text-foreground border-0"><CheckCircle2 className="h-3 w-3 mr-1" />Completed</Badge>;
-    }
-=======
   const isLoading = loadingWorkflows || loadingCandidates;
 
   const handleGoToOnboardingSetup = () => {
@@ -791,21 +985,10 @@ export default function EmployeeOnboarding() {
       scrollY: window.scrollY,
     }));
     navigate("/onboarding-setup");
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
   };
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-6xl">
-<<<<<<< HEAD
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-          <Building2 className="h-8 w-8 text-foreground dark:text-foreground" />
-          Employee Onboarding
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Manage the onboarding process for new employees
-        </p>
-=======
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
@@ -820,7 +1003,6 @@ export default function EmployeeOnboarding() {
           <Settings2 className="h-4 w-4 mr-2" />
           Manage Templates
         </Button>
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
       </div>
 
       <div className="space-y-6">
@@ -836,10 +1018,17 @@ export default function EmployeeOnboarding() {
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label>Select Employee *</Label>
-                <Select value={selectedEmployee} onValueChange={(val) => {
+                <Select value={selectedEmployee} onValueChange={async (val) => {
                   setSelectedEmployee(val);
                   clearPreviews();
-                  // Auto-fill start date from existing workflow
+                  // Auto-fill start date from offer (source of truth), fall back to workflow, then today
+                  try {
+                    const res = await api.get(`/offers/candidate/${val}`);
+                    if (res.data?.startDate) {
+                      setStartDate(new Date(res.data.startDate).toISOString().split('T')[0]);
+                      return;
+                    }
+                  } catch {}
                   const existingWorkflow = workflows.find((w: OnboardingWorkflow) => w.candidateId === val);
                   if (existingWorkflow?.startDate) {
                     setStartDate(new Date(existingWorkflow.startDate).toISOString().split('T')[0]);
@@ -1017,27 +1206,6 @@ export default function EmployeeOnboarding() {
               </div>
             </div>
 
-<<<<<<< HEAD
-            <div className="flex gap-3 pt-4">
-              <Button 
-                variant="outline" 
-                className="flex-1"
-                onClick={handleRequestIT}
-                disabled={!selectedEmployee}
-                data-testid="button-request-it"
-              >
-                <Monitor className="h-4 w-4 mr-2" />
-                Request IT Setup
-              </Button>
-              <Button 
-                className="flex-1 bg-muted hover:bg-muted"
-                onClick={handleSendOnboardingPack}
-                data-testid="button-send-pack"
-              >
-                <Send className="h-4 w-4 mr-2" />
-                Send Onboarding Pack
-              </Button>
-=======
             {/* Document Preview + Actions */}
             <div className="pt-4 border-t space-y-3">
               <div className="flex items-center justify-between">
@@ -1127,48 +1295,37 @@ export default function EmployeeOnboarding() {
                   })}
                 </div>
               )}
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5 text-foreground" />
-              New Employees
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5 text-green-600 dark:text-green-400" />
+                New Employees
+              </CardTitle>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => {
+                  queryClient.resetQueries({ queryKey: workflowsKey });
+                  queryClient.resetQueries({ queryKey: candidatesKey });
+                }}
+                title="Refresh employees"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+            </div>
             <CardDescription>Track onboarding progress for new hires</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-<<<<<<< HEAD
-            {employees.map((employee) => (
-              <div 
-                key={employee.id}
-                className="p-4 rounded-lg bg-gray-200/50 border border-gray-300 dark:border-zinc-700/50"
-                data-testid={`employee-item-${employee.id}`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-muted/20 flex items-center justify-center">
-                      <User className="h-5 w-5 text-foreground dark:text-foreground" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-foreground">{employee.name}</h4>
-                      <p className="text-sm text-muted-foreground">{employee.position} - {employee.department}</p>
-                    </div>
-                  </div>
-                  {getStatusBadge(employee.onboardingStatus)}
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Start Date: {new Date(employee.startDate).toLocaleDateString()}
-                </p>
-=======
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 <span className="ml-2 text-sm text-muted-foreground">Loading workflows...</span>
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
               </div>
             ) : workflows.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
@@ -1234,68 +1391,9 @@ export default function EmployeeOnboarding() {
         </Card>
       </div>
 
-<<<<<<< HEAD
-      <Card className="mt-6 bg-card border-border">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Download className="h-5 w-5 text-foreground dark:text-foreground" />
-            Onboarding Documents
-          </CardTitle>
-          <CardDescription>Download templates and documents for new employees</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-4">
-            <Button 
-              variant="outline" 
-              className="h-auto py-4 flex-col gap-2"
-              onClick={handleDownloadWelcomeLetter}
-              data-testid="button-download-welcome"
-            >
-              <Mail className="h-8 w-8 text-foreground dark:text-foreground" />
-              <span>Welcome Letter</span>
-              <span className="text-xs text-muted-foreground">Template</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              className="h-auto py-4 flex-col gap-2"
-              onClick={handleDownloadHandbook}
-              data-testid="button-download-handbook"
-            >
-              <BookOpen className="h-8 w-8 text-foreground dark:text-foreground" />
-              <span>Employee Handbook</span>
-              <span className="text-xs text-muted-foreground">PDF Document</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              className="h-auto py-4 flex-col gap-2" 
-              data-testid="button-download-policies"
-              onClick={() => openGenerateDialog("employee_handbook")}
-            >
-              <FileText className="h-8 w-8 text-foreground" />
-              <span>Company Policies</span>
-              <span className="text-xs text-muted-foreground">PDF Document</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              className="h-auto py-4 flex-col gap-2" 
-              data-testid="button-download-checklist"
-              onClick={() => openGenerateDialog("welcome_letter")}
-            >
-              <CheckCircle2 className="h-8 w-8 text-foreground dark:text-foreground" />
-              <span>Onboarding Checklist</span>
-              <span className="text-xs text-muted-foreground">Template</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Dialog open={generateDialogOpen} onOpenChange={setGenerateDialogOpen}>
-        <DialogContent className="max-w-md">
-=======
       {/* DOCX Preview Dialog */}
       <Dialog open={showDocxPreview} onOpenChange={setShowDocxPreview}>
         <DialogContent className="max-w-4xl h-[85vh] flex flex-col">
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />

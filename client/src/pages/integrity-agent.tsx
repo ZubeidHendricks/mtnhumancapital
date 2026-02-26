@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTenantQueryKey } from "@/hooks/useTenant";
 import { Button } from "@/components/ui/button";
@@ -322,9 +322,8 @@ export default function IntegrityAgent() {
 >>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
   };
 
-  const overallRiskScore = candidateChecks.length > 0
-    ? Math.round(candidateChecks.reduce((sum, check) => sum + (check.riskScore || 0), 0) / candidateChecks.length)
-    : null;
+  const latestScoredCheck = candidateChecks.find(check => check.riskScore != null);
+  const overallRiskScore = latestScoredCheck ? latestScoredCheck.riskScore : null;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -704,7 +703,7 @@ export default function IntegrityAgent() {
 =======
                         {(() => {
                           // Flatten comprehensive checks into individual finding cards
-                          const resultCards: { key: string; checkType: string; checkData: any; createdAt: string; index: number }[] = [];
+                          const resultCards: { key: string; checkType: string; checkData: any; createdAt: string; checkId: string; index: number }[] = [];
                           let cardIndex = 0;
 
                           candidateChecks.forEach((check) => {
@@ -712,6 +711,8 @@ export default function IntegrityAgent() {
                             if (typeof check.findings === 'string') {
                               try { parsedFindings = JSON.parse(check.findings); } catch { parsedFindings = check.findings; }
                             }
+                            // Skip checks with no findings yet (e.g. newly created, not yet run)
+                            if (!parsedFindings) return;
 
                             if (typeof parsedFindings === 'object' && !Array.isArray(parsedFindings)) {
                               const findingsMap = parsedFindings as Record<string, any>;
@@ -719,28 +720,52 @@ export default function IntegrityAgent() {
                               checkTypes.forEach((ct) => {
                                 const cd = findingsMap[ct.value];
                                 if (!cd || typeof cd !== 'object' || Array.isArray(cd)) return;
-                                resultCards.push({ key: `${check.id}-${ct.value}`, checkType: ct.value, checkData: cd, createdAt: check.createdAt, index: cardIndex++ });
+                                resultCards.push({ key: `${check.id}-${ct.value}`, checkType: ct.value, checkData: cd, createdAt: check.createdAt, checkId: check.id, index: cardIndex++ });
                               });
                               // Include any extra keys not in checkTypes
                               Object.entries(findingsMap).forEach(([key, cd]) => {
                                 if (key === '_progress' || !cd || typeof cd !== 'object' || Array.isArray(cd)) return;
                                 if (checkTypes.some(ct => ct.value === key)) return; // already added
-                                resultCards.push({ key: `${check.id}-${key}`, checkType: key, checkData: cd, createdAt: check.createdAt, index: cardIndex++ });
+                                resultCards.push({ key: `${check.id}-${key}`, checkType: key, checkData: cd, createdAt: check.createdAt, checkId: check.id, index: cardIndex++ });
                               });
                             } else {
                               // Legacy single-result check
-                              resultCards.push({ key: check.id, checkType: check.checkType, checkData: { findings: String(parsedFindings) }, createdAt: check.createdAt, index: cardIndex++ });
+                              resultCards.push({ key: check.id, checkType: check.checkType, checkData: { findings: String(parsedFindings) }, createdAt: check.createdAt, checkId: check.id, index: cardIndex++ });
                             }
                           });
 
-                          return resultCards.map((card) => {
+                          // Group cards by run (checkId) to count runs
+                          const runIds = [...new Set(resultCards.map(c => c.checkId))];
+                          const checkRiskMap = new Map(candidateChecks.map(c => [c.id, c.riskScore]));
+
+                          return resultCards.map((card, idx) => {
                             const checkTypeInfo = checkTypes.find(t => t.value === card.checkType);
                             const Icon = checkTypeInfo?.icon || FileText;
                             const result = card.checkData.result || (card.checkData.riskScore === 0 ? "Clear" : card.checkData.riskScore > 30 ? "Flagged" : "Verified");
+                            const isFirstOfRun = idx === 0 || resultCards[idx - 1].checkId !== card.checkId;
+                            const runNumber = runIds.indexOf(card.checkId) + 1;
 
                             return (
+                              <React.Fragment key={card.key}>
+                                {isFirstOfRun && runIds.length > 1 && (() => {
+                                  const runRisk = checkRiskMap.get(card.checkId);
+                                  return (
+                                    <div className="lg:col-span-2 flex items-center justify-between py-1 border-b border-border dark:border-white/10">
+                                      <div className="flex items-center gap-2">
+                                        <Clock className="w-3 h-3 text-muted-foreground" />
+                                        <span className="text-[11px] font-semibold text-muted-foreground">
+                                          Run {runNumber} — {format(new Date(card.createdAt), "MMM dd, yyyy 'at' HH:mm")}
+                                        </span>
+                                      </div>
+                                      {runRisk != null && (
+                                        <span className={`text-[11px] font-bold ${getRiskScoreColor(runRisk)}`}>
+                                          Overall: {runRisk}%
+                                        </span>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
                               <motion.div
-                                key={card.key}
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: card.index * 0.05 }}
@@ -889,6 +914,7 @@ export default function IntegrityAgent() {
                                   </CardContent>
                                 </Card>
                               </motion.div>
+                              </React.Fragment>
                             );
                           });
                         })()}

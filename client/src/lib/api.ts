@@ -214,13 +214,14 @@ export const onboardingService = {
   },
   triggerOnboarding: async (
     candidateId: string,
-    options?: { requirements?: { itSetup?: boolean; buildingAccess?: boolean; equipment?: boolean }; equipmentList?: string[]; startDate?: string; files?: File[]; selectedDocuments?: string[] }
+    options?: { requirements?: { itSetup?: boolean; buildingAccess?: boolean; equipment?: boolean }; equipmentList?: string[]; startDate?: string; files?: File[]; selectedDocuments?: string[]; generatedBatchId?: string }
   ): Promise<{ message: string; workflow: OnboardingWorkflow }> => {
     const formData = new FormData();
     if (options?.requirements) formData.append("requirements", JSON.stringify(options.requirements));
     if (options?.equipmentList) formData.append("equipmentList", JSON.stringify(options.equipmentList));
     if (options?.startDate) formData.append("startDate", options.startDate);
     if (options?.selectedDocuments) formData.append("selectedDocuments", JSON.stringify(options.selectedDocuments));
+    if (options?.generatedBatchId) formData.append("generatedBatchId", options.generatedBatchId);
     if (options?.files) {
       for (const file of options.files) {
         formData.append("files", file);

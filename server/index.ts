@@ -2,6 +2,7 @@ import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import fs from "fs";
 import path from "path";
+import multer from "multer";
 import { registerRoutes } from "./routes";
 import { resolveTenant } from "./tenant-middleware";
 import { seedDefaultTenant } from "./seed-default-tenant";
@@ -210,6 +211,148 @@ app.post("/api/public/interview-session/:token/complete", async (req, res) => {
   } catch (error) {
     console.error("Error completing interview session:", error);
     res.status(500).json({ message: "Failed to complete interview session" });
+  }
+});
+
+// PUBLIC route: Candidate onboarding document upload portal - GET info
+app.get("/api/public/onboarding-upload/:token", async (req, res) => {
+  try {
+    const workflow = await storage.getOnboardingWorkflowByUploadToken(req.params.token);
+    if (!workflow) {
+      return res.status(404).json({ message: "Upload link not found" });
+    }
+
+    if (workflow.uploadTokenExpiresAt && new Date(workflow.uploadTokenExpiresAt) < new Date()) {
+      return res.status(410).json({ message: "This upload link has expired. Please contact HR for a new link." });
+    }
+
+    const candidate = await storage.getCandidate(workflow.tenantId!, workflow.candidateId);
+    if (!candidate) {
+      return res.status(404).json({ message: "Candidate not found" });
+    }
+
+    const docRequests = await storage.getOnboardingDocumentRequests(workflow.tenantId!, workflow.id);
+
+    const tenant = workflow.tenantId
+      ? await storage.getTenantById(workflow.tenantId)
+      : null;
+
+    res.json({
+      candidate: {
+        id: candidate.id,
+        fullName: candidate.fullName,
+        role: candidate.role,
+      },
+      workflow: {
+        id: workflow.id,
+        status: workflow.status,
+      },
+      documentRequests: docRequests.map((r: any) => ({
+        id: r.id,
+        documentType: r.documentType,
+        documentName: r.documentName,
+        description: r.description,
+        status: r.status,
+        priority: r.priority,
+        isRequired: r.isRequired,
+        dueDate: r.dueDate,
+        receivedAt: r.receivedAt,
+      })),
+      tenantConfig: tenant ? {
+        companyName: tenant.companyName,
+        primaryColor: tenant.primaryColor,
+        logoUrl: tenant.logoUrl,
+      } : null,
+      expiresAt: workflow.uploadTokenExpiresAt,
+    });
+  } catch (error) {
+    console.error("Error fetching onboarding upload portal:", error);
+    res.status(500).json({ message: "Failed to load upload portal" });
+  }
+});
+
+// PUBLIC route: Candidate onboarding document upload - POST file
+const publicUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (_req, file, cb) => {
+    const allowedTypes = [
+      'application/pdf', 'image/jpeg', 'image/png', 'image/webp',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('File type not allowed. Please upload PDF, JPG, PNG, or Word documents.'));
+    }
+  },
+});
+
+app.post("/api/public/onboarding-upload/:token/:requestId", publicUpload.single("file"), async (req, res) => {
+  try {
+    const workflow = await storage.getOnboardingWorkflowByUploadToken(req.params.token);
+    if (!workflow) {
+      return res.status(404).json({ message: "Upload link not found" });
+    }
+
+    if (workflow.uploadTokenExpiresAt && new Date(workflow.uploadTokenExpiresAt) < new Date()) {
+      return res.status(410).json({ message: "This upload link has expired. Please contact HR for a new link." });
+    }
+
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    const request = await storage.getOnboardingDocumentRequest(workflow.tenantId!, req.params.requestId);
+    if (!request || request.workflowId !== workflow.id) {
+      return res.status(404).json({ message: "Document request not found" });
+    }
+
+    if (request.status === 'verified') {
+      return res.status(400).json({ message: "This document has already been verified" });
+    }
+
+    // Save file to disk
+    const fileName = `onboarding_${request.candidateId}_${request.documentType}_${Date.now()}${path.extname(file.originalname)}`;
+    const filePath = path.join("uploads/onboarding-documents", fileName);
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, file.buffer);
+
+    // Create document record (documents table - linked via receivedDocumentId)
+    const doc = await storage.createDocument(workflow.tenantId!, {
+      filename: fileName,
+      originalFilename: file.originalname,
+      mimeType: file.mimetype,
+      fileSize: file.size,
+      filePath: filePath,
+      type: "onboarding",
+      status: "uploaded",
+      linkedCandidateId: request.candidateId,
+    });
+
+    // Also create a candidateDocuments record so it appears in the Document Library
+    await storage.createCandidateDocument(workflow.tenantId!, {
+      candidateId: request.candidateId,
+      documentType: request.documentType || request.documentName,
+      fileName: file.originalname,
+      fileUrl: filePath,
+      fileSize: file.size,
+      mimeType: file.mimetype,
+      collectedVia: "portal",
+      status: "received",
+    });
+
+    // Mark document request as received
+    const { createOnboardingAgent } = await import("./onboarding-agent");
+    const agent = createOnboardingAgent(storage);
+    const updated = await agent.markDocumentReceived(workflow.tenantId!, req.params.requestId, doc.id);
+
+    res.json({ documentRequest: updated, document: { id: doc.id, filename: doc.filename } });
+  } catch (error) {
+    console.error("Error uploading onboarding document:", error);
+    res.status(500).json({ message: "Failed to upload document" });
   }
 });
 

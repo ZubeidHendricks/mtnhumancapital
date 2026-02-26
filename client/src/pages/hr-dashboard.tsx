@@ -497,7 +497,7 @@ BENEFITS:
 
   // Get risk data for a specific candidate
   const getCandidateRiskData = (candidateId: string) => {
-    const integrityCheck = allIntegrityChecks.find((check: any) => check.candidateId === candidateId);
+    const integrityCheck = allIntegrityChecks.find((check: any) => check.candidateId === candidateId && check.riskScore != null);
     const socialScreening = allSocialScreenings.find((screening: any) => screening.candidateId === candidateId);
     
     let overallRiskScore = 0;
@@ -1886,8 +1886,7 @@ BENEFITS:
                           </div>
                         ) : (
                           allIntegrityChecks.map((check: any) => {
-                            const candidate = candidates?.find((c: any) => c.id?.toString() === check.candidateId?.toString());
-                            const candidateName = candidate ? (candidate.fullName || candidate.name || "Unknown") : "Unknown Candidate";
+                            const candidateName = check.candidateName || "Unknown Candidate";
                             return (
                               <div
                                 key={check.id}
@@ -1903,6 +1902,7 @@ BENEFITS:
                                   <div>
                                     <p className="font-medium text-sm">{candidateName}</p>
                                     <p className="text-xs text-foreground font-semibold">{check.checkType || check.type || "Verification"}</p>
+                                    <p className="text-[10px] text-muted-foreground">{new Date(check.createdAt).toLocaleString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -1955,7 +1955,7 @@ BENEFITS:
                       <p className="text-sm text-foreground font-semibold mb-3">Select a candidate to view risk analysis:</p>
                       <ScrollArea className="h-[300px]">
                         <div className="space-y-2">
-                          {candidates && candidates.length > 0 ? candidates.slice(0, 20).map((candidate: any) => {
+                          {candidates && candidates.length > 0 ? candidates.map((candidate: any) => {
                             const riskData = getCandidateRiskData(candidate.id);
                             return (
                               <div 

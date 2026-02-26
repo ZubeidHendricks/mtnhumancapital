@@ -256,8 +256,9 @@ export interface IStorage {
   createOnboardingWorkflow(tenantId: string, workflow: InsertOnboardingWorkflow): Promise<OnboardingWorkflow>;
   updateOnboardingWorkflow(tenantId: string, id: string, workflow: Partial<InsertOnboardingWorkflow>): Promise<OnboardingWorkflow | undefined>;
   deleteOnboardingWorkflow(tenantId: string, id: string): Promise<boolean>;
-  
-  getTenantConfig(): Promise<TenantConfig | undefined>;
+  getOnboardingWorkflowByUploadToken(token: string): Promise<OnboardingWorkflow | undefined>;
+
+  getTenantConfig(tenantId?: string): Promise<TenantConfig | undefined>;
   getAllTenantConfigs(): Promise<TenantConfig[]>;
   getTenantById(id: string): Promise<TenantConfig | undefined>;
   createTenantConfig(config: InsertTenantConfig): Promise<TenantConfig>;
@@ -1003,7 +1004,16 @@ export class DatabaseStorage implements IStorage {
     return result.rowCount ? result.rowCount > 0 : false;
   }
 
-  async getTenantConfig(): Promise<TenantConfig | undefined> {
+  async getOnboardingWorkflowByUploadToken(token: string): Promise<OnboardingWorkflow | undefined> {
+    const [workflow] = await db.select().from(onboardingWorkflows).where(eq(onboardingWorkflows.uploadToken, token));
+    return workflow || undefined;
+  }
+
+  async getTenantConfig(tenantId?: string): Promise<TenantConfig | undefined> {
+    if (tenantId) {
+      const [config] = await db.select().from(tenantConfig).where(eq(tenantConfig.id, tenantId));
+      return config || undefined;
+    }
     const [config] = await db.select().from(tenantConfig).orderBy(desc(tenantConfig.createdAt)).limit(1);
     return config || undefined;
   }

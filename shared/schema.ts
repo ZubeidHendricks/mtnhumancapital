@@ -285,11 +285,14 @@ export const onboardingWorkflows = pgTable("onboarding_workflows", {
   provisioningData: jsonb("provisioning_data"),
   startDate: timestamp("start_date").notNull().defaultNow(),
   completedAt: timestamp("completed_at"),
+  uploadToken: varchar("upload_token").unique(),
+  uploadTokenExpiresAt: timestamp("upload_token_expires_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => ({
   tenantIdIdx: index("onboarding_workflows_tenant_id_idx").on(table.tenantId),
   candidateIdIdx: index("onboarding_workflows_candidate_id_idx").on(table.candidateId),
+  uploadTokenIdx: index("onboarding_workflows_upload_token_idx").on(table.uploadToken),
 }));
 
 export const tenantConfig = pgTable("tenant_config", {

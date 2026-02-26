@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { format } from "date-fns";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { CustomizableDashboard, DataSourceConfig } from "@/components/customizable-dashboard";
@@ -43,6 +44,8 @@ import {
   Zap,
   BrainCircuit,
   Loader2,
+  Eye,
+  Download,
 } from "lucide-react";
 
 interface OnboardingWorkflow {
@@ -88,6 +91,8 @@ interface DocumentRequest {
   maxReminders: number;
   receivedAt: string | null;
   verifiedAt: string | null;
+  receivedDocumentId: string | null;
+  metadata: Record<string, any> | null;
 }
 
 interface Candidate {
@@ -137,6 +142,8 @@ export default function OnboardingDashboard() {
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [interventionDialog, setInterventionDialog] = useState<AgentLog | null>(null);
   const [resolutionNotes, setResolutionNotes] = useState("");
+  const [reviewDoc, setReviewDoc] = useState<DocumentRequest | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   const { data: workflows = [], isLoading: loadingWorkflows } = useQuery<OnboardingWorkflow[]>({
     queryKey: ["/api/onboarding/workflows"],
@@ -158,6 +165,11 @@ export default function OnboardingDashboard() {
   const { data: documentRequests = [] } = useQuery<DocumentRequest[]>({
     queryKey: ["/api/onboarding/document-requests", selectedWorkflow],
     enabled: !!selectedWorkflow,
+  });
+
+  const { data: reviewDocumentDetails } = useQuery<{ id: string; filePath: string; fileUrl: string; fileName: string; mimeType: string }>({
+    queryKey: ["/api/documents", reviewDoc?.receivedDocumentId],
+    enabled: !!reviewDoc?.receivedDocumentId,
   });
 
   const processRemindersMutation = useMutation({
@@ -214,6 +226,23 @@ export default function OnboardingDashboard() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      if (selectedWorkflow) {
+        queryClient.invalidateQueries({ queryKey: ["/api/onboarding/document-requests", selectedWorkflow] });
+        queryClient.invalidateQueries({ queryKey: ["/api/onboarding/agent-logs", selectedWorkflow] });
+      }
+    },
+  });
+
+  const rejectDocumentMutation = useMutation({
+    mutationFn: async ({ requestId, reason }: { requestId: string; reason: string }) => {
+      const response = await fetch(`/api/onboarding/document-requests/${requestId}/rejected`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason }),
       });
       return response.json();
     },
@@ -626,7 +655,7 @@ export default function OnboardingDashboard() {
                                         <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                                           <span className="flex items-center gap-1">
                                             <Calendar className="w-3 h-3" />
-                                            Due: {new Date(doc.dueDate).toLocaleDateString()}
+                                            Due: {format(new Date(doc.dueDate), "dd MMM yyyy")}
                                           </span>
                                           {doc.reminderCount > 0 && (
                                             <span className="flex items-center gap-1 text-foreground dark:text-foreground">
@@ -669,14 +698,13 @@ export default function OnboardingDashboard() {
                                     {doc.status === "received" && (
                                       <Button
                                         size="sm"
-                                        onClick={() => markVerifiedMutation.mutate(doc.id)}
-                                        disabled={markVerifiedMutation.isPending}
+                                        onClick={() => { setReviewDoc(doc); setRejectionReason(""); }}
                                         variant="outline"
-                                        className="gap-1 border-border/30 bg-muted/10 hover:bg-muted/20 text-foreground"
-                                        data-testid={`button-verify-${doc.id}`}
+                                        className="gap-1 border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-300"
+                                        data-testid={`button-review-${doc.id}`}
                                       >
-                                        <CheckCircle2 className="w-4 h-4" />
-                                        Verify
+                                        <Eye className="w-4 h-4" />
+                                        Review
                                       </Button>
                                     )}
                                   </div>
@@ -845,6 +873,125 @@ export default function OnboardingDashboard() {
               data-testid="button-confirm-resolve"
             >
               {resolveInterventionMutation.isPending ? "Resolving..." : "Mark Resolved"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Document Review Dialog */}
+      <Dialog open={!!reviewDoc} onOpenChange={() => setReviewDoc(null)}>
+        <DialogContent className="sm:max-w-2xl bg-card border-border dark:border-white/10">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-500/20 rounded-lg">
+                <FileCheck className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <DialogTitle>Review Document</DialogTitle>
+                <DialogDescription>
+                  {reviewDoc?.documentName} — uploaded by candidate
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          {reviewDoc && (
+            <div className="space-y-4 py-2">
+              {/* Document preview area */}
+              <div className="rounded-lg border border-border dark:border-white/10 overflow-hidden bg-black/20">
+                {(reviewDocumentDetails?.filePath || reviewDocumentDetails?.fileUrl) ? (
+                  (() => {
+                    const mime = reviewDocumentDetails.mimeType || "";
+                    const url = `/${reviewDocumentDetails.filePath || reviewDocumentDetails.fileUrl}`;
+                    if (mime.startsWith("image/")) {
+                      return (
+                        <div className="flex justify-center p-4 max-h-[400px] overflow-auto">
+                          <img src={url} alt={reviewDoc.documentName} className="max-w-full max-h-[380px] object-contain rounded" />
+                        </div>
+                      );
+                    }
+                    if (mime === "application/pdf") {
+                      return (
+                        <iframe src={url} className="w-full h-[400px]" title={reviewDoc.documentName} />
+                      );
+                    }
+                    return (
+                      <div className="flex flex-col items-center justify-center p-8 gap-3">
+                        <FileText className="w-12 h-12 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">Preview not available for this file type</p>
+                        <a href={url} target="_blank" rel="noopener noreferrer">
+                          <Button size="sm" variant="outline" className="gap-2">
+                            <Download className="w-4 h-4" />
+                            Download to review
+                          </Button>
+                        </a>
+                      </div>
+                    );
+                  })()
+                ) : (
+                  <div className="flex flex-col items-center justify-center p-8 gap-2">
+                    <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
+                    <p className="text-sm text-muted-foreground">Loading document...</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Document info */}
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="bg-card/50 rounded-lg p-3 border border-border dark:border-white/5">
+                  <p className="text-muted-foreground text-xs mb-1">Document Type</p>
+                  <p className="font-medium text-foreground">{reviewDoc.documentName}</p>
+                </div>
+                <div className="bg-card/50 rounded-lg p-3 border border-border dark:border-white/5">
+                  <p className="text-muted-foreground text-xs mb-1">Received</p>
+                  <p className="font-medium text-foreground">{reviewDoc.receivedAt ? format(new Date(reviewDoc.receivedAt), "dd MMM yyyy 'at' HH:mm") : "N/A"}</p>
+                </div>
+              </div>
+
+              {/* Rejection reason input (shown inline) */}
+              <div>
+                <label className="block text-sm font-medium text-muted-foreground mb-2">
+                  Rejection reason (required only if rejecting)
+                </label>
+                <Textarea
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="e.g. Document is expired, image is blurry, wrong document type..."
+                  rows={2}
+                  className="resize-none bg-card/50 border-border dark:border-white/10"
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setReviewDoc(null)} className="border-border dark:border-white/10">
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (reviewDoc && rejectionReason.trim()) {
+                  rejectDocumentMutation.mutate({ requestId: reviewDoc.id, reason: rejectionReason.trim() });
+                  setReviewDoc(null);
+                }
+              }}
+              disabled={!rejectionReason.trim() || rejectDocumentMutation.isPending}
+              variant="outline"
+              className="gap-1 border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-300"
+            >
+              <XCircle className="w-4 h-4" />
+              Reject
+            </Button>
+            <Button
+              onClick={() => {
+                if (reviewDoc) {
+                  markVerifiedMutation.mutate(reviewDoc.id);
+                  setReviewDoc(null);
+                }
+              }}
+              disabled={markVerifiedMutation.isPending}
+              className="gap-1 bg-emerald-500/20 border border-emerald-500/30 hover:bg-emerald-500/30 text-emerald-300"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              Accept
             </Button>
           </DialogFooter>
         </DialogContent>
