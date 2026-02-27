@@ -2368,7 +2368,7 @@ export const pipelineStages = [
   "shortlisted",     // Passed screening, ready for interview
   "interviewing",    // In interview process
   "offer_pending",   // Offer extended, awaiting response
-  "offer_accepted",  // Offer accepted, triggers integrity checks
+  "offer_declined",  // Candidate declined the offer
   "integrity_checks", // Background verification in progress
   "integrity_passed", // All checks cleared
   "integrity_failed", // Check(s) failed

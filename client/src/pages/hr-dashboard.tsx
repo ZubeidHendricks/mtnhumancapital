@@ -185,7 +185,7 @@ export default function HRDashboard() {
     { key: "shortlisted", name: "Shortlisted" },
     { key: "interviewing", name: "Interviewing" },
     { key: "offer_pending", name: "Offer Pending" },
-    { key: "offer_accepted", name: "Offer Accepted" },
+    { key: "offer_declined", name: "Offer Declined" },
     { key: "integrity_checks", name: "Integrity Checks" },
     { key: "integrity_passed", name: "Checks Passed" },
     { key: "onboarding", name: "Onboarding" },

@@ -82,7 +82,7 @@ const PIPELINE_STAGES = [
   { key: "shortlisted", name: "Shortlisted", color: "bg-muted", section: "recruitment" },
   { key: "interviewing", name: "Interviewing", color: "bg-muted", section: "recruitment" },
   { key: "offer_pending", name: "Offer Pending", color: "bg-muted", section: "recruitment" },
-  { key: "offer_accepted", name: "Offer Accepted", color: "bg-muted", section: "recruitment" },
+  { key: "offer_declined", name: "Offer Declined", color: "bg-muted", section: "recruitment" },
   { key: "integrity_checks", name: "Integrity Checks", color: "bg-muted", section: "integrity" },
   { key: "integrity_passed", name: "Checks Passed", color: "bg-muted", section: "integrity" },
   { key: "onboarding", name: "Onboarding", color: "bg-muted", section: "onboarding" },

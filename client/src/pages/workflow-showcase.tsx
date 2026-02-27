@@ -218,7 +218,7 @@ const PIPELINE_STAGES_MAP: Record<string, string[]> = {
   "screening": ["screening"],
   "shortlisted": ["shortlisted"],
   "interviewing": ["interviewing"],
-  "offer": ["offer_pending", "offer_accepted"],
+  "offer": ["offer_pending", "offer_declined"],
   "integrity": ["integrity_checks", "integrity_passed"],
   "onboarding": ["onboarding"],
   "hired": ["hired"],

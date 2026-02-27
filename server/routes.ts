@@ -10941,7 +10941,7 @@ Format your response as JSON:
         if (response === "accepted") {
           pipelineTransition = await pipelineOrchestrator.transitionCandidate(
             offer.candidateId,
-            "offer_accepted",
+            "integrity_checks",
             req.tenant.id,
             {
               triggeredBy: "manual",
@@ -10952,13 +10952,12 @@ Format your response as JSON:
         } else {
           pipelineTransition = await pipelineOrchestrator.transitionCandidate(
             offer.candidateId,
-            "withdrawn",
+            "offer_declined",
             req.tenant.id,
             {
               triggeredBy: "manual",
               triggeredByUserId: req.user?.id,
               reason: "Candidate declined the offer",
-              skipPrerequisites: true,
             }
           );
         }
