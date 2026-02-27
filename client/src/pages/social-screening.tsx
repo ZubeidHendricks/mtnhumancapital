@@ -38,6 +38,8 @@ import {
   ExternalLink,
   Facebook,
   Twitter,
+  Linkedin,
+  Instagram,
   Undo2,
   Bot,
   Zap,
@@ -77,7 +79,9 @@ function AgentVisualization({ run, onClose }: { run: OrchestratorRun | null; onC
   
   const getAgentIcon = (agentName: string) => {
     if (agentName.toLowerCase().includes('facebook')) return Facebook;
-    if (agentName.toLowerCase().includes('twitter') || agentName.toLowerCase().includes('x')) return Twitter;
+    if (agentName.toLowerCase().includes('twitter') || agentName.toLowerCase().includes('x ')) return Twitter;
+    if (agentName.toLowerCase().includes('linkedin')) return Linkedin;
+    if (agentName.toLowerCase().includes('instagram')) return Instagram;
     if (agentName.toLowerCase().includes('orchestrator')) return Brain;
     return Bot;
   };
@@ -304,7 +308,8 @@ interface AgentLog {
 
 export default function SocialScreening() {
   const [, navigate] = useLocation();
-  const [activeTab, setActiveTab] = useState("overview");
+  const urlTab = new URLSearchParams(window.location.search).get('tab');
+  const [activeTab, setActiveTab] = useState(urlTab || "overview");
   const [selectedCandidate, setSelectedCandidate] = useState<string | null>(null);
   const [isRequestConsentOpen, setIsRequestConsentOpen] = useState(false);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
@@ -516,6 +521,8 @@ export default function SocialScreening() {
     return styles[riskLevel] || "bg-gray-500/20 text-gray-400";
   };
 
+  // candidateName is now included directly in API responses from findings/consents endpoints
+
   const addLog = (agent: string, message: string, level: AgentLog['level'] = 'info') => {
     const newLog: AgentLog = {
       timestamp: new Date(),
@@ -538,70 +545,137 @@ export default function SocialScreening() {
     });
   };
 
-  const simulateWorkflow = async () => {
+  const runRealScreening = async () => {
     const steps: WorkflowStep[] = [
-      { id: 'consent', name: 'Verify Consent', status: 'pending', description: 'Checking POPIA/GDPR consent status', agent: 'ConsentValidator', progress: 0 },
-      { id: 'facebook', name: 'Facebook Analysis', status: 'pending', description: 'Analyzing public Facebook profile', agent: 'FacebookAgent', progress: 0 },
-      { id: 'twitter', name: 'Twitter/X Analysis', status: 'pending', description: 'Analyzing public Twitter posts', agent: 'TwitterAgent', progress: 0 },
-      { id: 'linkedin', name: 'LinkedIn Analysis', status: 'pending', description: 'Analyzing professional profile', agent: 'LinkedInAgent', progress: 0 },
-      { id: 'sentiment', name: 'Sentiment Analysis', status: 'pending', description: 'AI analyzing content sentiment', agent: 'SentimentAgent', progress: 0 },
-      { id: 'culture', name: 'Culture Fit Assessment', status: 'pending', description: 'Evaluating cultural alignment', agent: 'CultureFitAgent', progress: 0 },
-      { id: 'report', name: 'Generate Report', status: 'pending', description: 'Compiling comprehensive analysis', agent: 'ReportGenerator', progress: 0 },
+      { id: 'consent', name: 'Verify Consent', status: 'pending', description: 'Checking POPIA consent status', agent: 'Orchestrator', progress: 0 },
+      { id: 'linkedin', name: 'LinkedIn Analysis', status: 'pending', description: 'Analyzing professional profile', agent: 'LinkedIn Agent', progress: 0 },
+      { id: 'facebook', name: 'Facebook Analysis', status: 'pending', description: 'Analyzing public Facebook profile', agent: 'Facebook Agent', progress: 0 },
+      { id: 'twitter', name: 'X (Twitter) Analysis', status: 'pending', description: 'Analyzing public posts', agent: 'X (Twitter) Agent', progress: 0 },
+      { id: 'instagram', name: 'Instagram Analysis', status: 'pending', description: 'Analyzing public Instagram posts', agent: 'Instagram Agent', progress: 0 },
+      { id: 'report', name: 'Aggregate & Report', status: 'pending', description: 'Compiling comprehensive analysis', agent: 'Orchestrator', progress: 0 },
     ];
-    
+
     setWorkflowSteps(steps);
     workflowStepsRef.current = steps;
 
-    for (let i = 0; i < steps.length; i++) {
-      if (!isRunningRef.current) break;
-      
-      const step = steps[i];
-      updateWorkflowStep(step.id, { status: 'running', progress: 0 });
-      addLog(step.agent, `Starting: ${step.description}`, 'info');
-
-      for (let progress = 0; progress <= 100; progress += 20) {
-        if (!isRunningRef.current) break;
-        await new Promise(r => setTimeout(r, 300));
-        updateWorkflowStep(step.id, { progress });
-        setOverallProgress(Math.round(((i * 100 + progress) / (steps.length * 100)) * 100));
-      }
-
-      if (isRunningRef.current) {
-        const duration = `${(Math.random() * 2 + 1).toFixed(1)}s`;
-        updateWorkflowStep(step.id, { status: 'completed', progress: 100, duration });
-        addLog(step.agent, `Completed: ${step.name}`, 'success');
-      }
-    }
-
-    if (isRunningRef.current) {
-      const selectedCand = candidatesWithConsent.find((c: any) => c.id === modalSelectedCandidateId);
-      setScreeningResult({
-        candidateName: selectedCand?.fullName || 'Unknown Candidate',
-        overallScore: Math.round(70 + Math.random() * 25),
-        riskLevel: ['low', 'medium', 'high'][Math.floor(Math.random() * 3)],
-        sentiment: { positive: 45 + Math.floor(Math.random() * 30), neutral: 20 + Math.floor(Math.random() * 15), negative: 5 + Math.floor(Math.random() * 15) },
-        redFlags: [
-          { type: 'Language', severity: 'low', platform: 'Twitter', description: 'Occasional informal language in professional context' },
-        ],
-        cultureFit: [
-          { category: 'Communication', score: 85, notes: 'Clear and professional communication style' },
-          { category: 'Teamwork', score: 78, notes: 'Shows collaborative tendencies in posts' },
-          { category: 'Values Alignment', score: 82, notes: 'Demonstrates alignment with company values' },
-        ],
-        platformsSummary: [
-          { platform: 'Facebook', postsAnalyzed: 45, riskLevel: 'low' },
-          { platform: 'Twitter', postsAnalyzed: 120, riskLevel: 'low' },
-          { platform: 'LinkedIn', postsAnalyzed: 28, riskLevel: 'low' },
-        ],
-        recommendation: 'Candidate shows strong cultural alignment with minimal concerns. Recommended for further consideration.',
+    try {
+      // Start real orchestrated screening
+      const startRes = await fetch(`/api/social-screening/orchestrator/start/${modalSelectedCandidateId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ platforms: ['linkedin', 'facebook', 'twitter', 'instagram'] }),
       });
-      
-      addLog('ReportGenerator', 'Screening completed successfully!', 'success');
+
+      if (!startRes.ok) {
+        const err = await startRes.json().catch(() => ({ message: 'Failed to start screening' }));
+        throw new Error(err.message || 'Failed to start screening');
+      }
+
+      const { runId } = await startRes.json();
+      addLog('Orchestrator', `Screening initiated (run: ${runId.slice(0, 12)}...)`, 'info');
+
+      // Poll for status updates
+      const pollInterval = setInterval(async () => {
+        try {
+          const statusRes = await fetch(`/api/social-screening/orchestrator/status/${runId}`);
+          if (!statusRes.ok) return;
+
+          const run = await statusRes.json();
+
+          // Update workflow steps from agent statuses
+          if (run.agents && run.agents.length > 0) {
+            run.agents.forEach((agent: any) => {
+              const agentId = agent.agentName.toLowerCase()
+                .replace(' agent', '')
+                .replace('x (twitter)', 'twitter')
+                .replace('orchestrator', 'consent');
+
+              const step = workflowStepsRef.current.find(s => s.id === agentId);
+              if (step) {
+                let status: WorkflowStep['status'] = 'pending';
+                if (agent.status === 'running') status = 'running';
+                else if (agent.status === 'completed') status = 'completed';
+                else if (agent.status === 'error') status = 'error';
+
+                updateWorkflowStep(step.id, { status, progress: agent.progress || 0 });
+              }
+            });
+          }
+
+          // Update logs
+          if (run.logs && run.logs.length > logsRef.current.length) {
+            const newLogs = run.logs.slice(logsRef.current.length);
+            newLogs.forEach((log: any) => {
+              addLog(log.agent, log.message, log.level === 'warn' ? 'warning' : log.level);
+            });
+          }
+
+          setOverallProgress(run.progress || 0);
+
+          if (run.status === 'completed') {
+            clearInterval(pollInterval);
+            const selectedCand = candidatesWithConsent.find((c: any) => c.id === modalSelectedCandidateId);
+            const result = run.result || run.orchestratorStatus?.results;
+
+            if (result) {
+              setScreeningResult({
+                candidateName: selectedCand?.fullName || 'Unknown Candidate',
+                overallScore: result.overallScore || 0,
+                riskLevel: result.riskLevel || 'medium',
+                sentiment: result.sentimentAnalysis || { positive: 0, neutral: 100, negative: 0 },
+                redFlags: (result.redFlags || []).map((f: any) => ({
+                  type: f.type, severity: f.severity, platform: f.evidence || '', description: f.description
+                })),
+                cultureFit: [
+                  { category: 'Culture Fit', score: result.cultureFitScore || 0, notes: '' },
+                  { category: 'Professionalism', score: result.professionalismScore || 0, notes: '' },
+                  { category: 'Communication', score: result.communicationScore || 0, notes: '' },
+                ],
+                platformsSummary: (result.platformsAnalyzed || []).map((p: string) => ({
+                  platform: p.charAt(0).toUpperCase() + p.slice(1),
+                  postsAnalyzed: result.totalPostsAnalyzed ? Math.round(result.totalPostsAnalyzed / (result.platformsAnalyzed?.length || 1)) : 0,
+                  riskLevel: result.riskLevel || 'medium'
+                })),
+                recommendation: result.aiSummary || 'Analysis complete.',
+              });
+            }
+
+            updateWorkflowStep('report', { status: 'completed', progress: 100 });
+            setOverallProgress(100);
+            setIsRunningScreening(false);
+            isRunningRef.current = false;
+            toast.success('Social screening completed!');
+            queryClient.invalidateQueries({ queryKey: findingsKey });
+            queryClient.invalidateQueries({ queryKey: statsKey });
+          } else if (run.status === 'failed') {
+            clearInterval(pollInterval);
+            const errorMsg = run.orchestratorStatus?.error || 'Screening failed';
+            addLog('Orchestrator', errorMsg, 'error');
+            setIsRunningScreening(false);
+            isRunningRef.current = false;
+            toast.error(errorMsg);
+          }
+        } catch (err) {
+          console.error('Polling error:', err);
+        }
+      }, 1500);
+
+      // Timeout after 3 minutes
+      setTimeout(() => {
+        clearInterval(pollInterval);
+        if (isRunningRef.current) {
+          setIsRunningScreening(false);
+          isRunningRef.current = false;
+          addLog('Orchestrator', 'Screening timeout - check results manually', 'warning');
+          toast.error('Screening timeout');
+        }
+      }, 180000);
+
+    } catch (error) {
+      addLog('Orchestrator', `Failed: ${(error as Error).message}`, 'error');
       setIsRunningScreening(false);
       isRunningRef.current = false;
-      toast.success('Social screening completed!');
-      queryClient.invalidateQueries({ queryKey: findingsKey });
-      queryClient.invalidateQueries({ queryKey: statsKey });
+      toast.error((error as Error).message);
     }
   };
 
@@ -619,8 +693,8 @@ export default function SocialScreening() {
     setOverallProgress(0);
     
     addLog('Orchestrator', 'Initializing social screening workflow...', 'info');
-    
-    await simulateWorkflow();
+
+    await runRealScreening();
   };
 
   const resetModalState = () => {
@@ -660,10 +734,10 @@ export default function SocialScreening() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <Link href="/hr">
+              <Link href="/hr?tab=integrity">
                 <Button variant="ghost" size="sm">
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to HR Dashboard
+                  Back to Integrity
                 </Button>
               </Link>
             </div>
@@ -834,7 +908,7 @@ export default function SocialScreening() {
                             finding.riskLevel === 'high' ? 'bg-muted' : 'bg-destructive'
                           }`} />
                           <div>
-                            <p className="font-medium">Candidate #{finding.candidateId?.slice(-6)}</p>
+                            <p className="font-medium">{finding.candidateName || 'Unknown Candidate'}</p>
                             <p className="text-sm text-muted-foreground">
                               Score: {finding.cultureFitScore || 'N/A'}% | 
                               {finding.aiRecommendation ? ` AI: ${finding.aiRecommendation}` : ' Pending'}
@@ -877,7 +951,7 @@ export default function SocialScreening() {
                       {consents.map((consent: any) => (
                         <div key={consent.id} className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-border dark:border-white/5">
                           <div>
-                            <p className="font-medium">Candidate #{consent.candidateId?.slice(-6)}</p>
+                            <p className="font-medium">{consent.candidateName || 'Unknown Candidate'}</p>
                             <p className="text-sm text-muted-foreground">
                               Requested: {new Date(consent.createdAt).toLocaleDateString()}
                             </p>
@@ -953,7 +1027,7 @@ export default function SocialScreening() {
                           <div className="flex items-start justify-between">
                             <div className="space-y-2">
                               <div className="flex items-center gap-3">
-                                <p className="font-medium text-lg">Candidate #{finding.candidateId?.slice(-6)}</p>
+                                <p className="font-medium text-lg">{finding.candidateName || 'Unknown Candidate'}</p>
                                 <Badge className={getRiskBadge(finding.riskLevel)}>
                                   {finding.riskLevel || 'Unknown'} Risk
                                 </Badge>
@@ -1034,6 +1108,7 @@ export default function SocialScreening() {
                       <PendingReviewCard
                         key={finding.id}
                         finding={finding}
+                        candidateName={finding.candidateName || 'Unknown Candidate'}
                         onSubmitReview={(decision, notes, adjustedRiskLevel, adjustedScore) => {
                           submitReviewMutation.mutate({
                             findingId: finding.id,
@@ -1334,12 +1409,14 @@ export default function SocialScreening() {
   );
 }
 
-function PendingReviewCard({ 
-  finding, 
+function PendingReviewCard({
+  finding,
+  candidateName,
   onSubmitReview,
-  isSubmitting 
-}: { 
+  isSubmitting
+}: {
   finding: any;
+  candidateName: string;
   onSubmitReview: (decision: string, notes: string, riskLevel?: string, score?: number) => void;
   isSubmitting: boolean;
 }) {
@@ -1365,7 +1442,7 @@ function PendingReviewCard({
     >
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h3 className="text-lg font-medium">Candidate #{finding.candidateId?.slice(-6)}</h3>
+          <h3 className="text-lg font-medium">{candidateName}</h3>
           <p className="text-sm text-muted-foreground">
             Screened on {new Date(finding.createdAt).toLocaleDateString()}
           </p>

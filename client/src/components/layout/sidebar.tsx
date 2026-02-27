@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { 
   LayoutDashboard, 
   UserSearch, 
@@ -45,10 +45,14 @@ interface NavSection {
   items: NavItem[];
 }
 
-export function Sidebar() {
+interface SidebarProps {
+  collapsed: boolean;
+  onToggle: () => void;
+}
+
+export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const [location] = useLocation();
   const { isModuleEnabled } = useTenant();
-  const [collapsed, setCollapsed] = useState(false);
   const navRef = useRef<HTMLElement>(null);
 
   // Auto-scroll sidebar to show the active nav item when route changes
@@ -147,7 +151,7 @@ export function Sidebar() {
           </Link>
         )}
         <button 
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={onToggle}
           className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
         >
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}

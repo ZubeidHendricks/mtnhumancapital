@@ -4995,6 +4995,13 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
           description: "Verify previous employment and references",
           enabled: checksConfig.employment?.enabled ?? false,
           cost: "R100"
+        },
+        {
+          id: "social-screening",
+          name: "Social Intelligence Screening",
+          description: "AI-powered screening of LinkedIn, Facebook, X (Twitter), and Instagram profiles",
+          enabled: checksConfig["social-screening"]?.enabled ?? true,
+          cost: "R50"
         }
       ];
       
@@ -9006,7 +9013,9 @@ Format your response as JSON:
   app.get("/api/social-screening/consents", async (req, res) => {
     try {
       const consents = await storage.getAllSocialConsents(req.tenant.id);
-      res.json(consents);
+      // Enrich with candidate names
+      const enriched = await enrichFindingsWithCandidateNames(req.tenant.id, consents);
+      res.json(enriched);
     } catch (error) {
       console.error("Error fetching social consents:", error);
       res.status(500).json({ message: "Failed to fetch social consents" });
@@ -9235,11 +9244,26 @@ Format your response as JSON:
   });
 
   // Social Screening - Findings
+  // Helper: enrich findings with candidate names so the client doesn't need a separate lookup
+  async function enrichFindingsWithCandidateNames(tenantId: string, findings: any[]) {
+    if (findings.length === 0) return findings;
+    const uniqueIds = [...new Set(findings.map(f => f.candidateId).filter(Boolean))];
+    const candidateMap = new Map<string, string>();
+    await Promise.all(uniqueIds.map(async (id) => {
+      const candidate = await storage.getCandidate(tenantId, id);
+      if (candidate) candidateMap.set(id, candidate.fullName);
+    }));
+    return findings.map(f => ({
+      ...f,
+      candidateName: candidateMap.get(f.candidateId) || 'Unknown Candidate',
+    }));
+  }
+
   app.get("/api/social-screening/findings", async (req, res) => {
     try {
       const candidateId = req.query.candidateId as string | undefined;
       const findings = await storage.getSocialScreeningFindings(req.tenant.id, candidateId);
-      res.json(findings);
+      res.json(await enrichFindingsWithCandidateNames(req.tenant.id, findings));
     } catch (error) {
       console.error("Error fetching social findings:", error);
       res.status(500).json({ message: "Failed to fetch social findings" });
@@ -9249,7 +9273,7 @@ Format your response as JSON:
   app.get("/api/social-screening/findings/pending-review", async (req, res) => {
     try {
       const findings = await storage.getPendingHumanReviewFindings(req.tenant.id);
-      res.json(findings);
+      res.json(await enrichFindingsWithCandidateNames(req.tenant.id, findings));
     } catch (error) {
       console.error("Error fetching pending review findings:", error);
       res.status(500).json({ message: "Failed to fetch pending findings" });
@@ -9262,7 +9286,8 @@ Format your response as JSON:
       if (!finding) {
         return res.status(404).json({ message: "Social screening finding not found" });
       }
-      res.json(finding);
+      const [enriched] = await enrichFindingsWithCandidateNames(req.tenant.id, [finding]);
+      res.json(enriched);
     } catch (error) {
       console.error("Error fetching social finding:", error);
       res.status(500).json({ message: "Failed to fetch social finding" });
@@ -9272,7 +9297,7 @@ Format your response as JSON:
   app.get("/api/social-screening/findings/candidate/:candidateId", async (req, res) => {
     try {
       const findings = await storage.getSocialScreeningFindingsByCandidate(req.tenant.id, req.params.candidateId);
-      res.json(findings);
+      res.json(await enrichFindingsWithCandidateNames(req.tenant.id, findings));
     } catch (error) {
       console.error("Error fetching social findings:", error);
       res.status(500).json({ message: "Failed to fetch social findings" });
@@ -9375,8 +9400,26 @@ Format your response as JSON:
       if (!run) {
         return res.status(404).json({ message: "Run not found or expired" });
       }
-      
-      res.json(run);
+
+      // Transform to the format the client expects
+      const agents = [
+        run.orchestratorStatus,
+        run.facebookAgentStatus,
+        run.xAgentStatus,
+        run.linkedinAgentStatus,
+        run.instagramAgentStatus,
+      ].filter(Boolean);
+
+      const completedAgents = agents.filter(a => a.status === 'completed').length;
+      const totalAgents = agents.length;
+      const progress = Math.round((completedAgents / totalAgents) * 100);
+
+      res.json({
+        ...run,
+        agents,
+        progress: run.status === 'completed' ? 100 : progress,
+        result: run.orchestratorStatus?.results || null,
+      });
     } catch (error) {
       console.error("Error fetching orchestrator status:", error);
       res.status(500).json({ message: "Failed to fetch status" });

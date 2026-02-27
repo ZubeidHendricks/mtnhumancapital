@@ -484,7 +484,7 @@ BENEFITS:
     queryKey: socialScreeningsKey,
     queryFn: async () => {
       try {
-        const res = await fetch('/api/social-screenings');
+        const res = await fetch('/api/social-screening/findings');
         if (!res.ok) throw new Error('Failed to fetch social screenings');
         return res.json();
       } catch (e) {
@@ -2037,7 +2037,7 @@ BENEFITS:
                   Social Intelligence Screening
                 </h3>
                 <p className="text-foreground font-semibold text-sm mt-1">
-                  AI-powered culture fit assessment via social media analysis (Facebook, X, Reddit) with POPIA compliance.
+                  AI-powered culture fit assessment via social media analysis (LinkedIn, Facebook, X, Instagram) with POPIA compliance.
                 </p>
               </div>
               <Link href="/social-screening">
@@ -2154,7 +2154,7 @@ BENEFITS:
                               finding.riskLevel === 'high' ? 'bg-foreground' : 'bg-destructive'
                             }`}></div>
                             <div>
-                              <p className="font-medium">Candidate #{finding.candidateId?.slice(-6)}</p>
+                              <p className="font-medium">{finding.candidateName || 'Unknown Candidate'}</p>
                               <p className="text-sm text-foreground font-semibold">
                                 Culture Fit: {finding.cultureFitScore || 'N/A'}% | 
                                 Risk: {finding.riskLevel || 'Unknown'}
@@ -2170,7 +2170,7 @@ BENEFITS:
                             }>
                               AI: {finding.aiRecommendation || 'Pending'}
                             </Badge>
-                            <Link href={`/social-screening/${finding.id}`}>
+                            <Link href="/social-screening?tab=reviews">
                               <Button size="sm" variant="outline">
                                 Review
                               </Button>
