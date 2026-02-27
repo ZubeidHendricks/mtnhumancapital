@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTenantQueryKey } from "@/hooks/useTenant";
 import { Button } from "@/components/ui/button";
@@ -281,10 +281,10 @@ export default function IntegrityAgent() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "Completed": return <CheckCircle2 className="w-4 h-4 text-foreground" />;
-      case "Pending": return <Clock className="w-4 h-4 text-foreground" />;
-      case "Failed": return <XCircle className="w-4 h-4 text-destructive" />;
-      default: return <Loader2 className="w-4 h-4 text-foreground animate-spin" />;
+      case "Completed": return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+      case "Pending": return <Clock className="w-4 h-4 text-yellow-500" />;
+      case "Failed": return <XCircle className="w-4 h-4 text-red-500" />;
+      default: return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />;
     }
   };
 
@@ -292,10 +292,10 @@ export default function IntegrityAgent() {
     if (!result) return null;
     
     const variants: Record<string, { bg: string; text: string }> = {
-      Clear: { bg: "bg-muted/10", text: "text-foreground" },
-      Verified: { bg: "bg-muted/10", text: "text-foreground" },
-      Flagged: { bg: "bg-muted/10", text: "text-foreground" },
-      Failed: { bg: "bg-destructive/10", text: "text-destructive" },
+      Clear: { bg: "bg-green-500/10", text: "text-green-500" },
+      Verified: { bg: "bg-green-500/10", text: "text-green-500" },
+      Flagged: { bg: "bg-yellow-500/10", text: "text-yellow-500" },
+      Failed: { bg: "bg-red-500/10", text: "text-red-500" },
     };
     
     const variant = variants[result] || { bg: "bg-gray-500/10", text: "text-gray-500" };
@@ -309,21 +309,15 @@ export default function IntegrityAgent() {
 
   const getRiskScoreColor = (score: number | null) => {
     if (score === null || score === undefined) return "text-gray-500";
-<<<<<<< HEAD
-    if (score === 0) return "text-foreground";
-    if (score < 30) return "text-foreground";
-    if (score < 70) return "text-foreground";
-    return "text-destructive";
-=======
     if (score <= 10) return "text-green-500";
     if (score <= 30) return "text-yellow-500";
     if (score <= 60) return "text-orange-500";
     return "text-red-500";
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
   };
 
-  const latestScoredCheck = candidateChecks.find(check => check.riskScore != null);
-  const overallRiskScore = latestScoredCheck ? latestScoredCheck.riskScore : null;
+  const overallRiskScore = candidateChecks.length > 0
+    ? Math.round(candidateChecks.reduce((sum, check) => sum + (check.riskScore || 0), 0) / candidateChecks.length)
+    : null;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -539,109 +533,24 @@ export default function IntegrityAgent() {
                 <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
                   <div>
                     <div className="text-xs text-muted-foreground">Pending</div>
-                    <div className="text-2xl font-bold text-foreground" data-testid="text-pending-checks">
+                    <div className="text-2xl font-bold text-yellow-500" data-testid="text-pending-checks">
                       {allChecks.filter(c => c.status === "Pending").length}
                     </div>
                   </div>
-                  <Clock className="w-8 h-8 text-foreground opacity-50" />
+                  <Clock className="w-8 h-8 text-yellow-500 opacity-50" />
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
                   <div>
                     <div className="text-xs text-muted-foreground">Completed</div>
-                    <div className="text-2xl font-bold text-foreground" data-testid="text-completed-checks">
+                    <div className="text-2xl font-bold text-green-500" data-testid="text-completed-checks">
                       {allChecks.filter(c => c.status === "Completed").length}
                     </div>
                   </div>
-                  <CheckCircle2 className="w-8 h-8 text-foreground opacity-50" />
+                  <CheckCircle2 className="w-8 h-8 text-green-500 opacity-50" />
                 </div>
               </CardContent>
             </Card>
-<<<<<<< HEAD
-          </div>
-
-          {/* MIDDLE: AI Agent Workflow Visualization */}
-          <div className="lg:col-span-5 flex flex-col overflow-hidden">
-            <Card className="flex-1 bg-card/30 border-border dark:border-white/10 backdrop-blur-sm flex flex-col overflow-hidden" data-testid="card-workflow">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-bold flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-primary" /> 
-                  AI Agent Workflow
-                </CardTitle>
-                <CardDescription>Automated integrity verification pipeline</CardDescription>
-              </CardHeader>
-              <CardContent className="flex-1 overflow-hidden">
-                <ScrollArea className="h-full pr-4">
-                  {workflowSteps.length === 0 ? (
-                    <div className="text-center py-16 text-muted-foreground" data-testid="text-workflow-waiting">
-                      <ShieldCheck className="w-16 h-16 mx-auto mb-4 opacity-20" />
-                      <p className="text-lg font-semibold mb-2">Select a Candidate</p>
-                      <p className="text-sm">Click "Start Integrity Evaluation" to begin the AI agent workflow</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-6 relative pb-4">
-                      <div className="absolute left-[19px] top-2 bottom-2 w-0.5 bg-white/5 z-0" />
-                      
-                      <AnimatePresence>
-                        {workflowSteps.map((step, index) => {
-                          const Icon = step.icon;
-                          return (
-                            <motion.div 
-                              key={step.id}
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: index * 0.1 }}
-                              className="relative z-10"
-                              data-testid={`workflow-step-${step.id}`}
-                            >
-                              <div className="flex items-start gap-3">
-                                <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 bg-background transition-all ${
-                                  step.status === "completed" ? "border-border text-foreground" : 
-                                  step.status === "processing" ? "border-primary text-primary animate-pulse" : 
-                                  step.status === "failed" ? "border-destructive text-destructive" :
-                                  "border-muted text-muted-foreground"
-                                }`}>
-                                  {step.status === "completed" ? <CheckCircle2 className="w-5 h-5" /> : 
-                                   step.status === "failed" ? <XCircle className="w-5 h-5" /> :
-                                   step.status === "processing" ? <Loader2 className="w-5 h-5 animate-spin" /> :
-                                   <Icon className="w-5 h-5" />}
-                                </div>
-                                <div className="flex-1 pt-1">
-                                  <h4 className={`text-sm font-bold transition-colors ${
-                                    step.status === "processing" ? "text-primary" : 
-                                    step.status === "completed" ? "text-foreground" :
-                                    step.status === "failed" ? "text-destructive" :
-                                    "text-foreground"
-                                  }`}>
-                                    {step.label}
-                                  </h4>
-                                  {step.details && (
-                                    <motion.ul 
-                                      initial={{ opacity: 0, height: 0 }}
-                                      animate={{ opacity: 1, height: "auto" }}
-                                      className="mt-2 space-y-1"
-                                    >
-                                      {step.details.map((detail, i) => (
-                                        <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
-                                          <div className="w-1 h-1 rounded-full bg-white/20 mt-1.5 shrink-0" />
-                                          <span>{detail}</span>
-                                        </li>
-                                      ))}
-                                    </motion.ul>
-                                  )}
-                                </div>
-                              </div>
-                            </motion.div>
-                          );
-                        })}
-                      </AnimatePresence>
-                    </div>
-                  )}
-                </ScrollArea>
-              </CardContent>
-            </Card>
-=======
             </div>
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
           </div>
 
           {/* RIGHT: Results & Evidence */}
@@ -676,34 +585,9 @@ export default function IntegrityAgent() {
                   ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       <AnimatePresence>
-<<<<<<< HEAD
-                        {candidateChecks.map((check, index) => {
-                          const checkTypeInfo = checkTypes.find(t => t.value === check.checkType);
-                          const Icon = checkTypeInfo?.icon || FileText;
-                          
-                          return (
-                            <motion.div
-                              key={check.id}
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: index * 0.05 }}
-                              data-testid={`result-card-${check.id}`}
-                              className="min-w-0"
-                            >
-                              <Card className={`bg-white/5 border transition-colors overflow-hidden ${
-                                check.result === "Flagged" ? "border-border/30" :
-                                check.result === "Clear" || check.result === "Verified" ? "border-border/30" :
-                                "border-border dark:border-white/10"
-                              }`}>
-                                <CardHeader className="pb-2">
-                                  <div className="flex items-start justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                                        <Icon className="w-4 h-4 text-primary" />
-=======
                         {(() => {
                           // Flatten comprehensive checks into individual finding cards
-                          const resultCards: { key: string; checkType: string; checkData: any; createdAt: string; checkId: string; index: number }[] = [];
+                          const resultCards: { key: string; checkType: string; checkData: any; createdAt: string; index: number }[] = [];
                           let cardIndex = 0;
 
                           candidateChecks.forEach((check) => {
@@ -711,8 +595,6 @@ export default function IntegrityAgent() {
                             if (typeof check.findings === 'string') {
                               try { parsedFindings = JSON.parse(check.findings); } catch { parsedFindings = check.findings; }
                             }
-                            // Skip checks with no findings yet (e.g. newly created, not yet run)
-                            if (!parsedFindings) return;
 
                             if (typeof parsedFindings === 'object' && !Array.isArray(parsedFindings)) {
                               const findingsMap = parsedFindings as Record<string, any>;
@@ -720,52 +602,28 @@ export default function IntegrityAgent() {
                               checkTypes.forEach((ct) => {
                                 const cd = findingsMap[ct.value];
                                 if (!cd || typeof cd !== 'object' || Array.isArray(cd)) return;
-                                resultCards.push({ key: `${check.id}-${ct.value}`, checkType: ct.value, checkData: cd, createdAt: check.createdAt, checkId: check.id, index: cardIndex++ });
+                                resultCards.push({ key: `${check.id}-${ct.value}`, checkType: ct.value, checkData: cd, createdAt: check.createdAt, index: cardIndex++ });
                               });
                               // Include any extra keys not in checkTypes
                               Object.entries(findingsMap).forEach(([key, cd]) => {
                                 if (key === '_progress' || !cd || typeof cd !== 'object' || Array.isArray(cd)) return;
                                 if (checkTypes.some(ct => ct.value === key)) return; // already added
-                                resultCards.push({ key: `${check.id}-${key}`, checkType: key, checkData: cd, createdAt: check.createdAt, checkId: check.id, index: cardIndex++ });
+                                resultCards.push({ key: `${check.id}-${key}`, checkType: key, checkData: cd, createdAt: check.createdAt, index: cardIndex++ });
                               });
                             } else {
                               // Legacy single-result check
-                              resultCards.push({ key: check.id, checkType: check.checkType, checkData: { findings: String(parsedFindings) }, createdAt: check.createdAt, checkId: check.id, index: cardIndex++ });
+                              resultCards.push({ key: check.id, checkType: check.checkType, checkData: { findings: String(parsedFindings) }, createdAt: check.createdAt, index: cardIndex++ });
                             }
                           });
 
-                          // Group cards by run (checkId) to count runs
-                          const runIds = [...new Set(resultCards.map(c => c.checkId))];
-                          const checkRiskMap = new Map(candidateChecks.map(c => [c.id, c.riskScore]));
-
-                          return resultCards.map((card, idx) => {
+                          return resultCards.map((card) => {
                             const checkTypeInfo = checkTypes.find(t => t.value === card.checkType);
                             const Icon = checkTypeInfo?.icon || FileText;
                             const result = card.checkData.result || (card.checkData.riskScore === 0 ? "Clear" : card.checkData.riskScore > 30 ? "Flagged" : "Verified");
-                            const isFirstOfRun = idx === 0 || resultCards[idx - 1].checkId !== card.checkId;
-                            const runNumber = runIds.indexOf(card.checkId) + 1;
 
                             return (
-                              <React.Fragment key={card.key}>
-                                {isFirstOfRun && runIds.length > 1 && (() => {
-                                  const runRisk = checkRiskMap.get(card.checkId);
-                                  return (
-                                    <div className="lg:col-span-2 flex items-center justify-between py-1 border-b border-border dark:border-white/10">
-                                      <div className="flex items-center gap-2">
-                                        <Clock className="w-3 h-3 text-muted-foreground" />
-                                        <span className="text-[11px] font-semibold text-muted-foreground">
-                                          Run {runNumber} — {format(new Date(card.createdAt), "MMM dd, yyyy 'at' HH:mm")}
-                                        </span>
-                                      </div>
-                                      {runRisk != null && (
-                                        <span className={`text-[11px] font-bold ${getRiskScoreColor(runRisk)}`}>
-                                          Overall: {runRisk}%
-                                        </span>
-                                      )}
-                                    </div>
-                                  );
-                                })()}
                               <motion.div
+                                key={card.key}
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: card.index * 0.05 }}
@@ -791,7 +649,6 @@ export default function IntegrityAgent() {
                                             {format(new Date(card.createdAt), "MMM dd, HH:mm")}
                                           </CardDescription>
                                         </div>
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                                       </div>
                                       <div className="flex items-center gap-1.5">
                                         {getResultBadge(result)}
@@ -829,76 +686,6 @@ export default function IntegrityAgent() {
                                       </div>
                                     )}
 
-<<<<<<< HEAD
-                                    return (
-                                      <>
-                                        {typeof parsedFindings === 'object' && !Array.isArray(parsedFindings) ? (
-                                          <>
-                                            {/* Show each check type's findings */}
-                                            {Object.entries(parsedFindings as Record<string, any>).map(([checkType, checkData]: [string, any]) => {
-                                              // Skip progress metadata and non-object entries
-                                              if (checkType === '_progress' || !checkData || typeof checkData !== 'object' || Array.isArray(checkData)) {
-                                                return null;
-                                              }
-
-                                              return (
-                                                <div key={checkType} className="space-y-2 w-full">
-                                                  <div className="p-2 rounded bg-black/20 border border-border dark:border-white/5 overflow-hidden w-full">
-                                                    <div className="text-[10px] font-semibold text-primary mb-1 uppercase">{checkType} Check:</div>
-                                                    <div className="text-[10px] text-muted-foreground whitespace-pre-wrap" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
-                                                      {checkData.findings || 'No findings available'}
-                                                    </div>
-                                                    
-                                                    {/* Missing Documents Alert */}
-                                                    {checkData.missingDocuments && checkData.missingDocuments.length > 0 && (
-                                                      <div className="mt-2 p-2 rounded bg-muted/10 border border-border/30 overflow-hidden">
-                                                        <div className="flex items-center gap-1 text-foreground mb-1">
-                                                          <FileWarning className="w-3 h-3 shrink-0" />
-                                                          <span className="text-[10px] font-semibold">Missing Documents:</span>
-                                                        </div>
-                                                        <ul className="text-[10px] text-foreground/80 space-y-0.5 ml-4 break-words">
-                                                          {checkData.missingDocuments.map((doc: string, idx: number) => (
-                                                            <li key={idx} className="list-disc break-words">{doc}</li>
-                                                          ))}
-                                                        </ul>
-                                                      </div>
-                                                    )}
-                                                    
-                                                    {/* Follow-Up Required Alert */}
-                                                    {checkData.requiresFollowUp && (
-                                                      <div className="mt-2 p-2 rounded bg-muted/10 border border-border/30 overflow-hidden">
-                                                        <div className="flex items-center gap-1 text-foreground mb-1">
-                                                          <Bell className="w-3 h-3 shrink-0" />
-                                                          <span className="text-[10px] font-semibold">HR Follow-Up Required:</span>
-                                                        </div>
-                                                        <div className="text-[10px] text-foreground/80" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
-                                                          {checkData.followUpReason || 'Manual verification needed'}
-                                                        </div>
-                                                      </div>
-                                                    )}
-                                                  </div>
-                                                </div>
-                                              );
-                                            })}
-                                          </>
-                                        ) : (
-                                          /* Fallback for string-based findings (legacy checks or in-progress status) */
-                                          <div className="p-2 rounded bg-black/20 border border-border dark:border-white/5 overflow-hidden w-full">
-                                            <div className="text-[10px] font-semibold text-primary mb-1">Findings:</div>
-                                            <div className="text-[10px] text-muted-foreground whitespace-pre-wrap" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
-                                              {String(parsedFindings)}
-                                            </div>
-                                          </div>
-                                        )}
-                                      </>
-                                    );
-                                  })()}
-                                </CardContent>
-                              </Card>
-                            </motion.div>
-                          );
-                        })}
-=======
                                     {/* Follow-Up Required Alert */}
                                     {card.checkData.requiresFollowUp && (
                                       <div className="p-2 rounded bg-teal-600/10 border border-teal-600/30">
@@ -914,11 +701,9 @@ export default function IntegrityAgent() {
                                   </CardContent>
                                 </Card>
                               </motion.div>
-                              </React.Fragment>
                             );
                           });
                         })()}
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                       </AnimatePresence>
                     </div>
                   )}

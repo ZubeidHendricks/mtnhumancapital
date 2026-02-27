@@ -1,8 +1,8 @@
-import { useState, useRef, lazy, Suspense } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { jobsService, candidateService, integrityChecksService, api } from "@/lib/api";
 import { useTenantQueryKey } from "@/hooks/useTenant";
-import { CustomizableDashboard, DataSourceConfig } from "@/components/customizable-dashboard";
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -229,7 +229,7 @@ export default function HRDashboard() {
     }
 
     try {
-      const response = await api.post(`/api/pipeline/candidates/${candidate.id}/transition`, {
+      const response = await api.post(`/pipeline/candidates/${candidate.id}/transition`, {
         toStage: nextStage
       });
       
@@ -695,72 +695,6 @@ BENEFITS:
   const displayJobs = jobsError ? [] : (Array.isArray(jobs) ? jobs : []);
   const jobCount = displayJobs.length || 12;
 
-  // Customizable dashboard data sources
-  const chartDataSources: DataSourceConfig[] = [
-    {
-      key: "candidates",
-      label: "Candidates",
-      fields: [
-        { value: "status", label: "Status", type: "categorical" },
-        { value: "stage", label: "Stage", type: "categorical" },
-        { value: "source", label: "Source", type: "categorical" },
-        { value: "role", label: "Role", type: "categorical" },
-        { value: "location", label: "Location", type: "categorical" },
-        { value: "match", label: "Match Score", type: "numeric" },
-      ]
-    },
-    {
-      key: "jobs",
-      label: "Jobs",
-      fields: [
-        { value: "status", label: "Status", type: "categorical" },
-        { value: "department", label: "Department", type: "categorical" },
-        { value: "location", label: "Location", type: "categorical" },
-        { value: "employmentType", label: "Employment Type", type: "categorical" },
-        { value: "salaryMin", label: "Minimum Salary (R)", type: "numeric" },
-        { value: "salaryMax", label: "Maximum Salary (R)", type: "numeric" },
-      ]
-    },
-    {
-      key: "employees",
-      label: "Employees",
-      fields: [
-        { value: "department", label: "Department", type: "categorical" },
-        { value: "team", label: "Team", type: "categorical" },
-        { value: "jobTitle", label: "Job Title", type: "categorical" },
-        { value: "employmentType", label: "Employment Type", type: "categorical" },
-        { value: "basicSalary", label: "Basic Salary (R)", type: "numeric" },
-      ]
-    },
-    {
-      key: "financialMetrics",
-      label: "Financial Metrics",
-      fields: [
-        { value: "category", label: "Quarter", type: "categorical" },
-        { value: "revenue", label: "Revenue (R)", type: "numeric" },
-        { value: "expenses", label: "Expenses (R)", type: "numeric" },
-        { value: "profit", label: "Profit (R)", type: "numeric" },
-      ]
-    }
-  ];
-
-  // Sample financial metrics data
-  const financialMetricsData = [
-    { category: "Q1", revenue: 450000, expenses: 280000, profit: 170000 },
-    { category: "Q2", revenue: 520000, expenses: 310000, profit: 210000 },
-    { category: "Q3", revenue: 480000, expenses: 295000, profit: 185000 },
-    { category: "Q4", revenue: 610000, expenses: 340000, profit: 270000 },
-  ];
-
-  const getChartData = (sourceKey: string) => {
-    switch (sourceKey) {
-      case "candidates": return displayCandidates;
-      case "jobs": return displayJobs;
-      case "employees": return employees || [];
-      case "financialMetrics": return financialMetricsData;
-      default: return [];
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -773,11 +707,11 @@ BENEFITS:
           </div>
           <div className="flex items-center gap-3">
             <Link href="/workflow-showcase">
-              <Button className="bg-muted hover:bg-muted text-white font-semibold" data-testid="button-start-workflow">
+              <Button className="bg-[#FFCB00] hover:bg-[#E6B800] text-black font-semibold" data-testid="button-start-workflow">
                 <ArrowRight className="w-4 h-4 mr-2" /> Start Workflow
               </Button>
             </Link>
-            <Badge variant="outline" className="bg-muted text-primary border-border dark:border-border px-3 py-1">
+            <Badge variant="outline" className="bg-muted dark:bg-muted text-primary border-border px-3 py-1">
               <BrainCircuit className="w-3 h-3 mr-2" /> AI Agents Active
             </Badge>
           </div>
@@ -785,7 +719,7 @@ BENEFITS:
 
         {/* Connection Error Alert */}
         {(jobsError || candidatesError) && (
-          <Alert variant="destructive" className="mb-6 border-destructive/20 bg-destructive/10 text-destructive">
+          <Alert variant="destructive" className="mb-6 border-red-500/20 bg-red-500/10 text-red-200">
             <WifiOff className="h-4 w-4" />
             <AlertTitle>Backend Connection Issue</AlertTitle>
             <AlertDescription>
@@ -796,22 +730,13 @@ BENEFITS:
 
         <Tabs value={activeTab} className="space-y-6" onValueChange={setActiveTab}>
           <div className="flex items-center gap-3 flex-wrap">
-            {/* Main 5 Tabs */}
-<<<<<<< HEAD
-            <TabsList className="grid grid-cols-2 md:grid-cols-5 lg:w-[600px] bg-white border-2 border-border dark:border-border">
-              <TabsTrigger value="jobs" className="data-[state=active]:bg-muted data-[state=active]:text-white font-semibold">Jobs</TabsTrigger>
-              <TabsTrigger value="recruitment" className="data-[state=active]:bg-muted data-[state=active]:text-white font-semibold">Recruitment</TabsTrigger>
-              <TabsTrigger value="integrity" className="data-[state=active]:bg-muted data-[state=active]:text-white font-semibold">Integrity</TabsTrigger>
-              <TabsTrigger value="offer" className="data-[state=active]:bg-muted data-[state=active]:text-white font-semibold">Offer</TabsTrigger>
-              <TabsTrigger value="onboarding" className="data-[state=active]:bg-muted data-[state=active]:text-white font-semibold">Onboarding</TabsTrigger>
-=======
-            <TabsList className="grid grid-cols-2 md:grid-cols-5 lg:w-[600px] bg-white dark:bg-gray-800 border-2 border-teal-200 dark:border-teal-700">
-              <TabsTrigger value="jobs" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white font-semibold">Jobs</TabsTrigger>
-              <TabsTrigger value="recruitment" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white font-semibold">Recruitment</TabsTrigger>
-              <TabsTrigger value="offer" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white font-semibold">Offer</TabsTrigger>
-              <TabsTrigger value="integrity" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white font-semibold">Integrity</TabsTrigger>
-              <TabsTrigger value="onboarding" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white font-semibold">Onboarding</TabsTrigger>
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
+            {/* Main Tabs */}
+            <TabsList className="grid grid-cols-2 md:grid-cols-5 lg:w-[600px] bg-white dark:bg-background border-2 border-border">
+              <TabsTrigger value="jobs" className="data-[state=active]:bg-muted data-[state=active]:text-white dark:data-[state=active]:border dark:data-[state=active]:border-[#FFCB00] dark:data-[state=active]:text-[#FFCB00] dark:data-[state=active]:bg-[#FFCB00]/10 font-semibold">Jobs</TabsTrigger>
+              <TabsTrigger value="recruitment" className="data-[state=active]:bg-muted data-[state=active]:text-white dark:data-[state=active]:border dark:data-[state=active]:border-[#FFCB00] dark:data-[state=active]:text-[#FFCB00] dark:data-[state=active]:bg-[#FFCB00]/10 font-semibold">Recruitment</TabsTrigger>
+              <TabsTrigger value="offer" className="data-[state=active]:bg-muted data-[state=active]:text-white dark:data-[state=active]:border dark:data-[state=active]:border-[#FFCB00] dark:data-[state=active]:text-[#FFCB00] dark:data-[state=active]:bg-[#FFCB00]/10 font-semibold">Offer</TabsTrigger>
+              <TabsTrigger value="integrity" className="data-[state=active]:bg-muted data-[state=active]:text-white dark:data-[state=active]:border dark:data-[state=active]:border-[#FFCB00] dark:data-[state=active]:text-[#FFCB00] dark:data-[state=active]:bg-[#FFCB00]/10 font-semibold">Integrity</TabsTrigger>
+              <TabsTrigger value="onboarding" className="data-[state=active]:bg-muted data-[state=active]:text-white dark:data-[state=active]:border dark:data-[state=active]:border-[#FFCB00] dark:data-[state=active]:text-[#FFCB00] dark:data-[state=active]:bg-[#FFCB00]/10 font-semibold">Onboarding</TabsTrigger>
             </TabsList>
           </div>
 
@@ -820,7 +745,7 @@ BENEFITS:
             
             {/* Quick Action Banners */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="rounded-lg bg-muted dark:bg-muted border-2 border-border dark:border-border p-6 flex items-center justify-between">
+              <div className="rounded-lg bg-muted dark:bg-muted border-2 border-border p-6 flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-bold flex items-center gap-2 text-foreground">
                     <Sparkles className="w-5 h-5 text-primary" />
@@ -831,16 +756,16 @@ BENEFITS:
                   </p>
                 </div>
                 <Link href="/recruitment-agent">
-                  <Button className="bg-muted hover:bg-muted text-white font-semibold">
+                  <Button className="bg-[#FFCB00] hover:bg-[#E6B800] text-black font-semibold">
                     Launch AI Recruiter
                   </Button>
                 </Link>
               </div>
 
-              <div className="rounded-lg bg-muted dark:bg-muted border-2 border-border dark:border-border p-6 flex items-center justify-between">
+              <div className="rounded-lg bg-[#FFCB00]/5 dark:bg-[#FFCB00]/10 border-2 border-[#FFCB00]/20 dark:border-[#FFCB00]/30 p-6 flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-bold flex items-center gap-2 text-foreground">
-                    <LayoutList className="w-5 h-5 text-foreground dark:text-foreground" />
+                    <LayoutList className="w-5 h-5 text-[#FFCB00]" />
                     Track candidate progress
                   </h3>
                   <p className="text-foreground font-semibold text-sm mt-1">
@@ -848,7 +773,7 @@ BENEFITS:
                   </p>
                 </div>
                 <Link href="/candidate-pipeline">
-                  <Button variant="outline" className="border-border/30 hover:bg-muted/10 shadow-lg shadow-blue-500/10">
+                  <Button variant="outline" className="border-[#FFCB00]/30 hover:bg-[#FFCB00]/10 shadow-lg shadow-[#FFCB00]/10">
                     View Pipeline
                   </Button>
                 </Link>
@@ -885,12 +810,8 @@ BENEFITS:
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-foreground font-bold text-foreground font-bold">Open Roles</CardTitle>
-<<<<<<< HEAD
-                    <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">
-=======
+                    <CardTitle className="text-foreground font-bold">Open Roles</CardTitle>
                     <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                       {loadingJobs ? "Loading positions..." : "Active job requisitions and hiring pipelines"}
                     </CardDescription>
                   </div>
@@ -906,7 +827,7 @@ BENEFITS:
                     </Button>
                     <Dialog open={isCreateJobOpen} onOpenChange={setIsCreateJobOpen}>
                       <DialogTrigger asChild>
-                        <Button variant="outline" className="gap-2 border-border dark:border-border bg-muted hover:bg-muted">
+                        <Button variant="outline" className="gap-2 border-border bg-muted dark:bg-muted hover:bg-muted dark:bg-muted">
                           <Plus className="h-4 w-4" />
                           New Role
                         </Button>
@@ -917,7 +838,7 @@ BENEFITS:
               </CardHeader>
               <CardContent>
                 <div className="rounded-md border border-border overflow-hidden">
-                  <div className="bg-white/5 px-4 py-3 grid grid-cols-12 text-sm font-medium text-foreground font-semibold">
+                  <div className="bg-white/5 px-4 py-3 grid grid-cols-12 text-sm text-foreground font-semibold">
                     <div className="col-span-4">Job Title</div>
                     <div className="col-span-2">Department</div>
                     <div className="col-span-2">Candidates</div>
@@ -943,18 +864,18 @@ BENEFITS:
                             </div>
                             <div className="col-span-2 text-sm text-foreground font-semibold">{job.department}</div>
                             <div className="col-span-2">
-                              <Badge variant="outline" className="bg-muted/10 text-foreground dark:text-foreground border-border/20">
+                              <Badge variant="outline" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20">
                                 {candidateCount} {candidateCount === 1 ? 'Candidate' : 'Candidates'}
                               </Badge>
                             </div>
                             <div className="col-span-2">
-                              <Badge className={`${job.status === 'Active' ? 'bg-muted/20 text-foreground' : 'bg-gray-500/20 text-gray-400'} border-0`}>
+                              <Badge className={`${job.status === 'Active' ? 'bg-green-500/20 text-green-600 dark:text-green-400' : 'bg-gray-500/20 text-gray-400'} border-0`}>
                                 {job.status}
                               </Badge>
                             </div>
                             <div className="col-span-2 text-right flex justify-end gap-2">
                               <Link href={`/recruitment-agent?jobId=${job.id}`}>
-                                <Button variant="outline" size="sm" className="gap-2 border-border/30 bg-muted/10 hover:bg-muted/20 text-foreground dark:text-foreground" data-testid={`button-start-search-${job.id}`}>
+                                <Button variant="outline" size="sm" className="gap-2 border-[#FFCB00]/30 bg-[#FFCB00]/10 hover:bg-[#FFCB00]/20 text-[#FFCB00]" data-testid={`button-start-search-${job.id}`}>
                                   <Search className="h-4 w-4" />
                                   Start Search
                                 </Button>
@@ -1003,7 +924,7 @@ BENEFITS:
                                         }
                                       }
                                     }}
-                                    className="cursor-pointer text-destructive focus:text-destructive"
+                                    className="cursor-pointer text-red-600 dark:text-red-400 focus:text-red-600 dark:text-red-400"
                                     data-testid={`button-delete-job-${job.id}`}
                                   >
                                     <Trash2 className="h-4 w-4 mr-2" />
@@ -1043,11 +964,7 @@ BENEFITS:
                         <FileArchive className="h-5 w-5 text-gray-400" />
                         Archived Roles
                       </CardTitle>
-<<<<<<< HEAD
-                      <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">
-=======
                       <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                         {loadingArchivedJobs ? "Loading archived positions..." : `${archivedJobs.length} archived job${archivedJobs.length !== 1 ? 's' : ''}`}
                       </CardDescription>
                     </div>
@@ -1055,7 +972,7 @@ BENEFITS:
                 </CardHeader>
                 <CardContent>
                   <div className="rounded-md border border-border overflow-hidden">
-                    <div className="bg-white/5 px-4 py-3 grid grid-cols-12 text-sm font-medium text-foreground font-semibold">
+                    <div className="bg-white/5 px-4 py-3 grid grid-cols-12 text-sm text-foreground font-semibold">
                       <div className="col-span-4">Job Title</div>
                       <div className="col-span-3">Department</div>
                       <div className="col-span-3">Archived On</div>
@@ -1084,7 +1001,7 @@ BENEFITS:
                               <Button 
                                 variant="outline" 
                                 size="sm" 
-                                className="gap-2 border-border/20 hover:bg-muted/10 text-foreground"
+                                className="gap-2 border-green-500/20 hover:bg-green-500/10 text-green-600 dark:text-green-400"
                                 onClick={async () => {
                                   try {
                                     await jobsService.restore(job.id);
@@ -1121,14 +1038,10 @@ BENEFITS:
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-foreground font-bold flex items-center gap-2">
-                      <Star className="h-5 w-5 text-foreground fill-yellow-400" />
+                      <Star className="h-5 w-5 text-yellow-600 dark:text-yellow-400 fill-yellow-400" />
                       Shortlisted Candidates
                     </CardTitle>
-<<<<<<< HEAD
-                    <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">
-=======
                     <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                       {loadingCandidates ? "Loading..." : "Top talent ready for interviews and offers"}
                     </CardDescription>
                   </div>
@@ -1163,7 +1076,7 @@ BENEFITS:
                                     {candidate.photoUrl && (
                                       <AvatarImage src={candidate.photoUrl} alt={candidate.fullName} />
                                     )}
-                                    <AvatarFallback className="bg-muted text-white text-xs font-semibold">
+                                    <AvatarFallback className="bg-[#0A0A0A] text-white text-xs font-semibold">
                                       {candidate.fullName?.split(' ')?.map((n: string) => n[0])?.join('')?.toUpperCase() || '?'}
                                     </AvatarFallback>
                                   </Avatar>
@@ -1174,11 +1087,11 @@ BENEFITS:
                                 </div>
                                 <div className="flex items-center gap-2">
                                   {candidate.match !== null && candidate.match !== undefined && (
-                                    <Badge className="bg-muted/10 text-foreground border-0 text-xs">
+                                    <Badge className="bg-yellow-400/10 text-yellow-600 dark:text-yellow-400 border-0 text-xs">
                                       {candidate.match}% Match
                                     </Badge>
                                   )}
-                                  <Star className="h-4 w-4 text-foreground fill-yellow-400" />
+                                  <Star className="h-4 w-4 text-yellow-600 dark:text-yellow-400 fill-yellow-400" />
                                 </div>
                               </div>
                             ))}
@@ -1204,12 +1117,8 @@ BENEFITS:
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-foreground font-bold text-foreground font-bold">Candidate Pipeline</CardTitle>
-<<<<<<< HEAD
-                    <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">
-=======
+                    <CardTitle className="text-foreground font-bold">Candidate Pipeline</CardTitle>
                     <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                       {loadingCandidates ? "Fetching data from backend..." : "AI-ranked candidates matched to hiring needs"}
                     </CardDescription>
                   </div>
@@ -1228,7 +1137,7 @@ BENEFITS:
 
                     <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
                       <DialogTrigger asChild>
-                        <Button variant="outline" className="gap-2 border-border dark:border-border bg-muted hover:bg-muted">
+                        <Button variant="outline" className="gap-2 border-border bg-muted dark:bg-muted hover:bg-muted dark:bg-muted">
                           <UploadCloud className="h-4 w-4" />
                           Upload CVs
                         </Button>
@@ -1262,7 +1171,7 @@ BENEFITS:
                                 </div>
                             ) : (
                                 <>
-                                    <div className="p-3 rounded-full bg-muted">
+                                    <div className="p-3 rounded-full bg-muted dark:bg-muted">
                                       <UploadCloud className="h-8 w-8 text-primary" />
                                     </div>
                                     <h3 className="font-medium mt-2">Drop files here or click to upload</h3>
@@ -1380,7 +1289,7 @@ BENEFITS:
                   </div>
                 )}
                 <div className="rounded-md border border-border overflow-hidden">
-                  <div className="bg-white/5 px-4 py-3 grid grid-cols-12 text-sm font-medium text-foreground font-semibold">
+                  <div className="bg-white/5 px-4 py-3 grid grid-cols-12 text-sm text-foreground font-semibold">
                     <div className="col-span-3">Candidate</div>
                     <div className="col-span-3">Role Applied</div>
                     <div className="col-span-2">AI Match Score</div>
@@ -1406,7 +1315,7 @@ BENEFITS:
                           <div className="col-span-3 font-medium">{candidate.fullName || candidate.name || "Unknown Candidate"}</div>
                           <div className="col-span-3 text-sm text-foreground font-semibold">{candidate.role || "General Application"}</div>
                           <div className="col-span-2">
-                            <Badge className={`${(candidate.match || candidate.overall_score || 0) > 90 ? 'bg-muted/20 text-foreground hover:bg-muted/30' : 'bg-muted/20 text-foreground hover:bg-muted/30'} border-0`}>
+                            <Badge className={`${(candidate.match || candidate.overall_score || 0) > 90 ? 'bg-green-500/20 text-green-600 dark:text-green-400 hover:bg-green-500/30' : 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-500/30'} border-0`}>
                               {candidate.match || candidate.overall_score || 0}% Match
                             </Badge>
                           </div>
@@ -1430,13 +1339,13 @@ BENEFITS:
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem asChild className="cursor-pointer">
-                                  <Link href="/interview-voice">
+                                  <Link href="/interview/voice">
                                     <Mic className="mr-2 h-4 w-4" />
                                     Start Voice Interview
                                   </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild className="cursor-pointer">
-                                  <Link href="/interview-video">
+                                  <Link href="/interview/video">
                                     <Video className="mr-2 h-4 w-4" />
                                     Start Video Interview
                                   </Link>
@@ -1466,7 +1375,7 @@ BENEFITS:
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem 
-                                  className="cursor-pointer text-destructive focus:text-destructive"
+                                  className="cursor-pointer text-red-600 dark:text-red-400 focus:text-red-600 dark:text-red-400"
                                   onClick={() => {
                                     if (candidate?.id && window.confirm(`Remove ${candidate.fullName || 'this candidate'}?`)) {
                                       deleteCandidateMutation.mutate(candidate.id);
@@ -1493,27 +1402,23 @@ BENEFITS:
 
           {/* JOBS TAB */}
           <TabsContent value="jobs" className="space-y-6">
-            <Card className="bg-gray-100/50 border-gray-200 dark:border-zinc-800">
+            <Card className="bg-gray-100 dark:bg-zinc-900/50 border-gray-200 dark:border-zinc-800">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-foreground font-bold text-lg text-foreground font-bold flex items-center gap-2">
-                      <Briefcase className="h-5 w-5 text-foreground dark:text-foreground" />
+                    <CardTitle className="text-foreground font-bold text-lg flex items-center gap-2">
+                      <Briefcase className="h-5 w-5 text-[#FFCB00]" />
                       Job Specifications Library
                     </CardTitle>
-<<<<<<< HEAD
-                    <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Extracted job requirements from uploaded specifications</CardDescription>
-=======
                     <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Extracted job requirements from uploaded specifications</CardDescription>
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center bg-gray-200 rounded-lg p-1">
+                    <div className="flex items-center bg-gray-200 dark:bg-zinc-800 rounded-lg p-1">
                       <Button
                         variant={jobSpecViewMode === "grid" ? "default" : "ghost"}
                         size="sm"
                         onClick={() => setJobSpecViewMode("grid")}
-                        className={jobSpecViewMode === "grid" ? "bg-muted/20 text-foreground dark:text-foreground" : "text-zinc-400"}
+                        className={jobSpecViewMode === "grid" ? "bg-[#FFCB00]/20 text-[#FFCB00]" : "text-zinc-400"}
                         data-testid="button-jobs-grid-view"
                       >
                         <Grid3X3 className="h-4 w-4" />
@@ -1522,7 +1427,7 @@ BENEFITS:
                         variant={jobSpecViewMode === "list" ? "default" : "ghost"}
                         size="sm"
                         onClick={() => setJobSpecViewMode("list")}
-                        className={jobSpecViewMode === "list" ? "bg-muted/20 text-foreground dark:text-foreground" : "text-zinc-400"}
+                        className={jobSpecViewMode === "list" ? "bg-[#FFCB00]/20 text-[#FFCB00]" : "text-zinc-400"}
                         data-testid="button-jobs-list-view"
                       >
                         <List className="h-4 w-4" />
@@ -1532,7 +1437,7 @@ BENEFITS:
                       {displayJobs.length + jobSpecDocuments.length} Jobs
                     </Badge>
                     <Link href="/recruitment-agent">
-                      <Button variant="outline" size="sm" className="border-border/50 text-foreground dark:text-foreground hover:bg-muted/10">
+                      <Button variant="outline" size="sm" className="border-[#FFCB00]/50 text-[#FFCB00] hover:bg-[#FFCB00]/10">
                         <Briefcase className="h-4 w-4 mr-2" />
                         View Recruitment
                         <ArrowRight className="h-4 w-4 ml-2" />
@@ -1540,7 +1445,7 @@ BENEFITS:
                     </Link>
                     <Dialog open={isCreateJobOpen} onOpenChange={setIsCreateJobOpen}>
                       <DialogTrigger asChild>
-                        <Button data-testid="button-create-job-dialog" className="bg-muted hover:bg-muted text-white font-semibold">
+                        <Button data-testid="button-create-job-dialog" className="bg-[#FFCB00] hover:bg-[#E6B800] text-black font-semibold">
                           <Plus className="h-4 w-4 mr-2" />
                           Create New Job
                         </Button>
@@ -1562,7 +1467,7 @@ BENEFITS:
               <CardContent>
                 {loadingJobs || loadingJobSpecs ? (
                   <div className="text-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-foreground dark:text-foreground mx-auto" />
+                    <Loader2 className="h-8 w-8 animate-spin text-[#FFCB00] mx-auto" />
                   </div>
                 ) : displayJobs.length === 0 && jobSpecDocuments.length === 0 ? (
                   <div className="text-center py-12">
@@ -1572,7 +1477,7 @@ BENEFITS:
                     <div className="flex gap-3 justify-center">
                       <Button 
                         onClick={() => setIsCreateJobOpen(true)}
-                        className="bg-muted hover:bg-muted text-white font-semibold"
+                        className="bg-[#FFCB00] hover:bg-[#E6B800] text-black font-semibold"
                       >
                         <Sparkles className="h-4 w-4 mr-2" />
                         Create with AI
@@ -1580,7 +1485,7 @@ BENEFITS:
                       <Link href="/document-automation">
                         <Button 
                           variant="outline" 
-                          className="border-border/50 text-foreground dark:text-foreground hover:bg-muted/10"
+                          className="border-[#FFCB00]/50 text-[#FFCB00] hover:bg-[#FFCB00]/10"
                         >
                           <UploadCloud className="h-4 w-4 mr-2" />
                           Upload Job Specs
@@ -1600,17 +1505,17 @@ BENEFITS:
                           onClick={() => { setSelectedJob(job); setIsJobDetailOpen(true); }}
                         >
                           <div className="flex items-start gap-3 mb-3">
-                            <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-lg bg-[#0A0A0A] flex items-center justify-center">
                               <Briefcase className="h-6 w-6 text-white" />
                             </div>
                             <div className="flex-1 min-w-0">
                               <h3 className="font-semibold text-foreground truncate">{job.title}</h3>
-                              <p className="text-foreground dark:text-foreground text-sm truncate flex items-center gap-1">
+                              <p className="text-[#FFCB00] text-sm truncate flex items-center gap-1">
                                 <Building2 className="h-3 w-3" />
                                 {job.department || 'General'}
                               </p>
                             </div>
-                            <Badge className={`${job.status === 'Active' ? 'bg-muted/20 text-foreground' : 'bg-gray-500/20 text-gray-400'} border-0 text-xs`}>
+                            <Badge className={`${job.status === 'Active' ? 'bg-green-500/20 text-green-600 dark:text-green-400' : 'bg-gray-500/20 text-gray-400'} border-0 text-xs`}>
                               {job.status}
                             </Badge>
                           </div>
@@ -1638,14 +1543,14 @@ BENEFITS:
                               <Button 
                                 variant="outline" 
                                 size="sm" 
-                                className="w-full border-border/30 text-foreground dark:text-foreground hover:bg-muted/10"
+                                className="w-full border-[#FFCB00]/30 text-[#FFCB00] hover:bg-[#FFCB00]/10"
                                 data-testid={`button-start-search-grid-${job.id}`}
                               >
                                 <Search className="h-3 w-3 mr-1" />
                                 Start Search
                               </Button>
                             </Link>
-                            <Link href={`/candidates-list?jobId=${job.id}`}>
+                            <Link href={`/recruitment-agent?jobId=${job.id}`}>
                               <Button 
                                 variant="ghost" 
                                 size="sm"
@@ -1665,11 +1570,11 @@ BENEFITS:
                         return (
                           <div 
                             key={doc.id}
-                            className="p-4 rounded-xl bg-card hover:bg-accent transition-all border-2 border-border hover:border-border group"
+                            className="p-4 rounded-xl bg-card hover:bg-accent transition-all border-2 border-border hover:border-[#FFCB00] group"
                             data-testid={`card-job-spec-${doc.id}`}
                           >
                             <div className="flex items-start gap-3 mb-3">
-                              <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
+                              <div className="w-12 h-12 rounded-lg bg-[#0A0A0A] flex items-center justify-center">
                                 <FileText className="h-6 w-6 text-white" />
                               </div>
                               <div className="flex-1 min-w-0">
@@ -1677,13 +1582,13 @@ BENEFITS:
                                   {extracted?.title || extracted?.jobTitle || doc.originalFilename}
                                 </h3>
                                 {extracted?.company && (
-                                  <p className="text-foreground dark:text-foreground text-sm truncate flex items-center gap-1">
+                                  <p className="text-[#FFCB00] text-sm truncate flex items-center gap-1">
                                     <Building2 className="h-3 w-3" />
                                     {extracted.company}
                                   </p>
                                 )}
                               </div>
-                              <Badge className="bg-muted/20 text-foreground dark:text-foreground border-0 text-xs">
+                              <Badge className="bg-blue-500/20 text-blue-600 dark:text-blue-400 border-0 text-xs">
                                 Uploaded
                               </Badge>
                             </div>
@@ -1707,7 +1612,7 @@ BENEFITS:
                               <Button 
                                 variant="outline" 
                                 size="sm" 
-                                className="flex-1 border-border/30 text-foreground dark:text-foreground hover:bg-muted/10"
+                                className="flex-1 border-[#FFCB00]/30 text-[#FFCB00] hover:bg-[#FFCB00]/10"
                                 onClick={() => setSelectedJobSpec(doc)}
                                 data-testid={`button-view-spec-${doc.id}`}
                               >
@@ -1737,10 +1642,10 @@ BENEFITS:
                         <tbody className="divide-y divide-zinc-800/50">
                           {/* AI-Created Jobs */}
                           {displayJobs.map((job: any) => (
-                            <tr key={job.id} className="hover:bg-gray-200/30 transition-colors" data-testid={`row-job-${job.id}`}>
+                            <tr key={job.id} className="hover:bg-gray-200 dark:bg-zinc-800/30 transition-colors" data-testid={`row-job-${job.id}`}>
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                                  <div className="w-8 h-8 rounded-lg bg-[#0A0A0A] flex items-center justify-center flex-shrink-0">
                                     <Briefcase className="h-4 w-4 text-white" />
                                   </div>
                                   <span className="font-medium text-foreground truncate max-w-[200px]">{job.title}</span>
@@ -1755,7 +1660,7 @@ BENEFITS:
                                 </span>
                               </td>
                               <td className="px-4 py-3">
-                                <Badge className={`${job.status === 'Active' ? 'bg-muted/20 text-foreground' : 'bg-gray-500/20 text-gray-400'} border-0 text-xs`}>
+                                <Badge className={`${job.status === 'Active' ? 'bg-green-500/20 text-green-600 dark:text-green-400' : 'bg-gray-500/20 text-gray-400'} border-0 text-xs`}>
                                   {job.status}
                                 </Badge>
                               </td>
@@ -1765,12 +1670,12 @@ BENEFITS:
                               <td className="px-4 py-3 text-right">
                                 <div className="flex items-center justify-end gap-1">
                                   <Link href={`/recruitment-agent?jobId=${job.id}`}>
-                                    <Button variant="ghost" size="sm" className="h-7 px-2 text-foreground dark:text-foreground">
+                                    <Button variant="ghost" size="sm" className="h-7 px-2 text-[#FFCB00]">
                                       <Search className="h-3.5 w-3.5 mr-1" />
                                       Search
                                     </Button>
                                   </Link>
-                                  <Link href={`/candidates-list?jobId=${job.id}`}>
+                                  <Link href={`/recruitment-agent?jobId=${job.id}`}>
                                     <Button variant="ghost" size="sm" className="h-7 px-2 text-zinc-400">
                                       <Eye className="h-3.5 w-3.5" />
                                     </Button>
@@ -1784,10 +1689,10 @@ BENEFITS:
                           {jobSpecDocuments.map((doc) => {
                             const extracted = doc.extractedData as any;
                             return (
-                              <tr key={doc.id} className="hover:bg-gray-200/30 transition-colors" data-testid={`row-job-spec-${doc.id}`}>
+                              <tr key={doc.id} className="hover:bg-gray-200 dark:bg-zinc-800/30 transition-colors" data-testid={`row-job-spec-${doc.id}`}>
                                 <td className="px-4 py-3">
                                   <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                                    <div className="w-8 h-8 rounded-lg bg-[#0A0A0A] flex items-center justify-center flex-shrink-0">
                                       <FileText className="h-4 w-4 text-white" />
                                     </div>
                                     <span className="font-medium text-foreground truncate max-w-[200px]">
@@ -1802,7 +1707,7 @@ BENEFITS:
                                   <span className="text-zinc-400 text-sm">{extracted?.location || '-'}</span>
                                 </td>
                                 <td className="px-4 py-3">
-                                  <Badge className="bg-muted/20 text-foreground dark:text-foreground border-0 text-xs">Uploaded</Badge>
+                                  <Badge className="bg-blue-500/20 text-blue-600 dark:text-blue-400 border-0 text-xs">Uploaded</Badge>
                                 </td>
                                 <td className="px-4 py-3">
                                   <span className="text-zinc-500 text-xs">{new Date(doc.createdAt).toLocaleDateString()}</span>
@@ -1835,10 +1740,10 @@ BENEFITS:
           <TabsContent value="integrity" className="space-y-6">
             
             {/* AI Integrity Banner */}
-            <div className="rounded-lg bg-muted dark:bg-muted border-2 border-border dark:border-border p-6 flex items-center justify-between">
+            <div className="rounded-lg bg-[#FFCB00]/5 dark:bg-[#FFCB00]/10 border-2 border-[#FFCB00]/20 dark:border-[#FFCB00]/30 p-6 flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-bold flex items-center gap-2 text-foreground">
-                  <ShieldCheck className="w-5 h-5 text-foreground dark:text-foreground" />
+                  <ShieldCheck className="w-5 h-5 text-foreground" />
                   Perform automated background checks?
                 </h3>
                 <p className="text-foreground font-semibold text-sm mt-1">
@@ -1846,7 +1751,7 @@ BENEFITS:
                 </p>
               </div>
               <Link href="/integrity-agent">
-                <Button className="bg-muted text-foreground hover:bg-muted shadow-lg shadow-cyan-500/20">
+                <Button className="bg-[#FFCB00] hover:bg-[#E6B800] text-black">
                   Start Integrity Check
                 </Button>
               </Link>
@@ -1856,24 +1761,12 @@ BENEFITS:
               <Card className="border-border bg-card">
                 <CardHeader>
                   <CardTitle className="text-foreground font-bold flex items-center gap-2">
-                    <FileCheck className="w-5 h-5 text-primary" />
+                    <FileCheck className="w-5 h-5 text-[#FFCB00]" />
                     Pending Verifications
                   </CardTitle>
                   <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Background check results and verification status</CardDescription>
                 </CardHeader>
                 <CardContent>
-<<<<<<< HEAD
-                  <div className="space-y-4">
-                    {integrityChecks.map((check) => (
-                      <div key={check.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-border">
-                        <div>
-                          <p className="font-medium">{check.type}</p>
-                          <p className="text-sm text-foreground font-semibold">Candidate: {check.candidate}</p>
-                        </div>
-                        <Badge variant={check.status === "Clear" ? "default" : "secondary"} className={check.status === "Clear" ? "bg-muted/20 text-foreground" : "bg-muted/20 text-foreground"}>
-                          {check.status}
-                        </Badge>
-=======
                   <div className="space-y-3">
                     <p className="text-sm text-foreground font-semibold mb-3">Recent integrity checks across all candidates:</p>
                     <ScrollArea className="h-[300px]">
@@ -1895,14 +1788,13 @@ BENEFITS:
                               >
                                 <div className="flex items-center gap-3">
                                   <Avatar className="h-8 w-8">
-                                    <AvatarFallback className="bg-cyan-100 dark:bg-cyan-900 text-primary text-xs">
+                                    <AvatarFallback className="bg-[#0A0A0A] text-white text-xs">
                                       {candidateName.substring(0, 2).toUpperCase()}
                                     </AvatarFallback>
                                   </Avatar>
                                   <div>
                                     <p className="font-medium text-sm">{candidateName}</p>
                                     <p className="text-xs text-foreground font-semibold">{check.checkType || check.type || "Verification"}</p>
-                                    <p className="text-[10px] text-muted-foreground">{new Date(check.createdAt).toLocaleString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -1930,7 +1822,6 @@ BENEFITS:
                             );
                           })
                         )}
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                       </div>
                     </ScrollArea>
                   </div>
@@ -1940,14 +1831,10 @@ BENEFITS:
               <Card className="border-border bg-card">
                 <CardHeader>
                   <CardTitle className="text-foreground font-bold flex items-center gap-2">
-                    <ShieldCheck className="w-5 h-5 text-foreground dark:text-foreground" />
+                    <ShieldCheck className="w-5 h-5 text-[#FFCB00]" />
                     Risk Assessment Overview
                   </CardTitle>
-<<<<<<< HEAD
-                  <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">AI-generated risk profiles based on background data</CardDescription>
-=======
                   <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">AI-generated risk profiles based on background data</CardDescription>
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                 </CardHeader>
                 <CardContent>
                   {!selectedRiskCandidate ? (
@@ -1955,7 +1842,7 @@ BENEFITS:
                       <p className="text-sm text-foreground font-semibold mb-3">Select a candidate to view risk analysis:</p>
                       <ScrollArea className="h-[300px]">
                         <div className="space-y-2">
-                          {candidates && candidates.length > 0 ? candidates.map((candidate: any) => {
+                          {candidates && candidates.length > 0 ? candidates.slice(0, 20).map((candidate: any) => {
                             const riskData = getCandidateRiskData(candidate.id);
                             return (
                               <div 
@@ -1966,7 +1853,7 @@ BENEFITS:
                               >
                                 <div className="flex items-center gap-3">
                                   <Avatar className="h-8 w-8">
-                                    <AvatarFallback className="bg-muted dark:bg-muted text-primary text-xs">
+                                    <AvatarFallback className="bg-[#0A0A0A] text-white text-xs">
                                       {(candidate.fullName || candidate.name || 'U').substring(0, 2).toUpperCase()}
                                     </AvatarFallback>
                                   </Avatar>
@@ -1979,10 +1866,10 @@ BENEFITS:
                                   <Badge 
                                     data-testid={`badge-risk-level-${candidate.id}`}
                                     className={
-                                      riskData.riskLevel === 'low' ? 'bg-muted/20 text-foreground' :
-                                      riskData.riskLevel === 'medium' ? 'bg-muted/20 text-foreground' :
-                                      riskData.riskLevel === 'high' ? 'bg-muted/20 text-foreground dark:text-foreground' :
-                                      'bg-destructive/20 text-destructive'
+                                      riskData.riskLevel === 'low' ? 'bg-green-500/20 text-green-600 dark:text-green-400' :
+                                      riskData.riskLevel === 'medium' ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400' :
+                                      riskData.riskLevel === 'high' ? 'bg-muted/20 text-foreground' :
+                                      'bg-red-500/20 text-red-600 dark:text-red-400'
                                     }
                                   >
                                     {riskData.riskLevel.charAt(0).toUpperCase() + riskData.riskLevel.slice(1)}
@@ -2006,7 +1893,7 @@ BENEFITS:
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
-                            <AvatarFallback className="bg-muted dark:bg-muted text-primary">
+                            <AvatarFallback className="bg-[#0A0A0A] text-white">
                               {(selectedRiskCandidate.fullName || selectedRiskCandidate.name || 'U').substring(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
@@ -2051,17 +1938,17 @@ BENEFITS:
                         
                         return (
                           <div className="space-y-3" data-testid="risk-detail-view">
-                            <div className="flex items-center justify-between p-3 rounded-lg bg-muted dark:bg-muted border-2 border-border dark:border-border">
+                            <div className="flex items-center justify-between p-3 rounded-lg bg-[#FFCB00]/5 dark:bg-[#FFCB00]/10 border-2 border-[#FFCB00]/20 dark:border-[#FFCB00]/30">
                               <span className="text-sm font-medium">Overall Risk Score</span>
                               <div className="flex items-center gap-2">
                                 <span className="text-2xl font-bold" data-testid="text-risk-score">{riskData.overallRiskScore}%</span>
                                 <Badge 
                                   data-testid="badge-detail-risk-level"
                                   className={
-                                    riskData.riskLevel === 'low' ? 'bg-muted/20 text-foreground' :
-                                    riskData.riskLevel === 'medium' ? 'bg-muted/20 text-foreground' :
-                                    riskData.riskLevel === 'high' ? 'bg-muted/20 text-foreground dark:text-foreground' :
-                                    'bg-destructive/20 text-destructive'
+                                    riskData.riskLevel === 'low' ? 'bg-green-500/20 text-green-600 dark:text-green-400' :
+                                    riskData.riskLevel === 'medium' ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400' :
+                                    riskData.riskLevel === 'high' ? 'bg-muted/20 text-foreground' :
+                                    'bg-red-500/20 text-red-600 dark:text-red-400'
                                   }
                                 >
                                   {riskData.riskLevel.charAt(0).toUpperCase() + riskData.riskLevel.slice(1)} Risk
@@ -2073,32 +1960,32 @@ BENEFITS:
                               <div className="p-3 rounded-lg bg-white/5 border border-border" data-testid="section-integrity-check">
                                 <div className="flex items-center justify-between mb-2">
                                   <span className="text-sm font-medium flex items-center gap-2">
-                                    <FileCheck className="w-4 h-4 text-foreground dark:text-foreground" /> Integrity Check
+                                    <FileCheck className="w-4 h-4 text-foreground" /> Integrity Check
                                   </span>
                                   <Badge variant="outline" data-testid="badge-integrity-status">{riskData.integrityCheck.status}</Badge>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2 text-xs">
                                   <div>
                                     <span className="text-foreground font-semibold">Criminal: </span>
-                                    <span className={riskData.integrityCheck.checks?.criminal?.passed ? 'text-foreground' : 'text-destructive'} data-testid="text-criminal-status">
+                                    <span className={riskData.integrityCheck.checks?.criminal?.passed ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'} data-testid="text-criminal-status">
                                       {riskData.integrityCheck.checks?.criminal?.passed ? 'Clear' : 'Review'}
                                     </span>
                                   </div>
                                   <div>
                                     <span className="text-foreground font-semibold">Credit: </span>
-                                    <span className={riskData.integrityCheck.checks?.credit?.passed ? 'text-foreground' : 'text-destructive'} data-testid="text-credit-status">
+                                    <span className={riskData.integrityCheck.checks?.credit?.passed ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'} data-testid="text-credit-status">
                                       {riskData.integrityCheck.checks?.credit?.passed ? 'Clear' : 'Review'}
                                     </span>
                                   </div>
                                   <div>
                                     <span className="text-foreground font-semibold">Identity: </span>
-                                    <span className={riskData.integrityCheck.checks?.identity?.passed ? 'text-foreground' : 'text-destructive'} data-testid="text-identity-status">
+                                    <span className={riskData.integrityCheck.checks?.identity?.passed ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'} data-testid="text-identity-status">
                                       {riskData.integrityCheck.checks?.identity?.passed ? 'Verified' : 'Pending'}
                                     </span>
                                   </div>
                                   <div>
                                     <span className="text-foreground font-semibold">References: </span>
-                                    <span className={riskData.integrityCheck.checks?.reference?.passed ? 'text-foreground' : 'text-foreground'} data-testid="text-reference-status">
+                                    <span className={riskData.integrityCheck.checks?.reference?.passed ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'} data-testid="text-reference-status">
                                       {riskData.integrityCheck.checks?.reference?.passed ? 'Verified' : 'Pending'}
                                     </span>
                                   </div>
@@ -2110,7 +1997,7 @@ BENEFITS:
                               <div className="p-3 rounded-lg bg-white/5 border border-border" data-testid="section-social-screening">
                                 <div className="flex items-center justify-between mb-2">
                                   <span className="text-sm font-medium flex items-center gap-2">
-                                    <Users className="w-4 h-4 text-foreground dark:text-foreground" /> Social Screening
+                                    <Users className="w-4 h-4 text-[#FFCB00]" /> Social Screening
                                   </span>
                                   <Badge variant="outline" data-testid="badge-social-status">{riskData.socialScreening.status}</Badge>
                                 </div>
@@ -2124,8 +2011,8 @@ BENEFITS:
                                     <span 
                                       data-testid="text-sentiment-score"
                                       className={
-                                        riskData.socialScreening.results.aggregatedResults.sentimentScore >= 70 ? 'text-foreground' :
-                                        riskData.socialScreening.results.aggregatedResults.sentimentScore >= 40 ? 'text-foreground' : 'text-destructive'
+                                        riskData.socialScreening.results.aggregatedResults.sentimentScore >= 70 ? 'text-green-600 dark:text-green-400' :
+                                        riskData.socialScreening.results.aggregatedResults.sentimentScore >= 40 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'
                                     }>
                                       {riskData.socialScreening.results.aggregatedResults.sentimentScore || 'N/A'}%
                                     </span>
@@ -2143,10 +2030,10 @@ BENEFITS:
             </div>
 
             {/* Social Screening Section */}
-            <div className="rounded-lg bg-muted dark:bg-muted border-2 border-border dark:border-border p-6 flex items-center justify-between">
+            <div className="rounded-lg bg-[#FFCB00]/5 dark:bg-[#FFCB00]/10 border-2 border-[#FFCB00]/20 dark:border-[#FFCB00]/30 p-6 flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-bold flex items-center gap-2 text-foreground">
-                  <Users className="w-5 h-5 text-foreground dark:text-foreground" />
+                  <Users className="w-5 h-5 text-[#FFCB00]" />
                   Social Intelligence Screening
                 </h3>
                 <p className="text-foreground font-semibold text-sm mt-1">
@@ -2154,7 +2041,7 @@ BENEFITS:
                 </p>
               </div>
               <Link href="/social-screening">
-                <Button className="bg-muted text-foreground hover:bg-muted shadow-lg shadow-blue-500/20">
+                <Button className="bg-[#FFCB00] text-black hover:bg-[#E6B800] shadow-lg shadow-[#FFCB00]/20">
                   <Search className="w-4 h-4 mr-2" />
                   View Social Screening
                 </Button>
@@ -2171,15 +2058,15 @@ BENEFITS:
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-sm">Granted</span>
-                      <Badge className="bg-muted/20 text-foreground">{socialStats?.consentGranted || 0}</Badge>
+                      <Badge className="bg-green-500/20 text-green-600 dark:text-green-400">{socialStats?.consentGranted || 0}</Badge>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm">Pending</span>
-                      <Badge className="bg-muted/20 text-foreground">{socialStats?.consentPending || 0}</Badge>
+                      <Badge className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-400">{socialStats?.consentPending || 0}</Badge>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm">Denied</span>
-                      <Badge className="bg-destructive/20 text-destructive">{socialStats?.consentDenied || 0}</Badge>
+                      <Badge className="bg-red-500/20 text-red-600 dark:text-red-400">{socialStats?.consentDenied || 0}</Badge>
                     </div>
                   </div>
                 </CardContent>
@@ -2197,11 +2084,11 @@ BENEFITS:
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm">Completed</span>
-                      <Badge className="bg-muted/20 text-foreground">{socialStats?.screeningsCompleted || 0}</Badge>
+                      <Badge className="bg-green-500/20 text-green-600 dark:text-green-400">{socialStats?.screeningsCompleted || 0}</Badge>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm">Pending Review</span>
-                      <Badge className="bg-muted/20 text-foreground dark:text-foreground">{socialStats?.pendingHumanReview || 0}</Badge>
+                      <Badge className="bg-blue-500/20 text-blue-600 dark:text-blue-400">{socialStats?.pendingHumanReview || 0}</Badge>
                     </div>
                   </div>
                 </CardContent>
@@ -2215,25 +2102,25 @@ BENEFITS:
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-sm flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-muted"></span> Low Risk
+                        <span className="w-2 h-2 rounded-full bg-green-500"></span> Low Risk
                       </span>
                       <span>{socialStats?.riskDistribution?.low || 0}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-muted"></span> Medium
+                        <span className="w-2 h-2 rounded-full bg-yellow-500"></span> Medium
                       </span>
                       <span>{socialStats?.riskDistribution?.medium || 0}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-muted"></span> High
+                        <span className="w-2 h-2 rounded-full bg-foreground"></span> High
                       </span>
                       <span>{socialStats?.riskDistribution?.high || 0}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-destructive"></span> Critical
+                        <span className="w-2 h-2 rounded-full bg-red-500"></span> Critical
                       </span>
                       <span>{socialStats?.riskDistribution?.critical || 0}</span>
                     </div>
@@ -2245,14 +2132,10 @@ BENEFITS:
               <Card className="border-border bg-card lg:col-span-3">
                 <CardHeader>
                   <CardTitle className="text-foreground font-bold flex items-center gap-2">
-                    <Eye className="w-5 h-5 text-foreground dark:text-foreground" />
+                    <Eye className="w-5 h-5 text-[#FFCB00]" />
                     Pending Human Reviews
                   </CardTitle>
-<<<<<<< HEAD
-                  <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Social screening findings requiring HR review</CardDescription>
-=======
                   <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Social screening findings requiring HR review</CardDescription>
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                 </CardHeader>
                 <CardContent>
                   {socialPendingReviews.length === 0 ? (
@@ -2266,9 +2149,9 @@ BENEFITS:
                         <div key={finding.id} className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-border">
                           <div className="flex items-center gap-4">
                             <div className={`w-3 h-3 rounded-full ${
-                              finding.riskLevel === 'low' ? 'bg-muted' :
-                              finding.riskLevel === 'medium' ? 'bg-muted' :
-                              finding.riskLevel === 'high' ? 'bg-muted' : 'bg-destructive'
+                              finding.riskLevel === 'low' ? 'bg-green-500' :
+                              finding.riskLevel === 'medium' ? 'bg-yellow-500' :
+                              finding.riskLevel === 'high' ? 'bg-foreground' : 'bg-destructive'
                             }`}></div>
                             <div>
                               <p className="font-medium">Candidate #{finding.candidateId?.slice(-6)}</p>
@@ -2280,10 +2163,10 @@ BENEFITS:
                           </div>
                           <div className="flex items-center gap-3">
                             <Badge className={
-                              finding.aiRecommendation === 'proceed' ? 'bg-muted/20 text-foreground' :
-                              finding.aiRecommendation === 'review' ? 'bg-muted/20 text-foreground' :
-                              finding.aiRecommendation === 'caution' ? 'bg-muted/20 text-foreground dark:text-foreground' :
-                              'bg-destructive/20 text-destructive'
+                              finding.aiRecommendation === 'proceed' ? 'bg-green-500/20 text-green-600 dark:text-green-400' :
+                              finding.aiRecommendation === 'review' ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400' :
+                              finding.aiRecommendation === 'caution' ? 'bg-muted/20 text-foreground' :
+                              'bg-red-500/20 text-red-600 dark:text-red-400'
                             }>
                               AI: {finding.aiRecommendation || 'Pending'}
                             </Badge>
@@ -2318,10 +2201,10 @@ BENEFITS:
             {/* Quick Actions Bar */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="bg-muted/10 text-foreground border-border/30">
+                <Badge variant="outline" className="bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30">
                   {activeReviewCycles.length} Active Cycle{activeReviewCycles.length !== 1 ? 's' : ''}
                 </Badge>
-                <Badge variant="outline" className="bg-muted/10 text-foreground dark:text-foreground border-border/30">
+                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30">
                   {pendingSubmissions.length} Pending Review{pendingSubmissions.length !== 1 ? 's' : ''}
                 </Badge>
               </div>
@@ -2333,7 +2216,7 @@ BENEFITS:
                   </Button>
                 </Link>
                 <Link href="/kpi-hr-dashboard">
-                  <Button className="bg-muted hover:bg-muted text-white font-semibold" data-testid="link-kpi-dashboard">
+                  <Button className="bg-[#FFCB00] hover:bg-[#E6B800] text-black font-semibold" data-testid="link-kpi-dashboard">
                     <BarChart3 className="w-4 h-4 mr-2" />
                     Full KPI Dashboard
                   </Button>
@@ -2347,16 +2230,16 @@ BENEFITS:
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-foreground font-semibold">Active KPI Cycles</p>
+                      <p className="text-sm text-foreground font-semibold">Active KPI Cycles</p>
                       <h3 className="text-2xl font-bold mt-2" data-testid="metric-active-cycles">
                         {activeReviewCycles.length}
                       </h3>
-                      <p className="text-xs text-foreground dark:text-foreground mt-1">
+                      <p className="text-xs text-[#FFCB00] mt-1">
                         {reviewCycles.length} total cycles
                       </p>
                     </div>
-                    <div className="p-3 rounded-lg bg-muted/10">
-                      <Calendar className="w-6 h-6 text-foreground dark:text-foreground" />
+                    <div className="p-3 rounded-lg bg-[#FFCB00]/10">
+                      <Calendar className="w-6 h-6 text-[#FFCB00]" />
                     </div>
                   </div>
                 </CardContent>
@@ -2366,16 +2249,16 @@ BENEFITS:
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-foreground font-semibold">Avg Performance</p>
+                      <p className="text-sm text-foreground font-semibold">Avg Performance</p>
                       <h3 className="text-2xl font-bold mt-2" data-testid="metric-avg-performance">
                         {avgScore}<span className="text-lg text-foreground font-semibold">/5.0</span>
                       </h3>
-                      <p className="text-xs text-foreground mt-1">
+                      <p className="text-xs text-green-500 mt-1">
                         From {completedSubmissions.length} review{completedSubmissions.length !== 1 ? 's' : ''}
                       </p>
                     </div>
-                    <div className="p-3 rounded-lg bg-muted/10">
-                      <Star className="w-6 h-6 text-foreground" />
+                    <div className="p-3 rounded-lg bg-green-500/10">
+                      <Star className="w-6 h-6 text-green-600 dark:text-green-400" />
                     </div>
                   </div>
                 </CardContent>
@@ -2385,16 +2268,16 @@ BENEFITS:
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-foreground font-semibold">Pending Reviews</p>
+                      <p className="text-sm text-foreground font-semibold">Pending Reviews</p>
                       <h3 className="text-2xl font-bold mt-2" data-testid="metric-pending-reviews">
                         {pendingSubmissions.length}
                       </h3>
-                      <p className="text-xs text-foreground dark:text-foreground mt-1">
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
                         {pendingAssignments.length} assignments in progress
                       </p>
                     </div>
-                    <div className="p-3 rounded-lg bg-muted/10">
-                      <Clock className="w-6 h-6 text-foreground dark:text-foreground" />
+                    <div className="p-3 rounded-lg bg-amber-500/10">
+                      <Clock className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                     </div>
                   </div>
                 </CardContent>
@@ -2404,16 +2287,16 @@ BENEFITS:
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-foreground font-semibold">KPI Completion</p>
+                      <p className="text-sm text-foreground font-semibold">KPI Completion</p>
                       <h3 className="text-2xl font-bold mt-2" data-testid="metric-kpi-achievement">
                         {completionRate}%
                       </h3>
-                      <p className="text-xs text-foreground dark:text-foreground mt-1">
+                      <p className="text-xs text-[#FFCB00] mt-1">
                         {completedAssignments.length}/{totalAssignments} completed
                       </p>
                     </div>
-                    <div className="p-3 rounded-lg bg-muted/10">
-                      <Target className="w-6 h-6 text-foreground dark:text-foreground" />
+                    <div className="p-3 rounded-lg bg-[#FFCB00]/10">
+                      <Target className="w-6 h-6 text-[#FFCB00]" />
                     </div>
                   </div>
                 </CardContent>
@@ -2429,14 +2312,10 @@ BENEFITS:
                       <Calendar className="w-5 h-5 text-primary" />
                       Active Review Cycles
                     </CardTitle>
-<<<<<<< HEAD
-                    <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Current KPI review periods</CardDescription>
-=======
                     <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Current KPI review periods</CardDescription>
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                   </div>
                   <Link href="/kpi-management?tab=cycles&action=new-cycle">
-                    <Button className="bg-muted hover:bg-muted text-white font-semibold" data-testid="button-new-cycle">
+                    <Button className="bg-[#FFCB00] hover:bg-[#E6B800] text-black font-semibold" data-testid="button-new-cycle">
                       <Plus className="w-4 h-4 mr-2" />
                       New Cycle
                     </Button>
@@ -2449,7 +2328,7 @@ BENEFITS:
                     activeReviewCycles.map((cycle: any) => (
                       <div key={cycle.id} className="flex items-center justify-between p-4 rounded-lg border border-border bg-white/5 hover:bg-white/10 transition-colors" data-testid={`cycle-item-${cycle.id}`}>
                         <div className="flex items-center gap-4 flex-1">
-                          <div className="p-2 rounded-lg bg-muted">
+                          <div className="p-2 rounded-lg bg-muted dark:bg-muted">
                             <Target className="w-5 h-5 text-primary" />
                           </div>
                           <div className="flex-1">
@@ -2462,7 +2341,7 @@ BENEFITS:
                               {cycle.startDate ? new Date(cycle.startDate).toLocaleDateString() : 'N/A'} - {cycle.endDate ? new Date(cycle.endDate).toLocaleDateString() : 'N/A'}
                             </p>
                           </div>
-                          <Badge className="bg-muted/20 text-foreground border-border/30">
+                          <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30">
                             Active
                           </Badge>
                           <Link href="/kpi-hr-dashboard">
@@ -2495,11 +2374,7 @@ BENEFITS:
                       <FileCheck className="w-5 h-5 text-primary" />
                       Recent Submissions
                     </CardTitle>
-<<<<<<< HEAD
-                    <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Employee KPI review submissions</CardDescription>
-=======
                     <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Employee KPI review submissions</CardDescription>
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                   </div>
                   <Link href="/kpi-hr-dashboard">
                     <Button variant="outline" className="border-border" data-testid="button-view-all-submissions">
@@ -2516,7 +2391,7 @@ BENEFITS:
                       <div key={submission.id} className="flex items-center justify-between p-4 rounded-lg border border-border bg-white/5 hover:bg-white/10 transition-colors" data-testid={`submission-item-${submission.id}`}>
                         <div className="flex items-center gap-4 flex-1">
                           <Avatar className="h-10 w-10">
-                            <AvatarFallback className="bg-muted dark:bg-muted text-primary">
+                            <AvatarFallback className="bg-[#0A0A0A] text-white">
                               {getEmployeeName(submission.employeeId).slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
@@ -2534,9 +2409,9 @@ BENEFITS:
                           </div>
                           <Badge 
                             className={
-                              submission.status === 'completed' ? "bg-muted/20 text-foreground border-border/30" :
-                              submission.status === 'in_progress' ? "bg-muted/20 text-foreground dark:text-foreground border-border/30" :
-                              "bg-muted/20 text-foreground dark:text-foreground border-border/30"
+                              submission.status === 'completed' ? "bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30" :
+                              submission.status === 'in_progress' ? "bg-[#FFCB00]/20 text-[#FFCB00] border-[#FFCB00]/30" :
+                              "bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30"
                             }
                           >
                             {submission.status || 'Pending'}
@@ -2566,14 +2441,10 @@ BENEFITS:
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-foreground font-bold flex items-center gap-2">
-                      <Target className="w-5 h-5 text-foreground dark:text-foreground" />
+                      <Target className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                       KPI Assignments
                     </CardTitle>
-<<<<<<< HEAD
-                    <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Current quarter performance objectives</CardDescription>
-=======
                     <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Current quarter performance objectives</CardDescription>
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                   </div>
                   <Link href="/kpi-management">
                     <Button variant="outline" className="border-border" data-testid="button-manage-assignments">
@@ -2591,7 +2462,7 @@ BENEFITS:
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
                             <Avatar className="h-8 w-8">
-                              <AvatarFallback className="bg-muted dark:bg-muted text-primary text-xs">
+                              <AvatarFallback className="bg-[#0A0A0A] text-white text-xs">
                                 {getEmployeeName(assignment.employeeId).slice(0, 2).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
@@ -2602,9 +2473,9 @@ BENEFITS:
                           </div>
                           <Badge 
                             className={
-                              assignment.status === 'completed' ? "bg-muted/20 text-foreground border-border/30" :
-                              assignment.status === 'in_progress' ? "bg-muted/20 text-foreground dark:text-foreground border-border/30" :
-                              "bg-muted/20 text-foreground dark:text-foreground border-border/30"
+                              assignment.status === 'completed' ? "bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30" :
+                              assignment.status === 'in_progress' ? "bg-[#FFCB00]/20 text-[#FFCB00] border-[#FFCB00]/30" :
+                              "bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30"
                             }
                           >
                             {assignment.status || 'Pending'}
@@ -2618,9 +2489,9 @@ BENEFITS:
                           <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
                             <div 
                               className={`h-full transition-all ${
-                                assignment.status === 'completed' ? "bg-muted" :
-                                assignment.status === 'in_progress' ? "bg-muted" :
-                                "bg-muted"
+                                assignment.status === 'completed' ? "bg-green-500" :
+                                assignment.status === 'in_progress' ? "bg-[#FFCB00]" :
+                                "bg-amber-500"
                               }`}
                               style={{ width: assignment.status === 'completed' ? '100%' : assignment.status === 'in_progress' ? '50%' : '0%' }}
                             />
@@ -2650,12 +2521,12 @@ BENEFITS:
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-foreground font-semibold">Active Courses</p>
+                      <p className="text-sm text-foreground font-semibold">Active Courses</p>
                       <h3 className="text-2xl font-bold mt-2">{lmsCourses.filter((c: any) => c.status === "published").length}</h3>
-                      <p className="text-xs text-foreground dark:text-foreground mt-1">Published courses</p>
+                      <p className="text-xs text-[#FFCB00] mt-1">Published courses</p>
                     </div>
-                    <div className="p-3 rounded-lg bg-muted/10">
-                      <BookOpen className="w-6 h-6 text-foreground dark:text-foreground" />
+                    <div className="p-3 rounded-lg bg-[#FFCB00]/10">
+                      <BookOpen className="w-6 h-6 text-[#FFCB00]" />
                     </div>
                   </div>
                 </CardContent>
@@ -2665,12 +2536,12 @@ BENEFITS:
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-foreground font-semibold">Total Courses</p>
+                      <p className="text-sm text-foreground font-semibold">Total Courses</p>
                       <h3 className="text-2xl font-bold mt-2">{lmsCourses.length}</h3>
-                      <p className="text-xs text-foreground mt-1">All courses</p>
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">All courses</p>
                     </div>
-                    <div className="p-3 rounded-lg bg-muted/10">
-                      <Users className="w-6 h-6 text-foreground" />
+                    <div className="p-3 rounded-lg bg-green-500/10">
+                      <Users className="w-6 h-6 text-green-600 dark:text-green-400" />
                     </div>
                   </div>
                 </CardContent>
@@ -2680,12 +2551,12 @@ BENEFITS:
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-foreground font-semibold">Categories</p>
+                      <p className="text-sm text-foreground font-semibold">Categories</p>
                       <h3 className="text-2xl font-bold mt-2">{new Set(lmsCourses.map((c: any) => c.category)).size}</h3>
-                      <p className="text-xs text-foreground dark:text-foreground mt-1">Course categories</p>
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Course categories</p>
                     </div>
-                    <div className="p-3 rounded-lg bg-muted/10">
-                      <TrendingUp className="w-6 h-6 text-foreground dark:text-foreground" />
+                    <div className="p-3 rounded-lg bg-amber-500/10">
+                      <TrendingUp className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                     </div>
                   </div>
                 </CardContent>
@@ -2695,12 +2566,12 @@ BENEFITS:
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-foreground font-semibold">Total Duration</p>
+                      <p className="text-sm text-foreground font-semibold">Total Duration</p>
                       <h3 className="text-2xl font-bold mt-2">{Math.round(lmsCourses.reduce((sum: number, c: any) => sum + (c.duration || 0), 0) / 60)}h</h3>
-                      <p className="text-xs text-foreground dark:text-foreground mt-1">Learning content</p>
+                      <p className="text-xs text-[#FFCB00] mt-1">Learning content</p>
                     </div>
-                    <div className="p-3 rounded-lg bg-muted/10">
-                      <Award className="w-6 h-6 text-foreground dark:text-foreground" />
+                    <div className="p-3 rounded-lg bg-[#FFCB00]/10">
+                      <Award className="w-6 h-6 text-[#FFCB00]" />
                     </div>
                   </div>
                 </CardContent>
@@ -2716,14 +2587,10 @@ BENEFITS:
                       <BookOpen className="w-5 h-5 text-primary" />
                       Active Training Courses
                     </CardTitle>
-<<<<<<< HEAD
-                    <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Current learning programs and progress</CardDescription>
-=======
                     <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Current learning programs and progress</CardDescription>
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                   </div>
                   <Link href="/learning-management">
-                    <Button className="bg-muted hover:bg-muted text-white font-semibold" data-testid="button-create-course-lms">
+                    <Button className="bg-[#FFCB00] hover:bg-[#E6B800] text-black font-semibold" data-testid="button-create-course-lms">
                       <Plus className="w-4 h-4 mr-2" />
                       Create Course
                     </Button>
@@ -2778,14 +2645,10 @@ BENEFITS:
             <Card className="border-border bg-card">
               <CardHeader>
                 <CardTitle className="text-foreground font-bold flex items-center gap-2">
-                  <GraduationCap className="w-5 h-5 text-foreground dark:text-foreground" />
+                  <GraduationCap className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                   Employee Learning Progress
                 </CardTitle>
-<<<<<<< HEAD
-                <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Individual training completion status</CardDescription>
-=======
                 <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Individual training completion status</CardDescription>
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -2798,7 +2661,7 @@ BENEFITS:
                     <div key={idx} className="flex items-center justify-between p-4 rounded-lg border border-border bg-white/5">
                       <div className="flex items-center gap-4">
                         <Avatar className="h-10 w-10">
-                          <AvatarFallback className="bg-muted dark:bg-muted text-primary">
+                          <AvatarFallback className="bg-[#0A0A0A] text-white">
                             {emp.employee.split(' ').map(n => n[0]).join('')}
                           </AvatarFallback>
                         </Avatar>
@@ -2809,15 +2672,15 @@ BENEFITS:
                       </div>
                       <div className="flex items-center gap-6">
                         <div className="text-center">
-                          <p className="text-2xl font-bold text-foreground">{emp.completed}</p>
+                          <p className="text-2xl font-bold text-green-600 dark:text-green-400">{emp.completed}</p>
                           <p className="text-xs text-foreground font-semibold">Completed</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-2xl font-bold text-foreground dark:text-foreground">{emp.inProgress}</p>
+                          <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{emp.inProgress}</p>
                           <p className="text-xs text-foreground font-semibold">In Progress</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-2xl font-bold text-foreground dark:text-foreground">{emp.certificates}</p>
+                          <p className="text-2xl font-bold text-[#FFCB00]">{emp.certificates}</p>
                           <p className="text-xs text-foreground font-semibold">Certificates</p>
                         </div>
                       </div>
@@ -2836,12 +2699,12 @@ BENEFITS:
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-foreground font-semibold">Present Today</p>
+                      <p className="text-sm text-foreground font-semibold">Present Today</p>
                       <h3 className="text-2xl font-bold mt-2">142</h3>
-                      <p className="text-xs text-foreground mt-1">92% attendance rate</p>
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">92% attendance rate</p>
                     </div>
-                    <div className="p-3 rounded-lg bg-muted/10">
-                      <CheckCircle2 className="w-6 h-6 text-foreground" />
+                    <div className="p-3 rounded-lg bg-green-500/10">
+                      <CheckCircle2 className="w-6 h-6 text-green-600 dark:text-green-400" />
                     </div>
                   </div>
                 </CardContent>
@@ -2851,12 +2714,12 @@ BENEFITS:
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-foreground font-semibold">On Leave</p>
+                      <p className="text-sm text-foreground font-semibold">On Leave</p>
                       <h3 className="text-2xl font-bold mt-2">8</h3>
-                      <p className="text-xs text-foreground dark:text-foreground mt-1">Approved leave</p>
+                      <p className="text-xs text-[#FFCB00] mt-1">Approved leave</p>
                     </div>
-                    <div className="p-3 rounded-lg bg-muted/10">
-                      <Calendar className="w-6 h-6 text-foreground dark:text-foreground" />
+                    <div className="p-3 rounded-lg bg-[#FFCB00]/10">
+                      <Calendar className="w-6 h-6 text-[#FFCB00]" />
                     </div>
                   </div>
                 </CardContent>
@@ -2866,12 +2729,12 @@ BENEFITS:
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-foreground font-semibold">Late Arrivals</p>
+                      <p className="text-sm text-foreground font-semibold">Late Arrivals</p>
                       <h3 className="text-2xl font-bold mt-2">5</h3>
-                      <p className="text-xs text-foreground dark:text-foreground mt-1">Today</p>
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Today</p>
                     </div>
-                    <div className="p-3 rounded-lg bg-muted/10">
-                      <Clock className="w-6 h-6 text-foreground dark:text-foreground" />
+                    <div className="p-3 rounded-lg bg-amber-500/10">
+                      <Clock className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                     </div>
                   </div>
                 </CardContent>
@@ -2881,12 +2744,12 @@ BENEFITS:
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-foreground font-semibold">Overtime Hours</p>
+                      <p className="text-sm text-foreground font-semibold">Overtime Hours</p>
                       <h3 className="text-2xl font-bold mt-2">48</h3>
-                      <p className="text-xs text-foreground dark:text-foreground mt-1">This week</p>
+                      <p className="text-xs text-[#FFCB00] mt-1">This week</p>
                     </div>
-                    <div className="p-3 rounded-lg bg-muted/10">
-                      <Timer className="w-6 h-6 text-foreground dark:text-foreground" />
+                    <div className="p-3 rounded-lg bg-[#FFCB00]/10">
+                      <Timer className="w-6 h-6 text-[#FFCB00]" />
                     </div>
                   </div>
                 </CardContent>
@@ -2902,11 +2765,7 @@ BENEFITS:
                       <Timer className="w-5 h-5 text-primary" />
                       Today's Attendance
                     </CardTitle>
-<<<<<<< HEAD
-                    <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Real-time employee attendance tracking</CardDescription>
-=======
                     <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Real-time employee attendance tracking</CardDescription>
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                   </div>
                   <div className="flex gap-2">
                     <Button variant="outline" className="border-border">
@@ -2928,7 +2787,7 @@ BENEFITS:
                     <div key={idx} className="flex items-center justify-between p-4 rounded-lg border border-border bg-white/5 hover:bg-white/10 transition-colors">
                       <div className="flex items-center gap-4 flex-1">
                         <Avatar className="h-10 w-10">
-                          <AvatarFallback className="bg-muted dark:bg-muted text-primary">
+                          <AvatarFallback className="bg-[#0A0A0A] text-white">
                             {record.employee.split(' ').map(n => n[0]).join('')}
                           </AvatarFallback>
                         </Avatar>
@@ -2950,10 +2809,10 @@ BENEFITS:
                         </div>
                         <Badge 
                           className={
-                            record.status === "Present" ? "bg-muted/20 text-foreground border-border/30" :
-                            record.status === "Late" ? "bg-muted/20 text-foreground dark:text-foreground border-border/30" :
-                            record.status === "On Leave" ? "bg-muted/20 text-foreground dark:text-foreground border-border/30" :
-                            "bg-destructive/20 text-destructive border-destructive/30"
+                            record.status === "Present" ? "bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30" :
+                            record.status === "Late" ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30" :
+                            record.status === "On Leave" ? "bg-[#FFCB00]/20 text-[#FFCB00] border-[#FFCB00]/30" :
+                            "bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30"
                           }
                         >
                           {record.status}
@@ -2971,14 +2830,10 @@ BENEFITS:
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-foreground font-bold flex items-center gap-2">
-                      <Calendar className="w-5 h-5 text-foreground dark:text-foreground" />
+                      <Calendar className="w-5 h-5 text-[#FFCB00]" />
                       Pending Leave Requests
                     </CardTitle>
-<<<<<<< HEAD
-                    <CardDescription className="text-gray-700 font-medium text-gray-700 font-medium">Approve or reject employee leave requests</CardDescription>
-=======
                     <CardDescription className="text-gray-700 dark:text-gray-300 font-medium">Approve or reject employee leave requests</CardDescription>
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                   </div>
                 </div>
               </CardHeader>
@@ -2992,7 +2847,7 @@ BENEFITS:
                     <div key={idx} className="flex items-center justify-between p-4 rounded-lg border border-border bg-white/5">
                       <div className="flex items-center gap-4 flex-1">
                         <Avatar className="h-10 w-10">
-                          <AvatarFallback className="bg-muted dark:bg-muted text-primary">
+                          <AvatarFallback className="bg-[#0A0A0A] text-white">
                             {leave.employee.split(' ').map(n => n[0]).join('')}
                           </AvatarFallback>
                         </Avatar>
@@ -3013,10 +2868,10 @@ BENEFITS:
                           <p className="font-medium truncate">{leave.reason}</p>
                         </div>
                         <div className="flex gap-2">
-                          <Button size="sm" className="bg-muted/20 text-foreground hover:bg-muted/30 border border-border/30">
+                          <Button size="sm" className="bg-green-500/20 text-green-600 dark:text-green-400 hover:bg-green-500/30 border border-green-500/30">
                             Approve
                           </Button>
-                          <Button size="sm" variant="outline" className="border-destructive/30 text-destructive hover:bg-destructive/20">
+                          <Button size="sm" variant="outline" className="border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-500/20">
                             Reject
                           </Button>
                         </div>
@@ -3032,10 +2887,10 @@ BENEFITS:
 
       {/* Job Spec Detail Modal */}
       <Dialog open={!!selectedJobSpec} onOpenChange={() => setSelectedJobSpec(null)}>
-        <DialogContent className="max-w-3xl bg-gray-100 border-gray-300 dark:border-zinc-700 max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl bg-gray-100 dark:bg-zinc-900 border-gray-300 dark:border-zinc-700 max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-foreground flex items-center gap-2">
-              <Briefcase className="h-5 w-5 text-foreground dark:text-foreground" />
+              <Briefcase className="h-5 w-5 text-[#FFCB00]" />
               {selectedJobSpec?.originalFilename}
             </DialogTitle>
             <DialogDescription>
@@ -3057,12 +2912,12 @@ BENEFITS:
                 return (
                   <>
                     {/* Header with Status */}
-                    <div className="flex items-center justify-between p-4 bg-gray-200/50 rounded-lg">
+                    <div className="flex items-center justify-between p-4 bg-gray-200 dark:bg-zinc-800/50 rounded-lg">
                       <div className="flex items-center gap-3">
                         <Badge className={
                           selectedJobSpec.status === "processed" 
-                            ? "bg-muted/20 text-foreground border-border/30" 
-                            : "bg-muted/20 text-foreground border-border/30"
+                            ? "bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30" 
+                            : "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-yellow-500/30"
                         }>
                           {selectedJobSpec.status === "processed" ? <CheckCircle2 className="h-3 w-3 mr-1" /> : <AlertCircle className="h-3 w-3 mr-1" />}
                           <span className="capitalize">{selectedJobSpec.status}</span>
@@ -3070,7 +2925,7 @@ BENEFITS:
                         <span className="text-zinc-400 text-sm">{formatFileSize(selectedJobSpec.fileSize || 0)}</span>
                       </div>
                       {selectedJobSpec.linkedJobId && (
-                        <Badge className="bg-muted/20 text-foreground border-border/30">
+                        <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30">
                           <CheckCircle2 className="h-3 w-3 mr-1" />
                           Job Created
                         </Badge>
@@ -3082,17 +2937,17 @@ BENEFITS:
                         {/* Job Information */}
                         <div className="space-y-3">
                           <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                            <Briefcase className="h-5 w-5 text-foreground dark:text-foreground" />
+                            <Briefcase className="h-5 w-5 text-[#FFCB00]" />
                             Job Information
                           </h3>
-                          <div className="grid grid-cols-2 gap-4 p-4 bg-gray-200/30 rounded-lg">
+                          <div className="grid grid-cols-2 gap-4 p-4 bg-gray-200 dark:bg-zinc-800/30 rounded-lg">
                             <div>
                               <p className="text-xs text-zinc-500 mb-1">Job Title</p>
                               <p className="text-foreground font-medium">{data.title || data.jobTitle || "N/A"}</p>
                             </div>
                             <div>
                               <p className="text-xs text-zinc-500 mb-1">Company</p>
-                              <p className="text-foreground dark:text-foreground">{data.company || "N/A"}</p>
+                              <p className="text-[#FFCB00]">{data.company || "N/A"}</p>
                             </div>
                             <div>
                               <p className="text-xs text-zinc-500 mb-1">Department</p>
@@ -3108,7 +2963,7 @@ BENEFITS:
                             </div>
                             <div>
                               <p className="text-xs text-zinc-500 mb-1">Salary Range</p>
-                              <p className="text-foreground">{data.salaryRange || data.salary || "N/A"}</p>
+                              <p className="text-green-600 dark:text-green-400">{data.salaryRange || data.salary || "N/A"}</p>
                             </div>
                           </div>
                         </div>
@@ -3117,10 +2972,10 @@ BENEFITS:
                         {data.experienceRequired && (
                           <div className="space-y-3">
                             <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                              <Clock className="h-5 w-5 text-foreground dark:text-foreground" />
+                              <Clock className="h-5 w-5 text-[#FFCB00]" />
                               Experience Required
                             </h3>
-                            <p className="text-zinc-300 text-sm leading-relaxed p-4 bg-gray-200/30 rounded-lg">
+                            <p className="text-zinc-300 text-sm leading-relaxed p-4 bg-gray-200 dark:bg-zinc-800/30 rounded-lg">
                               {data.experienceRequired}
                             </p>
                           </div>
@@ -3130,10 +2985,10 @@ BENEFITS:
                         {data.description && (
                           <div className="space-y-3">
                             <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                              <FileText className="h-5 w-5 text-foreground dark:text-foreground" />
+                              <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                               Job Description
                             </h3>
-                            <p className="text-zinc-300 text-sm leading-relaxed p-4 bg-gray-200/30 rounded-lg whitespace-pre-wrap">
+                            <p className="text-zinc-300 text-sm leading-relaxed p-4 bg-gray-200 dark:bg-zinc-800/30 rounded-lg whitespace-pre-wrap">
                               {data.description}
                             </p>
                           </div>
@@ -3143,12 +2998,12 @@ BENEFITS:
                         {data.requiredSkills && data.requiredSkills.length > 0 && (
                           <div className="space-y-3">
                             <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                              <Award className="h-5 w-5 text-foreground dark:text-foreground" />
+                              <Award className="h-5 w-5 text-[#FFCB00]" />
                               Required Skills ({data.requiredSkills.length})
                             </h3>
-                            <div className="flex flex-wrap gap-2 p-4 bg-gray-200/30 rounded-lg">
+                            <div className="flex flex-wrap gap-2 p-4 bg-gray-200 dark:bg-zinc-800/30 rounded-lg">
                               {data.requiredSkills.map((skill: string, i: number) => (
-                                <Badge key={i} className="bg-muted/20 text-foreground border-border/30">
+                                <Badge key={i} className="bg-blue-500/20 text-blue-300 border-blue-500/30">
                                   {skill}
                                 </Badge>
                               ))}
@@ -3160,14 +3015,14 @@ BENEFITS:
                         {data.responsibilities && data.responsibilities.length > 0 && (
                           <div className="space-y-3">
                             <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                              <Target className="h-5 w-5 text-foreground" />
+                              <Target className="h-5 w-5 text-green-600 dark:text-green-400" />
                               Responsibilities ({data.responsibilities.length})
                             </h3>
-                            <div className="p-4 bg-gray-200/30 rounded-lg">
+                            <div className="p-4 bg-gray-200 dark:bg-zinc-800/30 rounded-lg">
                               <ul className="space-y-2">
                                 {data.responsibilities.map((resp: string, i: number) => (
                                   <li key={i} className="flex items-start gap-2 text-sm text-zinc-300">
-                                    <span className="text-foreground mt-1">•</span>
+                                    <span className="text-green-600 dark:text-green-400 mt-1">•</span>
                                     {resp}
                                   </li>
                                 ))}
@@ -3183,7 +3038,7 @@ BENEFITS:
                               <GraduationCap className="h-5 w-5 text-foreground dark:text-foreground" />
                               Qualifications ({data.qualifications.length})
                             </h3>
-                            <div className="p-4 bg-gray-200/30 rounded-lg">
+                            <div className="p-4 bg-gray-200 dark:bg-zinc-800/30 rounded-lg">
                               <ul className="space-y-2">
                                 {data.qualifications.map((qual: string, i: number) => (
                                   <li key={i} className="flex items-start gap-2 text-sm text-zinc-300">
@@ -3200,12 +3055,12 @@ BENEFITS:
                         {data.benefits && data.benefits.length > 0 && (
                           <div className="space-y-3">
                             <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                              <Star className="h-5 w-5 text-foreground" />
+                              <Star className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
                               Benefits ({data.benefits.length})
                             </h3>
-                            <div className="flex flex-wrap gap-2 p-4 bg-gray-200/30 rounded-lg">
+                            <div className="flex flex-wrap gap-2 p-4 bg-gray-200 dark:bg-zinc-800/30 rounded-lg">
                               {data.benefits.map((benefit: string, i: number) => (
-                                <Badge key={i} variant="outline" className="text-xs border-border/30 text-foreground">
+                                <Badge key={i} variant="outline" className="text-xs border-yellow-500/30 text-yellow-300">
                                   {benefit}
                                 </Badge>
                               ))}
@@ -3222,7 +3077,7 @@ BENEFITS:
                           <FileText className="h-4 w-4 text-zinc-400" />
                           Raw Text Preview
                         </h3>
-                        <ScrollArea className="h-40 p-3 bg-gray-200/50 rounded-lg">
+                        <ScrollArea className="h-40 p-3 bg-gray-200 dark:bg-zinc-800/50 rounded-lg">
                           <p className="text-xs text-zinc-500 whitespace-pre-wrap">
                             {selectedJobSpec.rawText.slice(0, 2000)}
                             {selectedJobSpec.rawText.length > 2000 && "..."}
@@ -3243,7 +3098,7 @@ BENEFITS:
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-card border-border">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-foreground flex items-center gap-2">
-              <Briefcase className="h-5 w-5 text-foreground dark:text-foreground" />
+              <Briefcase className="h-5 w-5 text-[#FFCB00]" />
               {selectedJob?.title || 'Job Details'}
             </DialogTitle>
             <DialogDescription>
@@ -3256,25 +3111,25 @@ BENEFITS:
               {/* Header Info */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {selectedJob.customer && (
-                  <div className="bg-gray-200/50 rounded-lg p-3">
+                  <div className="bg-gray-200 dark:bg-zinc-800/50 rounded-lg p-3">
                     <p className="text-xs text-muted-foreground">Customer</p>
                     <p className="font-medium text-foreground">{selectedJob.customer}</p>
                   </div>
                 )}
                 {selectedJob.department && (
-                  <div className="bg-gray-200/50 rounded-lg p-3">
+                  <div className="bg-gray-200 dark:bg-zinc-800/50 rounded-lg p-3">
                     <p className="text-xs text-muted-foreground">Department</p>
                     <p className="font-medium text-foreground">{selectedJob.department}</p>
                   </div>
                 )}
-                <div className="bg-gray-200/50 rounded-lg p-3">
+                <div className="bg-gray-200 dark:bg-zinc-800/50 rounded-lg p-3">
                   <p className="text-xs text-muted-foreground">Status</p>
-                  <Badge className={`${selectedJob.status === 'Active' ? 'bg-muted/20 text-foreground' : 'bg-gray-500/20 text-gray-400'}`}>
+                  <Badge className={`${selectedJob.status === 'Active' ? 'bg-green-500/20 text-green-600 dark:text-green-400' : 'bg-gray-500/20 text-gray-400'}`}>
                     {selectedJob.status}
                   </Badge>
                 </div>
                 {(selectedJob.city || selectedJob.province || selectedJob.location) && (
-                  <div className="bg-gray-200/50 rounded-lg p-3">
+                  <div className="bg-gray-200 dark:bg-zinc-800/50 rounded-lg p-3">
                     <p className="text-xs text-muted-foreground">Location</p>
                     <p className="font-medium text-foreground flex items-center gap-1">
                       <MapPin className="h-3 w-3" />
@@ -3285,21 +3140,21 @@ BENEFITS:
                   </div>
                 )}
                 {selectedJob.remuneration && (
-                  <div className="bg-gray-200/50 rounded-lg p-3">
+                  <div className="bg-gray-200 dark:bg-zinc-800/50 rounded-lg p-3">
                     <p className="text-xs text-muted-foreground">Remuneration</p>
-                    <p className="font-medium text-foreground">{selectedJob.remuneration}</p>
+                    <p className="font-medium text-green-600 dark:text-green-400">{selectedJob.remuneration}</p>
                   </div>
                 )}
                 {(selectedJob.salaryMin || selectedJob.salaryMax) && !selectedJob.remuneration && (
-                  <div className="bg-gray-200/50 rounded-lg p-3">
+                  <div className="bg-gray-200 dark:bg-zinc-800/50 rounded-lg p-3">
                     <p className="text-xs text-muted-foreground">Salary Range</p>
-                    <p className="font-medium text-foreground">
+                    <p className="font-medium text-green-600 dark:text-green-400">
                       R{selectedJob.salaryMin?.toLocaleString() || '0'} - R{selectedJob.salaryMax?.toLocaleString() || '0'}
                     </p>
                   </div>
                 )}
                 {selectedJob.gender && (
-                  <div className="bg-gray-200/50 rounded-lg p-3">
+                  <div className="bg-gray-200 dark:bg-zinc-800/50 rounded-lg p-3">
                     <p className="text-xs text-muted-foreground">Gender</p>
                     <p className="font-medium text-foreground">{selectedJob.gender}</p>
                   </div>
@@ -3309,8 +3164,8 @@ BENEFITS:
               {/* Introduction */}
               {selectedJob.introduction && (
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-foreground dark:text-foreground">Introduction</h3>
-                  <p className="text-sm text-muted-foreground bg-gray-200/30 rounded-lg p-3">
+                  <h3 className="text-sm font-semibold text-[#FFCB00]">Introduction</h3>
+                  <p className="text-sm text-muted-foreground bg-gray-200 dark:bg-zinc-800/30 rounded-lg p-3">
                     {selectedJob.introduction}
                   </p>
                 </div>
@@ -3319,8 +3174,8 @@ BENEFITS:
               {/* Description */}
               {selectedJob.description && (
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-foreground dark:text-foreground">Description</h3>
-                  <p className="text-sm text-muted-foreground bg-gray-200/30 rounded-lg p-3">
+                  <h3 className="text-sm font-semibold text-[#FFCB00]">Description</h3>
+                  <p className="text-sm text-muted-foreground bg-gray-200 dark:bg-zinc-800/30 rounded-lg p-3">
                     {selectedJob.description}
                   </p>
                 </div>
@@ -3329,11 +3184,11 @@ BENEFITS:
               {/* Duties */}
               {selectedJob.duties && selectedJob.duties.length > 0 && (
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-foreground dark:text-foreground">Duties & Responsibilities</h3>
-                  <ul className="space-y-1 bg-gray-200/30 rounded-lg p-3">
+                  <h3 className="text-sm font-semibold text-[#FFCB00]">Duties & Responsibilities</h3>
+                  <ul className="space-y-1 bg-gray-200 dark:bg-zinc-800/30 rounded-lg p-3">
                     {selectedJob.duties.map((duty: string, i: number) => (
                       <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                        <span className="text-foreground dark:text-foreground mt-1">•</span>
+                        <span className="text-[#FFCB00] mt-1">•</span>
                         {duty}
                       </li>
                     ))}
@@ -3344,11 +3199,11 @@ BENEFITS:
               {/* Attributes */}
               {selectedJob.attributes && selectedJob.attributes.length > 0 && (
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-foreground">Attributes, Skills & Competencies</h3>
-                  <ul className="space-y-1 bg-gray-200/30 rounded-lg p-3">
+                  <h3 className="text-sm font-semibold text-green-600 dark:text-green-400">Attributes, Skills & Competencies</h3>
+                  <ul className="space-y-1 bg-gray-200 dark:bg-zinc-800/30 rounded-lg p-3">
                     {selectedJob.attributes.map((attr: string, i: number) => (
                       <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                        <span className="text-foreground mt-1">•</span>
+                        <span className="text-green-600 dark:text-green-400 mt-1">•</span>
                         {attr}
                       </li>
                     ))}
@@ -3359,11 +3214,11 @@ BENEFITS:
               {/* Qualifications */}
               {selectedJob.qualifications && selectedJob.qualifications.length > 0 && (
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-foreground dark:text-foreground">Qualifications</h3>
-                  <ul className="space-y-1 bg-gray-200/30 rounded-lg p-3">
+                  <h3 className="text-sm font-semibold text-amber-600 dark:text-amber-400">Qualifications</h3>
+                  <ul className="space-y-1 bg-gray-200 dark:bg-zinc-800/30 rounded-lg p-3">
                     {selectedJob.qualifications.map((qual: string, i: number) => (
                       <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                        <span className="text-foreground dark:text-foreground mt-1">•</span>
+                        <span className="text-amber-600 dark:text-amber-400 mt-1">•</span>
                         {qual}
                       </li>
                     ))}
@@ -3374,8 +3229,8 @@ BENEFITS:
               {/* Ethics */}
               {selectedJob.ethics && (
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-foreground dark:text-foreground">Ethics & Values</h3>
-                  <p className="text-sm text-muted-foreground bg-gray-200/30 rounded-lg p-3">
+                  <h3 className="text-sm font-semibold text-[#FFCB00]">Ethics & Values</h3>
+                  <p className="text-sm text-muted-foreground bg-gray-200 dark:bg-zinc-800/30 rounded-lg p-3">
                     {selectedJob.ethics}
                   </p>
                 </div>
@@ -3384,11 +3239,11 @@ BENEFITS:
               {/* Requirements */}
               {selectedJob.requirements && selectedJob.requirements.length > 0 && (
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-foreground dark:text-foreground">Requirements</h3>
-                  <ul className="space-y-1 bg-gray-200/30 rounded-lg p-3">
+                  <h3 className="text-sm font-semibold text-foreground">Requirements</h3>
+                  <ul className="space-y-1 bg-gray-200 dark:bg-zinc-800/30 rounded-lg p-3">
                     {selectedJob.requirements.map((req: string, i: number) => (
                       <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                        <span className="text-foreground dark:text-foreground mt-1">•</span>
+                        <span className="text-foreground mt-1">•</span>
                         {req}
                       </li>
                     ))}
@@ -3399,10 +3254,10 @@ BENEFITS:
               {/* Benefits */}
               {selectedJob.benefits && selectedJob.benefits.length > 0 && (
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-foreground">Benefits</h3>
-                  <div className="flex flex-wrap gap-2 bg-gray-200/30 rounded-lg p-3">
+                  <h3 className="text-sm font-semibold text-yellow-600 dark:text-yellow-400">Benefits</h3>
+                  <div className="flex flex-wrap gap-2 bg-gray-200 dark:bg-zinc-800/30 rounded-lg p-3">
                     {selectedJob.benefits.map((benefit: string, i: number) => (
-                      <Badge key={i} variant="outline" className="text-xs border-border/30 text-foreground">
+                      <Badge key={i} variant="outline" className="text-xs border-yellow-500/30 text-yellow-300">
                         {benefit}
                       </Badge>
                     ))}
@@ -3413,7 +3268,7 @@ BENEFITS:
               {/* Action Buttons */}
               <div className="flex gap-3 pt-4 border-t border-border">
                 <Link href={`/recruitment-agent?jobId=${selectedJob.id}`} className="flex-1">
-                  <Button className="w-full bg-muted hover:bg-muted">
+                  <Button className="w-full bg-[#FFCB00] hover:bg-[#E6B800]">
                     <Search className="h-4 w-4 mr-2" />
                     Start Candidate Search
                   </Button>
@@ -3430,25 +3285,6 @@ BENEFITS:
         </DialogContent>
       </Dialog>
 
-      {/* Customizable Charts Section */}
-      <div className="mt-8 px-6 pb-12 container mx-auto">
-        <Card className="bg-card/30 border-border dark:border-white/10 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-xl">Custom Analytics</CardTitle>
-            <CardDescription className="text-muted-foreground">
-              Build your own charts by selecting data sources and fields
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <CustomizableDashboard
-              dataSources={chartDataSources}
-              getData={getChartData}
-              storageKey="hr-dashboard-charts"
-              columns={2}
-            />
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

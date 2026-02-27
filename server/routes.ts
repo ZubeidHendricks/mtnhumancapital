@@ -2463,7 +2463,7 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
         const candidate = await storage.getCandidate(req.tenant.id, check.candidateId);
         return {
           ...check,
-          candidateName: candidate ? (candidate.fullName || candidate.name || "Unknown") : "Unknown Candidate",
+          candidateName: candidate?.fullName || "Unknown Candidate",
         };
       }));
       res.json(enriched);
@@ -3722,8 +3722,8 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
         fullName: candidate.fullName,
         email: candidate.email || undefined,
         phone: candidate.phone || undefined,
-        jobTitle: (candidate as any).role || (candidate as any).position || "Position",
-        department: (candidate as any).department || "",
+        jobTitle: candidate.role || "Position",
+        department: "",
         startDate: startDate || "TBD",
         companyName,
       };
@@ -4168,7 +4168,10 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
         if (notes) pd.buildingAccessNotes = notes;
       }
 
-      const allConfirmed = pd.itConfirmed && pd.buildingAccessConfirmed;
+      const itDone = pd.itConfirmed === true;
+      const buildingDone = pd.buildingAccessConfirmed === true;
+      const equipmentDone = pd.equipmentConfirmed === true || !(pd.equipmentList?.length > 0);
+      const allConfirmed = itDone && buildingDone && equipmentDone;
       if (allConfirmed) {
         const provTask = tasks.find((t: any) => t.type === "provisioning");
         if (provTask) provTask.status = "completed";
@@ -4206,7 +4209,14 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
   app.get("/api/onboarding/workflows", async (req, res) => {
     try {
       const workflows = await storage.getAllOnboardingWorkflows(req.tenant.id);
-      res.json(workflows);
+      const enriched = await Promise.all(workflows.map(async (workflow) => {
+        const candidate = await storage.getCandidate(req.tenant.id, workflow.candidateId);
+        return {
+          ...workflow,
+          candidateName: candidate?.fullName || "Unknown Candidate",
+        };
+      }));
+      res.json(enriched);
     } catch (error) {
       console.error("Error fetching onboarding workflows:", error);
       res.status(500).json({ message: "Failed to fetch onboarding workflows" });
@@ -10624,7 +10634,22 @@ Format your response as JSON:
   app.get("/api/offers", async (req, res) => {
     try {
       const allOffers = await storage.getAllOffers(req.tenant.id);
-      res.json(allOffers);
+      const now = new Date();
+      const enriched = await Promise.all(allOffers.map(async (offer) => {
+        // Auto-expire sent offers past their expiresAt date
+        if (offer.status === "sent" && offer.expiresAt && new Date(offer.expiresAt) < now) {
+          try {
+            await storage.updateOffer(req.tenant.id, offer.id, { status: "expired" } as any);
+            offer = { ...offer, status: "expired" };
+          } catch {}
+        }
+        const candidate = await storage.getCandidate(req.tenant.id, offer.candidateId);
+        return {
+          ...offer,
+          candidateName: candidate?.fullName || "Unknown Candidate",
+        };
+      }));
+      res.json(enriched);
     } catch (error) {
       console.error("Error fetching offers:", error);
       res.status(500).json({ message: "Failed to fetch offers" });
@@ -10845,7 +10870,7 @@ Format your response as JSON:
           to: candidate.email,
           candidateName: candidate.fullName,
           jobTitle,
-          salary: `${offer.currency || "ZAR"} ${offer.salary}`,
+          salary: `${offer.currency || "ZAR"} ${String(offer.salary).replace(/^R\s*/i, "")}`,
           startDate: offer.startDate ? new Date(offer.startDate).toLocaleDateString() : "TBD",
           attachments: emailAttachments.length > 0 ? emailAttachments : undefined,
         });

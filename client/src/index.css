@@ -98,7 +98,7 @@
 
   --border: 0 0% 90%;
   --input: 0 0% 90%;
-  --ring: 0 0% 0%;
+  --ring: 48 100% 50%;
 
   --button-outline: hsl(0 0% 80%);
   --radius: 4px;
@@ -110,7 +110,7 @@
   --chart-5: 0 0% 45%;
 }
 
-.dark {
+html.dark {
   --background: 0 0% 7%;
   --foreground: 0 0% 95%;
 
@@ -137,7 +137,7 @@
 
   --border: 0 0% 18%;
   --input: 0 0% 18%;
-  --ring: 0 0% 80%;
+  --ring: 48 100% 50%;
 
   --chart-1: 0 0% 100%;
   --chart-2: 0 0% 70%;
@@ -188,18 +188,18 @@
 }
 
 .sidebar-nav .bg-primary\/10 {
-  background-color: rgba(255,255,255,0.10) !important;
-  border-left: 3px solid #FFFFFF !important;
+  background-color: rgba(255,203,0,0.10) !important;
+  border-left: 3px solid #FFCB00 !important;
   border-radius: 6px !important;
 }
 
 .sidebar-nav .text-primary {
-  color: #FFFFFF !important;
+  color: #FFCB00 !important;
 }
 
 .sidebar-nav .text-primary svg,
 .sidebar-nav .bg-primary\/10 svg {
-  color: #FFFFFF !important;
+  color: #FFCB00 !important;
 }
 
 .sidebar-nav .bg-primary {
@@ -233,6 +233,9 @@
     @apply font-display tracking-tight;
     font-weight: 700;
     color: hsl(var(--foreground));
+  }
+  .dark h1 {
+    color: #FFCB00;
   }
   strong, b {
     font-weight: 700;

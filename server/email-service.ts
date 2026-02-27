@@ -1,12 +1,5 @@
 import nodemailer from "nodemailer";
 import type { IStorage } from "./storage";
-import nodemailer from "nodemailer";
-
-interface EmailAttachment {
-  filename: string;
-  content: Buffer;
-  contentType?: string;
-}
 
 interface EmailAttachment {
   filename: string;
@@ -75,10 +68,7 @@ export class EmailService {
 
   async sendEmail(options: EmailOptions): Promise<boolean> {
     try {
-<<<<<<< HEAD
-=======
       // Apply dev override
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
       const actualTo = process.env.DEV_TEST_EMAIL || options.to;
       if (process.env.DEV_TEST_EMAIL && process.env.DEV_TEST_EMAIL !== options.to) {
         console.log(`[EmailService] DEV_TEST_EMAIL override: ${options.to} -> ${actualTo}`);
@@ -86,11 +76,7 @@ export class EmailService {
 
       if (this.transporter) {
         const mailOptions: any = {
-<<<<<<< HEAD
-          from: process.env.SMTP_FROM || process.env.SMTP_USER || "noreply@mtn-gpt.com",
-=======
           from: process.env.SMTP_FROM || process.env.SMTP_USER || "noreply@avatarhuman.capital",
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
           to: actualTo,
           subject: options.subject,
           text: options.body,

@@ -101,7 +101,7 @@ export default function PipelineBoard() {
     setAdvancingCandidate(candidate.id);
     
     try {
-      const response = await api.post(`/api/pipeline/candidates/${candidate.id}/transition`, {
+      const response = await api.post(`/pipeline/candidates/${candidate.id}/transition`, {
         toStage: toStage
       });
       

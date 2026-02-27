@@ -72,31 +72,31 @@ const PLATFORM_META: Record<string, { icon: any; color: string; category: string
   // Tech Sourcing
   "GitHub": { icon: Users, color: "bg-gray-700", category: "Tech", description: "Open source developers from GitHub" },
   "Dev.to": { icon: FileText, color: "bg-gray-700", category: "Tech", description: "Technical writers & developers" },
-  "StackOverflow": { icon: Brain, color: "bg-muted", category: "Tech", description: "Top developers by reputation" },
-  "HackerNews": { icon: Zap, color: "bg-muted", category: "Tech", description: "Who's Hiring thread candidates" },
-  "Kaggle": { icon: TrendingUp, color: "bg-muted", category: "Tech", description: "Data scientists & ML engineers" },
+  "StackOverflow": { icon: Brain, color: "bg-teal-600", category: "Tech", description: "Top developers by reputation" },
+  "HackerNews": { icon: Zap, color: "bg-teal-700", category: "Tech", description: "Who's Hiring thread candidates" },
+  "Kaggle": { icon: TrendingUp, color: "bg-blue-500", category: "Tech", description: "Data scientists & ML engineers" },
   // Executive
-  "Executive": { icon: Award, color: "bg-muted", category: "Executive", description: "C-suite from executive networks" },
-  "CandidateAPI": { icon: Search, color: "bg-muted", category: "Executive", description: "Premium candidate databases" },
+  "Executive": { icon: Award, color: "bg-amber-600", category: "Executive", description: "C-suite from executive networks" },
+  "CandidateAPI": { icon: Search, color: "bg-indigo-600", category: "Executive", description: "Premium candidate databases" },
   "CompanyLeadership": { icon: Building2, color: "bg-slate-700", category: "Executive", description: "Leaders from company websites" },
-  "ExecutiveNews": { icon: FileSearch, color: "bg-destructive", category: "Executive", description: "Executive appointments from news" },
-  "CIPC": { icon: Briefcase, color: "bg-muted", category: "Executive", description: "SA company directors (CIPC/JSE)" },
+  "ExecutiveNews": { icon: FileSearch, color: "bg-red-600", category: "Executive", description: "Executive appointments from news" },
+  "CIPC": { icon: Briefcase, color: "bg-green-700", category: "Executive", description: "SA company directors (CIPC/JSE)" },
   // Blue Collar
-  "OLX": { icon: Users, color: "bg-muted", category: "Blue Collar", description: "Trade workers & job seekers" },
-  "TradeForums": { icon: Users, color: "bg-muted", category: "Blue Collar", description: "Skilled tradespeople" },
+  "OLX": { icon: Users, color: "bg-teal-600", category: "Blue Collar", description: "Trade workers & job seekers" },
+  "TradeForums": { icon: Users, color: "bg-yellow-600", category: "Blue Collar", description: "Skilled tradespeople" },
   // Job Boards
-  "Gumtree South Africa": { icon: Search, color: "bg-muted", category: "Job Boards", description: "SA classifieds & job listings" },
-  "Indeed South Africa": { icon: Search, color: "bg-muted", category: "Job Boards", description: "Global job board - SA section" },
-  "Careers24": { icon: FileSearch, color: "bg-muted", category: "Job Boards", description: "SA career portal" },
-  "PNet": { icon: FileSearch, color: "bg-muted", category: "Job Boards", description: "SA's largest recruitment portal" },
-  "LinkedIn": { icon: Linkedin, color: "bg-muted", category: "Job Boards", description: "Professional network" },
+  "Gumtree South Africa": { icon: Search, color: "bg-green-500", category: "Job Boards", description: "SA classifieds & job listings" },
+  "Indeed South Africa": { icon: Search, color: "bg-blue-600", category: "Job Boards", description: "Global job board - SA section" },
+  "Careers24": { icon: FileSearch, color: "bg-blue-600", category: "Job Boards", description: "SA career portal" },
+  "PNet": { icon: FileSearch, color: "bg-green-600", category: "Job Boards", description: "SA's largest recruitment portal" },
+  "LinkedIn": { icon: Linkedin, color: "bg-blue-700", category: "Job Boards", description: "Professional network" },
 };
 
 // Fallback for legacy code
 const SOURCING_SPECIALISTS = [
-  { name: "LinkedIn Specialist", platform: "LinkedIn", icon: Linkedin, color: "bg-muted", description: "Passive candidates from professional network" },
-  { name: "PNet Specialist", platform: "PNet", icon: FileSearch, color: "bg-muted", description: "Active job seekers from SA's largest portal" },
-  { name: "Indeed Specialist", platform: "Indeed South Africa", icon: Search, color: "bg-muted", description: "Diverse candidates from resume database" },
+  { name: "LinkedIn Specialist", platform: "LinkedIn", icon: Linkedin, color: "bg-blue-600", description: "Passive candidates from professional network" },
+  { name: "PNet Specialist", platform: "PNet", icon: FileSearch, color: "bg-green-600", description: "Active job seekers from SA's largest portal" },
+  { name: "Indeed Specialist", platform: "Indeed South Africa", icon: Search, color: "bg-blue-600", description: "Diverse candidates from resume database" },
 ];
 
 
@@ -126,17 +126,17 @@ function ContactEnrichmentSection({ candidate, metadata }: { candidate: Candidat
   return (
     <div className="flex flex-wrap gap-2 mt-2">
       {candidate.email ? (
-        <a href={`mailto:${candidate.email}`} className="inline-flex items-center gap-1 text-xs text-foreground dark:text-foreground hover:text-foreground">
+        <a href={`mailto:${candidate.email}`} className="inline-flex items-center gap-1 text-xs text-[#FFCB00] hover:text-[#E6B800]">
           <Mail className="h-3 w-3" /> {candidate.email}
         </a>
       ) : null}
       {candidate.phone ? (
-        <a href={`tel:${candidate.phone}`} className="inline-flex items-center gap-1 text-xs text-foreground hover:text-foreground">
+        <a href={`tel:${candidate.phone}`} className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 hover:text-green-300">
           <Phone className="h-3 w-3" /> {candidate.phone}
         </a>
       ) : null}
       {metadata?.linkedinUrl && (
-        <a href={metadata.linkedinUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-foreground dark:text-foreground hover:text-foreground">
+        <a href={metadata.linkedinUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-[#FFCB00] hover:text-[#E6B800]">
           <Linkedin className="h-3 w-3" /> LinkedIn
         </a>
       )}
@@ -146,7 +146,7 @@ function ContactEnrichmentSection({ candidate, metadata }: { candidate: Candidat
         <Button
           variant="outline"
           size="sm"
-          className="h-7 text-xs gap-1 border-border/50 text-foreground dark:text-foreground hover:bg-muted/10"
+          className="h-7 text-xs gap-1 border-[#FFCB00]/50 text-[#FFCB00] hover:bg-[#FFCB00]/10"
           onClick={handleEnrichContact}
           disabled={isEnriching}
           data-testid={`enrich-contact-${candidate.id}`}
@@ -170,7 +170,7 @@ function ContactEnrichmentSection({ candidate, metadata }: { candidate: Candidat
         <Button
           variant="outline"
           size="sm"
-          className="h-7 text-xs gap-1 border-border/50 text-foreground dark:text-foreground hover:bg-muted/10"
+          className="h-7 text-xs gap-1 border-[#FFCB00]/50 text-[#FFCB00] hover:bg-[#FFCB00]/10"
           onClick={() => window.open(`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(candidate.fullName || '')}`, '_blank')}
           data-testid={`linkedin-search-${candidate.id}`}
         >
@@ -181,7 +181,7 @@ function ContactEnrichmentSection({ candidate, metadata }: { candidate: Candidat
       
       {/* Show enrichment result */}
       {enrichResult && (
-        <div className={`w-full mt-2 p-2 rounded text-xs ${enrichResult.success ? 'bg-muted/10 border border-border/30 text-foreground' : 'bg-muted/10 border border-border/30 text-foreground dark:text-foreground'}`}>
+        <div className={`w-full mt-2 p-2 rounded text-xs ${enrichResult.success ? 'bg-green-500/10 border border-green-500/30 text-green-600 dark:text-green-400' : 'bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400'}`}>
           {enrichResult.success ? (
             <span className="flex items-center gap-1">
               <CheckCircle className="h-3 w-3" />
@@ -467,23 +467,23 @@ export default function RecruitmentAgent() {
 
   const getAgentColor = (agent: string) => {
     switch (agent) {
-      case "Job Analyzer": return "bg-muted";
-      case "LinkedIn Specialist": return "bg-muted";
-      case "PNet Specialist": return "bg-muted";
-      case "Indeed Specialist": return "bg-muted";
-      case "AI Search": return "bg-muted";
-      case "Screening AI": return "bg-muted";
-      case "Ranking Engine": return "bg-muted";
-      case "System": return "bg-muted";
+      case "Job Analyzer": return "bg-blue-500";
+      case "LinkedIn Specialist": return "bg-blue-600";
+      case "PNet Specialist": return "bg-green-600";
+      case "Indeed Specialist": return "bg-blue-600";
+      case "AI Search": return "bg-cyan-500";
+      case "Screening AI": return "bg-blue-500";
+      case "Ranking Engine": return "bg-teal-600";
+      case "System": return "bg-green-500";
       default: return "bg-gray-500";
     }
   };
 
   const getMatchColor = (score: number) => {
-    if (score >= 85) return 'text-foreground bg-muted/20 border-border/30';
-    if (score >= 70) return 'text-foreground bg-muted/20 border-border/30';
-    if (score >= 50) return 'text-foreground dark:text-foreground bg-muted/20 border-border/30';
-    return 'text-gray-500 bg-gray-500/20 border-gray-500/30';
+    if (score >= 85) return 'text-green-600 dark:text-green-400 bg-green-500/20 border-green-500/30';
+    if (score >= 70) return 'text-yellow-600 dark:text-yellow-400 bg-yellow-500/20 border-yellow-500/30';
+    if (score >= 50) return 'text-teal-600 dark:text-teal-400 bg-teal-600/20 border-teal-500/30';
+    return 'text-gray-500 dark:text-gray-400 bg-gray-500/20 border-gray-500/30';
   };
 
   const getMatchLabel = (score: number) => {
@@ -505,14 +505,14 @@ export default function RecruitmentAgent() {
           {/* Header */}
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-muted to-background">
-                <Bot className="h-8 w-8 text-white" />
+              <div className="w-12 h-12 rounded-full bg-[#FFCB00]/10 flex items-center justify-center">
+                <Bot className="w-7 h-7 text-[#FFCB00]" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-muted to-background dark:from-muted dark:to-background bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold text-foreground dark:text-[#FFCB00]">
                   AI Recruitment Command Center
                 </h1>
-                <p className="text-gray-500">
+                <p className="text-muted-foreground">
                   Intelligent talent acquisition powered by LLaMA 3.1 70B via Groq
                 </p>
               </div>
@@ -520,16 +520,16 @@ export default function RecruitmentAgent() {
           </div>
 
           {/* Controls Bar - Horizontal */}
-          <Card className="bg-gray-100/50 border-border mb-6">
+          <Card className="bg-gray-100 dark:bg-zinc-900/50 border-border mb-6">
             <CardContent className="p-4">
               <div className="flex flex-wrap items-end gap-4">
                 <div className="flex-1 min-w-[200px] max-w-xs">
-                  <Label className="text-gray-500 text-xs mb-1 block">Target Position</Label>
+                  <Label className="text-gray-500 dark:text-gray-400 text-xs mb-1 block">Target Position</Label>
                   <Select value={selectedJobId} onValueChange={setSelectedJobId}>
-                    <SelectTrigger className="bg-gray-200 border-border" data-testid="select-job">
+                    <SelectTrigger className="bg-gray-200 dark:bg-zinc-800 border-border" data-testid="select-job">
                       <SelectValue placeholder="Select a job..." />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-200 border-border">
+                    <SelectContent className="bg-gray-200 dark:bg-zinc-800 border-border">
                       {jobsLoading ? (
                         <SelectItem value="loading" disabled>Loading...</SelectItem>
                       ) : jobs?.length ? (
@@ -545,37 +545,37 @@ export default function RecruitmentAgent() {
                   </Select>
                 </div>
                 {selectedJob && (
-                  <div className="hidden md:flex items-center gap-2 text-sm text-gray-500 px-3 py-2 bg-muted/50 rounded-lg border border-border">
-                    <Briefcase className="h-4 w-4 text-foreground dark:text-foreground" />
+                  <div className="hidden md:flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 px-3 py-2 bg-muted/50 rounded-lg border border-border">
+                    <Briefcase className="h-4 w-4 text-[#FFCB00]" />
                     <span className="font-medium text-foreground">{selectedJob.title}</span>
                     {selectedJob.department && <span>• {selectedJob.department}</span>}
                     {selectedJob.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{selectedJob.location}</span>}
                   </div>
                 )}
                 <div className="w-24">
-                  <Label className="text-gray-500 text-xs mb-1 block">Max</Label>
+                  <Label className="text-gray-500 dark:text-gray-400 text-xs mb-1 block">Max</Label>
                   <Input
                     type="number"
                     value={maxCandidates}
                     onChange={(e) => setMaxCandidates(Number(e.target.value))}
-                    className="bg-gray-200 border-border"
+                    className="bg-gray-200 dark:bg-zinc-800 border-border"
                     data-testid="input-max-candidates"
                   />
                 </div>
                 <div className="w-24">
-                  <Label className="text-gray-500 text-xs mb-1 block">Min Score</Label>
+                  <Label className="text-gray-500 dark:text-gray-400 text-xs mb-1 block">Min Score</Label>
                   <Input
                     type="number"
                     value={minMatchScore}
                     onChange={(e) => setMinMatchScore(Number(e.target.value))}
-                    className="bg-gray-200 border-border"
+                    className="bg-gray-200 dark:bg-zinc-800 border-border"
                     data-testid="input-min-match"
                   />
                 </div>
                 <Button
                   onClick={handleStartRecruitment}
                   disabled={!selectedJobId || startRecruitmentMutation.isPending || isSimulating}
-                  className="bg-gradient-to-r from-muted to-background hover:from-muted hover:to-background h-10 px-6"
+                  className="bg-[#FFCB00] hover:bg-[#E6B800] text-black h-10 px-6"
                   data-testid="button-start-recruitment"
                 >
                   {startRecruitmentMutation.isPending || isSimulating ? (
@@ -596,63 +596,63 @@ export default function RecruitmentAgent() {
 
           {/* Stats Row */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <Card className="bg-gray-100/50 border-border">
+            <Card className="bg-gray-100 dark:bg-zinc-900/50 border-border">
               <CardContent className="p-4 flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-muted/10">
-                  <Activity className="h-5 w-5 text-foreground dark:text-foreground" />
+                <div className="p-2 rounded-lg bg-[#FFCB00]/10">
+                  <Activity className="h-5 w-5 text-[#FFCB00]" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground dark:text-foreground">{sessions?.length || 0}</p>
-                  <p className="text-xs text-gray-500">Sessions</p>
+                  <p className="text-2xl font-bold text-[#FFCB00]">{sessions?.length || 0}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">Sessions</p>
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-gray-100/50 border-border">
+            <Card className="bg-gray-100 dark:bg-zinc-900/50 border-border">
               <CardContent className="p-4 flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-muted/10">
-                  <Users className="h-5 w-5 text-foreground" />
+                <div className="p-2 rounded-lg bg-green-500/10">
+                  <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground">{candidates?.length || 0}</p>
-                  <p className="text-xs text-gray-500">Candidates</p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">{candidates?.length || 0}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">Candidates</p>
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-gray-100/50 border-border">
+            <Card className="bg-gray-100 dark:bg-zinc-900/50 border-border">
               <CardContent className="p-4 flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-muted/10">
-                  <CheckCircle className="h-5 w-5 text-foreground dark:text-foreground" />
+                <div className="p-2 rounded-lg bg-teal-500/10">
+                  <CheckCircle className="h-5 w-5 text-teal-600 dark:text-teal-400" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground dark:text-foreground">{completedSessions.length}</p>
-                  <p className="text-xs text-gray-500">Completed</p>
+                  <p className="text-2xl font-bold text-teal-600 dark:text-teal-400">{completedSessions.length}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">Completed</p>
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-gray-100/50 border-border">
+            <Card className="bg-gray-100 dark:bg-zinc-900/50 border-border">
               <CardContent className="p-4 flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-muted/10">
-                  <Star className="h-5 w-5 text-foreground" />
+                <div className="p-2 rounded-lg bg-yellow-500/10">
+                  <Star className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground">{topCandidates.length}</p>
-                  <p className="text-xs text-gray-500">Top Matches</p>
+                  <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{topCandidates.length}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">Top Matches</p>
                 </div>
               </CardContent>
             </Card>
           </div>
 
           {/* Top Matches - Main Content */}
-          <Card className="bg-gray-100/50 border-border mb-6">
+          <Card className="bg-gray-100 dark:bg-zinc-900/50 border-border mb-6">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-3">
                   <CardTitle className="text-xl flex items-center gap-2">
-                    <Star className="h-6 w-6 text-foreground" />
+                    <Star className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
                     Top Matches
                   </CardTitle>
                   {displayJobTitle && (
-                    <Badge className="bg-muted/10 text-foreground dark:text-foreground border border-border/30">
+                    <Badge className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30">
                       <Briefcase className="h-3 w-3 mr-1" />
                       {displayJobTitle}
                     </Badge>
@@ -661,10 +661,10 @@ export default function RecruitmentAgent() {
                 <div className="flex items-center gap-3">
                   {!displayJobTitle && jobs && jobs.length > 0 && (
                     <Select value={selectedJobId} onValueChange={setSelectedJobId}>
-                      <SelectTrigger className="bg-gray-200 border-border h-8 text-xs w-48">
+                      <SelectTrigger className="bg-gray-200 dark:bg-zinc-800 border-border h-8 text-xs w-48">
                         <SelectValue placeholder="Filter by job..." />
                       </SelectTrigger>
-                      <SelectContent className="bg-gray-200 border-border">
+                      <SelectContent className="bg-gray-200 dark:bg-zinc-800 border-border">
                         {jobs.map((job) => (
                           <SelectItem key={job.id} value={job.id} className="text-xs">
                             {job.title}
@@ -698,28 +698,28 @@ export default function RecruitmentAgent() {
                       <div
                         key={candidate.id}
                         onClick={() => handleCandidateClick(candidate)}
-                        className="group p-5 rounded-xl border border-border bg-card hover:border-border/40 hover:shadow-lg hover:shadow-blue-500/5 transition-all cursor-pointer relative"
+                        className="group p-5 rounded-xl border border-border bg-card hover:border-[#FFCB00]/40 hover:shadow-lg hover:shadow-[#FFCB00]/5 transition-all cursor-pointer relative"
                         data-testid={`candidate-card-${candidate.id}`}
                       >
                         {index < 3 && (
                           <div className={`absolute -top-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold shadow-md ${
-                            index === 0 ? 'bg-muted text-black' : index === 1 ? 'bg-gray-400 text-black' : 'bg-muted text-white'
+                            index === 0 ? 'bg-yellow-500 text-black' : index === 1 ? 'bg-gray-400 text-black' : 'bg-amber-600 text-white'
                           }`}>
                             {index + 1}
                           </div>
                         )}
 
                         <div className="flex items-start gap-4 mb-3">
-                          <Avatar className="h-12 w-12 bg-gradient-to-br from-muted to-background flex-shrink-0">
+                          <Avatar className="h-12 w-12 bg-[#0A0A0A] flex-shrink-0">
                             <AvatarFallback className="text-white text-sm font-bold bg-transparent">
                               {candidate.fullName?.split(' ').map(n => n[0]).join('') || '?'}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">
                             <h3 className="font-semibold text-base truncate">{candidate.fullName}</h3>
-                            <p className="text-sm text-gray-500 truncate">{candidate.role || 'No role specified'}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{candidate.role || 'No role specified'}</p>
                             {metadata?.company && (
-                              <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                              <p className="text-xs text-gray-500 dark:text-gray-500 flex items-center gap-1 mt-0.5">
                                 <Building2 className="h-3 w-3" /> {metadata.company}
                               </p>
                             )}
@@ -732,7 +732,7 @@ export default function RecruitmentAgent() {
                         </div>
 
                         {(candidate.location || metadata?.location) && (
-                          <p className="text-xs text-gray-500 flex items-center gap-1 mb-2">
+                          <p className="text-xs text-gray-500 dark:text-gray-500 flex items-center gap-1 mb-2">
                             <MapPin className="h-3 w-3" /> {candidate.location || metadata?.location}
                           </p>
                         )}
@@ -755,20 +755,9 @@ export default function RecruitmentAgent() {
                         <ContactEnrichmentSection candidate={candidate} metadata={metadata} />
 
                         <div className="mt-3 pt-3 border-t border-border flex gap-2">
-<<<<<<< HEAD
-                          <Link href={`/candidates-list?candidateId=${candidate.id}`} onClick={(e: any) => e.stopPropagation()}>
-                            <Button size="sm" className="bg-muted hover:bg-muted text-xs h-7">
-                              <Eye className="h-3 w-3 mr-1" />
-                              Profile
-                            </Button>
-                          </Link>
-                          <Button size="sm" variant="outline" className="border-border hover:bg-muted text-xs h-7" onClick={(e: any) => e.stopPropagation()}>
-                            <ThumbsUp className="h-3 w-3 mr-1" />
-                            Shortlist
-=======
                           <Button
                             size="sm"
-                            className="bg-blue-600 hover:bg-blue-500 text-xs h-7"
+                            className="bg-[#FFCB00] hover:bg-[#E6B800] text-black text-xs h-7"
                             onClick={(e: any) => { e.stopPropagation(); handleCandidateClick(candidate); }}
                           >
                             <Eye className="h-3 w-3 mr-1" />
@@ -787,7 +776,6 @@ export default function RecruitmentAgent() {
                               <ThumbsUp className="h-3 w-3 mr-1" />
                             )}
                             {candidate.stage === 'Shortlisted' ? 'Shortlisted' : shortlistingId === String(candidate.id) ? 'Shortlisting...' : 'Shortlist'}
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                           </Button>
                         </div>
                       </div>
@@ -795,7 +783,7 @@ export default function RecruitmentAgent() {
                   })}
                 </div>
               ) : (
-                <div className="text-center py-16 text-gray-500">
+                <div className="text-center py-16 text-gray-500 dark:text-gray-500">
                   <Bot className="h-16 w-16 mx-auto mb-4 opacity-20" />
                   <h3 className="text-lg font-medium text-foreground mb-1">No candidates yet</h3>
                   <p className="text-sm max-w-md mx-auto">Select a job position above and deploy AI agents to find and rank top candidates automatically.</p>
@@ -806,10 +794,10 @@ export default function RecruitmentAgent() {
 
           {/* Recent Sessions - Compact Horizontal */}
           {sessions && sessions.length > 0 && (
-            <Card className="bg-gray-100/50 border-border">
+            <Card className="bg-gray-100 dark:bg-zinc-900/50 border-border">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-gray-500" />
+                  <Clock className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                   Recent Sessions
                 </CardTitle>
               </CardHeader>
@@ -827,14 +815,14 @@ export default function RecruitmentAgent() {
                             {job?.title || 'Unknown Job'}
                           </span>
                           <Badge className={`text-[10px] ml-2 ${
-                            session.status === 'Completed' ? 'bg-muted/20 text-foreground' :
-                            session.status === 'Running' ? 'bg-muted/20 text-foreground dark:text-foreground' :
-                            'bg-destructive/20 text-destructive'
+                            session.status === 'Completed' ? 'bg-green-500/20 text-green-600 dark:text-green-400' :
+                            session.status === 'Running' ? 'bg-blue-500/20 text-[#FFCB00]' :
+                            'bg-red-500/20 text-red-600 dark:text-red-400'
                           }`}>
                             {session.status}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-gray-500">
+                        <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-500">
                           <span>{session.candidatesFound} found</span>
                           <span>{session.candidatesAdded} added</span>
                         </div>
@@ -853,22 +841,22 @@ export default function RecruitmentAgent() {
         <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden bg-card border-border text-foreground">
           <DialogHeader className="border-b border-border pb-4">
             <DialogTitle className="text-xl flex items-center gap-2">
-              <Bot className="h-6 w-6 text-foreground dark:text-foreground" />
+              <Bot className="h-6 w-6 text-[#FFCB00]" />
               AI Agents Working
               {isSimulating && (
-                <Badge className="ml-2 bg-muted/20 text-foreground border-border/30">
-                  <span className="w-2 h-2 bg-muted rounded-full mr-2 animate-pulse" />
+                <Badge className="ml-2 bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30">
+                  <span className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse" />
                   Live
                 </Badge>
               )}
               {!isSimulating && agentMessages.length > 0 && (
-                <Badge className="ml-2 bg-muted/20 text-foreground dark:text-foreground border-border/30">
+                <Badge className="ml-2 bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30">
                   <CheckCircle className="h-3 w-3 mr-1" />
                   Complete
                 </Badge>
               )}
             </DialogTitle>
-            <DialogDescription className="text-gray-500">
+            <DialogDescription className="text-gray-500 dark:text-gray-400">
               {selectedJob ? `Sourcing candidates for: ${selectedJob.title}` : 'Deploying sourcing agents across platforms'}
             </DialogDescription>
           </DialogHeader>
@@ -878,7 +866,7 @@ export default function RecruitmentAgent() {
             <div className="border border-border rounded-lg overflow-hidden">
               <div className="px-4 py-3 bg-muted/50 border-b border-border">
                 <h3 className="font-medium text-sm flex items-center gap-2">
-                  <Bot className="h-4 w-4 text-foreground dark:text-foreground" />
+                  <Bot className="h-4 w-4 text-[#FFCB00]" />
                   AI Agent Workflow
                 </h3>
               </div>
@@ -891,7 +879,7 @@ export default function RecruitmentAgent() {
                   ) : (
                     Object.entries(agentsByCategory).map(([category, agents]) => (
                       <div key={category}>
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider px-2 py-1.5">{category}</p>
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-2 py-1.5">{category}</p>
                         {agents.map((agent) => {
                           const isActive = effectiveStep === 1;
                           const sessionResult = specialistResultsFromSession.find(
@@ -902,26 +890,26 @@ export default function RecruitmentAgent() {
                             <div
                               key={agent.platform}
                               className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${
-                                isActive ? 'bg-muted/10' : hasResult ? 'bg-muted/5' : ''
+                                isActive ? 'bg-[#FFCB00]/10' : hasResult ? 'bg-green-500/5' : ''
                               }`}
                               data-testid={`agent-${agent.platform.toLowerCase().replace(/\s+/g, '-')}`}
                             >
                               <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                isActive ? 'bg-muted' : hasResult ? 'bg-muted' : 'bg-gray-300'
+                                isActive ? 'bg-[#FFCB00]' : hasResult ? 'bg-green-500' : 'bg-gray-300 dark:bg-zinc-700'
                               }`}>
                                 {isActive ? (
                                   <Loader2 className="h-3 w-3 animate-spin text-white" />
                                 ) : hasResult ? (
                                   <CheckCircle className="h-3 w-3 text-white" />
                                 ) : (
-                                  <div className="w-2 h-2 rounded-full bg-gray-400" />
+                                  <div className="w-2 h-2 rounded-full bg-gray-400 dark:bg-zinc-500" />
                                 )}
                               </div>
-                              <span className={`flex-1 text-sm ${isActive ? 'text-foreground' : hasResult ? 'text-gray-700' : 'text-gray-500'}`}>
+                              <span className={`flex-1 text-sm ${isActive ? 'text-foreground' : hasResult ? 'text-gray-700 dark:text-gray-300' : 'text-gray-500 dark:text-gray-500'}`}>
                                 {agent.name}
                               </span>
                               {hasResult && (
-                                <Badge className="text-[10px] px-1.5 py-0 bg-muted/20 text-foreground">
+                                <Badge className="text-[10px] px-1.5 py-0 bg-green-500/20 text-green-600 dark:text-green-400">
                                   {sessionResult?.found || 0} found
                                 </Badge>
                               )}
@@ -939,14 +927,14 @@ export default function RecruitmentAgent() {
             <div className="border border-border rounded-lg overflow-hidden">
               <div className="px-4 py-3 bg-muted/50 border-b border-border">
                 <h3 className="font-medium text-sm flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4 text-foreground dark:text-foreground" />
+                  <MessageSquare className="h-4 w-4 text-[#FFCB00]" />
                   Live Agent Activity
                 </h3>
               </div>
               <ScrollArea className="h-[400px]">
                 <div className="p-3 space-y-2">
                   {agentMessages.length === 0 && !isSimulating ? (
-                    <div className="text-center py-12 text-gray-500">
+                    <div className="text-center py-12 text-gray-500 dark:text-gray-500">
                       <Bot className="h-10 w-10 mx-auto mb-3 opacity-30" />
                       <p className="text-sm">Waiting for agents to start...</p>
                     </div>
@@ -963,22 +951,22 @@ export default function RecruitmentAgent() {
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 bg-muted/50 rounded-lg p-2 border border-border">
-                          <span className="font-medium text-xs text-gray-700">{msg.agent}</span>
-                          <p className="text-xs text-gray-500">{msg.message}</p>
+                          <span className="font-medium text-xs text-gray-700 dark:text-gray-300">{msg.agent}</span>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{msg.message}</p>
                         </div>
                       </div>
                     ))
                   )}
                   {isSimulating && (
                     <div className="flex gap-2 animate-pulse">
-                      <Avatar className="h-7 w-7 bg-muted flex-shrink-0">
+                      <Avatar className="h-7 w-7 bg-[#FFCB00] flex-shrink-0">
                         <AvatarFallback className="text-[10px] font-bold text-white bg-transparent">AI</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 bg-muted/50 rounded-lg p-2 border border-border">
                         <div className="flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 bg-muted rounded-full animate-bounce" />
-                          <span className="w-1.5 h-1.5 bg-muted rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                          <span className="w-1.5 h-1.5 bg-muted rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                          <span className="w-1.5 h-1.5 bg-[#FFCB00] rounded-full animate-bounce" />
+                          <span className="w-1.5 h-1.5 bg-[#FFCB00] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <span className="w-1.5 h-1.5 bg-[#FFCB00] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                         </div>
                       </div>
                     </div>
@@ -1036,9 +1024,9 @@ export default function RecruitmentAgent() {
                     return (
                       <div
                         key={candidate.id}
-                        className="flex items-center gap-4 p-4 rounded-lg border border-border bg-muted/50 hover:border-blue-500/30 transition-all"
+                        className="flex items-center gap-4 p-4 rounded-lg border border-border bg-muted/50 hover:border-[#FFCB00]/30 transition-all"
                       >
-                        <Avatar className="h-11 w-11 bg-gradient-to-br from-teal-500 to-blue-600 flex-shrink-0">
+                        <Avatar className="h-11 w-11 bg-[#0A0A0A] flex-shrink-0">
                           <AvatarFallback className="text-white text-sm font-bold bg-transparent">
                             {candidate.fullName?.split(' ').map(n => n[0]).join('') || '?'}
                           </AvatarFallback>
@@ -1070,7 +1058,7 @@ export default function RecruitmentAgent() {
                           </Button>
                           <Button
                             size="sm"
-                            className="bg-gradient-to-r from-teal-600 to-blue-600 hover:from-teal-500 hover:to-blue-500 h-8 text-xs"
+                            className="bg-[#FFCB00] hover:bg-[#E6B800] text-black h-8 text-xs"
                             data-testid={`ai-interview-${candidate.id}`}
                             onClick={() => {
                               setInviteCandidate(candidate);
@@ -1123,15 +1111,15 @@ export default function RecruitmentAgent() {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden bg-card border-border text-foreground">
           <DialogHeader className="border-b border-border pb-4">
             <DialogTitle className="text-xl flex items-center gap-2">
-              <Star className="h-5 w-5 text-foreground" />
+              <Star className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
               Top Matched Candidates
               {displayJobTitle && (
-                <Badge className="ml-2 bg-muted/20 text-foreground dark:text-foreground border-border/30">
+                <Badge className="ml-2 bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30">
                   {displayJobTitle}
                 </Badge>
               )}
             </DialogTitle>
-            <DialogDescription className="text-gray-500">
+            <DialogDescription className="text-gray-500 dark:text-gray-400">
               {topCandidates.length} candidates ranked by AI based on job requirements and skill matching
             </DialogDescription>
           </DialogHeader>
@@ -1151,27 +1139,22 @@ export default function RecruitmentAgent() {
                       }
                     }}
                     className={`p-4 rounded-lg border transition-all ${
-<<<<<<< HEAD
-                      selectedCandidate?.id === candidate.id 
-                        ? 'bg-muted/10 border-border/50' 
-=======
                       selectedCandidate?.id === candidate.id
-                        ? 'bg-blue-500/10 border-blue-500/50'
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
+                        ? 'bg-[#FFCB00]/10 border-[#FFCB00]/50'
                         : 'bg-muted/50 border-border hover:border-border'
                     }`}
                   >
                     <div className="flex items-start gap-4">
                       {/* Avatar & Rank */}
                       <div className="relative flex-shrink-0">
-                        <Avatar className="h-14 w-14 bg-gradient-to-br from-muted to-background">
+                        <Avatar className="h-14 w-14 bg-[#0A0A0A]">
                           <AvatarFallback className="text-white text-lg font-bold bg-transparent">
                             {candidate.fullName?.split(' ').map(n => n[0]).join('') || '?'}
                           </AvatarFallback>
                         </Avatar>
                         {index < 3 && (
                           <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold ${
-                            index === 0 ? 'bg-muted text-black' : index === 1 ? 'bg-zinc-400 text-black' : 'bg-muted text-white'
+                            index === 0 ? 'bg-yellow-500 text-black' : index === 1 ? 'bg-zinc-400 text-black' : 'bg-amber-600 text-white'
                           }`}>
                             {index + 1}
                           </div>
@@ -1183,14 +1166,14 @@ export default function RecruitmentAgent() {
                         <div className="flex items-start justify-between gap-4">
                           <div>
                             <h3 className="font-semibold text-lg">{candidate.fullName}</h3>
-                            <p className="text-gray-500">{candidate.role}</p>
+                            <p className="text-gray-500 dark:text-gray-400">{candidate.role}</p>
                             {metadata?.company && (
-                              <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
+                              <p className="text-sm text-gray-500 dark:text-gray-500 flex items-center gap-1 mt-1">
                                 <Building2 className="h-3 w-3" /> {metadata.company}
                               </p>
                             )}
                             {(candidate.location || metadata?.location) && (
-                              <p className="text-sm text-gray-500 flex items-center gap-1">
+                              <p className="text-sm text-gray-500 dark:text-gray-500 flex items-center gap-1">
                                 <MapPin className="h-3 w-3" /> {candidate.location || metadata?.location}
                               </p>
                             )}
@@ -1213,15 +1196,15 @@ export default function RecruitmentAgent() {
                         {/* Skills */}
                         {candidate.skills && candidate.skills.length > 0 && (
                           <div className="mt-3">
-                            <p className="text-xs text-gray-500 mb-2">Skills</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-500 mb-2">Skills</p>
                             <div className="flex flex-wrap gap-1.5">
                               {(candidate.skills as string[]).slice(0, 8).map((skill, i) => (
-                                <Badge key={i} variant="outline" className="text-xs bg-gray-200 border-border">
+                                <Badge key={i} variant="outline" className="text-xs bg-gray-200 dark:bg-zinc-800 border-border">
                                   {skill}
                                 </Badge>
                               ))}
                               {(candidate.skills as string[]).length > 8 && (
-                                <Badge variant="outline" className="text-xs bg-gray-200 border-border">
+                                <Badge variant="outline" className="text-xs bg-gray-200 dark:bg-zinc-800 border-border">
                                   +{(candidate.skills as string[]).length - 8} more
                                 </Badge>
                               )}
@@ -1232,43 +1215,32 @@ export default function RecruitmentAgent() {
                         {/* Experience */}
                         {metadata?.experience && (
                           <div className="mt-3">
-                            <p className="text-xs text-gray-500 mb-1">Experience</p>
-                            <p className="text-sm text-gray-700">{metadata.experience}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-500 mb-1">Experience</p>
+                            <p className="text-sm text-gray-700 dark:text-gray-300">{metadata.experience}</p>
                           </div>
                         )}
 
                         {/* AI Reasoning */}
                         {metadata?.aiReasoning && (
-                          <div className="mt-3 p-3 bg-muted/10 rounded-lg border border-border/20">
-                            <p className="text-xs text-foreground dark:text-foreground mb-1 flex items-center gap-1">
+                          <div className="mt-3 p-3 bg-[#FFCB00]/10 rounded-lg border border-[#FFCB00]/20">
+                            <p className="text-xs text-[#FFCB00] mb-1 flex items-center gap-1">
                               <Brain className="h-3 w-3" /> AI Analysis
                             </p>
-                            <p className="text-sm text-gray-700">{metadata.aiReasoning}</p>
+                            <p className="text-sm text-gray-700 dark:text-gray-300">{metadata.aiReasoning}</p>
                           </div>
                         )}
 
                         {/* Applied For Job */}
                         {candidateJob && (
                           <div className="mt-3 pt-3 border-t border-border">
-                            <p className="text-xs text-gray-500 flex items-center gap-1">
-                              <Briefcase className="h-3 w-3" /> Applied for: <span className="text-gray-700">{candidateJob.title}</span>
+                            <p className="text-xs text-gray-500 dark:text-gray-500 flex items-center gap-1">
+                              <Briefcase className="h-3 w-3" /> Applied for: <span className="text-gray-700 dark:text-gray-300">{candidateJob.title}</span>
                             </p>
                           </div>
                         )}
 
                         {/* Actions */}
                         <div className="mt-4 flex gap-2">
-<<<<<<< HEAD
-                          <Link href={`/candidates-list?candidateId=${candidate.id}`}>
-                            <Button size="sm" className="bg-muted hover:bg-muted">
-                              <Eye className="h-4 w-4 mr-1" />
-                              View Full Profile
-                            </Button>
-                          </Link>
-                          <Button size="sm" variant="outline" className="border-border hover:bg-muted">
-                            <ThumbsUp className="h-4 w-4 mr-1" />
-                            Shortlist
-=======
                           <Button
                             size="sm"
                             variant="outline"
@@ -1282,7 +1254,6 @@ export default function RecruitmentAgent() {
                               <ThumbsUp className="h-4 w-4 mr-1" />
                             )}
                             {candidate.stage === 'Shortlisted' ? 'Shortlisted' : shortlistingId === String(candidate.id) ? 'Shortlisting...' : 'Shortlist'}
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                           </Button>
                         </div>
                       </div>

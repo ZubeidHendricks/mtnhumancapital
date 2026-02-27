@@ -319,7 +319,7 @@ function WorkflowDetail({ workflowId, onViewDocument }: { workflowId: string; on
       <div className="pt-3">
         <div className="flex items-center justify-between mb-2">
           <h5 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-            <FileText className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+            <FileText className="h-3.5 w-3.5 text-[#FFCB00]" />
             Document Requests ({docRequests.length})
           </h5>
           {docRequests.some((d: any) => d.status === "pending" || d.status === "requested" || d.status === "overdue") && (
@@ -419,7 +419,7 @@ function WorkflowDetail({ workflowId, onViewDocument }: { workflowId: string; on
         return (
           <div>
             <h5 className="text-xs font-semibold text-foreground flex items-center gap-1.5 mb-2">
-              <Monitor className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
+              <Monitor className="h-3.5 w-3.5 text-[#FFCB00]" />
               Provisioning Status
             </h5>
             <div className="space-y-1.5">
@@ -599,7 +599,7 @@ function WorkflowDetail({ workflowId, onViewDocument }: { workflowId: string; on
                     }
                     if (reviewMime === "application/pdf") {
                       const url = URL.createObjectURL(reviewBlob);
-                      return <iframe src={url} className="w-full h-[400px]" title={reviewDoc.documentName} />;
+                      return <iframe src={url} className="w-full h-[400px]" title={reviewDoc.documentName} onLoad={() => URL.revokeObjectURL(url)} />;
                     }
                     if (reviewMime.includes("wordprocessingml") || reviewMime.includes("msword")) {
                       return (
@@ -623,16 +623,20 @@ function WorkflowDetail({ workflowId, onViewDocument }: { workflowId: string; on
                       );
                     }
                     // Fallback: download link
-                    const url = URL.createObjectURL(reviewBlob);
                     return (
                       <div className="flex flex-col items-center justify-center p-8 gap-3">
                         <FileText className="w-10 h-10 text-muted-foreground" />
                         <p className="text-sm text-muted-foreground">Preview not available for this file type</p>
-                        <a href={url} download={reviewDoc.documentName}>
-                          <Button size="sm" variant="outline" className="gap-1.5">
-                            <Download className="h-3 w-3" />Download to review
-                          </Button>
-                        </a>
+                        <Button size="sm" variant="outline" className="gap-1.5" onClick={() => {
+                          const url = URL.createObjectURL(reviewBlob);
+                          const a = document.createElement("a");
+                          a.href = url;
+                          a.download = reviewDoc.documentName;
+                          a.click();
+                          URL.revokeObjectURL(url);
+                        }}>
+                          <Download className="h-3 w-3" />Download to review
+                        </Button>
                       </div>
                     );
                   })()
@@ -867,9 +871,13 @@ export default function EmployeeOnboarding() {
     setGeneratedBatchId(null);
   }, []);
 
-  // Watch selectedDocuments changes to clear previews
+  // Watch selectedDocuments changes to clear previews (skip initial render)
+  const prevDocsRef = useRef(selectedDocuments);
   useEffect(() => {
-    clearPreviews();
+    if (prevDocsRef.current !== selectedDocuments) {
+      prevDocsRef.current = selectedDocuments;
+      clearPreviews();
+    }
   }, [selectedDocuments, clearPreviews]);
 
   // View a generated preview in the dialog
@@ -897,7 +905,7 @@ export default function EmployeeOnboarding() {
   );
   const onboardingEligibleStages = ["onboarding", "integrity_passed", "integrity passed", "hired"];
   const onboardingCandidates = candidates.filter((c: Candidate) => {
-    const stage = ((c as any).stage || "").toLowerCase();
+    const stage = (c.stage || "").toLowerCase();
     return onboardingEligibleStages.some(s => stage === s || stage.includes("onboard")) || workflowCandidateIds.has(c.id.toString());
   });
 
@@ -992,7 +1000,7 @@ export default function EmployeeOnboarding() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-            <Building2 className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+            <Building2 className="h-8 w-8 text-[#FFCB00]" />
             Employee Onboarding
           </h1>
           <p className="text-muted-foreground mt-2">
@@ -1009,7 +1017,7 @@ export default function EmployeeOnboarding() {
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5 text-foreground dark:text-foreground" />
+              <Package className="h-5 w-5 text-[#FFCB00]" />
               Send Onboarding Pack
             </CardTitle>
             <CardDescription>Prepare and send onboarding documents to a new employee</CardDescription>
@@ -1045,7 +1053,7 @@ export default function EmployeeOnboarding() {
                         <SelectItem key={candidate.id} value={candidate.id.toString()}>
                           <div className="flex items-center gap-2">
                             <User className="h-4 w-4" />
-                            {(candidate as any).fullName || (candidate as any).name} - {(candidate as any).role || (candidate as any).position || "Candidate"}
+                            {candidate.fullName} - {candidate.role || "Candidate"}
                           </div>
                         </SelectItem>
                       ))
@@ -1214,7 +1222,7 @@ export default function EmployeeOnboarding() {
                     variant="outline"
                     onClick={handleGenerateAllPreviews}
                     disabled={selectedDocuments.length === 0 || isGeneratingAll}
-                    className="border-blue-300 text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950"
+                    className="border-blue-300 text-[#FFCB00] hover:bg-[#FFCB00]/10"
                   >
                     {isGeneratingAll ? (
                       <>
@@ -1267,7 +1275,7 @@ export default function EmployeeOnboarding() {
                     return (
                       <div key={preview.docId} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-muted/50">
                         <div className="flex items-center gap-2 text-sm min-w-0">
-                          <Icon className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                          <Icon className="h-4 w-4 text-[#FFCB00] shrink-0" />
                           <span className="font-medium truncate">{preview.filename}</span>
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0">
@@ -1303,7 +1311,7 @@ export default function EmployeeOnboarding() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <User className="h-5 w-5 text-white" />
                 New Employees
               </CardTitle>
               <Button
@@ -1311,8 +1319,8 @@ export default function EmployeeOnboarding() {
                 size="icon"
                 className="h-8 w-8"
                 onClick={() => {
-                  queryClient.resetQueries({ queryKey: workflowsKey });
-                  queryClient.resetQueries({ queryKey: candidatesKey });
+                  queryClient.invalidateQueries({ queryKey: workflowsKey });
+                  queryClient.invalidateQueries({ queryKey: candidatesKey });
                 }}
                 title="Refresh employees"
               >
@@ -1336,9 +1344,9 @@ export default function EmployeeOnboarding() {
             ) : (
               workflows.map((workflow: OnboardingWorkflow) => {
                 const candidate = getCandidateForWorkflow(workflow);
-                const name = candidate ? ((candidate as any).fullName || (candidate as any).name || "Unknown") : "Unknown Candidate";
-                const role = candidate ? ((candidate as any).role || (candidate as any).position || "") : "";
-                const dept = candidate ? ((candidate as any).department || "") : "";
+                const name = (workflow as any).candidateName || candidate?.fullName || "Unknown Candidate";
+                const role = candidate?.role || "";
+                const dept = "";
                 const isExpanded = expandedWorkflowId === workflow.id;
                 return (
                   <div
@@ -1357,8 +1365,8 @@ export default function EmployeeOnboarding() {
                           ) : (
                             <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                           )}
-                          <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                            <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                          <div className="w-10 h-10 rounded-full bg-[#0A0A0A] flex items-center justify-center">
+                            <User className="h-5 w-5 text-white" />
                           </div>
                           <div>
                             <h4 className="font-medium text-foreground">{name}</h4>

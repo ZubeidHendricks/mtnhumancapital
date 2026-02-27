@@ -51,11 +51,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
-<<<<<<< HEAD
     "@types/nodemailer": "^7.0.11",
-=======
-    "@types/nodemailer": "^7.0.10",
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
     "@types/pg": "^8.16.0",
     "@types/react-grid-layout": "^1.3.6",
     "adm-zip": "^0.5.16",

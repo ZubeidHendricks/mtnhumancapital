@@ -80,6 +80,7 @@ export default function OfferManagement() {
   const [additionalBenefits, setAdditionalBenefits] = useState(saved.current?.additionalBenefits || "");
   const [contractType, setContractType] = useState<string>(saved.current?.contractType || "");
   const [isSending, setIsSending] = useState(false);
+  const [respondingOfferId, setRespondingOfferId] = useState<string | null>(null);
 
   // Document preview state
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -135,20 +136,27 @@ export default function OfferManagement() {
       const stage = (c.stage || "").toLowerCase();
       return (
         !activeOfferCandidateIds.has(c.id) &&
-        ["interviewing", "interview", "shortlisted", "offer_pending", "offer"].includes(stage)
+        ["interviewing", "interview", "shortlisted", "offer_pending", "offer", "withdrawn"].includes(stage)
       );
     }
   );
+
+  // Cleanup Object URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   // Clear preview when form fields change
   const clearPreview = useCallback(() => {
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
-      setPreviewUrl(null);
-      setPreviewBlob(null);
-      setPreviewFilename("");
-      setPreviewReviewed(false);
     }
+    setPreviewUrl(null);
+    setPreviewBlob(null);
+    setPreviewFilename("");
+    setPreviewReviewed(false);
   }, [previewUrl]);
 
   const handleCandidateChange = (val: string) => { setSelectedCandidate(val); clearPreview(); };
@@ -280,9 +288,12 @@ export default function OfferManagement() {
   );
 
   const respondMutation = useMutation({
-    mutationFn: ({ id, response }: { id: string; response: "accepted" | "declined" }) =>
-      offersService.respond(id, response),
+    mutationFn: ({ id, response }: { id: string; response: "accepted" | "declined" }) => {
+      setRespondingOfferId(id);
+      return offersService.respond(id, response);
+    },
     onSuccess: (_data, variables) => {
+      setRespondingOfferId(null);
       queryClient.invalidateQueries({ queryKey: offersKey });
       queryClient.invalidateQueries({ queryKey: candidatesKey });
       toast({
@@ -293,15 +304,16 @@ export default function OfferManagement() {
       });
     },
     onError: () => {
+      setRespondingOfferId(null);
       toast({ title: "Error", description: "Failed to process response.", variant: "destructive" });
     },
   });
 
   const handleSendOffer = async () => {
-    if (!selectedCandidate || !salaryAmount || !startDate) {
+    if (!selectedCandidate || !salaryAmount || !startDate || !contractType) {
       toast({
         title: "Missing Information",
-        description: "Please select a candidate and fill in salary and start date.",
+        description: "Please select a candidate and fill in contract type, salary, and start date.",
         variant: "destructive",
       });
       return;
@@ -322,7 +334,14 @@ export default function OfferManagement() {
         contractType: contractType || undefined,
       });
 
-      const result = await offersService.send(offer.id);
+      let result;
+      try {
+        result = await offersService.send(offer.id);
+      } catch (sendError) {
+        // Rollback: delete the orphaned draft so the candidate stays eligible for retry
+        try { await api.delete(`/offers/${offer.id}`); } catch {}
+        throw sendError;
+      }
 
       queryClient.invalidateQueries({ queryKey: offersKey });
       queryClient.invalidateQueries({ queryKey: candidatesKey });
@@ -354,21 +373,13 @@ export default function OfferManagement() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-<<<<<<< HEAD
-      case "pending":
-        return <Badge className="bg-gray-500/20 text-gray-600 border-0"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
-=======
       case "draft":
         return <Badge className="bg-gray-500/20 text-gray-600 dark:text-gray-400 border-0"><Clock className="h-3 w-3 mr-1" />Draft</Badge>;
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
       case "sent":
-        return <Badge className="bg-muted/20 text-foreground dark:text-foreground border-0"><Send className="h-3 w-3 mr-1" />Sent</Badge>;
+        return <Badge className="bg-blue-500/20 text-blue-600 dark:text-blue-400 border-0"><Send className="h-3 w-3 mr-1" />Sent</Badge>;
       case "accepted":
-        return <Badge className="bg-muted/20 text-foreground border-0"><CheckCircle2 className="h-3 w-3 mr-1" />Accepted</Badge>;
+        return <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-0"><CheckCircle2 className="h-3 w-3 mr-1" />Accepted</Badge>;
       case "declined":
-<<<<<<< HEAD
-        return <Badge className="bg-destructive/20 text-destructive border-0"><XCircle className="h-3 w-3 mr-1" />Declined</Badge>;
-=======
         return <Badge className="bg-red-500/20 text-red-600 dark:text-red-400 border-0"><XCircle className="h-3 w-3 mr-1" />Declined</Badge>;
       case "expired":
         return <Badge className="bg-amber-500/20 text-amber-600 dark:text-amber-400 border-0"><Clock className="h-3 w-3 mr-1" />Expired</Badge>;
@@ -376,12 +387,12 @@ export default function OfferManagement() {
         return <Badge className="bg-gray-500/20 text-gray-600 dark:text-gray-400 border-0"><XCircle className="h-3 w-3 mr-1" />Withdrawn</Badge>;
       default:
         return <Badge className="bg-gray-500/20 text-gray-600 dark:text-gray-400 border-0">{status}</Badge>;
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
     }
   };
 
-  const getCandidateName = (candidateId: string) => {
-    const candidate = allCandidates.find((c: any) => c.id === candidateId);
+  const getCandidateName = (offer: any) => {
+    if (offer.candidateName) return offer.candidateName;
+    const candidate = allCandidates.find((c: any) => c.id === offer.candidateId);
     return candidate?.fullName || "Unknown Candidate";
   };
 
@@ -404,32 +415,10 @@ export default function OfferManagement() {
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-6xl">
-<<<<<<< HEAD
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-          <FileText className="h-8 w-8 text-foreground" />
-          Offer Management
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Create and send offer letters to successful candidates
-        </p>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Send className="h-5 w-5 text-foreground dark:text-foreground" />
-              Send New Offer
-            </CardTitle>
-            <CardDescription>Create and send an offer letter to a candidate</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-=======
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-            <FileText className="h-8 w-8 text-green-600 dark:text-green-400" />
+            <FileText className="h-8 w-8 text-[#FFCB00]" />
             Offer Management
           </h1>
           <p className="text-muted-foreground mt-2">
@@ -445,14 +434,13 @@ export default function OfferManagement() {
       <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Send className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <Send className="h-5 w-5 text-[#FFCB00]" />
             Send New Offer
           </CardTitle>
           <CardDescription>Create and send an offer letter to a candidate</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
             <div className="space-y-2">
               <Label>Select Candidate *</Label>
               <Select value={selectedCandidate} onValueChange={handleCandidateChange}>
@@ -505,7 +493,7 @@ export default function OfferManagement() {
                   type="text"
                   value={salaryAmount}
                   onChange={handleSalaryChange}
-                  placeholder="e.g., R45,000"
+                  placeholder="e.g., 45,000"
                   className="pl-10"
                   data-testid="input-salary"
                 />
@@ -586,56 +574,8 @@ export default function OfferManagement() {
                 variant="outline"
                 onClick={handleGeneratePreview}
                 disabled={!canGeneratePreview || isGeneratingPreview}
-                className="border-blue-300 text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950"
+                className="border-blue-300 text-[#FFCB00] hover:bg-[#FFCB00]/10"
               >
-<<<<<<< HEAD
-                <Download className="h-4 w-4 mr-2" />
-                Download Template
-              </Button>
-              <Button 
-                className="flex-1 bg-muted hover:bg-muted"
-                onClick={handleSendOffer}
-                data-testid="button-send-offer"
-              >
-                <Send className="h-4 w-4 mr-2" />
-                Send Offer
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-foreground dark:text-foreground" />
-              Recent Offers
-            </CardTitle>
-            <CardDescription>Track the status of sent offer letters</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {candidates.map((candidate) => (
-              <div 
-                key={candidate.id}
-                className="p-4 rounded-lg bg-gray-200/50 border border-gray-300 dark:border-zinc-700/50"
-                data-testid={`offer-item-${candidate.id}`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-muted/20 flex items-center justify-center">
-                      <User className="h-5 w-5 text-foreground dark:text-foreground" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-foreground">{candidate.name}</h4>
-                      <p className="text-sm text-muted-foreground">{candidate.position}</p>
-                    </div>
-                  </div>
-                  {getStatusBadge(candidate.status)}
-                </div>
-                {candidate.offerDate && (
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Offer sent: {new Date(candidate.offerDate).toLocaleDateString()}
-                  </p>
-=======
                 {isGeneratingPreview ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -646,7 +586,6 @@ export default function OfferManagement() {
                     <FileDown className="h-4 w-4 mr-2" />
                     Generate Preview
                   </>
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
                 )}
               </Button>
               {!canGeneratePreview && !previewUrl && (
@@ -656,7 +595,7 @@ export default function OfferManagement() {
               )}
               {previewUrl && (
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-400">
+                  <div className="flex items-center gap-2 text-sm text-[#FFCB00]">
                     <FileText className="h-4 w-4" />
                     <span className="font-medium">{previewFilename}</span>
                   </div>
@@ -690,47 +629,6 @@ export default function OfferManagement() {
               )}
             </div>
 
-<<<<<<< HEAD
-      <Card className="mt-6 bg-card border-border">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Download className="h-5 w-5 text-foreground dark:text-foreground" />
-            Offer Letter Templates
-          </CardTitle>
-          <CardDescription>Download and customize offer letter templates</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            <Button 
-              variant="outline" 
-              className="h-auto py-4 flex-col gap-2" 
-              data-testid="button-template-standard"
-              onClick={() => openGenerateDialog("offer_letter")}
-            >
-              <FileText className="h-8 w-8 text-foreground dark:text-foreground" />
-              <span>Standard Offer</span>
-              <span className="text-xs text-muted-foreground">Permanent position</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              className="h-auto py-4 flex-col gap-2" 
-              data-testid="button-template-contract"
-              onClick={() => openGenerateDialog("employment_contract")}
-            >
-              <FileText className="h-8 w-8 text-foreground dark:text-foreground" />
-              <span>Contract Offer</span>
-              <span className="text-xs text-muted-foreground">Fixed-term contract</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              className="h-auto py-4 flex-col gap-2" 
-              data-testid="button-template-executive"
-              onClick={() => openGenerateDialog("offer_letter")}
-            >
-              <FileText className="h-8 w-8 text-foreground dark:text-foreground" />
-              <span>Executive Offer</span>
-              <span className="text-xs text-muted-foreground">Senior management</span>
-=======
             <Button
               className="bg-green-600 hover:bg-green-700 px-8"
               onClick={handleSendOffer}
@@ -748,7 +646,6 @@ export default function OfferManagement() {
                   Send Offer
                 </>
               )}
->>>>>>> 7fee4ac65b551979fb60ea28a8aefaee18fcfca1
             </Button>
           </div>
         </CardContent>
@@ -758,7 +655,7 @@ export default function OfferManagement() {
       <Card className="mt-6 bg-card border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Table className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <Table className="h-5 w-5 text-[#FFCB00]" />
             Recent Offers
           </CardTitle>
           <CardDescription>Track the status of sent offer letters</CardDescription>
@@ -792,15 +689,15 @@ export default function OfferManagement() {
                       <tr key={offer.id} className="border-b last:border-0 hover:bg-muted/30">
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0">
-                              <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            <div className="w-8 h-8 rounded-full bg-[#0A0A0A] flex items-center justify-center shrink-0">
+                              <User className="h-4 w-4 text-white" />
                             </div>
-                            <span className="font-medium">{getCandidateName(offer.candidateId)}</span>
+                            <span className="font-medium">{getCandidateName(offer)}</span>
                           </div>
                         </td>
                         <td className="py-3 px-4 text-muted-foreground">{getJobTitle(offer)}</td>
                         <td className="py-3 px-4 text-muted-foreground">
-                          {offer.salary ? `${offer.currency || "ZAR"} ${offer.salary}/mo` : "-"}
+                          {offer.salary ? `${offer.currency || "ZAR"} ${String(offer.salary).replace(/^R\s*/i, "")}/mo` : "-"}
                         </td>
                         <td className="py-3 px-4 text-muted-foreground">
                           {offer.sentAt ? new Date(offer.sentAt).toLocaleDateString() : "-"}
@@ -846,9 +743,9 @@ export default function OfferManagement() {
                                   size="sm"
                                   className="bg-green-600 hover:bg-green-700 h-7 text-xs"
                                   onClick={() => respondMutation.mutate({ id: offer.id, response: "accepted" })}
-                                  disabled={respondMutation.isPending}
+                                  disabled={respondingOfferId === offer.id}
                                 >
-                                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                                  {respondingOfferId === offer.id ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 mr-1" />}
                                   Accept
                                 </Button>
                                 <Button
@@ -856,9 +753,9 @@ export default function OfferManagement() {
                                   variant="outline"
                                   className="text-red-600 border-red-300 hover:bg-red-50 dark:hover:bg-red-950 h-7 text-xs"
                                   onClick={() => respondMutation.mutate({ id: offer.id, response: "declined" })}
-                                  disabled={respondMutation.isPending}
+                                  disabled={respondingOfferId === offer.id}
                                 >
-                                  <XCircle className="h-3 w-3 mr-1" />
+                                  {respondingOfferId === offer.id ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <XCircle className="h-3 w-3 mr-1" />}
                                   Decline
                                 </Button>
                               </>
