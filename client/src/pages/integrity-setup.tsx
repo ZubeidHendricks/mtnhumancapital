@@ -229,11 +229,6 @@ export default function IntegritySetup() {
                   <div>
                     <h4 className="font-medium text-foreground">{check.name}</h4>
                     <p className="text-sm text-muted-foreground">{check.description}</p>
-                    {check.cost && (
-                      <Badge variant="outline" className="mt-1 text-xs text-gray-600 border-border dark:border-zinc-600">
-                        Est. cost: {check.cost}
-                      </Badge>
-                    )}
                   </div>
                 </div>
                 <Switch
