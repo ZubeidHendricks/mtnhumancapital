@@ -26,6 +26,7 @@ import {
   FileDown,
   Settings2,
   X,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Link, useLocation } from "wouter";
@@ -101,7 +102,7 @@ export default function OfferManagement() {
   const [isLoadingOfferDoc, setIsLoadingOfferDoc] = useState<string | null>(null);
   const offerDocContainerRef = useRef<HTMLDivElement | null>(null);
 
-  const { data: allOffers = [], isLoading: offersLoading } = useQuery({
+  const { data: allOffers = [], isLoading: offersLoading, isFetching: offersFetching } = useQuery({
     queryKey: offersKey,
     queryFn: offersService.getAll,
   });
@@ -654,10 +655,26 @@ export default function OfferManagement() {
       {/* Recent Offers Table */}
       <Card className="mt-6 bg-card border-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Table className="h-5 w-5 text-[#FFCB00]" />
-            Recent Offers
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Table className="h-5 w-5 text-[#FFCB00]" />
+              Recent Offers
+            </CardTitle>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              disabled={offersFetching}
+              onClick={() => {
+                queryClient.invalidateQueries({ queryKey: offersKey });
+                queryClient.invalidateQueries({ queryKey: candidatesKey });
+                queryClient.invalidateQueries({ queryKey: jobsKey });
+              }}
+              title="Refresh offers"
+            >
+              <RefreshCw className={`w-4 h-4 ${offersFetching ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
           <CardDescription>Track the status of sent offer letters</CardDescription>
         </CardHeader>
         <CardContent>

@@ -787,13 +787,13 @@ export default function EmployeeOnboarding() {
   const workflowsKey = useTenantQueryKey(['onboarding-workflows']);
   const candidatesKey = useTenantQueryKey(['candidates']);
 
-  const { data: workflows = [], isLoading: loadingWorkflows } = useQuery({
+  const { data: workflows = [], isLoading: loadingWorkflows, isFetching: fetchingWorkflows } = useQuery({
     queryKey: workflowsKey,
     queryFn: () => onboardingService.getWorkflows(),
     retry: 1,
   });
 
-  const { data: candidates = [], isLoading: loadingCandidates } = useQuery({
+  const { data: candidates = [], isLoading: loadingCandidates, isFetching: fetchingCandidates } = useQuery({
     queryKey: candidatesKey,
     queryFn: () => candidateService.getAll(),
     retry: 1,
@@ -988,6 +988,7 @@ export default function EmployeeOnboarding() {
   };
 
   const isLoading = loadingWorkflows || loadingCandidates;
+  const isRefreshing = fetchingWorkflows || fetchingCandidates;
 
   const handleGoToOnboardingSetup = () => {
     sessionStorage.setItem(ONBOARDING_FORM_KEY, JSON.stringify({
@@ -1312,13 +1313,14 @@ export default function EmployeeOnboarding() {
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
+                disabled={isRefreshing}
                 onClick={() => {
                   queryClient.invalidateQueries({ queryKey: workflowsKey });
                   queryClient.invalidateQueries({ queryKey: candidatesKey });
                 }}
                 title="Refresh employees"
               >
-                <RefreshCw className="w-4 h-4" />
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               </Button>
             </div>
             <CardDescription>Track onboarding progress for new hires</CardDescription>
