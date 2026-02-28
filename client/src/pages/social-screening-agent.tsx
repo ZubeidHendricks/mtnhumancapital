@@ -29,6 +29,8 @@ import {
   User,
   Facebook,
   Twitter,
+  Linkedin,
+  Instagram,
   MessageSquare,
   Search,
   AlertTriangle,
@@ -48,50 +50,66 @@ import { format } from "date-fns";
 import type { Candidate } from "@shared/schema";
 
 const platformAgents = [
-  { 
-    id: "consent_check", 
-    label: "Consent Verification", 
-    icon: FileCheck, 
+  {
+    id: "consent_check",
+    label: "Consent Verification",
+    icon: FileCheck,
     description: "Verifying candidate consent status and permissions...",
     color: "text-foreground dark:text-foreground",
     bgColor: "bg-muted/20"
   },
-  { 
-    id: "facebook", 
-    label: "Facebook Agent", 
-    icon: Facebook, 
+  {
+    id: "linkedin",
+    label: "LinkedIn Agent",
+    icon: Linkedin,
+    description: "Analyzing professional profile, endorsements, and activity...",
+    color: "text-blue-500",
+    bgColor: "bg-blue-500/20"
+  },
+  {
+    id: "facebook",
+    label: "Facebook Agent",
+    icon: Facebook,
     description: "Analyzing public Facebook profile and posts...",
     color: "text-foreground dark:text-foreground",
     bgColor: "bg-muted/20"
   },
-  { 
-    id: "twitter", 
-    label: "X (Twitter) Agent", 
-    icon: Twitter, 
+  {
+    id: "twitter",
+    label: "X (Twitter) Agent",
+    icon: Twitter,
     description: "Scanning tweets, retweets, and engagement patterns...",
     color: "text-sky-400",
     bgColor: "bg-sky-500/20"
   },
-  { 
-    id: "sentiment", 
-    label: "Sentiment Analysis", 
-    icon: Heart, 
+  {
+    id: "instagram",
+    label: "Instagram Agent",
+    icon: Instagram,
+    description: "Analyzing public posts, captions, and engagement...",
+    color: "text-pink-500",
+    bgColor: "bg-pink-500/20"
+  },
+  {
+    id: "sentiment",
+    label: "Sentiment Analysis",
+    icon: Heart,
     description: "Analyzing emotional tone and sentiment patterns...",
     color: "text-foreground",
     bgColor: "bg-muted/20"
   },
-  { 
-    id: "culture_fit", 
-    label: "Culture Fit Assessment", 
-    icon: Target, 
+  {
+    id: "culture_fit",
+    label: "Culture Fit Assessment",
+    icon: Target,
     description: "Evaluating alignment with company values and culture...",
     color: "text-foreground",
     bgColor: "bg-muted/20"
   },
-  { 
-    id: "risk_scoring", 
-    label: "Risk Scoring", 
-    icon: Shield, 
+  {
+    id: "risk_scoring",
+    label: "Risk Scoring",
+    icon: Shield,
     description: "Computing overall risk score and generating report...",
     color: "text-foreground dark:text-foreground",
     bgColor: "bg-muted/20"
@@ -122,7 +140,7 @@ export default function SocialScreeningAgent() {
   const [, navigate] = useLocation();
   const { tenant } = useTenant();
   const [selectedCandidateId, setSelectedCandidateId] = useState<string>("");
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["facebook", "twitter"]);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["linkedin", "facebook", "twitter", "instagram"]);
   const [isRunningScreening, setIsRunningScreening] = useState(false);
   const [workflowSteps, setWorkflowSteps] = useState<WorkflowStep[]>([]);
   const [currentStepIndex, setCurrentStepIndex] = useState(-1);
@@ -240,7 +258,8 @@ export default function SocialScreeningAgent() {
                   .replace('consent verification', 'consent_check')
                   .replace('sentiment analysis', 'sentiment')
                   .replace('culture fit assessment', 'culture_fit')
-                  .replace('risk scoring', 'risk_scoring');
+                  .replace('risk scoring', 'risk_scoring')
+                  .replace('orchestrator', 'consent_check');
                   
                 const stepIdx = updated.findIndex(s => s.id === agentId);
                 
@@ -503,19 +522,27 @@ export default function SocialScreeningAgent() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {selectedPlatforms.map((platform) => {
             const platformResult = screeningResult.platforms?.[platform] || {};
+            const platformMeta: Record<string, { icon: any; label: string; iconClass: string }> = {
+              linkedin: { icon: Linkedin, label: 'LinkedIn', iconClass: 'text-blue-500' },
+              facebook: { icon: Facebook, label: 'Facebook', iconClass: 'text-foreground dark:text-foreground' },
+              twitter: { icon: Twitter, label: 'X (Twitter)', iconClass: 'text-sky-400' },
+              instagram: { icon: Instagram, label: 'Instagram', iconClass: 'text-pink-500' },
+            };
+            const meta = platformMeta[platform] || { icon: Search, label: platform, iconClass: 'text-foreground' };
+            const PlatformIcon = meta.icon;
             return (
               <Card key={platform} className="bg-card/30 border-border dark:border-white/10" data-testid={`result-platform-${platform}`}>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm flex items-center gap-2">
-                    {platform === 'facebook' ? <Facebook className="w-4 h-4 text-foreground dark:text-foreground" /> : <Twitter className="w-4 h-4 text-sky-400" />}
-                    {platform === 'facebook' ? 'Facebook' : 'X (Twitter)'} Analysis
+                    <PlatformIcon className={`w-4 h-4 ${meta.iconClass}`} />
+                    {meta.label} Analysis
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <p className="text-muted-foreground">Posts Found</p>
-                      <p className="font-medium">{platformResult.postsFound || Math.floor(Math.random() * 50) + 10}</p>
+                      <p className="font-medium">{platformResult.postsFound || 0}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Engagement</p>
@@ -581,7 +608,7 @@ export default function SocialScreeningAgent() {
       
       <div className="flex-1 pt-20 container mx-auto px-4 py-6 h-[calc(100vh-80px)]">
         <div className="mb-6">
-          <BackButton fallbackPath="/social-screening" className="mb-4" />
+          <BackButton fallbackPath="/hr?tab=integrity" className="mb-4" />
           <h1 className="text-3xl font-bold flex items-center gap-3">
             <Brain className="w-8 h-8 text-foreground dark:text-foreground" />
             Social Intelligence Agent
@@ -699,8 +726,10 @@ export default function SocialScreeningAgent() {
                   <Label className="text-xs text-muted-foreground">Platforms to Screen</Label>
                   <div className="space-y-2">
                     {[
+                      { id: 'linkedin', label: 'LinkedIn', icon: Linkedin },
                       { id: 'facebook', label: 'Facebook', icon: Facebook },
                       { id: 'twitter', label: 'X (Twitter)', icon: Twitter },
+                      { id: 'instagram', label: 'Instagram', icon: Instagram },
                     ].map((platform) => (
                       <div key={platform.id} className="flex items-center gap-2">
                         <Checkbox

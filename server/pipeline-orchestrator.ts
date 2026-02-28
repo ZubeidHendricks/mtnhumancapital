@@ -47,11 +47,11 @@ const stagePrerequisites: StagePrerequisites = {
   offer_pending: {
     allowedFromStages: ["interviewing"],
   },
-  offer_accepted: {
+  offer_declined: {
     allowedFromStages: ["offer_pending"],
   },
   integrity_checks: {
-    allowedFromStages: ["offer_accepted"],
+    allowedFromStages: ["offer_pending"],
   },
   integrity_passed: {
     allowedFromStages: ["integrity_checks"],
@@ -106,7 +106,7 @@ const stagePrerequisites: StagePrerequisites = {
     allowedFromStages: ["sourcing", "screening", "shortlisted", "interviewing", "offer_pending", "integrity_checks", "integrity_failed"],
   },
   withdrawn: {
-    allowedFromStages: ["sourcing", "screening", "shortlisted", "interviewing", "offer_pending", "offer_accepted", "integrity_checks", "onboarding"],
+    allowedFromStages: ["sourcing", "screening", "shortlisted", "interviewing", "offer_pending", "offer_declined", "integrity_checks", "onboarding"],
   },
 };
 
@@ -248,16 +248,10 @@ export class PipelineOrchestrator {
       ));
     
     switch (stage) {
-      case "offer_accepted":
+      case "integrity_checks":
         if (!config || config.autoLaunchIntegrity) {
           await this.launchIntegrityChecks(candidateId, tenantId, config?.requiredChecks || null);
           actions.push("Launched integrity checks");
-          
-          await this.transitionCandidate(candidateId, "integrity_checks", tenantId, {
-            triggeredBy: "auto",
-            reason: "Auto-launched after offer accepted",
-          });
-          actions.push("Transitioned to integrity_checks");
         }
         break;
         

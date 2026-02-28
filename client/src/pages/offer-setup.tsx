@@ -545,19 +545,19 @@ export default function OfferSetup() {
                   <div 
                     key={template.id}
                     className={`flex items-center justify-between p-4 rounded-lg border ${
-                      template.isActive ? 'bg-muted/10 border-border/30' : 'bg-card'
+                      template.isActive ? 'bg-green-500/10 border-green-500/30' : 'bg-card'
                     }`}
                     data-testid={`custom-template-${template.id}`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${template.isActive ? 'bg-muted/20' : 'bg-primary/10'}`}>
-                        <FileText className={`w-5 h-5 ${template.isActive ? 'text-foreground' : 'text-primary'}`} />
+                      <div className={`p-2 rounded-lg ${template.isActive ? 'bg-green-500/20' : 'bg-primary/10'}`}>
+                        <FileText className={`w-5 h-5 ${template.isActive ? 'text-green-600 dark:text-green-400' : 'text-primary'}`} />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
                           <h4 className="font-medium">{template.name}</h4>
                           {template.isActive === 1 && (
-                            <Badge className="bg-muted/20 text-foreground border-border/30">
+                            <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30">
                               <Star className="w-3 h-3 mr-1" />
                               Active
                             </Badge>

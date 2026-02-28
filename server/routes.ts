@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import crypto from "crypto";
 import path from "path";
 import fs from "fs";
+import { format } from "date-fns";
 import { storage } from "./storage";
 import { insertCandidateSchema, insertJobSchema, insertIntegrityCheckSchema, insertRecruitmentSessionSchema, insertInterviewSchema, updateInterviewSchema, insertTenantRequestSchema, updateTenantRequestSchema, type InsertCandidate, insertIntegrityDocumentRequirementSchema, updateIntegrityDocumentRequirementSchema, insertCandidateDocumentSchema, updateCandidateDocumentSchema, documentTypes, insertInterviewSessionSchema, insertInterviewFeedbackSchema, updateInterviewFeedbackSchema, insertOfferSchema } from "@shared/schema";
 import { z } from "zod";
@@ -2457,7 +2458,15 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
   app.get("/api/integrity-checks", async (req, res) => {
     try {
       const checks = await storage.getAllIntegrityChecks(req.tenant.id);
-      res.json(checks);
+      // Enrich with candidate names to avoid client-side lookup issues with paginated candidates
+      const enriched = await Promise.all(checks.map(async (check) => {
+        const candidate = await storage.getCandidate(req.tenant.id, check.candidateId);
+        return {
+          ...check,
+          candidateName: candidate?.fullName || "Unknown Candidate",
+        };
+      }));
+      res.json(enriched);
     } catch (error) {
       console.error("Error fetching integrity checks:", error);
       res.status(500).json({ message: "Failed to fetch integrity checks" });
@@ -3691,6 +3700,96 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     }
   });
 
+  // Generate real personalized onboarding documents for preview (temp directory, cleaned up after)
+  app.post("/api/onboarding/generate-documents", async (req, res) => {
+    try {
+      const { candidateId, selectedDocuments, startDate } = req.body;
+      if (!candidateId || !selectedDocuments || !Array.isArray(selectedDocuments) || selectedDocuments.length === 0) {
+        return res.status(400).json({ message: "candidateId and selectedDocuments are required" });
+      }
+
+      const candidate = await storage.getCandidate(req.tenant.id, candidateId);
+      if (!candidate) {
+        return res.status(404).json({ message: "Candidate not found" });
+      }
+
+      const { createDocumentGenerator } = await import("./document-generator");
+      const docGenerator = createDocumentGenerator(storage);
+      const tenantConfig = await storage.getTenantConfig(req.tenant.id);
+      const companyName = tenantConfig?.companyName || req.tenant.subdomain || "Company";
+
+      const employeeData = {
+        fullName: candidate.fullName,
+        email: candidate.email || undefined,
+        phone: candidate.phone || undefined,
+        jobTitle: candidate.role || "Position",
+        department: "",
+        startDate: startDate || "TBD",
+        companyName,
+      };
+
+      const batchId = `batch_${candidateId}_${Date.now()}`;
+      const tempDir = path.join(process.cwd(), "uploads", "onboarding-temp");
+      fs.mkdirSync(tempDir, { recursive: true });
+
+      // Clean up any previous temp batches for this candidate
+      try {
+        const existing = fs.readdirSync(tempDir).filter((f: string) => f.startsWith(`batch_${candidateId}_`));
+        for (const old of existing) fs.unlinkSync(path.join(tempDir, old));
+      } catch {}
+
+      const generated: { docType: string; filename: string; mimeType: string; fileSize: number }[] = [];
+
+      for (const docType of selectedDocuments) {
+        try {
+          const { buffer, filename, mimeType } = await docGenerator.generateDocument(
+            req.tenant.id,
+            docType as any,
+            employeeData
+          );
+          const savedFilename = `${batchId}_${filename}`;
+          fs.writeFileSync(path.join(tempDir, savedFilename), buffer);
+
+          generated.push({ docType, filename, mimeType, fileSize: buffer.length });
+        } catch (docErr) {
+          console.error(`[Onboarding] Failed to generate ${docType}:`, docErr);
+        }
+      }
+
+      res.json({ batchId, candidateId, documents: generated });
+    } catch (error) {
+      console.error("Error generating onboarding documents:", error);
+      res.status(500).json({ message: "Failed to generate documents" });
+    }
+  });
+
+  // Download a specific temp-generated onboarding document for preview
+  app.get("/api/onboarding/generated-document/:batchId/:docType", async (req, res) => {
+    try {
+      const { batchId, docType } = req.params;
+      const tempDir = path.join(process.cwd(), "uploads", "onboarding-temp");
+      if (!fs.existsSync(tempDir)) return res.status(404).json({ message: "Document not found" });
+
+      const allFiles = fs.readdirSync(tempDir).filter((f: string) => f.startsWith(`${batchId}_`));
+      const match = allFiles.find((f: string) => {
+        const lower = f.toLowerCase();
+        return lower.includes(docType.replace(/_/g, '')) || lower.includes(docType);
+      });
+      if (!match) return res.status(404).json({ message: "Document not found" });
+
+      const filePath = path.join(tempDir, match);
+      const ext = path.extname(match).toLowerCase();
+      const mimeType = ext === '.docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'application/pdf';
+
+      res.setHeader('Content-Type', mimeType);
+      res.setHeader('Content-Disposition', `attachment; filename="${match.replace(`${batchId}_`, '')}"`);
+      res.send(fs.readFileSync(filePath));
+    } catch (error) {
+      console.error("Error serving generated document:", error);
+      res.status(500).json({ message: "Failed to retrieve document" });
+    }
+  });
+
   app.post("/api/onboarding/trigger/:candidateId", upload.array("files", 20), async (req, res) => {
     try {
       const { OnboardingOrchestrator } = await import("./onboarding-orchestrator");
@@ -3698,21 +3797,31 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
       const orchestrator = new OnboardingOrchestrator(storage);
       const emailService = new EmailService(storage);
 
-      const { requirements, startDate, equipmentList, selectedDocuments: selectedDocsRaw } = req.body || {};
+      const { requirements, startDate, equipmentList, selectedDocuments: selectedDocsRaw, generatedBatchId } = req.body || {};
       // Parse JSON strings from multipart form data
       const parsedRequirements = typeof requirements === "string" ? JSON.parse(requirements) : requirements;
       const parsedEquipmentList = typeof equipmentList === "string" ? JSON.parse(equipmentList) : (equipmentList || []);
       const parsedSelectedDocuments: string[] = typeof selectedDocsRaw === "string" ? JSON.parse(selectedDocsRaw) : (selectedDocsRaw || []);
+      const batchId = typeof generatedBatchId === "string" ? generatedBatchId : undefined;
 
       const candidate = await storage.getCandidate(req.tenant.id, req.params.candidateId);
       if (!candidate) {
         return res.status(404).json({ message: "Candidate not found" });
       }
 
+      // Use provided start date, or fall back to the offer's start date
+      let resolvedStartDate: Date | undefined = startDate ? new Date(startDate) : undefined;
+      if (!resolvedStartDate) {
+        const offer = await storage.getOfferByCandidateId(req.tenant.id, req.params.candidateId);
+        if (offer?.startDate) {
+          resolvedStartDate = new Date(offer.startDate);
+        }
+      }
+
       const workflow = await orchestrator.startOnboarding(req.tenant.id, req.params.candidateId, false, {
         requirements: parsedRequirements,
         equipmentList: parsedEquipmentList,
-        startDate: startDate ? new Date(startDate) : undefined,
+        startDate: resolvedStartDate,
       });
 
       // Build email attachments from manually uploaded files + generated documents
@@ -3734,37 +3843,33 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
         }
       }
 
-      // Generate DOCX documents for each selected document type
+      // Collect DOCX documents — reuse pre-generated temp docs if batchId provided, otherwise generate fresh
       const sentDocuments: { id: string; title: string; type: string; status: string; snippet: string; url: string; docType: string }[] = [];
+      const permanentDir = path.join(process.cwd(), "uploads", "onboarding-packs");
+      fs.mkdirSync(permanentDir, { recursive: true });
+
       if (parsedSelectedDocuments.length > 0) {
-        try {
-          const { createDocumentGenerator } = await import("./document-generator");
-          const docGenerator = createDocumentGenerator(storage);
-          const tenantConfig = await storage.getTenantConfig(req.tenant.id);
-          const companyName = tenantConfig?.companyName || req.tenant.subdomain || "Company";
+        if (batchId) {
+          // Move pre-generated docs from temp to permanent storage
+          const tempDir = path.join(process.cwd(), "uploads", "onboarding-temp");
+          try {
+            const batchFiles = fs.existsSync(tempDir)
+              ? fs.readdirSync(tempDir).filter((f: string) => f.startsWith(`${batchId}_`))
+              : [];
+            for (const batchFile of batchFiles) {
+              const tempPath = path.join(tempDir, batchFile);
+              const buffer = fs.readFileSync(tempPath);
+              const filename = batchFile.replace(`${batchId}_`, '');
+              const ext = path.extname(filename).toLowerCase();
+              const mimeType = ext === '.docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'application/pdf';
+              const docType = parsedSelectedDocuments.find(d => filename.toLowerCase().includes(d.replace(/_/g, ''))) || filename;
 
-          const employeeData = {
-            fullName: candidate.fullName,
-            email: candidate.email || undefined,
-            phone: candidate.phone || undefined,
-            jobTitle: (candidate as any).role || (candidate as any).position || "Position",
-            department: (candidate as any).department || "",
-            startDate: startDate || "TBD",
-            companyName,
-          };
-
-          for (const docType of parsedSelectedDocuments) {
-            try {
-              const { buffer, filename, mimeType } = await docGenerator.generateDocument(
-                req.tenant.id,
-                docType as any,
-                employeeData
-              );
-              // Save to disk
-              const uploadDir = path.join(process.cwd(), "uploads", "onboarding-packs");
-              fs.mkdirSync(uploadDir, { recursive: true });
-              const savedPath = path.join(uploadDir, `${candidate.id}_${filename}`);
+              // Save permanently
+              const savedPath = path.join(permanentDir, `${candidate.id}_${filename}`);
               fs.writeFileSync(savedPath, buffer);
+
+              // Clean up temp file
+              fs.unlinkSync(tempPath);
 
               emailAttachments.push({ filename, content: buffer, contentType: mimeType });
               sentDocuments.push({
@@ -3776,44 +3881,151 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
                 url: `/uploads/onboarding-packs/${candidate.id}_${filename}`,
                 docType,
               });
-            } catch (docErr) {
-              console.error(`[Onboarding] Failed to generate ${docType} (non-blocking):`, docErr);
             }
+            if (batchFiles.length > 0) {
+              console.log(`[Onboarding] Moved ${batchFiles.length} pre-generated documents from temp to permanent storage`);
+            }
+          } catch (batchErr) {
+            console.error("[Onboarding] Failed to load pre-generated documents, falling back to generation:", batchErr);
           }
-        } catch (genErr) {
-          console.error("[Onboarding] Document generation setup failed (non-blocking):", genErr);
+        }
+
+        // If no batchId or batch loading failed, generate fresh
+        if (sentDocuments.length === 0) {
+          try {
+            const { createDocumentGenerator } = await import("./document-generator");
+            const docGenerator = createDocumentGenerator(storage);
+            const tenantConfig = await storage.getTenantConfig(req.tenant.id);
+            const companyName = tenantConfig?.companyName || req.tenant.subdomain || "Company";
+
+            const employeeData = {
+              fullName: candidate.fullName,
+              email: candidate.email || undefined,
+              phone: candidate.phone || undefined,
+              jobTitle: (candidate as any).role || (candidate as any).position || "Position",
+              department: (candidate as any).department || "",
+              startDate: startDate || "TBD",
+              companyName,
+            };
+
+            for (const docType of parsedSelectedDocuments) {
+              try {
+                const { buffer, filename, mimeType } = await docGenerator.generateDocument(
+                  req.tenant.id,
+                  docType as any,
+                  employeeData
+                );
+                const savedPath = path.join(permanentDir, `${candidate.id}_${filename}`);
+                fs.writeFileSync(savedPath, buffer);
+
+                emailAttachments.push({ filename, content: buffer, contentType: mimeType });
+                sentDocuments.push({
+                  id: `sent-${docType}-${Date.now()}`,
+                  title: filename,
+                  type: "document",
+                  status: "sent",
+                  snippet: `Sent in onboarding pack`,
+                  url: `/uploads/onboarding-packs/${candidate.id}_${filename}`,
+                  docType,
+                });
+              } catch (docErr) {
+                console.error(`[Onboarding] Failed to generate ${docType} (non-blocking):`, docErr);
+              }
+            }
+          } catch (genErr) {
+            console.error("[Onboarding] Document generation setup failed (non-blocking):", genErr);
+          }
         }
       }
 
-      // Send onboarding pack email if we have any attachments
-      if (emailAttachments.length > 0) {
-        await emailService.sendEmail({
-          to: candidate.email || "no-email@placeholder.com",
-          subject: `Onboarding Pack - Welcome to the Team, ${candidate.fullName}!`,
-          body: `Dear ${candidate.fullName},\n\nPlease find attached your onboarding documents. Review them carefully and reach out if you have any questions.\n\nBest regards,\nHR Team`,
-          html: `
-<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #0d9488, #2563eb); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-    <h1 style="color: white; margin: 0; font-size: 24px;">Welcome to the Team!</h1>
-    <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">${candidate.fullName}</p>
-  </div>
-  <div style="background: #ffffff; border: 1px solid #e5e7eb; border-top: none; padding: 30px; border-radius: 0 0 12px 12px;">
-    <p style="font-size: 16px; color: #374151;">Dear ${candidate.fullName},</p>
-    <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
-      Please find attached your onboarding documents (${emailAttachments.length} file${emailAttachments.length > 1 ? 's' : ''}). Review them carefully and reach out if you have any questions.
-    </p>
-    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 20px 0;">
-      <h3 style="margin: 0 0 8px 0; color: #166534;">Attached Documents</h3>
-      ${emailAttachments.map(a => `<p style="margin: 4px 0; color: #374151;">- ${a.filename}</p>`).join('')}
+      // Initialize document requests directly (don't rely on background orchestrator timing)
+      const { createOnboardingAgent } = await import("./onboarding-agent");
+      const onboardingAgent = createOnboardingAgent(storage);
+      let docRequests = await storage.getOnboardingDocumentRequests(req.tenant.id, workflow.id);
+      if (docRequests.length === 0) {
+        await onboardingAgent.initializeDocumentRequests(req.tenant.id, workflow.id, candidate.id.toString());
+        await onboardingAgent.requestDocuments(req.tenant.id, workflow.id, candidate.id.toString(), 'email');
+        docRequests = await storage.getOnboardingDocumentRequests(req.tenant.id, workflow.id);
+      }
+
+      // Generate upload portal token
+      const uploadToken = crypto.randomBytes(24).toString('hex');
+      const uploadTokenExpiresAt = new Date();
+      uploadTokenExpiresAt.setDate(uploadTokenExpiresAt.getDate() + 14);
+      await storage.updateOnboardingWorkflow(req.tenant.id, workflow.id, {
+        uploadToken,
+        uploadTokenExpiresAt,
+      } as any);
+      const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+      const uploadPortalUrl = `${baseUrl}/onboarding-upload/${uploadToken}`;
+
+      // Build document requirements HTML for the combined email
+      const docListHtml = docRequests.map(r => {
+        const dueDate = r.dueDate ? format(new Date(r.dueDate), 'dd MMM yyyy') : 'ASAP';
+        const priorityBadge = r.priority === 'urgent' ? ' <span style="color:#dc2626;font-weight:bold;">(Urgent)</span>' :
+                             r.priority === 'high' ? ' <span style="color:#ea580c;">(High Priority)</span>' : '';
+        return `<tr>
+          <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">${r.documentName}${priorityBadge}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:13px;">${r.description || ''}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">${dueDate}</td>
+        </tr>`;
+      }).join('');
+
+      const docListText = docRequests.map(r => {
+        const dueDate = r.dueDate ? format(new Date(r.dueDate), 'dd MMM yyyy') : 'ASAP';
+        return `- ${r.documentName}: ${r.description || ''} (Due: ${dueDate})`;
+      }).join('\n');
+
+      // Build attached documents HTML section
+      const attachedDocsHtml = emailAttachments.length > 0 ? `
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin:20px 0;">
+      <h3 style="margin:0 0 8px 0;color:#166534;">Attached Documents</h3>
+      <p style="font-size:13px;color:#6b7280;margin:0 0 8px 0;">Please review the following attached onboarding documents:</p>
+      ${emailAttachments.map(a => `<p style="margin:4px 0;color:#374151;">- ${a.filename}</p>`).join('')}
+    </div>` : '';
+
+      // Build required documents HTML section
+      const requiredDocsHtml = docRequests.length > 0 ? `
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:20px;margin:20px 0;">
+      <h3 style="margin:0 0 12px 0;color:#92400e;">Documents We Need From You</h3>
+      <p style="font-size:13px;color:#6b7280;margin:0 0 12px 0;">Please submit the following documents as soon as possible:</p>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead><tr style="background:#fef3c7;">
+          <th style="padding:8px 12px;text-align:left;">Document</th>
+          <th style="padding:8px 12px;text-align:left;">Details</th>
+          <th style="padding:8px 12px;text-align:left;">Due Date</th>
+        </tr></thead>
+        <tbody>${docListHtml}</tbody>
+      </table>
     </div>
-    <p style="font-size: 14px; color: #6b7280;">Best regards,<br><strong>HR Team</strong></p>
+    <div style="text-align:center;margin:24px 0;">
+      <a href="${uploadPortalUrl}" style="display:inline-block;background:linear-gradient(135deg,#0d9488,#2563eb);color:white;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">Upload Your Documents</a>
+    </div>
+    <p style="font-size:12px;color:#9ca3af;text-align:center;">This link expires in 14 days. If you need a new link, please contact HR.</p>` : '';
+
+      // Send single combined onboarding email
+      await emailService.sendEmail({
+        to: candidate.email || "no-email@placeholder.com",
+        subject: `Welcome to the Team, ${candidate.fullName}! - Onboarding Information`,
+        body: `Dear ${candidate.fullName},\n\nWelcome to the team! We're excited to have you join us.\n\n${emailAttachments.length > 0 ? `Please find attached your onboarding documents (${emailAttachments.length} file${emailAttachments.length > 1 ? 's' : ''}). Review them carefully.\n\n` : ''}${docRequests.length > 0 ? `As part of your onboarding, we need the following documents from you:\n\n${docListText}\n\nYou can upload your documents securely using this link:\n${uploadPortalUrl}\n\nThis link expires in 14 days.\n\n` : ''}Best regards,\nHR Team`,
+        html: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+  <div style="background:linear-gradient(135deg,#0d9488,#2563eb);padding:30px;border-radius:12px 12px 0 0;text-align:center;">
+    <h1 style="color:white;margin:0;font-size:24px;">Welcome to the Team!</h1>
+    <p style="color:rgba(255,255,255,0.9);margin:10px 0 0 0;">${candidate.fullName} - ${candidate.role || 'New Team Member'}</p>
+  </div>
+  <div style="background:#ffffff;border:1px solid #e5e7eb;border-top:none;padding:30px;border-radius:0 0 12px 12px;">
+    <p style="font-size:16px;color:#374151;">Dear ${candidate.fullName},</p>
+    <p style="font-size:14px;color:#6b7280;line-height:1.6;">Welcome to the team! We're excited to have you join us. Below you'll find everything you need to get started.</p>
+    ${attachedDocsHtml}
+    ${requiredDocsHtml}
+    <p style="font-size:14px;color:#6b7280;margin-top:20px;">Best regards,<br><strong>HR Team</strong></p>
   </div>
 </div>`,
-          attachments: emailAttachments,
-        });
+        attachments: emailAttachments,
+      });
 
-        console.log(`[Onboarding] Sent onboarding pack email with ${emailAttachments.length} attachment(s) for ${candidate.fullName}`);
-      }
+      console.log(`[Onboarding] Sent combined onboarding email for ${candidate.fullName} (${emailAttachments.length} attachments, ${docRequests.length} document requests, upload link included)`);
 
       // Store sent documents in the workflow for tracking
       if (sentDocuments.length > 0) {
@@ -3830,6 +4042,35 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     } catch (error) {
       console.error("Error starting onboarding:", error);
       res.status(500).json({ message: "Failed to start onboarding workflow" });
+    }
+  });
+
+  // HR-facing endpoint: regenerate or extend the candidate upload portal token
+  app.post("/api/onboarding/workflows/:id/regenerate-upload-token", async (req, res) => {
+    try {
+      const workflow = await storage.getOnboardingWorkflow(req.tenant.id, req.params.id);
+      if (!workflow) {
+        return res.status(404).json({ message: "Workflow not found" });
+      }
+
+      const uploadToken = crypto.randomBytes(24).toString('hex');
+      const uploadTokenExpiresAt = new Date();
+      uploadTokenExpiresAt.setDate(uploadTokenExpiresAt.getDate() + 14);
+
+      const updated = await storage.updateOnboardingWorkflow(req.tenant.id, req.params.id, {
+        uploadToken,
+        uploadTokenExpiresAt,
+      } as any);
+
+      const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+      res.json({
+        workflow: updated,
+        uploadUrl: `${baseUrl}/onboarding-upload/${uploadToken}`,
+        expiresAt: uploadTokenExpiresAt,
+      });
+    } catch (error) {
+      console.error("Error regenerating upload token:", error);
+      res.status(500).json({ message: "Failed to regenerate upload token" });
     }
   });
 
@@ -3927,7 +4168,10 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
         if (notes) pd.buildingAccessNotes = notes;
       }
 
-      const allConfirmed = pd.itConfirmed && pd.buildingAccessConfirmed;
+      const itDone = pd.itConfirmed === true;
+      const buildingDone = pd.buildingAccessConfirmed === true;
+      const equipmentDone = pd.equipmentConfirmed === true || !(pd.equipmentList?.length > 0);
+      const allConfirmed = itDone && buildingDone && equipmentDone;
       if (allConfirmed) {
         const provTask = tasks.find((t: any) => t.type === "provisioning");
         if (provTask) provTask.status = "completed";
@@ -3965,7 +4209,14 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
   app.get("/api/onboarding/workflows", async (req, res) => {
     try {
       const workflows = await storage.getAllOnboardingWorkflows(req.tenant.id);
-      res.json(workflows);
+      const enriched = await Promise.all(workflows.map(async (workflow) => {
+        const candidate = await storage.getCandidate(req.tenant.id, workflow.candidateId);
+        return {
+          ...workflow,
+          candidateName: candidate?.fullName || "Unknown Candidate",
+        };
+      }));
+      res.json(enriched);
     } catch (error) {
       console.error("Error fetching onboarding workflows:", error);
       res.status(500).json({ message: "Failed to fetch onboarding workflows" });
@@ -4113,6 +4364,18 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
         linkedCandidateId: request.candidateId,
       });
 
+      // Also create a candidateDocuments record so it appears in the Document Library
+      await storage.createCandidateDocument(req.tenant.id, {
+        candidateId: request.candidateId,
+        documentType: request.documentType || request.documentName,
+        fileName: file.originalname,
+        fileUrl: filePath,
+        fileSize: file.size,
+        mimeType: file.mimetype,
+        collectedVia: "portal",
+        status: "received",
+      });
+
       // Mark the onboarding document request as received, linking the uploaded doc
       const updated = await agent.markDocumentReceived(req.tenant.id, req.params.requestId, doc.id);
 
@@ -4139,6 +4402,45 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     } catch (error) {
       console.error("Error verifying document:", error);
       res.status(500).json({ message: "Failed to verify document" });
+    }
+  });
+
+  app.post("/api/onboarding/document-requests/:requestId/rejected", async (req, res) => {
+    try {
+      const { reason, rejectedBy } = req.body;
+      const request = await storage.getOnboardingDocumentRequest(req.tenant.id, req.params.requestId);
+      if (!request) {
+        return res.status(404).json({ message: "Document request not found" });
+      }
+
+      const updated = await storage.updateOnboardingDocumentRequest(req.tenant.id, req.params.requestId, {
+        status: 'rejected',
+        metadata: { ...(request.metadata as any || {}), rejectionReason: reason || "Document not acceptable", rejectedBy: rejectedBy || "HR Staff", rejectedAt: new Date().toISOString() },
+      });
+
+      // Log the rejection
+      const { createOnboardingAgent } = await import("./onboarding-agent");
+      const agent = createOnboardingAgent(storage);
+      await agent.logStep(req.tenant.id, request.workflowId, request.candidateId, 'document_collector', 'document_rejected', {
+        stepName: 'documentation',
+        status: 'requires_intervention',
+        details: { documentType: request.documentType, documentName: request.documentName, reason },
+        targetEntity: 'candidate',
+        targetEntityId: request.candidateId,
+        communicationChannel: 'system',
+      });
+
+      // Auto-send reminder so candidate knows to resubmit
+      try {
+        await agent.sendReminder(req.tenant.id, req.params.requestId, 'email');
+      } catch (err) {
+        console.error("Failed to send rejection reminder:", err);
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error rejecting document:", error);
+      res.status(500).json({ message: "Failed to reject document" });
     }
   });
 
@@ -4693,6 +4995,13 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
           description: "Verify previous employment and references",
           enabled: checksConfig.employment?.enabled ?? false,
           cost: "R100"
+        },
+        {
+          id: "social-screening",
+          name: "Social Intelligence Screening",
+          description: "AI-powered screening of LinkedIn, Facebook, X (Twitter), and Instagram profiles",
+          enabled: checksConfig["social-screening"]?.enabled ?? true,
+          cost: "R50"
         }
       ];
       
@@ -8704,7 +9013,9 @@ Format your response as JSON:
   app.get("/api/social-screening/consents", async (req, res) => {
     try {
       const consents = await storage.getAllSocialConsents(req.tenant.id);
-      res.json(consents);
+      // Enrich with candidate names
+      const enriched = await enrichFindingsWithCandidateNames(req.tenant.id, consents);
+      res.json(enriched);
     } catch (error) {
       console.error("Error fetching social consents:", error);
       res.status(500).json({ message: "Failed to fetch social consents" });
@@ -8933,11 +9244,26 @@ Format your response as JSON:
   });
 
   // Social Screening - Findings
+  // Helper: enrich findings with candidate names so the client doesn't need a separate lookup
+  async function enrichFindingsWithCandidateNames(tenantId: string, findings: any[]) {
+    if (findings.length === 0) return findings;
+    const uniqueIds = [...new Set(findings.map(f => f.candidateId).filter(Boolean))];
+    const candidateMap = new Map<string, string>();
+    await Promise.all(uniqueIds.map(async (id) => {
+      const candidate = await storage.getCandidate(tenantId, id);
+      if (candidate) candidateMap.set(id, candidate.fullName);
+    }));
+    return findings.map(f => ({
+      ...f,
+      candidateName: candidateMap.get(f.candidateId) || 'Unknown Candidate',
+    }));
+  }
+
   app.get("/api/social-screening/findings", async (req, res) => {
     try {
       const candidateId = req.query.candidateId as string | undefined;
       const findings = await storage.getSocialScreeningFindings(req.tenant.id, candidateId);
-      res.json(findings);
+      res.json(await enrichFindingsWithCandidateNames(req.tenant.id, findings));
     } catch (error) {
       console.error("Error fetching social findings:", error);
       res.status(500).json({ message: "Failed to fetch social findings" });
@@ -8947,7 +9273,7 @@ Format your response as JSON:
   app.get("/api/social-screening/findings/pending-review", async (req, res) => {
     try {
       const findings = await storage.getPendingHumanReviewFindings(req.tenant.id);
-      res.json(findings);
+      res.json(await enrichFindingsWithCandidateNames(req.tenant.id, findings));
     } catch (error) {
       console.error("Error fetching pending review findings:", error);
       res.status(500).json({ message: "Failed to fetch pending findings" });
@@ -8960,7 +9286,8 @@ Format your response as JSON:
       if (!finding) {
         return res.status(404).json({ message: "Social screening finding not found" });
       }
-      res.json(finding);
+      const [enriched] = await enrichFindingsWithCandidateNames(req.tenant.id, [finding]);
+      res.json(enriched);
     } catch (error) {
       console.error("Error fetching social finding:", error);
       res.status(500).json({ message: "Failed to fetch social finding" });
@@ -8970,7 +9297,7 @@ Format your response as JSON:
   app.get("/api/social-screening/findings/candidate/:candidateId", async (req, res) => {
     try {
       const findings = await storage.getSocialScreeningFindingsByCandidate(req.tenant.id, req.params.candidateId);
-      res.json(findings);
+      res.json(await enrichFindingsWithCandidateNames(req.tenant.id, findings));
     } catch (error) {
       console.error("Error fetching social findings:", error);
       res.status(500).json({ message: "Failed to fetch social findings" });
@@ -9073,8 +9400,26 @@ Format your response as JSON:
       if (!run) {
         return res.status(404).json({ message: "Run not found or expired" });
       }
-      
-      res.json(run);
+
+      // Transform to the format the client expects
+      const agents = [
+        run.orchestratorStatus,
+        run.facebookAgentStatus,
+        run.xAgentStatus,
+        run.linkedinAgentStatus,
+        run.instagramAgentStatus,
+      ].filter(Boolean);
+
+      const completedAgents = agents.filter(a => a.status === 'completed').length;
+      const totalAgents = agents.length;
+      const progress = Math.round((completedAgents / totalAgents) * 100);
+
+      res.json({
+        ...run,
+        agents,
+        progress: run.status === 'completed' ? 100 : progress,
+        result: run.orchestratorStatus?.results || null,
+      });
     } catch (error) {
       console.error("Error fetching orchestrator status:", error);
       res.status(500).json({ message: "Failed to fetch status" });
@@ -10332,7 +10677,22 @@ Format your response as JSON:
   app.get("/api/offers", async (req, res) => {
     try {
       const allOffers = await storage.getAllOffers(req.tenant.id);
-      res.json(allOffers);
+      const now = new Date();
+      const enriched = await Promise.all(allOffers.map(async (offer) => {
+        // Auto-expire sent offers past their expiresAt date
+        if (offer.status === "sent" && offer.expiresAt && new Date(offer.expiresAt) < now) {
+          try {
+            await storage.updateOffer(req.tenant.id, offer.id, { status: "expired" } as any);
+            offer = { ...offer, status: "expired" };
+          } catch {}
+        }
+        const candidate = await storage.getCandidate(req.tenant.id, offer.candidateId);
+        return {
+          ...offer,
+          candidateName: candidate?.fullName || "Unknown Candidate",
+        };
+      }));
+      res.json(enriched);
     } catch (error) {
       console.error("Error fetching offers:", error);
       res.status(500).json({ message: "Failed to fetch offers" });
@@ -10553,7 +10913,7 @@ Format your response as JSON:
           to: candidate.email,
           candidateName: candidate.fullName,
           jobTitle,
-          salary: `${offer.currency || "ZAR"} ${offer.salary}`,
+          salary: `${offer.currency || "ZAR"} ${String(offer.salary).replace(/^R\s*/i, "")}`,
           startDate: offer.startDate ? new Date(offer.startDate).toLocaleDateString() : "TBD",
           attachments: emailAttachments.length > 0 ? emailAttachments : undefined,
         });
@@ -10624,7 +10984,7 @@ Format your response as JSON:
         if (response === "accepted") {
           pipelineTransition = await pipelineOrchestrator.transitionCandidate(
             offer.candidateId,
-            "offer_accepted",
+            "integrity_checks",
             req.tenant.id,
             {
               triggeredBy: "manual",
@@ -10635,13 +10995,12 @@ Format your response as JSON:
         } else {
           pipelineTransition = await pipelineOrchestrator.transitionCandidate(
             offer.candidateId,
-            "withdrawn",
+            "offer_declined",
             req.tenant.id,
             {
               triggeredBy: "manual",
               triggeredByUserId: req.user?.id,
               reason: "Candidate declined the offer",
-              skipPrerequisites: true,
             }
           );
         }

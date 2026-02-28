@@ -218,7 +218,7 @@ const PIPELINE_STAGES_MAP: Record<string, string[]> = {
   "screening": ["screening"],
   "shortlisted": ["shortlisted"],
   "interviewing": ["interviewing"],
-  "offer": ["offer_pending", "offer_accepted"],
+  "offer": ["offer_pending", "offer_declined"],
   "integrity": ["integrity_checks", "integrity_passed"],
   "onboarding": ["onboarding"],
   "hired": ["hired"],
@@ -348,7 +348,7 @@ export default function WorkflowShowcase() {
   const handleAdvanceCandidate = async (candidate: Candidate, toStage: string) => {
     setAdvancingCandidate(candidate.id);
     try {
-      const response = await api.post(`/api/pipeline/candidates/${candidate.id}/transition`, { toStage });
+      const response = await api.post(`/pipeline/candidates/${candidate.id}/transition`, { toStage });
       if (response.data.success) {
         queryClient.invalidateQueries({ queryKey: candidatesKey });
         toast.success(`${candidate.fullName} advanced to ${toStage}!`, {
@@ -960,13 +960,13 @@ BENEFITS:
       return (
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <Link href="/interview-voice">
+            <Link href="/interview/voice">
               <Button variant="outline" className="w-full h-20 flex-col gap-2 border-border/30 hover:bg-muted/10" data-testid="button-ai-voice-interview">
                 <Mic className="h-6 w-6 text-foreground dark:text-foreground" />
                 <span>AI Voice Interview</span>
               </Button>
             </Link>
-            <Link href="/interview-video">
+            <Link href="/interview/video">
               <Button variant="outline" className="w-full h-20 flex-col gap-2 border-border/30 hover:bg-muted/10" data-testid="button-video-interview">
                 <Video className="h-6 w-6 text-foreground dark:text-foreground" />
                 <span>Video Interview</span>

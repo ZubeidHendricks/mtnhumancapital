@@ -1,3 +1,4 @@
+import { format } from "date-fns";
 import type { IStorage } from "./storage";
 import type { Candidate, OnboardingWorkflow, OnboardingAgentLog, OnboardingDocumentRequest } from "@shared/schema";
 import { EmailService } from "./email-service";
@@ -187,7 +188,7 @@ export class OnboardingAgent {
     const updated = await this.storage.updateOnboardingDocumentRequest(tenantId, requestId, {
       status: 'verified',
       verifiedAt: new Date(),
-      verifiedBy,
+      metadata: { ...(request.metadata as any || {}), verifiedByName: verifiedBy },
     });
 
     if (updated) {
@@ -213,6 +214,11 @@ export class OnboardingAgent {
     const request = await this.storage.getOnboardingDocumentRequest(tenantId, requestId);
     if (!request) return { sent: false, escalated: false };
 
+    // Skip reminders for documents already received or verified
+    if (request.status === 'received' || request.status === 'verified') {
+      return { sent: false, escalated: false };
+    }
+
     const reminderCount = (request.reminderCount || 0) + 1;
     const maxReminders = request.maxReminders || 3;
 
@@ -236,19 +242,35 @@ export class OnboardingAgent {
       const candidate = await this.storage.getCandidateById(tenantId, request.candidateId);
       if (candidate?.email) {
         const dueInfo = request.dueDate
-          ? `Due date: ${new Date(request.dueDate).toLocaleDateString('en-ZA')}`
+          ? `Due date: ${format(new Date(request.dueDate), 'dd MMM yyyy')}`
           : '';
+
+        // Look up workflow for upload portal link
+        const workflow = await this.storage.getOnboardingWorkflow(tenantId, request.workflowId);
+        const uploadPortalUrl = workflow?.uploadToken && workflow?.uploadTokenExpiresAt && new Date(workflow.uploadTokenExpiresAt) > new Date()
+          ? `${process.env.BASE_URL || 'http://localhost:5000'}/onboarding-upload/${workflow.uploadToken}`
+          : null;
+        const uploadButtonHtml = uploadPortalUrl
+          ? `<div style="text-align:center;margin:16px 0;">
+      <a href="${uploadPortalUrl}" style="display:inline-block;background:linear-gradient(135deg,#0d9488,#2563eb);color:white;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:bold;">Upload Your Document</a>
+    </div>`
+          : '';
+        const uploadTextInfo = uploadPortalUrl
+          ? `\n\nYou can upload your document here: ${uploadPortalUrl}`
+          : '';
+
         await this.emailService.sendEmail({
           to: candidate.email,
           subject: `Document Reminder: ${request.documentName} - Onboarding`,
-          body: message,
+          body: message + uploadTextInfo,
           html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
   <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:20px;">
     <h2 style="color:#92400e;margin:0 0 10px 0;">Document Reminder</h2>
     <p style="color:#374151;">Hi ${candidate.fullName},</p>
     <p style="color:#374151;">${message}</p>
     ${dueInfo ? `<p style="color:#dc2626;font-weight:bold;">${dueInfo}</p>` : ''}
-    <p style="color:#6b7280;font-size:13px;margin-top:16px;">Please reply to this email or contact HR to submit your document.</p>
+    ${uploadButtonHtml}
+    <p style="color:#6b7280;font-size:13px;margin-top:16px;">If you have any questions, please contact HR.</p>
   </div>
 </div>`,
         });
@@ -304,7 +326,7 @@ export class OnboardingAgent {
 
     // Build consolidated message
     const docListText = toRemind.map(r => {
-      const dueDate = r.dueDate ? new Date(r.dueDate).toLocaleDateString('en-ZA') : 'ASAP';
+      const dueDate = r.dueDate ? format(new Date(r.dueDate), 'dd MMM yyyy') : 'ASAP';
       return `- ${r.documentName} (Due: ${dueDate})`;
     }).join('\n');
 
@@ -326,7 +348,7 @@ export class OnboardingAgent {
     // Send one consolidated email
     if (candidate?.email) {
       const docListHtml = toRemind.map(r => {
-        const dueDate = r.dueDate ? new Date(r.dueDate).toLocaleDateString('en-ZA') : 'ASAP';
+        const dueDate = r.dueDate ? format(new Date(r.dueDate), 'dd MMM yyyy') : 'ASAP';
         const priorityBadge = r.priority === 'urgent' ? ' <span style="color:#dc2626;">(Urgent)</span>' :
                              r.priority === 'high' ? ' <span style="color:#ea580c;">(High Priority)</span>' : '';
         return `<tr>

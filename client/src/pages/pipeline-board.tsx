@@ -36,7 +36,7 @@ const PIPELINE_STAGES = [
   { key: "shortlisted", name: "Shortlisted", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
   { key: "interviewing", name: "Interviewing", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
   { key: "offer_pending", name: "Offer Pending", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
-  { key: "offer_accepted", name: "Offer Accepted", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
+  { key: "offer_declined", name: "Offer Declined", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
   { key: "integrity_checks", name: "Integrity", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
   { key: "integrity_passed", name: "Checks Passed", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
   { key: "onboarding", name: "Onboarding", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
@@ -101,7 +101,7 @@ export default function PipelineBoard() {
     setAdvancingCandidate(candidate.id);
     
     try {
-      const response = await api.post(`/api/pipeline/candidates/${candidate.id}/transition`, {
+      const response = await api.post(`/pipeline/candidates/${candidate.id}/transition`, {
         toStage: toStage
       });
       

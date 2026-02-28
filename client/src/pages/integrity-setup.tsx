@@ -6,16 +6,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Shield, 
-  Key, 
-  CheckCircle2, 
+import {
+  Shield,
+  Key,
+  CheckCircle2,
   AlertTriangle,
   FileSearch,
   CreditCard,
   UserCheck,
   GraduationCap,
   Building2,
+  Brain,
   Save,
   Loader2,
   Link as LinkIcon,
@@ -45,7 +46,8 @@ const CHECK_ICONS: Record<string, React.ReactNode> = {
   credit: <CreditCard className="h-5 w-5" />,
   "id-verification": <UserCheck className="h-5 w-5" />,
   qualification: <GraduationCap className="h-5 w-5" />,
-  employment: <Building2 className="h-5 w-5" />
+  employment: <Building2 className="h-5 w-5" />,
+  "social-screening": <Brain className="h-5 w-5" />
 };
 
 export default function IntegritySetup() {
@@ -176,7 +178,8 @@ export default function IntegritySetup() {
       credit: "Credit Check",
       "id-verification": "ID Verification",
       qualification: "Qualification Verification",
-      employment: "Employment History"
+      employment: "Employment History",
+      "social-screening": "Social Intelligence Screening"
     };
     return names[checkId] || checkId;
   };
