@@ -1,6 +1,13 @@
 import { Client } from "@replit/object-storage";
 
-const client = new Client();
+let client: Client | null = null;
+
+function getClient(): Client {
+  if (!client) {
+    client = new Client();
+  }
+  return client;
+}
 
 const BUCKET_PREFIX = "recordings";
 
@@ -17,19 +24,19 @@ export const recordingStorage = {
     _mimeType: string
   ): Promise<{ key: string; size: number }> {
     const key = buildKey(tenantId, sessionId, filename);
-    await client.uploadFromBytes(key, buffer);
+    await getClient().uploadFromBytes(key, buffer);
     return { key, size: buffer.length };
   },
 
   async downloadRecording(key: string): Promise<Buffer> {
-    const { value } = await client.downloadAsBytes(key);
+    const { value } = await getClient().downloadAsBytes(key);
     if (!value) throw new Error(`Recording not found: ${key}`);
     return Buffer.from(value as unknown as ArrayBuffer);
   },
 
   async exists(key: string): Promise<boolean> {
     try {
-      const { value } = await client.downloadAsBytes(key);
+      const { value } = await getClient().downloadAsBytes(key);
       return !!value;
     } catch {
       return false;
@@ -37,6 +44,6 @@ export const recordingStorage = {
   },
 
   async deleteRecording(key: string): Promise<void> {
-    await client.delete(key);
+    await getClient().delete(key);
   },
 };

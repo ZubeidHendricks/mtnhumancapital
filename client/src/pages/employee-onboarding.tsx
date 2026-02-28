@@ -1244,7 +1244,7 @@ export default function EmployeeOnboarding() {
                 </div>
 
                 <Button
-                  className="bg-green-600 hover:bg-green-700 px-8"
+                  className="bg-[#FFCB05] hover:bg-[#e6b800] text-black px-8"
                   onClick={handleSendOnboardingPack}
                   disabled={triggerOnboarding.isPending || selectedDocuments.length === 0 || generatedPreviews.length === 0}
                   data-testid="button-send-pack"

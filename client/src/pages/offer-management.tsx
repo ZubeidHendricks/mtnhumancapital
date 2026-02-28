@@ -630,7 +630,7 @@ export default function OfferManagement() {
             </div>
 
             <Button
-              className="bg-green-600 hover:bg-green-700 px-8"
+              className="bg-[#FFCB05] hover:bg-[#e6b800] text-black px-8"
               onClick={handleSendOffer}
               disabled={isSending || !selectedCandidate || !salaryAmount || !startDate || !previewUrl || !previewReviewed}
               data-testid="button-send-offer"
