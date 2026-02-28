@@ -11,6 +11,8 @@ import { fromZodError } from "zod-validation-error";
 import { IntegrityOrchestrator } from "./integrity-orchestrator";
 import { RecruitmentOrchestrator } from "./recruitment-orchestrator";
 import { interviewOrchestrator } from "./interview-orchestrator";
+import { transcriptProviderManager } from "./transcript-providers";
+import { transcriptAnalysisAgent } from "./transcript-analysis-agent";
 import { sourcingOrchestrator, type SpecialistCandidate } from "./sourcing-specialists";
 import { scraperOrchestrator, type ScrapedCandidate, type ScraperResult } from "./web-scraper-agents";
 import { cvParser } from "./cv-parser";
@@ -7499,6 +7501,278 @@ Format your response as JSON:
     } catch (error) {
       console.error("Error checking interview status:", error);
       res.status(500).json({ message: "Failed to check status" });
+    }
+  });
+
+  // ==================== ViTT TIMELINE TAGS & TRANSCRIPT ANALYSIS ====================
+
+  // Get timeline tags for a session
+  app.get("/api/interviews/:sessionId/timeline-tags", async (req, res) => {
+    try {
+      const { tagType } = req.query;
+      let tags;
+      if (tagType) {
+        tags = await storage.getTimelineTagsByType(req.tenant.id, req.params.sessionId, tagType as string);
+      } else {
+        tags = await storage.getTimelineTags(req.tenant.id, req.params.sessionId);
+      }
+      res.json(tags);
+    } catch (error) {
+      console.error("Error fetching timeline tags:", error);
+      res.status(500).json({ message: "Failed to fetch timeline tags" });
+    }
+  });
+
+  // Create a manual timeline tag
+  app.post("/api/interviews/:sessionId/timeline-tags", async (req, res) => {
+    try {
+      const tag = await storage.createTimelineTag(req.tenant.id, {
+        ...req.body,
+        sessionId: req.params.sessionId,
+        tagSource: "manual",
+        createdBy: req.user?.id,
+      });
+      res.status(201).json(tag);
+    } catch (error) {
+      console.error("Error creating timeline tag:", error);
+      res.status(500).json({ message: "Failed to create timeline tag" });
+    }
+  });
+
+  // Update a timeline tag
+  app.patch("/api/interviews/:sessionId/timeline-tags/:tagId", async (req, res) => {
+    try {
+      const tag = await storage.updateTimelineTag(req.tenant.id, req.params.tagId, req.body);
+      if (!tag) return res.status(404).json({ message: "Tag not found" });
+      res.json(tag);
+    } catch (error) {
+      console.error("Error updating timeline tag:", error);
+      res.status(500).json({ message: "Failed to update timeline tag" });
+    }
+  });
+
+  // Delete a timeline tag
+  app.delete("/api/interviews/:sessionId/timeline-tags/:tagId", async (req, res) => {
+    try {
+      await storage.deleteTimelineTag(req.tenant.id, req.params.tagId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting timeline tag:", error);
+      res.status(500).json({ message: "Failed to delete timeline tag" });
+    }
+  });
+
+  // Get transcript jobs for a session
+  app.get("/api/interviews/:sessionId/transcript-jobs", async (req, res) => {
+    try {
+      const jobs = await storage.getTranscriptJobs(req.tenant.id, req.params.sessionId);
+      res.json(jobs);
+    } catch (error) {
+      console.error("Error fetching transcript jobs:", error);
+      res.status(500).json({ message: "Failed to fetch transcript jobs" });
+    }
+  });
+
+  // Submit a transcript job for a specific provider
+  app.post("/api/interviews/:sessionId/transcript-jobs", async (req, res) => {
+    try {
+      const { provider, audioUrl, config } = req.body;
+
+      if (!provider || !audioUrl) {
+        return res.status(400).json({ message: "Provider and audioUrl are required" });
+      }
+
+      if (!transcriptProviderManager.isProviderAvailable(provider)) {
+        return res.status(400).json({ message: `Provider ${provider} is not configured` });
+      }
+
+      const job = await storage.createTranscriptJob(req.tenant.id, {
+        sessionId: req.params.sessionId,
+        provider,
+        status: "pending",
+        submittedAt: new Date(),
+        ...config,
+      });
+
+      // Run transcription async
+      transcriptProviderManager
+        .transcribeWithProvider(req.tenant.id, job.id, audioUrl, provider, config || {})
+        .then(async (result) => {
+          await transcriptProviderManager.generateTimelineTags(
+            req.tenant.id,
+            req.params.sessionId,
+            result,
+            job.recordingId || undefined
+          );
+        })
+        .catch((err) => console.error(`[TranscriptJob] Error: ${err.message}`));
+
+      res.status(202).json(job);
+    } catch (error) {
+      console.error("Error submitting transcript job:", error);
+      res.status(500).json({ message: "Failed to submit transcript job" });
+    }
+  });
+
+  // Submit transcript jobs for ALL configured providers
+  app.post("/api/interviews/:sessionId/transcript-jobs/all", async (req, res) => {
+    try {
+      const { audioUrl, config } = req.body;
+      if (!audioUrl) return res.status(400).json({ message: "audioUrl is required" });
+
+      const results = await transcriptProviderManager.transcribeWithAllProviders(
+        req.tenant.id,
+        req.params.sessionId,
+        audioUrl,
+        config || {}
+      );
+
+      res.json(results);
+    } catch (error) {
+      console.error("Error submitting all transcript jobs:", error);
+      res.status(500).json({ message: "Failed to submit transcript jobs" });
+    }
+  });
+
+  // Get recording sources for a session
+  app.get("/api/interviews/:sessionId/recording-sources", async (req, res) => {
+    try {
+      const sources = await storage.getRecordingSources(req.tenant.id, req.params.sessionId);
+      res.json(sources);
+    } catch (error) {
+      console.error("Error fetching recording sources:", error);
+      res.status(500).json({ message: "Failed to fetch recording sources" });
+    }
+  });
+
+  // Create recording source (browser, Zoom, Skype, upload)
+  app.post("/api/interviews/:sessionId/recording-sources", async (req, res) => {
+    try {
+      const source = await storage.createRecordingSource(req.tenant.id, {
+        ...req.body,
+        sessionId: req.params.sessionId,
+      });
+      res.status(201).json(source);
+    } catch (error) {
+      console.error("Error creating recording source:", error);
+      res.status(500).json({ message: "Failed to create recording source" });
+    }
+  });
+
+  // LeMUR Q&A - Ask a question about the interview
+  app.post("/api/interviews/:sessionId/ask", async (req, res) => {
+    try {
+      const { question } = req.body;
+      if (!question) return res.status(400).json({ message: "Question is required" });
+
+      const result = await transcriptAnalysisAgent.askQuestion(
+        { tenantId: req.tenant.id, sessionId: req.params.sessionId, userId: req.user?.id },
+        question
+      );
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error asking question:", error);
+      res.status(500).json({ message: error.message || "Failed to process question" });
+    }
+  });
+
+  // Generate interview summary
+  app.post("/api/interviews/:sessionId/summary", async (req, res) => {
+    try {
+      const summary = await transcriptAnalysisAgent.generateSummary({
+        tenantId: req.tenant.id,
+        sessionId: req.params.sessionId,
+        userId: req.user?.id,
+      });
+      res.json({ summary });
+    } catch (error: any) {
+      console.error("Error generating summary:", error);
+      res.status(500).json({ message: error.message || "Failed to generate summary" });
+    }
+  });
+
+  // Extract action items
+  app.post("/api/interviews/:sessionId/action-items", async (req, res) => {
+    try {
+      const result = await transcriptAnalysisAgent.extractActionItems({
+        tenantId: req.tenant.id,
+        sessionId: req.params.sessionId,
+        userId: req.user?.id,
+      });
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error extracting action items:", error);
+      res.status(500).json({ message: error.message || "Failed to extract action items" });
+    }
+  });
+
+  // Auto-tag transcript
+  app.post("/api/interviews/:sessionId/auto-tag", async (req, res) => {
+    try {
+      const result = await transcriptAnalysisAgent.autoTagTranscript({
+        tenantId: req.tenant.id,
+        sessionId: req.params.sessionId,
+        userId: req.user?.id,
+      });
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error auto-tagging:", error);
+      res.status(500).json({ message: error.message || "Failed to auto-tag" });
+    }
+  });
+
+  // Full re-analysis
+  app.post("/api/interviews/:sessionId/reanalyze", async (req, res) => {
+    try {
+      const result = await transcriptAnalysisAgent.fullReanalysis({
+        tenantId: req.tenant.id,
+        sessionId: req.params.sessionId,
+        userId: req.user?.id,
+      });
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error in re-analysis:", error);
+      res.status(500).json({ message: error.message || "Failed to re-analyze" });
+    }
+  });
+
+  // Get sentiment timeline
+  app.post("/api/interviews/:sessionId/sentiment-timeline", async (req, res) => {
+    try {
+      const result = await transcriptAnalysisAgent.generateSentimentTimeline({
+        tenantId: req.tenant.id,
+        sessionId: req.params.sessionId,
+        userId: req.user?.id,
+      });
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error generating sentiment timeline:", error);
+      res.status(500).json({ message: error.message || "Failed to generate sentiment timeline" });
+    }
+  });
+
+  // Get analysis history for a session
+  app.get("/api/interviews/:sessionId/analysis-history", async (req, res) => {
+    try {
+      const results = await storage.getLemurAnalysisResults(req.tenant.id, req.params.sessionId);
+      res.json(results);
+    } catch (error) {
+      console.error("Error fetching analysis history:", error);
+      res.status(500).json({ message: "Failed to fetch analysis history" });
+    }
+  });
+
+  // Get available transcript providers
+  app.get("/api/transcript-providers/status", async (_req, res) => {
+    try {
+      res.json({
+        providers: transcriptProviderManager.getStatus(),
+        available: transcriptProviderManager.getAvailableProviders(),
+        analysisAgent: transcriptAnalysisAgent.isConfigured(),
+      });
+    } catch (error) {
+      console.error("Error checking provider status:", error);
+      res.status(500).json({ message: "Failed to check provider status" });
     }
   });
 

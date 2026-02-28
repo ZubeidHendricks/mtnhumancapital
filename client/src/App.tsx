@@ -50,6 +50,7 @@ import InterviewInvite from "@/pages/interview-invite";
 import OnboardingDashboard from "@/pages/onboarding-dashboard";
 import HRConversations from "@/pages/hr-conversations";
 import InterviewConsole from "@/pages/interview-console";
+import InterviewTimeline from "@/pages/interview-timeline";
 import Recommendations from "@/pages/recommendations";
 import KpiManagement from "@/pages/kpi-management";
 import KpiReview from "@/pages/kpi-review";
@@ -119,6 +120,7 @@ function Router() {
       <Route path="/onboarding-dashboard" component={OnboardingDashboard} />
       <Route path="/hr-conversations" component={HRConversations} />
       <Route path="/interview-console" component={InterviewConsole} />
+      <Route path="/interview-timeline/:sessionId" component={InterviewTimeline} />
       <Route path="/recommendations" component={Recommendations} />
       <Route path="/kpi-management" component={KpiManagement} />
       <Route path="/kpi-review/:id?" component={KpiReview} />

@@ -165,6 +165,65 @@ export const interviewService = {
   }
 };
 
+// ViTT Timeline Tags & Transcript Analysis Service
+export const timelineService = {
+  getTags: async (sessionId: string) => {
+    const res = await api.get(`/interviews/${sessionId}/timeline-tags`);
+    return res.data;
+  },
+  createTag: async (sessionId: string, tag: any) => {
+    const res = await api.post(`/interviews/${sessionId}/timeline-tags`, tag);
+    return res.data;
+  },
+  updateTag: async (sessionId: string, tagId: string, updates: any) => {
+    const res = await api.patch(`/interviews/${sessionId}/timeline-tags/${tagId}`, updates);
+    return res.data;
+  },
+  deleteTag: async (sessionId: string, tagId: string) => {
+    await api.delete(`/interviews/${sessionId}/timeline-tags/${tagId}`);
+  },
+  getTranscriptJobs: async (sessionId: string) => {
+    const res = await api.get(`/interviews/${sessionId}/transcript-jobs`);
+    return res.data;
+  },
+  submitTranscriptJob: async (sessionId: string, provider: string, audioUrl: string, config?: any) => {
+    const res = await api.post(`/interviews/${sessionId}/transcript-jobs`, { provider, audioUrl, config });
+    return res.data;
+  },
+  submitAllTranscriptJobs: async (sessionId: string, audioUrl: string, config?: any) => {
+    const res = await api.post(`/interviews/${sessionId}/transcript-jobs/all`, { audioUrl, config });
+    return res.data;
+  },
+  askQuestion: async (sessionId: string, question: string) => {
+    const res = await api.post(`/interviews/${sessionId}/ask`, { question });
+    return res.data;
+  },
+  generateSummary: async (sessionId: string) => {
+    const res = await api.post(`/interviews/${sessionId}/summary`);
+    return res.data;
+  },
+  extractActionItems: async (sessionId: string) => {
+    const res = await api.post(`/interviews/${sessionId}/action-items`);
+    return res.data;
+  },
+  autoTag: async (sessionId: string) => {
+    const res = await api.post(`/interviews/${sessionId}/auto-tag`);
+    return res.data;
+  },
+  reanalyze: async (sessionId: string) => {
+    const res = await api.post(`/interviews/${sessionId}/reanalyze`);
+    return res.data;
+  },
+  getAnalysisHistory: async (sessionId: string) => {
+    const res = await api.get(`/interviews/${sessionId}/analysis-history`);
+    return res.data;
+  },
+  getProviderStatus: async () => {
+    const res = await api.get("/transcript-providers/status");
+    return res.data;
+  },
+};
+
 export const integrityChecksService = {
   getAll: async (): Promise<IntegrityCheck[]> => {
     const response = await api.get("/integrity-checks");

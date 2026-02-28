@@ -27,7 +27,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Bot,
-  Cpu
+  Cpu,
 } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
 import { ThemeToggle } from "@/components/ui/theme-toggle";

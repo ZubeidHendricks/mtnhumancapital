@@ -201,6 +201,18 @@ import {
   weighbridgeSlips,
   type WeighbridgeSlip,
   type InsertWeighbridgeSlip,
+  interviewTimelineTags,
+  transcriptJobs,
+  recordingSources,
+  lemurAnalysisResults,
+  type InterviewTimelineTag,
+  type InsertInterviewTimelineTag,
+  type TranscriptJob,
+  type InsertTranscriptJob,
+  type RecordingSource,
+  type InsertRecordingSource,
+  type LemurAnalysisResult,
+  type InsertLemurAnalysisResult,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, lte, sql, isNull, isNotNull, or } from "drizzle-orm";
@@ -430,7 +442,31 @@ export interface IStorage {
   getModelTrainingEvents(tenantId: string, sessionId?: string): Promise<ModelTrainingEvent[]>;
   createModelTrainingEvent(tenantId: string, event: InsertModelTrainingEvent): Promise<ModelTrainingEvent>;
   updateModelTrainingEvent(tenantId: string, id: string, updates: Partial<InsertModelTrainingEvent>): Promise<ModelTrainingEvent | undefined>;
-  
+
+  // ViTT Timeline Tags
+  getTimelineTags(tenantId: string, sessionId: string): Promise<InterviewTimelineTag[]>;
+  getTimelineTag(tenantId: string, id: string): Promise<InterviewTimelineTag | undefined>;
+  getTimelineTagsByType(tenantId: string, sessionId: string, tagType: string): Promise<InterviewTimelineTag[]>;
+  createTimelineTag(tenantId: string, tag: InsertInterviewTimelineTag): Promise<InterviewTimelineTag>;
+  updateTimelineTag(tenantId: string, id: string, updates: Partial<InsertInterviewTimelineTag>): Promise<InterviewTimelineTag | undefined>;
+  deleteTimelineTag(tenantId: string, id: string): Promise<void>;
+
+  // Transcript Jobs
+  getTranscriptJobs(tenantId: string, sessionId: string): Promise<TranscriptJob[]>;
+  getTranscriptJob(tenantId: string, id: string): Promise<TranscriptJob | undefined>;
+  createTranscriptJob(tenantId: string, job: InsertTranscriptJob): Promise<TranscriptJob>;
+  updateTranscriptJob(tenantId: string, id: string, updates: Partial<InsertTranscriptJob>): Promise<TranscriptJob | undefined>;
+
+  // Recording Sources
+  getRecordingSources(tenantId: string, sessionId: string): Promise<RecordingSource[]>;
+  getRecordingSource(tenantId: string, id: string): Promise<RecordingSource | undefined>;
+  createRecordingSource(tenantId: string, source: InsertRecordingSource): Promise<RecordingSource>;
+  updateRecordingSource(tenantId: string, id: string, updates: Partial<InsertRecordingSource>): Promise<RecordingSource | undefined>;
+
+  // LeMUR Analysis Results
+  getLemurAnalysisResults(tenantId: string, sessionId: string): Promise<LemurAnalysisResult[]>;
+  createLemurAnalysisResult(tenantId: string, result: InsertLemurAnalysisResult): Promise<LemurAnalysisResult>;
+
   // Onboarding Agent Logs
   getOnboardingAgentLogs(tenantId: string, workflowId?: string): Promise<OnboardingAgentLog[]>;
   getOnboardingAgentLogsByCandidate(tenantId: string, candidateId: string): Promise<OnboardingAgentLog[]>;
@@ -2007,6 +2043,111 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(modelTrainingEvents.id, id), eq(modelTrainingEvents.tenantId, tenantId)))
       .returning();
     return event || undefined;
+  }
+
+  // ViTT Timeline Tags Implementation
+  async getTimelineTags(tenantId: string, sessionId: string): Promise<InterviewTimelineTag[]> {
+    return await db.select().from(interviewTimelineTags)
+      .where(and(eq(interviewTimelineTags.tenantId, tenantId), eq(interviewTimelineTags.sessionId, sessionId)))
+      .orderBy(interviewTimelineTags.offsetMs);
+  }
+
+  async getTimelineTag(tenantId: string, id: string): Promise<InterviewTimelineTag | undefined> {
+    const [tag] = await db.select().from(interviewTimelineTags)
+      .where(and(eq(interviewTimelineTags.id, id), eq(interviewTimelineTags.tenantId, tenantId)));
+    return tag || undefined;
+  }
+
+  async getTimelineTagsByType(tenantId: string, sessionId: string, tagType: string): Promise<InterviewTimelineTag[]> {
+    return await db.select().from(interviewTimelineTags)
+      .where(and(
+        eq(interviewTimelineTags.tenantId, tenantId),
+        eq(interviewTimelineTags.sessionId, sessionId),
+        eq(interviewTimelineTags.tagType, tagType)
+      ))
+      .orderBy(interviewTimelineTags.offsetMs);
+  }
+
+  async createTimelineTag(tenantId: string, tag: InsertInterviewTimelineTag): Promise<InterviewTimelineTag> {
+    const [newTag] = await db.insert(interviewTimelineTags).values({ ...tag, tenantId }).returning();
+    return newTag;
+  }
+
+  async updateTimelineTag(tenantId: string, id: string, updates: Partial<InsertInterviewTimelineTag>): Promise<InterviewTimelineTag | undefined> {
+    const [tag] = await db.update(interviewTimelineTags)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(eq(interviewTimelineTags.id, id), eq(interviewTimelineTags.tenantId, tenantId)))
+      .returning();
+    return tag || undefined;
+  }
+
+  async deleteTimelineTag(tenantId: string, id: string): Promise<void> {
+    await db.delete(interviewTimelineTags)
+      .where(and(eq(interviewTimelineTags.id, id), eq(interviewTimelineTags.tenantId, tenantId)));
+  }
+
+  // Transcript Jobs Implementation
+  async getTranscriptJobs(tenantId: string, sessionId: string): Promise<TranscriptJob[]> {
+    return await db.select().from(transcriptJobs)
+      .where(and(eq(transcriptJobs.tenantId, tenantId), eq(transcriptJobs.sessionId, sessionId)))
+      .orderBy(desc(transcriptJobs.createdAt));
+  }
+
+  async getTranscriptJob(tenantId: string, id: string): Promise<TranscriptJob | undefined> {
+    const [job] = await db.select().from(transcriptJobs)
+      .where(and(eq(transcriptJobs.id, id), eq(transcriptJobs.tenantId, tenantId)));
+    return job || undefined;
+  }
+
+  async createTranscriptJob(tenantId: string, job: InsertTranscriptJob): Promise<TranscriptJob> {
+    const [newJob] = await db.insert(transcriptJobs).values({ ...job, tenantId }).returning();
+    return newJob;
+  }
+
+  async updateTranscriptJob(tenantId: string, id: string, updates: Partial<InsertTranscriptJob>): Promise<TranscriptJob | undefined> {
+    const [job] = await db.update(transcriptJobs)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(eq(transcriptJobs.id, id), eq(transcriptJobs.tenantId, tenantId)))
+      .returning();
+    return job || undefined;
+  }
+
+  // Recording Sources Implementation
+  async getRecordingSources(tenantId: string, sessionId: string): Promise<RecordingSource[]> {
+    return await db.select().from(recordingSources)
+      .where(and(eq(recordingSources.tenantId, tenantId), eq(recordingSources.sessionId, sessionId)))
+      .orderBy(desc(recordingSources.createdAt));
+  }
+
+  async getRecordingSource(tenantId: string, id: string): Promise<RecordingSource | undefined> {
+    const [source] = await db.select().from(recordingSources)
+      .where(and(eq(recordingSources.id, id), eq(recordingSources.tenantId, tenantId)));
+    return source || undefined;
+  }
+
+  async createRecordingSource(tenantId: string, source: InsertRecordingSource): Promise<RecordingSource> {
+    const [newSource] = await db.insert(recordingSources).values({ ...source, tenantId }).returning();
+    return newSource;
+  }
+
+  async updateRecordingSource(tenantId: string, id: string, updates: Partial<InsertRecordingSource>): Promise<RecordingSource | undefined> {
+    const [source] = await db.update(recordingSources)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(eq(recordingSources.id, id), eq(recordingSources.tenantId, tenantId)))
+      .returning();
+    return source || undefined;
+  }
+
+  // LeMUR Analysis Results Implementation
+  async getLemurAnalysisResults(tenantId: string, sessionId: string): Promise<LemurAnalysisResult[]> {
+    return await db.select().from(lemurAnalysisResults)
+      .where(and(eq(lemurAnalysisResults.tenantId, tenantId), eq(lemurAnalysisResults.sessionId, sessionId)))
+      .orderBy(desc(lemurAnalysisResults.createdAt));
+  }
+
+  async createLemurAnalysisResult(tenantId: string, result: InsertLemurAnalysisResult): Promise<LemurAnalysisResult> {
+    const [newResult] = await db.insert(lemurAnalysisResults).values({ ...result, tenantId }).returning();
+    return newResult;
   }
 
   // Onboarding Agent Logs Implementation

@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import InterviewTimeline from "@/pages/interview-timeline";
 import {
   Mic,
   Video,
@@ -333,8 +334,8 @@ export default function InterviewConsole() {
                   </TabsList>
 
                   <TabsContent value="analysis" className="mt-4">
-                    {latestFeedback ? (
-                      <div className="space-y-6">
+                    {latestFeedback && (
+                      <div className="space-y-6 mb-6">
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                           <ScoreCard label="Overall" value={latestFeedback.overallScore} />
                           <ScoreCard label="Technical" value={latestFeedback.technicalScore} />
@@ -405,11 +406,12 @@ export default function InterviewConsole() {
                           </div>
                         )}
                       </div>
-                    ) : (
-                      <div className="text-center py-12 text-muted-foreground">
-                        <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                        <p>No analysis available yet</p>
-                        <p className="text-sm mt-1">Analysis will be generated after the interview is completed</p>
+                    )}
+
+                    {/* Interview Timeline - embedded */}
+                    {selectedSession && (
+                      <div className="border rounded-lg overflow-hidden">
+                        <InterviewTimeline sessionId={selectedSession} embedded />
                       </div>
                     )}
                   </TabsContent>
