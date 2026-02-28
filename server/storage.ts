@@ -984,7 +984,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllOnboardingWorkflows(tenantId: string): Promise<OnboardingWorkflow[]> {
-    return await db.select().from(onboardingWorkflows).where(eq(onboardingWorkflows.tenantId, tenantId)).orderBy(desc(onboardingWorkflows.createdAt));
+    const all = await db.select().from(onboardingWorkflows).where(eq(onboardingWorkflows.tenantId, tenantId)).orderBy(desc(onboardingWorkflows.createdAt));
+    // Deduplicate by candidateId — keep only the earliest workflow per candidate
+    const seen = new Set<string>();
+    return all.filter(w => {
+      if (seen.has(w.candidateId)) return false;
+      seen.add(w.candidateId);
+      return true;
+    });
   }
 
   async getOnboardingWorkflow(tenantId: string, id: string): Promise<OnboardingWorkflow | undefined> {
