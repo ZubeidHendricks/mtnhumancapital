@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import InterviewTimeline from "@/pages/interview-timeline";
@@ -119,6 +120,7 @@ export default function InterviewConsole() {
   const [showDecisionDialog, setShowDecisionDialog] = useState(false);
   const [pendingDecision, setPendingDecision] = useState<"accepted" | "rejected" | "pipeline" | null>(null);
   const [candidateSearch, setCandidateSearch] = useState("");
+  const [positionFilter, setPositionFilter] = useState<string>("all");
   const [activeFlowStep, setActiveFlowStep] = useState<string | null>(null);
   const [showPractice, setShowPractice] = useState<"voice" | "video" | null>(null);
   const { toast } = useToast();
@@ -128,6 +130,16 @@ export default function InterviewConsole() {
     queryKey: ["/api/interviews"],
   });
   const sessions: InterviewSession[] = Array.isArray(sessionsResponse) ? sessionsResponse : (sessionsResponse?.data || []);
+
+  const uniquePositions = useMemo(() => {
+    const positions = sessions.map(s => s.jobTitle).filter(Boolean);
+    return [...new Set(positions)].sort();
+  }, [sessions]);
+
+  const filteredSessions = useMemo(() => {
+    if (positionFilter === "all") return sessions;
+    return sessions.filter(s => s.jobTitle === positionFilter);
+  }, [sessions, positionFilter]);
 
   const { data: details, isLoading: loadingDetails } = useQuery<InterviewDetails>({
     queryKey: ["/api/interviews", selectedSession],
@@ -360,24 +372,39 @@ export default function InterviewConsole() {
               Interview Sessions
             </CardTitle>
             <CardDescription>
-              {sessions.length} total sessions
+              {filteredSessions.length}{positionFilter !== "all" ? ` of ${sessions.length}` : ""} sessions
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {uniquePositions.length > 1 && (
+              <div className="mb-3">
+                <Select value={positionFilter} onValueChange={setPositionFilter}>
+                  <SelectTrigger className="w-full" data-testid="select-position-filter">
+                    <SelectValue placeholder="Filter by position" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Positions</SelectItem>
+                    {uniquePositions.map(pos => (
+                      <SelectItem key={pos} value={pos!}>{pos}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <ScrollArea className="h-[600px]">
               {loadingSessions ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
-              ) : sessions.length === 0 ? (
+              ) : filteredSessions.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Mic className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No interview sessions yet</p>
-                  <p className="text-sm mt-1">Sessions will appear here when scheduled</p>
+                  <p>{positionFilter !== "all" ? "No sessions for this position" : "No interview sessions yet"}</p>
+                  <p className="text-sm mt-1">{positionFilter !== "all" ? "Try a different position filter" : "Sessions will appear here when scheduled"}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {sessions.map((session) => (
+                  {filteredSessions.map((session) => (
                     <div
                       key={session.id}
                       data-testid={`card-session-${session.id}`}
