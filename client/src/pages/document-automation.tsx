@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -6,17 +6,22 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { useTenantQueryKey } from "@/hooks/useTenant";
-import { 
-  Upload, 
-  FileText, 
-  Users, 
-  Briefcase, 
-  CheckCircle2, 
-  XCircle, 
-  Clock, 
+import { format } from "date-fns";
+import {
+  Upload,
+  FileText,
+  FileType,
+  Users,
+  Briefcase,
+  CheckCircle2,
+  XCircle,
+  Clock,
   Loader2,
   File,
   Trash2,
@@ -45,6 +50,7 @@ import {
   Download
 } from "lucide-react";
 import { toast } from "sonner";
+import type { CvTemplate } from "@shared/schema";
 
 interface Document {
   id: string;
@@ -87,6 +93,120 @@ export default function DocumentAutomation() {
   const [uploadType, setUploadType] = useState<"cvs" | "job-specs">("cvs");
   const [dragOver, setDragOver] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
+  // CV template state
+  const cvFileInputRef = useRef<HTMLInputElement>(null);
+  const cvTemplatesKey = useTenantQueryKey("cv-templates");
+  const [cvUploadDialogOpen, setCvUploadDialogOpen] = useState(false);
+  const [cvSelectedFile, setCvSelectedFile] = useState<File | null>(null);
+  const [cvTemplateName, setCvTemplateName] = useState("");
+  const [cvUploadProgress, setCvUploadProgress] = useState(0);
+  const [isCvUploading, setIsCvUploading] = useState(false);
+
+  const { data: cvTemplates = [], isLoading: cvTemplatesLoading } = useQuery<CvTemplate[]>({
+    queryKey: cvTemplatesKey,
+    queryFn: async () => {
+      const response = await fetch("/api/cv-templates");
+      if (!response.ok) throw new Error("Failed to fetch templates");
+      return response.json();
+    },
+  });
+
+  const cvUploadMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      setIsCvUploading(true);
+      setCvUploadProgress(0);
+      const progressInterval = setInterval(() => {
+        setCvUploadProgress(prev => Math.min(prev + 10, 90));
+      }, 200);
+      try {
+        const response = await fetch("/api/cv-templates/upload", {
+          method: "POST",
+          body: formData,
+        });
+        clearInterval(progressInterval);
+        setCvUploadProgress(100);
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || "Failed to upload template");
+        }
+        return response.json();
+      } finally {
+        clearInterval(progressInterval);
+        setIsCvUploading(false);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cvTemplatesKey });
+      toast.success("Template uploaded successfully");
+      setCvUploadDialogOpen(false);
+      setCvSelectedFile(null);
+      setCvTemplateName("");
+      setCvUploadProgress(0);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+      setCvUploadProgress(0);
+    },
+  });
+
+  const cvActivateMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/cv-templates/${id}/activate`, { method: "PATCH" });
+      if (!response.ok) throw new Error("Failed to activate template");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cvTemplatesKey });
+      toast.success("Template activated successfully");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const cvDeleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/cv-templates/${id}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("Failed to delete template");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cvTemplatesKey });
+      toast.success("Template deleted successfully");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const handleCvFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const allowedTypes = [
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/msword"
+      ];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error("Only PDF and DOCX files are supported");
+        return;
+      }
+      setCvSelectedFile(file);
+      if (!cvTemplateName) {
+        setCvTemplateName(file.name.replace(/\.[^/.]+$/, ""));
+      }
+    }
+  };
+
+  const handleCvUpload = () => {
+    if (!cvSelectedFile) return;
+    const formData = new FormData();
+    formData.append("template", cvSelectedFile);
+    formData.append("name", cvTemplateName || cvSelectedFile.name);
+    cvUploadMutation.mutate(formData);
+  };
+
+  const formatCvFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
 
   const { data: allDocumentsResponse, isLoading: documentsLoading } = useQuery<{ data: Document[]; total: number } | Document[]>({
     queryKey: documentsKey,
@@ -1345,111 +1465,189 @@ export default function DocumentAutomation() {
           </TabsContent>
 
           <TabsContent value="templates" className="space-y-6">
-            <Card className="bg-card border-border">
-              <CardHeader>
-                <CardTitle className="text-lg text-foreground">Document Templates</CardTitle>
-                <CardDescription>Download templates for HR documents and onboarding materials</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  <div className="p-4 rounded-lg bg-muted border border-border hover:border-border/50 transition-colors">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="p-2 rounded-lg bg-muted/20">
-                        <FileText className="h-5 w-5 text-foreground" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-foreground">Offer Letter</h4>
-                        <p className="text-xs text-muted-foreground">Standard employment offer</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">CV Templates</h3>
+                <p className="text-muted-foreground text-sm">Upload CV templates for AI-powered CV formatting</p>
+              </div>
+              <Dialog open={cvUploadDialogOpen} onOpenChange={setCvUploadDialogOpen}>
+                <Button onClick={() => setCvUploadDialogOpen(true)} className="gap-2" data-testid="button-upload-cv">
+                  <Upload className="w-4 h-4" />
+                  Upload Template
+                </Button>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Upload CV Template</DialogTitle>
+                    <DialogDescription>
+                      Upload a PDF or DOCX file to use as a CV formatting template.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="cv-template-name">Template Name</Label>
+                      <Input
+                        id="cv-template-name"
+                        data-testid="input-template-name"
+                        placeholder="Enter template name"
+                        value={cvTemplateName}
+                        onChange={(e) => setCvTemplateName(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Template File</Label>
+                      <div
+                        className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                        onClick={() => cvFileInputRef.current?.click()}
+                        data-testid="dropzone-file-upload"
+                      >
+                        <input
+                          ref={cvFileInputRef}
+                          type="file"
+                          accept=".pdf,.docx,.doc"
+                          onChange={handleCvFileChange}
+                          className="hidden"
+                          data-testid="input-file-upload"
+                        />
+                        {cvSelectedFile ? (
+                          <div className="flex items-center justify-center gap-3">
+                            <File className="w-8 h-8 text-primary" />
+                            <div className="text-left">
+                              <p className="font-medium" data-testid="text-selected-filename">{cvSelectedFile.name}</p>
+                              <p className="text-sm text-muted-foreground">{formatCvFileSize(cvSelectedFile.size)}</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <Upload className="w-10 h-10 mx-auto text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground">Click to upload or drag and drop</p>
+                            <p className="text-xs text-muted-foreground">PDF or DOCX (max 10MB)</p>
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" className="w-full" data-testid="button-download-offer-letter">
-                      <Download className="h-4 w-4 mr-2" />
-                      Download Template
-                    </Button>
+                    {isCvUploading && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span>Uploading...</span>
+                          <span>{cvUploadProgress}%</span>
+                        </div>
+                        <Progress value={cvUploadProgress} data-testid="progress-upload" />
+                      </div>
+                    )}
                   </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setCvUploadDialogOpen(false)} disabled={isCvUploading} data-testid="button-cancel-upload">
+                      Cancel
+                    </Button>
+                    <Button onClick={handleCvUpload} disabled={!cvSelectedFile || isCvUploading} data-testid="button-submit-upload">
+                      {isCvUploading ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
+                      ) : (
+                        "Upload Template"
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
 
-                  <div className="p-4 rounded-lg bg-muted border border-border hover:border-border/50 transition-colors">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="p-2 rounded-lg bg-muted/20">
-                        <Mail className="h-5 w-5 text-foreground dark:text-foreground" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-foreground">Welcome Letter</h4>
-                        <p className="text-xs text-muted-foreground">New employee welcome</p>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm" className="w-full" data-testid="button-download-welcome-letter">
-                      <Download className="h-4 w-4 mr-2" />
-                      Download Template
-                    </Button>
-                  </div>
-
-                  <div className="p-4 rounded-lg bg-muted border border-border hover:border-border/50 transition-colors">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="p-2 rounded-lg bg-muted/20">
-                        <FolderOpen className="h-5 w-5 text-foreground dark:text-foreground" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-foreground">Employee Handbook</h4>
-                        <p className="text-xs text-muted-foreground">Company policies & guidelines</p>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm" className="w-full" data-testid="button-download-handbook">
-                      <Download className="h-4 w-4 mr-2" />
-                      Download Template
-                    </Button>
-                  </div>
-
-                  <div className="p-4 rounded-lg bg-muted border border-border hover:border-border/50 transition-colors">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="p-2 rounded-lg bg-muted/20">
-                        <FileText className="h-5 w-5 text-foreground dark:text-foreground" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-foreground">CV Template</h4>
-                        <p className="text-xs text-muted-foreground">Branded CV format</p>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm" className="w-full" data-testid="button-download-cv-template">
-                      <Download className="h-4 w-4 mr-2" />
-                      Download Template
-                    </Button>
-                  </div>
-
-                  <div className="p-4 rounded-lg bg-muted border border-border hover:border-destructive/50 transition-colors">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="p-2 rounded-lg bg-destructive/20">
-                        <FileText className="h-5 w-5 text-destructive" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-foreground">NDA Agreement</h4>
-                        <p className="text-xs text-muted-foreground">Non-disclosure template</p>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm" className="w-full" data-testid="button-download-nda">
-                      <Download className="h-4 w-4 mr-2" />
-                      Download Template
-                    </Button>
-                  </div>
-
-                  <div className="p-4 rounded-lg bg-muted border border-border hover:border-border/50 transition-colors">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="p-2 rounded-lg bg-muted/20">
-                        <FileText className="h-5 w-5 text-foreground dark:text-foreground" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-foreground">Employment Contract</h4>
-                        <p className="text-xs text-muted-foreground">Standard contract template</p>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm" className="w-full" data-testid="button-download-contract">
-                      <Download className="h-4 w-4 mr-2" />
-                      Download Template
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {cvTemplatesLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : cvTemplates.length === 0 ? (
+              <Card className="border-dashed">
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <FileText className="w-5 h-5" />
+                  <h3 className="text-lg font-medium mb-2 mt-4">No templates yet</h3>
+                  <p className="text-muted-foreground text-center mb-4">
+                    Upload your first CV template to get started.
+                  </p>
+                  <Button onClick={() => setCvUploadDialogOpen(true)} data-testid="button-upload-first-cv">
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Template
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {cvTemplates.map((template) => {
+                  const isActive = template.isActive === 1;
+                  const getFileIcon = (mimeType: string) => {
+                    if (mimeType === "application/pdf") return <FileText className="w-8 h-8 text-destructive" />;
+                    return <FileType className="w-8 h-8 text-foreground dark:text-foreground" />;
+                  };
+                  return (
+                    <Card key={template.id} className={`relative ${isActive ? 'ring-2 ring-ring/50 bg-muted/5' : ''}`} data-testid={`card-template-${template.id}`}>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start gap-3">
+                          {getFileIcon(template.mimeType)}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <CardTitle className="text-base truncate" data-testid={`text-template-name-${template.id}`}>
+                                {template.name}
+                              </CardTitle>
+                              {isActive ? (
+                                <Badge className="bg-muted/20 text-foreground border-border/30 shrink-0" data-testid={`badge-active-${template.id}`}>
+                                  <CheckCircle2 className="w-3 h-3 mr-1" />Active
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-muted-foreground shrink-0" data-testid={`badge-inactive-${template.id}`}>
+                                  <Clock className="w-3 h-3 mr-1" />Inactive
+                                </Badge>
+                              )}
+                            </div>
+                            <CardDescription className="text-xs truncate">{template.originalFilename}</CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Size: {formatCvFileSize(template.fileSize)}</span>
+                            <span className="text-muted-foreground" data-testid={`text-upload-date-${template.id}`}>
+                              {format(new Date(template.createdAt), "MMM d, yyyy")}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {!isActive && (
+                              <Button variant="outline" size="sm" className="flex-1" onClick={() => cvActivateMutation.mutate(template.id)} disabled={cvActivateMutation.isPending} data-testid={`button-activate-${template.id}`}>
+                                {cvActivateMutation.isPending ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <><CheckCircle2 className="w-4 h-4 mr-1" />Set Active</>
+                                )}
+                              </Button>
+                            )}
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" data-testid={`button-delete-${template.id}`}>
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Template</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete "{template.name}"? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => cvDeleteMutation.mutate(template.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" data-testid="button-confirm-delete">
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>

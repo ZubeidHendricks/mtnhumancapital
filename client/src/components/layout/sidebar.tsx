@@ -113,7 +113,6 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         { name: "Employee Onboarding Setup", href: "/onboarding-setup", icon: Building2, module: "onboarding" },
         { name: "Document Automation", href: "/document-automation", icon: FileText },
         { name: "Document Library", href: "/document-library", icon: ClipboardList },
-        { name: "Templates", href: "/cv-templates", icon: FileText },
       ]
     },
     {
