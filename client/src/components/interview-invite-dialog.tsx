@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Bot, Mail, MessageSquare, Send, Loader2, CheckCircle,
-  ChevronDown, ChevronUp
+  ChevronDown, ChevronUp, ClipboardList
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
@@ -252,6 +252,17 @@ AHC Recruiting Team`;
                   View in WhatsApp Monitor
                 </Button>
               )}
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() => {
+                  onOpenChange(false);
+                  setLocation("/interview-console");
+                }}
+              >
+                <ClipboardList className="h-4 w-4" />
+                View in Interview Console
+              </Button>
               <Button onClick={() => onOpenChange(false)}>Close</Button>
             </div>
           </>
