@@ -136,9 +136,16 @@ export const interviewService = {
     return response.data;
   },
   createVideoSession: async (candidateId?: string, candidateName?: string, jobRole?: string): Promise<{ sessionUrl: string; sessionId: string; status: string; candidateId?: string; candidateName?: string; interviewId?: string }> => {
-    const response = await api.post("/interview/video/session", { 
-      candidateId, 
+    const response = await api.post("/interview/video/session", {
+      candidateId,
       candidateName,
+      jobRole
+    });
+    return response.data;
+  },
+  createPracticeVideoSession: async (candidateName?: string, jobRole?: string): Promise<{ sessionUrl: string; sessionId: string; status: string; interviewId?: string }> => {
+    const response = await api.post("/interview/video/session", {
+      candidateName: `[Practice] ${candidateName || "Practice"}`,
       jobRole
     });
     return response.data;

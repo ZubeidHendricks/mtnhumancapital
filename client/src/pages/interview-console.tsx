@@ -12,6 +12,10 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import InterviewTimeline from "@/pages/interview-timeline";
+import { InterviewFlowStepper, type FlowStep } from "@/components/interview-flow-stepper";
+import { PracticeVoicePanel } from "@/components/practice-voice-panel";
+import { PracticeVideoPanel } from "@/components/practice-video-panel";
+import { AnimatePresence } from "framer-motion";
 import {
   Mic,
   Video,
@@ -115,6 +119,8 @@ export default function InterviewConsole() {
   const [showDecisionDialog, setShowDecisionDialog] = useState(false);
   const [pendingDecision, setPendingDecision] = useState<"accepted" | "rejected" | "pipeline" | null>(null);
   const [candidateSearch, setCandidateSearch] = useState("");
+  const [activeFlowStep, setActiveFlowStep] = useState<string | null>(null);
+  const [showPractice, setShowPractice] = useState<"voice" | "video" | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -191,6 +197,62 @@ export default function InterviewConsole() {
       c.skills?.some((s) => s.toLowerCase().includes(q))
     );
   }, [candidatesResponse, candidateSearch]);
+
+  // Derive interview flow steps for the selected session's candidate
+  const flowSteps = useMemo((): FlowStep[] | null => {
+    if (!details?.session?.candidateId) return null;
+    const candidateId = details.session.candidateId;
+
+    // Get all sessions for this candidate, excluding [Practice] sessions
+    const candidateSessions = sessions.filter(
+      (s) => s.candidateId === candidateId && !s.candidateName?.startsWith("[Practice]")
+    );
+
+    const hasCompletedType = (type: string) =>
+      candidateSessions.some((s) => s.interviewType === type && s.status === "completed");
+
+    const getSessionForType = (type: string) =>
+      candidateSessions.find((s) => s.interviewType === type && s.status === "completed");
+
+    const voiceCompleted = hasCompletedType("voice");
+    const videoCompleted = hasCompletedType("video");
+    const f2fCompleted = hasCompletedType("f2f") || hasCompletedType("face_to_face");
+
+    const voiceSession = getSessionForType("voice");
+    const videoSession = getSessionForType("video");
+    const f2fSession = getSessionForType("f2f") || getSessionForType("face_to_face");
+
+    return [
+      {
+        id: "voice",
+        label: "Voice",
+        status: voiceCompleted ? "completed" : "active",
+        sessionId: voiceSession?.id || null,
+        score: voiceSession?.overallScore || null,
+      },
+      {
+        id: "video",
+        label: "Video",
+        status: videoCompleted ? "completed" : voiceCompleted ? "active" : "locked",
+        sessionId: videoSession?.id || null,
+        score: videoSession?.overallScore || null,
+      },
+      {
+        id: "f2f",
+        label: "Face to Face",
+        status: f2fCompleted ? "completed" : videoCompleted ? "active" : "locked",
+        sessionId: f2fSession?.id || null,
+        score: f2fSession?.overallScore || null,
+      },
+      {
+        id: "offer",
+        label: "Make Offer",
+        status: f2fCompleted ? "active" : "locked",
+        sessionId: null,
+        score: null,
+      },
+    ];
+  }, [details?.session?.candidateId, sessions]);
 
   // Pipeline transition mutation
   const pipelineTransitionMutation = useMutation({
@@ -399,6 +461,58 @@ export default function InterviewConsole() {
                   </div>
                 </div>
               </CardHeader>
+
+              {/* Interview Flow Stepper */}
+              {flowSteps && (
+                <div className="px-6 pb-2">
+                  <InterviewFlowStepper
+                    steps={flowSteps}
+                    activeStepId={activeFlowStep || undefined}
+                    onStepClick={(step) => {
+                      setActiveFlowStep(step.id);
+                      setShowPractice(null);
+                      // If clicking a completed step with a sessionId, switch to that session
+                      if (step.sessionId && step.status === "completed") {
+                        setSelectedSession(step.sessionId);
+                      }
+                    }}
+                    onStartInterview={(step) => {
+                      // Navigate to the appropriate interview page
+                      const candidateId = details?.session?.candidateId;
+                      const candidateName = details?.session?.candidateName;
+                      if (step.id === "voice") {
+                        window.open(`/interview-voice?candidateId=${candidateId}&candidate=${encodeURIComponent(candidateName || "")}`, "_blank");
+                      } else if (step.id === "video") {
+                        window.open(`/interview-video?id=${candidateId}&candidate=${encodeURIComponent(candidateName || "")}`, "_blank");
+                      }
+                    }}
+                    onPractice={(step) => {
+                      if (step.id === "voice" || step.id === "video") {
+                        setShowPractice(step.id);
+                        setActiveFlowStep(step.id);
+                      }
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Practice Panels */}
+              <AnimatePresence>
+                {showPractice === "voice" && (
+                  <div className="px-6 pb-4">
+                    <PracticeVoicePanel onClose={() => setShowPractice(null)} />
+                  </div>
+                )}
+                {showPractice === "video" && (
+                  <div className="px-6 pb-4">
+                    <PracticeVideoPanel
+                      candidateName={details?.session?.candidateName || undefined}
+                      onClose={() => setShowPractice(null)}
+                    />
+                  </div>
+                )}
+              </AnimatePresence>
+
               <CardContent>
                 <Tabs defaultValue="analysis" className="w-full">
                   <TabsList className="grid w-full grid-cols-5">
