@@ -370,6 +370,44 @@ export const onboardingService = {
   },
 };
 
+export const integrityDocService = {
+  getByCandidate: async (candidateId: string) => {
+    const response = await api.get(`/candidates/${candidateId}/document-requirements`);
+    return response.data;
+  },
+  verify: async (id: string) => {
+    const response = await api.post(`/document-requirements/${id}/verify`);
+    return response.data;
+  },
+  sendReminder: async (id: string, channel: "email" | "whatsapp" = "whatsapp") => {
+    const response = await api.post(`/document-requirements/${id}/send-reminder`, { channel });
+    return response.data;
+  },
+  requestDocs: async (checkId: string, documentTypes: string[], sendWhatsappRequest = true) => {
+    const response = await api.post(`/integrity-checks/${checkId}/request-documents`, {
+      documentTypes,
+      sendWhatsappRequest,
+    });
+    return response.data;
+  },
+  upload: async (id: string, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await api.post(`/document-requirements/${id}/upload`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  },
+  reject: async (id: string, reason: string) => {
+    const response = await api.post(`/document-requirements/${id}/reject`, { reason });
+    return response.data;
+  },
+  remindAll: async (candidateId: string, channel: "email" | "whatsapp" = "whatsapp") => {
+    const response = await api.post(`/candidates/${candidateId}/integrity-docs/remind-all`, { channel });
+    return response.data;
+  },
+};
+
 export const offersService = {
   getAll: async (): Promise<any[]> => {
     const response = await api.get("/offers");

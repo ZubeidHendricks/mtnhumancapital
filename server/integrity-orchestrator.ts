@@ -241,6 +241,9 @@ export class IntegrityOrchestrator {
     // Create document requirements for any missing documents identified
     await this.createDocumentRequirementsFromFindings(tenantId, checkId, candidateId, finalFindings);
 
+    // Update the comprehensive check status based on whether documents are required
+    await this.updateComprehensiveCheckStatus(tenantId, candidateId, finalFindings);
+
     return finalCheck!;
   }
 
@@ -348,6 +351,38 @@ export class IntegrityOrchestrator {
       } catch (error) {
         console.error(`Failed to create document requirement ${reqData.type}:`, error);
       }
+    }
+  }
+
+  private async updateComprehensiveCheckStatus(
+    tenantId: string,
+    candidateId: string,
+    findings: Record<string, any>
+  ): Promise<void> {
+    // Find the comprehensive check for this candidate
+    const checks = await this.storage.getIntegrityChecksByCandidateId(tenantId, candidateId);
+    const comprehensiveCheck = checks.find(c => c.checkType === "Comprehensive" || c.checkType === "comprehensive");
+    if (!comprehensiveCheck) return;
+
+    // Check if any missing documents were identified across all findings
+    let hasMissingDocs = false;
+    for (const [, data] of Object.entries(findings)) {
+      if (data?.missingDocuments && Array.isArray(data.missingDocuments) && data.missingDocuments.length > 0) {
+        hasMissingDocs = true;
+        break;
+      }
+    }
+
+    if (hasMissingDocs) {
+      await this.storage.updateIntegrityCheck(tenantId, comprehensiveCheck.id, {
+        status: "Documents Required",
+        result: comprehensiveCheck.result || "Pending document verification",
+      });
+    } else {
+      await this.storage.updateIntegrityCheck(tenantId, comprehensiveCheck.id, {
+        status: "Completed",
+        result: comprehensiveCheck.result || "Clear",
+      });
     }
   }
 

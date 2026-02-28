@@ -112,6 +112,8 @@ export const integrityChecks = pgTable("integrity_checks", {
   lastReminderAt: timestamp("last_reminder_at"),
   nextReminderAt: timestamp("next_reminder_at"),
   reminderEnabled: integer("reminder_enabled").default(1),
+  uploadToken: varchar("upload_token").unique(),
+  uploadTokenExpiresAt: timestamp("upload_token_expires_at"),
   completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

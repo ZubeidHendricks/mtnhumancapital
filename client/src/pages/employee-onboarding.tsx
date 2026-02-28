@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTenantQueryKey } from "@/hooks/useTenant";
 import { onboardingService, candidateService, api } from "@/lib/api";
@@ -81,6 +81,7 @@ function WorkflowDetail({ workflowId, onViewDocument }: { workflowId: string; on
   const [reviewMime, setReviewMime] = useState("");
   const [reviewLoading, setReviewLoading] = useState(false);
   const reviewDocxRef = useRef<HTMLDivElement | null>(null);
+  const reviewBlobUrl = useMemo(() => reviewBlob ? URL.createObjectURL(reviewBlob) : null, [reviewBlob]);
   const workflowsKey = useTenantQueryKey(['onboarding-workflows']);
   const workflowKey = useTenantQueryKey(['onboarding-workflow', workflowId]);
   const docRequestsKey = useTenantQueryKey(['onboarding-doc-requests', workflowId]);
@@ -612,7 +613,7 @@ function WorkflowDetail({ workflowId, onViewDocument }: { workflowId: string; on
 
       {/* Document Review Dialog */}
       <Dialog open={!!reviewDoc} onOpenChange={() => setReviewDoc(null)}>
-        <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Eye className="h-4 w-4" />
@@ -620,33 +621,32 @@ function WorkflowDetail({ workflowId, onViewDocument }: { workflowId: string; on
             </DialogTitle>
           </DialogHeader>
           {reviewDoc && (
-            <div className="space-y-4 min-h-0 flex flex-col flex-1">
+            <div className="space-y-4 overflow-y-auto">
               {/* Document preview */}
-              <div className="rounded-lg border overflow-auto bg-muted/30 min-h-[200px] flex-1" style={{ maxHeight: "60vh" }}>
+              <div className="rounded-lg border overflow-auto bg-muted/30 h-[400px]">
                 {reviewLoading ? (
                   <div className="flex flex-col items-center justify-center p-8 gap-2">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     <p className="text-sm text-muted-foreground">Loading document...</p>
                   </div>
-                ) : reviewBlob ? (
+                ) : reviewBlobUrl ? (
                   (() => {
                     if (reviewMime.startsWith("image/")) {
-                      const url = URL.createObjectURL(reviewBlob);
                       return (
                         <div className="flex justify-center p-4 max-h-[400px] overflow-auto">
-                          <img src={url} alt={reviewDoc.documentName} className="max-w-full max-h-[380px] object-contain rounded" onLoad={() => URL.revokeObjectURL(url)} />
+                          <img src={reviewBlobUrl} alt={reviewDoc.documentName} className="max-w-full max-h-[380px] object-contain rounded" />
                         </div>
                       );
                     }
                     if (reviewMime === "application/pdf") {
-                      const url = URL.createObjectURL(reviewBlob);
-                      return <iframe src={url} className="w-full h-[400px]" title={reviewDoc.documentName} onLoad={() => URL.revokeObjectURL(url)} />;
+                      return <iframe src={reviewBlobUrl} className="w-full h-[400px]" title={reviewDoc.documentName} />;
                     }
                     if (reviewMime.includes("wordprocessingml") || reviewMime.includes("msword")) {
                       return (
                         <div
                           ref={(node) => {
-                            if (node && reviewBlob) {
+                            if (node && reviewBlob && !node.dataset.rendered) {
+                              node.dataset.rendered = "true";
                               node.innerHTML = '<p class="text-center text-muted-foreground py-8">Rendering document...</p>';
                               renderAsync(reviewBlob, node, undefined, {
                                 className: "docx-preview",
@@ -669,12 +669,10 @@ function WorkflowDetail({ workflowId, onViewDocument }: { workflowId: string; on
                         <FileText className="w-10 h-10 text-muted-foreground" />
                         <p className="text-sm text-muted-foreground">Preview not available for this file type</p>
                         <Button size="sm" variant="outline" className="gap-1.5" onClick={() => {
-                          const url = URL.createObjectURL(reviewBlob);
                           const a = document.createElement("a");
-                          a.href = url;
+                          a.href = reviewBlobUrl;
                           a.download = reviewDoc.documentName;
                           a.click();
-                          URL.revokeObjectURL(url);
                         }}>
                           <Download className="h-3 w-3" />Download to review
                         </Button>
@@ -717,10 +715,25 @@ function WorkflowDetail({ workflowId, onViewDocument }: { workflowId: string; on
 
               {/* Action buttons */}
               <div className="flex justify-end gap-2 pt-1 shrink-0">
-                <Button variant="outline" size="sm" onClick={() => setReviewDoc(null)}>
+                <Button type="button" variant="outline" size="sm" onClick={() => setReviewDoc(null)}>
                   Cancel
                 </Button>
                 <Button
+                  type="button"
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  disabled={verifyMutation.isPending || !!rejectionReason.trim()}
+                  onClick={() => {
+                    if (reviewDoc) {
+                      verifyMutation.mutate(reviewDoc.id);
+                      setReviewDoc(null);
+                    }
+                  }}
+                >
+                  {verifyMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <><CheckCircle2 className="h-3 w-3 mr-1" />Accept</>}
+                </Button>
+                <Button
+                  type="button"
                   size="sm"
                   variant="outline"
                   className="text-red-600 border-red-200 hover:bg-red-50 dark:border-red-500/30 dark:hover:bg-red-500/10 dark:text-red-400"
@@ -733,19 +746,6 @@ function WorkflowDetail({ workflowId, onViewDocument }: { workflowId: string; on
                   }}
                 >
                   {rejectMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <><AlertCircle className="h-3 w-3 mr-1" />Reject</>}
-                </Button>
-                <Button
-                  size="sm"
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                  disabled={verifyMutation.isPending}
-                  onClick={() => {
-                    if (reviewDoc) {
-                      verifyMutation.mutate(reviewDoc.id);
-                      setReviewDoc(null);
-                    }
-                  }}
-                >
-                  {verifyMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <><CheckCircle2 className="h-3 w-3 mr-1" />Accept</>}
                 </Button>
               </div>
             </div>

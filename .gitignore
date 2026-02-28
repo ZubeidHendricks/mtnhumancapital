@@ -13,6 +13,9 @@ uploads/document-templates/
 uploads/onboarding-documents/
 uploads/onboarding-packs/
 uploads/offer-documents/
+uploads/integrity-documents/
+uploads/onboarding-temp/
+uploads/signed-offers/
 
 # Local settings
 .claude/settings.local.json

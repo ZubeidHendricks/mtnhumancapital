@@ -269,6 +269,7 @@ export interface IStorage {
   updateOnboardingWorkflow(tenantId: string, id: string, workflow: Partial<InsertOnboardingWorkflow>): Promise<OnboardingWorkflow | undefined>;
   deleteOnboardingWorkflow(tenantId: string, id: string): Promise<boolean>;
   getOnboardingWorkflowByUploadToken(token: string): Promise<OnboardingWorkflow | undefined>;
+  getIntegrityCheckByUploadToken(token: string): Promise<IntegrityCheck | undefined>;
 
   getTenantConfig(tenantId?: string): Promise<TenantConfig | undefined>;
   getAllTenantConfigs(): Promise<TenantConfig[]>;
@@ -1051,6 +1052,11 @@ export class DatabaseStorage implements IStorage {
   async getOnboardingWorkflowByUploadToken(token: string): Promise<OnboardingWorkflow | undefined> {
     const [workflow] = await db.select().from(onboardingWorkflows).where(eq(onboardingWorkflows.uploadToken, token));
     return workflow || undefined;
+  }
+
+  async getIntegrityCheckByUploadToken(token: string): Promise<IntegrityCheck | undefined> {
+    const [check] = await db.select().from(integrityChecks).where(eq(integrityChecks.uploadToken, token));
+    return check || undefined;
   }
 
   async getTenantConfig(tenantId?: string): Promise<TenantConfig | undefined> {

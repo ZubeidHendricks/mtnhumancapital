@@ -1,6 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { jobsService, candidateService, integrityChecksService, api } from "@/lib/api";
+import { jobsService, candidateService, integrityChecksService, integrityDocService, api } from "@/lib/api";
 import { useTenantQueryKey } from "@/hooks/useTenant";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -63,7 +63,11 @@ import {
   Timer,
   RotateCcw,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Upload,
+  Bell,
+  MessageSquare,
+  XCircle
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { motion } from "framer-motion";
@@ -72,6 +76,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 
 // Format stage names: "offer_pending" → "Offer Pending", "integrity_checks" → "Integrity Checks"
@@ -160,22 +165,185 @@ export default function HRDashboard() {
     }
   });
 
-  const [verifyingCheckId, setVerifyingCheckId] = useState<string | null>(null);
+  const [verifyingCheckIds, setVerifyingCheckIds] = useState<Set<string>>(new Set());
+  const [expandedCheckId, setExpandedCheckId] = useState<string | null>(null);
+  const [expandedDocReqs, setExpandedDocReqs] = useState<any[]>([]);
+  const [loadingDocReqs, setLoadingDocReqs] = useState(false);
+  const [verifyingDocId, setVerifyingDocId] = useState<string | null>(null);
+  const [remindingDocId, setRemindingDocId] = useState<string | null>(null);
+  const [uploadingIntegrityDocId, setUploadingIntegrityDocId] = useState<string | null>(null);
+  const [remindingAllCandidateId, setRemindingAllCandidateId] = useState<string | null>(null);
+  const integrityFileInputRef = useRef<HTMLInputElement>(null);
+  const [reviewDoc, setReviewDoc] = useState<any>(null);
+  const [reviewBlob, setReviewBlob] = useState<Blob | null>(null);
+  const [reviewMime, setReviewMime] = useState<string>("");
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const reviewBlobUrl = useMemo(() => reviewBlob ? URL.createObjectURL(reviewBlob) : null, [reviewBlob]);
+
+  const toggleExpandCheck = async (checkId: string, candidateId: string) => {
+    if (expandedCheckId === checkId) {
+      setExpandedCheckId(null);
+      setExpandedDocReqs([]);
+      return;
+    }
+    setExpandedCheckId(checkId);
+    setLoadingDocReqs(true);
+    try {
+      const reqs = await integrityDocService.getByCandidate(candidateId);
+      setExpandedDocReqs(reqs);
+    } catch {
+      setExpandedDocReqs([]);
+    } finally {
+      setLoadingDocReqs(false);
+    }
+  };
+
+  const verifyDocRequirement = async (docId: string, candidateId: string) => {
+    setVerifyingDocId(docId);
+    try {
+      await integrityDocService.verify(docId);
+      // Refresh doc requirements
+      const reqs = await integrityDocService.getByCandidate(candidateId);
+      setExpandedDocReqs(reqs);
+      queryClient.invalidateQueries({ queryKey: integrityChecksKey });
+      queryClient.invalidateQueries({ queryKey: candidatesKey });
+      toast.success("Document verified");
+    } catch {
+      toast.error("Failed to verify document");
+    } finally {
+      setVerifyingDocId(null);
+    }
+  };
+
+  const openReviewDialog = async (doc: any) => {
+    setReviewDoc(doc);
+    setRejectionReason("");
+    setReviewBlob(null);
+    setReviewMime("");
+    const documentId = doc.metadata?.documentId;
+    if (!documentId) return;
+    setReviewLoading(true);
+    try {
+      // First get document metadata to find filePath and mimeType
+      const meta = await api.get(`/documents/${documentId}`);
+      const filePath = meta.data.filePath;
+      const mime = meta.data.mimeType || "";
+      setReviewMime(mime);
+      // Fetch the actual file as a blob via filePath
+      const res = await fetch(`/${filePath}`);
+      const blob = await res.blob();
+      setReviewBlob(blob as any);
+    } catch {
+      toast.error("Failed to load document preview");
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
+  const handleReviewAccept = async () => {
+    if (!reviewDoc) return;
+    setVerifyingDocId(reviewDoc.id);
+    try {
+      await integrityDocService.verify(reviewDoc.id);
+      const reqs = await integrityDocService.getByCandidate(reviewDoc.candidateId);
+      setExpandedDocReqs(reqs);
+      queryClient.invalidateQueries({ queryKey: integrityChecksKey });
+      queryClient.invalidateQueries({ queryKey: candidatesKey });
+      toast.success("Document accepted");
+      setReviewDoc(null);
+    } catch {
+      toast.error("Failed to verify document");
+    } finally {
+      setVerifyingDocId(null);
+    }
+  };
+
+  const handleReviewReject = async () => {
+    if (!reviewDoc) return;
+    try {
+      await integrityDocService.reject(reviewDoc.id, rejectionReason);
+      const reqs = await integrityDocService.getByCandidate(reviewDoc.candidateId);
+      setExpandedDocReqs(reqs);
+      queryClient.invalidateQueries({ queryKey: integrityChecksKey });
+      toast.success("Document rejected");
+      setReviewDoc(null);
+    } catch {
+      toast.error("Failed to reject document");
+    }
+  };
+
+  const remindDocRequirement = async (docId: string, candidateId: string, channel: "email" | "whatsapp" = "whatsapp") => {
+    setRemindingDocId(docId);
+    try {
+      await integrityDocService.sendReminder(docId, channel);
+      toast.success("Reminder sent");
+    } catch {
+      toast.error("Failed to send reminder");
+    } finally {
+      setRemindingDocId(null);
+    }
+  };
+
+  const handleIntegrityUploadClick = (docId: string) => {
+    setUploadingIntegrityDocId(docId);
+    integrityFileInputRef.current?.click();
+  };
+
+  const handleIntegrityFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && uploadingIntegrityDocId) {
+      try {
+        await integrityDocService.upload(uploadingIntegrityDocId, file);
+        // Find the candidateId from current expanded docs
+        const doc = expandedDocReqs.find(d => d.id === uploadingIntegrityDocId);
+        if (doc) {
+          const reqs = await integrityDocService.getByCandidate(doc.candidateId);
+          setExpandedDocReqs(reqs);
+        }
+        queryClient.invalidateQueries({ queryKey: integrityChecksKey });
+        toast.success("Document uploaded");
+      } catch {
+        toast.error("Failed to upload document");
+      } finally {
+        setUploadingIntegrityDocId(null);
+      }
+    }
+    e.target.value = "";
+  };
+
+  const remindAllIntegrityDocs = async (candidateId: string, channel: "email" | "whatsapp") => {
+    setRemindingAllCandidateId(candidateId);
+    try {
+      const result = await integrityDocService.remindAll(candidateId, channel);
+      toast.success(result.message || `Sent via ${channel}`);
+      // Refresh doc list so status updates from "pending" to "requested"
+      const reqs = await integrityDocService.getByCandidate(candidateId);
+      setExpandedDocReqs(reqs);
+    } catch {
+      toast.error("Failed to send");
+    } finally {
+      setRemindingAllCandidateId(null);
+    }
+  };
 
   const verifyIntegrityCheck = async (checkId: string, candidateId: string) => {
-    setVerifyingCheckId(checkId);
+    setVerifyingCheckIds(prev => new Set(prev).add(checkId));
     try {
       // Mark the check as Completed/Clear
       await integrityChecksService.update(checkId, { status: "Completed" as any, result: "Clear" as any });
       // Auto-advance pipeline if all checks are done
       await api.post(`/pipeline/candidates/${candidateId}/check-integrity`);
-      queryClient.invalidateQueries({ queryKey: integrityChecksKey });
-      queryClient.invalidateQueries({ queryKey: candidatesKey });
+      // Wait for queries to refetch so UI reflects the new status before clearing loading
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: integrityChecksKey }),
+        queryClient.invalidateQueries({ queryKey: candidatesKey }),
+      ]);
       toast.success("Verification marked as clear");
     } catch {
       toast.error("Failed to verify check");
     } finally {
-      setVerifyingCheckId(null);
+      setVerifyingCheckIds(prev => { const next = new Set(prev); next.delete(checkId); return next; });
     }
   };
 
@@ -531,6 +699,22 @@ BENEFITS:
     };
   };
 
+  // Sort candidates for Risk Assessment: integrity_checks first, then integrity_passed, then others
+  const sortedRiskCandidates = useMemo(() => {
+    if (!candidates || candidates.length === 0) return [];
+    const stagePriority: Record<string, number> = {
+      integrity_checks: 0,
+      integrity_passed: 1,
+    };
+    return [...candidates].sort((a: any, b: any) => {
+      const aPriority = stagePriority[a.stage] ?? 2;
+      const bPriority = stagePriority[b.stage] ?? 2;
+      if (aPriority !== bPriority) return aPriority - bPriority;
+      // Within same group, newest first
+      return new Date(b.updatedAt || b.createdAt || 0).getTime() - new Date(a.updatedAt || a.createdAt || 0).getTime();
+    }).slice(0, 20);
+  }, [candidates]);
+
   interface JobSpecDocument {
     id: string;
     originalFilename: string;
@@ -698,7 +882,149 @@ BENEFITS:
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      
+      <input
+        type="file"
+        ref={integrityFileInputRef}
+        className="hidden"
+        accept=".pdf,.jpg,.jpeg,.png,.docx"
+        onChange={handleIntegrityFileChange}
+      />
+
+      {/* Document Review Dialog */}
+      <Dialog open={!!reviewDoc} onOpenChange={() => setReviewDoc(null)}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="shrink-0">
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-4 w-4" />
+              Review: {reviewDoc?.description || reviewDoc?.documentType}
+            </DialogTitle>
+          </DialogHeader>
+          {reviewDoc && (
+            <div className="space-y-4 overflow-y-auto">
+              {/* Document preview */}
+              <div className="rounded-lg border overflow-auto bg-muted/30 h-[400px]">
+                {reviewLoading ? (
+                  <div className="flex flex-col items-center justify-center p-8 gap-2">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Loading document...</p>
+                  </div>
+                ) : reviewBlobUrl ? (
+                  (() => {
+                    if (reviewMime.startsWith("image/")) {
+                      return (
+                        <div className="flex justify-center p-4 max-h-[400px] overflow-auto">
+                          <img src={reviewBlobUrl} alt={reviewDoc.description || reviewDoc.documentType} className="max-w-full max-h-[380px] object-contain rounded" />
+                        </div>
+                      );
+                    }
+                    if (reviewMime === "application/pdf") {
+                      return <iframe src={reviewBlobUrl} className="w-full h-[400px]" title={reviewDoc.description || reviewDoc.documentType} />;
+                    }
+                    if (reviewMime.includes("wordprocessingml") || reviewMime.includes("msword")) {
+                      return (
+                        <div
+                          ref={(node) => {
+                            if (node && reviewBlob && !node.dataset.rendered) {
+                              node.dataset.rendered = "true";
+                              node.innerHTML = '<p class="text-center text-muted-foreground py-8">Rendering document...</p>';
+                              import("docx-preview").then(({ renderAsync }) => {
+                                renderAsync(reviewBlob, node, undefined, {
+                                  className: "docx-preview",
+                                  inWrapper: true,
+                                  ignoreWidth: true,
+                                  ignoreHeight: false,
+                                  ignoreFonts: false,
+                                  breakPages: true,
+                                }).catch(() => {
+                                  node.innerHTML = '<p class="text-center text-muted-foreground py-8">Failed to render document.</p>';
+                                });
+                              });
+                            }
+                          }}
+                        />
+                      );
+                    }
+                    // Fallback: download link
+                    return (
+                      <div className="flex flex-col items-center justify-center p-8 gap-3">
+                        <FileText className="w-10 h-10 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">Preview not available for this file type</p>
+                        <Button size="sm" variant="outline" className="gap-1.5" onClick={() => {
+                          const a = document.createElement("a");
+                          a.href = reviewBlobUrl;
+                          a.download = reviewDoc.description || reviewDoc.documentType;
+                          a.click();
+                        }}>
+                          <Download className="h-3 w-3" />Download to review
+                        </Button>
+                      </div>
+                    );
+                  })()
+                ) : (
+                  <div className="flex flex-col items-center justify-center p-8 gap-2">
+                    <FileText className="h-6 w-6 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">No document uploaded yet</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Info row */}
+              <div className="flex gap-3 text-xs shrink-0">
+                <div className="flex-1 bg-muted/30 rounded-lg p-2.5 border">
+                  <p className="text-muted-foreground mb-0.5">Type</p>
+                  <p className="font-medium">{reviewDoc.description || reviewDoc.documentType}</p>
+                </div>
+                <div className="flex-1 bg-muted/30 rounded-lg p-2.5 border">
+                  <p className="text-muted-foreground mb-0.5">Received</p>
+                  <p className="font-medium">{reviewDoc.receivedAt ? new Date(reviewDoc.receivedAt).toLocaleDateString() : "N/A"}</p>
+                </div>
+              </div>
+
+              {/* Rejection reason */}
+              <div className="shrink-0">
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                  Rejection reason (only required if rejecting)
+                </label>
+                <Textarea
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="e.g. Document is expired, image is blurry..."
+                  rows={2}
+                  className="text-sm resize-none"
+                />
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex justify-end gap-2 pt-1 shrink-0">
+                <Button type="button" variant="outline" size="sm" onClick={() => setReviewDoc(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  disabled={verifyingDocId === reviewDoc?.id || !!rejectionReason.trim()}
+                  onClick={handleReviewAccept}
+                >
+                  {verifyingDocId === reviewDoc?.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <CheckCircle2 className="h-3 w-3 mr-1" />}
+                  Accept
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="text-red-600 border-red-200 hover:bg-red-50 dark:border-red-500/30 dark:hover:bg-red-500/10 dark:text-red-400"
+                  disabled={!rejectionReason.trim()}
+                  onClick={handleReviewReject}
+                >
+                  <AlertCircle className="h-3 w-3 mr-1" />Reject
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <main className="pt-24 pb-12 px-6 container mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
@@ -1780,11 +2106,208 @@ BENEFITS:
                         ) : (
                           allIntegrityChecks.map((check: any) => {
                             const candidateName = check.candidateName || "Unknown Candidate";
+                            const isComprehensive = check.checkType === "Comprehensive" || check.checkType === "comprehensive";
+                            const isDocsRequired = check.status === "Documents Required";
+                            const isExpanded = expandedCheckId === check.id;
+
+                            // Status badge style helper
+                            const getStatusBadge = (status: string) => {
+                              const isComplete = status === "Clear" || status === "completed" || status === "Completed";
+                              const isDocsReq = status === "Documents Required";
+                              return (
+                                <Badge
+                                  variant={isComplete ? "default" : "secondary"}
+                                  className={
+                                    isComplete ? "bg-green-500/20 text-green-600 dark:text-green-400" :
+                                    isDocsReq ? "bg-amber-500/20 text-amber-600 dark:text-amber-400" :
+                                    "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
+                                  }
+                                >
+                                  {status}
+                                </Badge>
+                              );
+                            };
+
+                            if (isComprehensive) {
+                              return (
+                                <Collapsible key={check.id} open={isExpanded} onOpenChange={() => toggleExpandCheck(check.id, check.candidateId)}>
+                                  <CollapsibleTrigger asChild>
+                                    <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-border cursor-pointer hover:bg-white/10 transition-colors">
+                                      <div className="flex items-center gap-3">
+                                        <Avatar className="h-8 w-8">
+                                          <AvatarFallback className="bg-[#0A0A0A] text-white text-xs">
+                                            {candidateName.substring(0, 2).toUpperCase()}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                          <p className="font-medium text-sm">{candidateName}</p>
+                                          <p className="text-xs text-foreground font-semibold">AI Integrity Check</p>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        {check.status === "Pending" && (
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="h-7 text-xs gap-1 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950"
+                                            onClick={(e) => { e.stopPropagation(); navigate(`/integrity-agent?candidateId=${check.candidateId}&autoStart=true`); }}
+                                          >
+                                            <ShieldCheck className="h-3 w-3" /> Start
+                                          </Button>
+                                        )}
+                                        {check.status === "In Progress" && <Loader2 className="h-4 w-4 animate-spin text-yellow-500" />}
+                                        {getStatusBadge(check.status)}
+                                        {isDocsRequired && (
+                                          <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                                        )}
+                                      </div>
+                                    </div>
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent>
+                                    {isExpanded && (
+                                      <div className="ml-11 mt-1 mb-2 p-3 rounded-lg bg-white/3 border border-border/50 space-y-2">
+                                        {loadingDocReqs ? (
+                                          <div className="flex items-center justify-center py-4">
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                            <span className="ml-2 text-xs text-muted-foreground">Loading documents...</span>
+                                          </div>
+                                        ) : expandedDocReqs.length === 0 ? (
+                                          <p className="text-xs text-muted-foreground text-center py-3">No document requirements found</p>
+                                        ) : (
+                                          <>
+                                            <div className="flex items-center justify-between mb-1">
+                                              <p className="text-xs font-semibold text-foreground">Required Documents ({expandedDocReqs.length})</p>
+                                              {expandedDocReqs.some((d: any) => d.status === "pending" || d.status === "requested") && (
+                                                <DropdownMenu>
+                                                  <DropdownMenuTrigger asChild>
+                                                    <Button
+                                                      size="sm"
+                                                      variant="outline"
+                                                      className="h-6 text-[10px] px-2 text-amber-600 border-amber-300"
+                                                      disabled={remindingAllCandidateId === check.candidateId}
+                                                      onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                      {remindingAllCandidateId === check.candidateId ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Bell className="h-3 w-3 mr-1" />{expandedDocReqs.some((d: any) => d.status === "pending") ? "Request All" : "Remind All"}<ChevronDown className="h-2.5 w-2.5 ml-0.5" /></>}
+                                                    </Button>
+                                                  </DropdownMenuTrigger>
+                                                  <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => remindAllIntegrityDocs(check.candidateId, "email")}>
+                                                      <Mail className="h-3.5 w-3.5 mr-2" />Send via Email
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => remindAllIntegrityDocs(check.candidateId, "whatsapp")}>
+                                                      <MessageSquare className="h-3.5 w-3.5 mr-2" />Send via WhatsApp
+                                                    </DropdownMenuItem>
+                                                  </DropdownMenuContent>
+                                                </DropdownMenu>
+                                              )}
+                                            </div>
+                                            {expandedDocReqs.map((doc: any) => (
+                                              <div key={doc.id} className="flex items-center justify-between px-2 py-1.5 rounded bg-white/50 dark:bg-zinc-900/50 text-xs gap-2">
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                  <FileText className="h-3 w-3 text-muted-foreground shrink-0" />
+                                                  <span className="truncate">{doc.description || doc.documentType}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5 shrink-0">
+                                                  <Badge
+                                                    variant="secondary"
+                                                    className={
+                                                      doc.status === "verified" ? "bg-green-500/20 text-green-600 dark:text-green-400 text-[10px]" :
+                                                      doc.status === "received" ? "bg-blue-500/20 text-blue-600 dark:text-blue-400 text-[10px]" :
+                                                      doc.status === "rejected" ? "bg-red-500/20 text-red-600 dark:text-red-400 text-[10px]" :
+                                                      "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 text-[10px]"
+                                                    }
+                                                  >
+                                                    {doc.status}
+                                                  </Badge>
+                                                  {(doc.status === "pending" || doc.status === "requested") && (
+                                                    <>
+                                                      <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="h-5 text-[10px] px-1.5"
+                                                        disabled={uploadingIntegrityDocId === doc.id}
+                                                        onClick={(e) => { e.stopPropagation(); handleIntegrityUploadClick(doc.id); }}
+                                                      >
+                                                        {uploadingIntegrityDocId === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Upload className="h-3 w-3 mr-0.5" />Upload</>}
+                                                      </Button>
+                                                      <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                          <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            className="h-5 text-[10px] px-1.5 text-amber-600"
+                                                            disabled={remindingDocId === doc.id}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                          >
+                                                            {remindingDocId === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Bell className="h-3 w-3 mr-0.5" />Remind<ChevronDown className="h-2 w-2 ml-0.5" /></>}
+                                                          </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                          <DropdownMenuItem onClick={() => remindDocRequirement(doc.id, check.candidateId, "email")}>
+                                                            <Mail className="h-3.5 w-3.5 mr-2" />Send via Email
+                                                          </DropdownMenuItem>
+                                                          <DropdownMenuItem onClick={() => remindDocRequirement(doc.id, check.candidateId, "whatsapp")}>
+                                                            <MessageSquare className="h-3.5 w-3.5 mr-2" />Send via WhatsApp
+                                                          </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                      </DropdownMenu>
+                                                    </>
+                                                  )}
+                                                  {doc.status === "received" && (
+                                                    <Button
+                                                      size="sm"
+                                                      variant="ghost"
+                                                      className="h-5 text-[10px] px-1.5 text-blue-600"
+                                                      onClick={(e) => { e.stopPropagation(); openReviewDialog(doc); }}
+                                                    >
+                                                      <Eye className="h-3 w-3 mr-0.5" />Review
+                                                    </Button>
+                                                  )}
+                                                  {doc.status === "rejected" && (
+                                                    <>
+                                                      <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                          <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            className="h-5 text-[10px] px-1.5 text-amber-600"
+                                                            disabled={remindingDocId === doc.id}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                          >
+                                                            {remindingDocId === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Bell className="h-3 w-3 mr-0.5" />Remind<ChevronDown className="h-2 w-2 ml-0.5" /></>}
+                                                          </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                          <DropdownMenuItem onClick={() => remindDocRequirement(doc.id, check.candidateId, "email")}>
+                                                            <Mail className="h-3.5 w-3.5 mr-2" />Send via Email
+                                                          </DropdownMenuItem>
+                                                          <DropdownMenuItem onClick={() => remindDocRequirement(doc.id, check.candidateId, "whatsapp")}>
+                                                            <MessageSquare className="h-3.5 w-3.5 mr-2" />Send via WhatsApp
+                                                          </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                      </DropdownMenu>
+                                                    </>
+                                                  )}
+                                                  {doc.status === "verified" && (
+                                                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                                                  )}
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </>
+                                        )}
+                                      </div>
+                                    )}
+                                  </CollapsibleContent>
+                                </Collapsible>
+                              );
+                            }
+
+                            // Non-comprehensive checks (Criminal Record, ID Verification, Reference Check)
                             return (
                               <div
                                 key={check.id}
-                                className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-border cursor-pointer hover:bg-white/10 transition-colors"
-                                onClick={() => navigate(`/integrity-agent?candidateId=${check.candidateId}&readOnly=true`)}
+                                className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-border"
                               >
                                 <div className="flex items-center gap-3">
                                   <Avatar className="h-8 w-8">
@@ -1794,29 +2317,27 @@ BENEFITS:
                                   </Avatar>
                                   <div>
                                     <p className="font-medium text-sm">{candidateName}</p>
-                                    <p className="text-xs text-foreground font-semibold">{check.checkType || check.type || "Verification"}</p>
+                                    <p className="text-xs text-foreground font-semibold">{check.checkType || "Verification"}</p>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  {check.status === "Pending" || check.status === "In Progress" ? (
+                                  {(check.status === "Pending" || check.status === "In Progress") && (
                                     <Button
                                       size="sm"
                                       variant="outline"
                                       className="h-7 text-xs gap-1 border-green-300 dark:border-green-700 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950"
-                                      disabled={verifyingCheckId === check.id}
-                                      onClick={(e) => { e.stopPropagation(); verifyIntegrityCheck(check.id, check.candidateId); }}
+                                      disabled={verifyingCheckIds.has(check.id)}
+                                      onClick={() => verifyIntegrityCheck(check.id, check.candidateId)}
                                     >
-                                      {verifyingCheckId === check.id ? (
+                                      {verifyingCheckIds.has(check.id) ? (
                                         <Loader2 className="h-3 w-3 animate-spin" />
                                       ) : (
                                         <CheckCircle2 className="h-3 w-3" />
                                       )}
                                       Verify
                                     </Button>
-                                  ) : null}
-                                  <Badge variant={check.status === "Clear" || check.status === "completed" || check.status === "Completed" ? "default" : "secondary"} className={check.status === "Clear" || check.status === "completed" || check.status === "Completed" ? "bg-green-500/20 text-green-600 dark:text-green-400" : "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"}>
-                                    {check.status}
-                                  </Badge>
+                                  )}
+                                  {getStatusBadge(check.status)}
                                 </div>
                               </div>
                             );
@@ -1842,10 +2363,11 @@ BENEFITS:
                       <p className="text-sm text-foreground font-semibold mb-3">Select a candidate to view risk analysis:</p>
                       <ScrollArea className="h-[300px]">
                         <div className="space-y-2">
-                          {candidates && candidates.length > 0 ? candidates.slice(0, 20).map((candidate: any) => {
+                          {sortedRiskCandidates.length > 0 ? sortedRiskCandidates.map((candidate: any) => {
                             const riskData = getCandidateRiskData(candidate.id);
+                            const isIntegrityStage = candidate.stage === "integrity_checks";
                             return (
-                              <div 
+                              <div
                                 key={candidate.id}
                                 onClick={() => setSelectedRiskCandidate(candidate)}
                                 className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-border cursor-pointer hover:bg-white/10 transition-colors"
@@ -1862,21 +2384,25 @@ BENEFITS:
                                     <p className="text-xs text-foreground font-semibold">{candidate.role || 'Candidate'}</p>
                                   </div>
                                 </div>
-                                {riskData.hasData ? (
-                                  <Badge 
-                                    data-testid={`badge-risk-level-${candidate.id}`}
-                                    className={
-                                      riskData.riskLevel === 'low' ? 'bg-green-500/20 text-green-600 dark:text-green-400' :
-                                      riskData.riskLevel === 'medium' ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400' :
-                                      riskData.riskLevel === 'high' ? 'bg-muted/20 text-foreground' :
-                                      'bg-red-500/20 text-red-600 dark:text-red-400'
-                                    }
-                                  >
-                                    {riskData.riskLevel.charAt(0).toUpperCase() + riskData.riskLevel.slice(1)}
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="outline" className="text-foreground font-semibold" data-testid={`badge-no-data-${candidate.id}`}>No Data</Badge>
-                                )}
+                                <div className="flex items-center gap-2">
+                                  {riskData.hasData ? (
+                                    <Badge
+                                      data-testid={`badge-risk-level-${candidate.id}`}
+                                      className={
+                                        riskData.riskLevel === 'low' ? 'bg-green-500/20 text-green-600 dark:text-green-400' :
+                                        riskData.riskLevel === 'medium' ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400' :
+                                        riskData.riskLevel === 'high' ? 'bg-muted/20 text-foreground' :
+                                        'bg-red-500/20 text-red-600 dark:text-red-400'
+                                      }
+                                    >
+                                      {riskData.riskLevel.charAt(0).toUpperCase() + riskData.riskLevel.slice(1)}
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-foreground font-semibold" data-testid={`badge-no-data-${candidate.id}`}>
+                                      {isIntegrityStage ? "Pending" : "No Data"}
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
                             );
                           }) : (
@@ -1942,7 +2468,7 @@ BENEFITS:
                               <span className="text-sm font-medium">Overall Risk Score</span>
                               <div className="flex items-center gap-2">
                                 <span className="text-2xl font-bold" data-testid="text-risk-score">{riskData.overallRiskScore}%</span>
-                                <Badge 
+                                <Badge
                                   data-testid="badge-detail-risk-level"
                                   className={
                                     riskData.riskLevel === 'low' ? 'bg-green-500/20 text-green-600 dark:text-green-400' :
@@ -1953,6 +2479,11 @@ BENEFITS:
                                 >
                                   {riskData.riskLevel.charAt(0).toUpperCase() + riskData.riskLevel.slice(1)} Risk
                                 </Badge>
+                                <Link href={`/integrity-agent?candidateId=${selectedRiskCandidate.id}&readOnly=true`}>
+                                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1">
+                                    <FileCheck className="w-3 h-3" /> View Report
+                                  </Button>
+                                </Link>
                               </div>
                             </div>
                             

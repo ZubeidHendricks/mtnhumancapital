@@ -2860,57 +2860,357 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
   // Send reminder for pending document requirements
   app.post("/api/document-requirements/:id/send-reminder", async (req, res) => {
     try {
+      const { channel = "whatsapp" } = req.body;
       const requirement = await storage.getIntegrityDocumentRequirement(req.tenant.id, req.params.id);
       if (!requirement) {
         return res.status(404).json({ message: "Document requirement not found" });
       }
-      
+
       const candidate = await storage.getCandidate(req.tenant.id, requirement.candidateId);
-      if (!candidate || !candidate.phone) {
-        return res.status(400).json({ message: "Candidate has no phone number" });
+      if (!candidate) {
+        return res.status(404).json({ message: "Candidate not found" });
       }
-      
+
+      // Build upload portal link if available
+      const checks = await storage.getIntegrityChecksByCandidateId(req.tenant.id, requirement.candidateId);
+      const comprehensiveCheck = checks.find((c: any) => c.checkType === "Comprehensive");
+      let uploadLink = "";
+      if (comprehensiveCheck) {
+        let token = comprehensiveCheck.uploadToken;
+        if (!token || (comprehensiveCheck.uploadTokenExpiresAt && new Date(comprehensiveCheck.uploadTokenExpiresAt) < new Date())) {
+          token = crypto.randomBytes(24).toString("hex");
+          const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+          await storage.updateIntegrityCheck(req.tenant.id, comprehensiveCheck.id, {
+            uploadToken: token,
+            uploadTokenExpiresAt: expiresAt,
+          } as any);
+        }
+        const baseUrl = `${req.protocol}://${req.get("host")}`;
+        uploadLink = `${baseUrl}/integrity-upload/${token}`;
+      }
+
+      const docName = requirement.description || requirement.documentType;
+      const uploadInstruction = uploadLink ? `\n\nYou can upload your document here: ${uploadLink}` : "";
+
+      const whatsappMessage = `Hi ${candidate.fullName},\n\nThis is a reminder that we're still waiting for your ${docName}.${uploadInstruction}\n\nPlease upload this document at your earliest convenience to complete your background verification.`;
+
       try {
-        const { whatsappService } = await import("./whatsapp-service");
+        if (channel === "email") {
+          if (!candidate.email) {
+            return res.status(400).json({ message: "Candidate has no email address" });
+          }
 
-        const message = `Hi ${candidate.fullName},\n\nThis is a reminder that we're still waiting for your ${requirement.description}.\n\nReference code: ${requirement.referenceCode}\n\nPlease upload this document at your earliest convenience to complete your background verification.\n\nReply with "${requirement.documentType}" before sending the document.`;
+          const uploadButtonHtml = uploadLink
+            ? `<div style="text-align:center;margin:24px 0;">
+                <a href="${uploadLink}" style="display:inline-block;background:linear-gradient(135deg,#0d9488,#2563eb);color:white;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">Upload Your Document</a>
+              </div>
+              <p style="font-size:12px;color:#9ca3af;text-align:center;">This link expires in 14 days. If you need a new link, please contact HR.</p>`
+            : '';
 
-        const candidatePhone = candidate.phone.replace(/\D/g, '');
-        const conversation = await whatsappService.getOrCreateConversation(
-          req.tenant.id,
-          candidatePhone,
-          candidatePhone,
-          candidate.fullName,
-          candidate.id,
-          'document_collection'
-        );
+          await emailService.sendEmail({
+            to: candidate.email,
+            subject: `Document Reminder - ${docName}`,
+            html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+              <div style="background:linear-gradient(135deg,#0d9488,#2563eb);padding:30px;border-radius:12px 12px 0 0;text-align:center;">
+                <h1 style="color:white;margin:0;font-size:24px;">Document Reminder</h1>
+                <p style="color:rgba(255,255,255,0.9);margin:10px 0 0 0;">Background Verification - ${candidate.fullName}</p>
+              </div>
+              <div style="background:#ffffff;border:1px solid #e5e7eb;border-top:none;padding:30px;border-radius:0 0 12px 12px;">
+                <p style="font-size:16px;color:#374151;">Dear ${candidate.fullName},</p>
+                <p style="font-size:14px;color:#6b7280;line-height:1.6;">This is a friendly reminder that we're still waiting for the following document to complete your background verification:</p>
+                <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:20px;margin:20px 0;">
+                  <h3 style="margin:0 0 12px 0;color:#92400e;">Document Required</h3>
+                  <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                    <thead><tr style="background:#fef3c7;">
+                      <th style="padding:8px 12px;text-align:left;">Document</th>
+                      <th style="padding:8px 12px;text-align:left;">Type</th>
+                    </tr></thead>
+                    <tbody><tr>
+                      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">${docName}</td>
+                      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:13px;">${requirement.documentType}</td>
+                    </tr></tbody>
+                  </table>
+                </div>
+                ${uploadButtonHtml}
+                <p style="font-size:14px;color:#6b7280;margin-top:20px;">Best regards,<br><strong>HR Team</strong></p>
+              </div>
+            </div>`,
+          });
+        } else {
+          if (!candidate.phone) {
+            return res.status(400).json({ message: "Candidate has no phone number" });
+          }
 
-        await whatsappService.sendTextMessage(
-          req.tenant.id,
-          conversation.id,
-          candidatePhone,
-          message,
-          'ai'
-        );
-        
+          const { whatsappService } = await import("./whatsapp-service");
+          const candidatePhone = candidate.phone.replace(/\D/g, '');
+          const conversation = await whatsappService.getOrCreateConversation(
+            req.tenant.id, candidatePhone, candidatePhone, candidate.fullName, candidate.id, 'document_collection'
+          );
+          await whatsappService.sendTextMessage(req.tenant.id, conversation.id, candidatePhone, whatsappMessage, 'ai');
+        }
+
         // Update reminder tracking
         const now = new Date();
-        const nextReminderAt = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours
-        
+        const nextReminderAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
         await storage.updateIntegrityDocumentRequirement(req.tenant.id, req.params.id, {
           remindersSent: (requirement.remindersSent || 0) + 1,
           lastReminderAt: now,
           nextReminderAt,
         });
-        
+
         res.json({ message: "Reminder sent successfully" });
-      } catch (whatsappError) {
-        console.error("Failed to send WhatsApp reminder:", whatsappError);
-        res.status(500).json({ message: "Failed to send reminder via WhatsApp" });
+      } catch (sendError) {
+        console.error("Failed to send reminder:", sendError);
+        res.status(500).json({ message: `Failed to send reminder via ${channel}` });
       }
     } catch (error) {
       console.error("Error sending document requirement reminder:", error);
       res.status(500).json({ message: "Failed to send reminder" });
+    }
+  });
+
+  // Verify an integrity document requirement
+  app.post("/api/document-requirements/:id/verify", async (req, res) => {
+    try {
+      const requirement = await storage.getIntegrityDocumentRequirement(req.tenant.id, req.params.id);
+      if (!requirement) {
+        return res.status(404).json({ message: "Document requirement not found" });
+      }
+
+      const updated = await storage.updateIntegrityDocumentRequirement(req.tenant.id, req.params.id, {
+        status: "verified",
+        verifiedAt: new Date(),
+      });
+
+      // Check if all doc requirements for this candidate are now verified
+      const allReqs = await storage.getIntegrityDocumentRequirements(req.tenant.id, requirement.candidateId);
+      const allVerified = allReqs.every(r => r.status === "verified");
+
+      if (allVerified) {
+        // Update the comprehensive check from "Documents Required" to "Completed"
+        const checks = await storage.getIntegrityChecksByCandidateId(req.tenant.id, requirement.candidateId);
+        const comprehensiveCheck = checks.find((c: any) => c.checkType === "Comprehensive" && c.status === "Documents Required");
+        if (comprehensiveCheck) {
+          await storage.updateIntegrityCheck(req.tenant.id, comprehensiveCheck.id, {
+            status: "Completed",
+            result: comprehensiveCheck.result || "Clear",
+          });
+        }
+
+        // Try to auto-advance the pipeline
+        try {
+          const { pipelineOrchestrator } = await import("./pipeline-orchestrator");
+          await pipelineOrchestrator.checkAndAutoAdvanceIntegrity(requirement.candidateId, req.tenant.id);
+        } catch (err) {
+          console.error("Auto-advance after doc verify failed (non-blocking):", err);
+        }
+      }
+
+      res.json({ requirement: updated, allVerified });
+    } catch (error) {
+      console.error("Error verifying document requirement:", error);
+      res.status(500).json({ message: "Failed to verify document requirement" });
+    }
+  });
+
+  // Reject an integrity document requirement
+  app.post("/api/document-requirements/:id/reject", async (req, res) => {
+    try {
+      const { reason } = req.body;
+      const requirement = await storage.getIntegrityDocumentRequirement(req.tenant.id, req.params.id);
+      if (!requirement) {
+        return res.status(404).json({ message: "Document requirement not found" });
+      }
+
+      const updated = await storage.updateIntegrityDocumentRequirement(req.tenant.id, req.params.id, {
+        status: "rejected",
+        metadata: { ...(requirement.metadata as any || {}), rejectionReason: reason || "Document rejected by HR" },
+      });
+
+      res.json({ requirement: updated });
+    } catch (error) {
+      console.error("Error rejecting document requirement:", error);
+      res.status(500).json({ message: "Failed to reject document requirement" });
+    }
+  });
+
+  // Upload a document for an integrity document requirement
+  app.post("/api/document-requirements/:id/upload", upload.single("file"), async (req, res) => {
+    try {
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const requirement = await storage.getIntegrityDocumentRequirement(req.tenant.id, req.params.id);
+      if (!requirement) {
+        return res.status(404).json({ message: "Document requirement not found" });
+      }
+
+      // Save file to disk
+      const fileName = `integrity_${requirement.candidateId}_${requirement.documentType}_${Date.now()}${path.extname(file.originalname)}`;
+      const filePath = path.join("uploads/integrity-documents", fileName);
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+      fs.writeFileSync(filePath, file.buffer);
+
+      // Create a document record
+      const doc = await storage.createDocument(req.tenant.id, {
+        filename: fileName,
+        originalFilename: file.originalname,
+        mimeType: file.mimetype,
+        fileSize: file.size,
+        filePath: filePath,
+        type: "integrity",
+        status: "uploaded",
+        linkedCandidateId: requirement.candidateId,
+      });
+
+      // Also create a candidateDocuments record
+      await storage.createCandidateDocument(req.tenant.id, {
+        candidateId: requirement.candidateId,
+        documentType: requirement.documentType,
+        fileName: file.originalname,
+        fileUrl: filePath,
+        fileSize: file.size,
+        mimeType: file.mimetype,
+        collectedVia: "portal",
+        status: "received",
+      });
+
+      // Mark the requirement as received with documentId and receivedAt
+      const updated = await storage.updateIntegrityDocumentRequirement(req.tenant.id, req.params.id, {
+        status: "received",
+        receivedAt: new Date(),
+        metadata: { ...(requirement.metadata as any || {}), documentId: doc.id },
+      });
+
+      res.json({ requirement: updated, document: doc });
+    } catch (error) {
+      console.error("Error uploading integrity document:", error);
+      res.status(500).json({ message: "Failed to upload document" });
+    }
+  });
+
+  // Request or remind all pending integrity document requirements for a candidate
+  app.post("/api/candidates/:candidateId/integrity-docs/remind-all", async (req, res) => {
+    try {
+      const { channel = "whatsapp" } = req.body;
+      const candidateId = req.params.candidateId;
+
+      const candidate = await storage.getCandidate(req.tenant.id, candidateId);
+      if (!candidate) {
+        return res.status(404).json({ message: "Candidate not found" });
+      }
+
+      const allReqs = await storage.getIntegrityDocumentRequirements(req.tenant.id, candidateId);
+      const pendingReqs = allReqs.filter(r => r.status === "pending" || r.status === "requested");
+
+      if (pendingReqs.length === 0) {
+        return res.json({ message: "No pending documents to remind about", reminded: 0 });
+      }
+
+      // Determine if this is an initial request (any docs still "pending") or a reminder
+      const isInitialRequest = pendingReqs.some(r => r.status === "pending");
+      const docList = pendingReqs.map(r => `• ${r.description || r.documentType}`).join("\n");
+      const docListHtml = pendingReqs.map(r => `<li>${r.description || r.documentType}</li>`).join("");
+
+      // Find or create upload token on the candidate's Comprehensive integrity check
+      const checks = await storage.getIntegrityChecksByCandidateId(req.tenant.id, candidateId);
+      const comprehensiveCheck = checks.find((c: any) => c.checkType === "Comprehensive");
+      let uploadLink = "";
+      if (comprehensiveCheck) {
+        let token = comprehensiveCheck.uploadToken;
+        if (!token || (comprehensiveCheck.uploadTokenExpiresAt && new Date(comprehensiveCheck.uploadTokenExpiresAt) < new Date())) {
+          token = crypto.randomBytes(24).toString("hex");
+          const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+          await storage.updateIntegrityCheck(req.tenant.id, comprehensiveCheck.id, {
+            uploadToken: token,
+            uploadTokenExpiresAt: expiresAt,
+          } as any);
+        }
+        const baseUrl = `${req.protocol}://${req.get("host")}`;
+        uploadLink = `${baseUrl}/integrity-upload/${token}`;
+      }
+
+      const uploadInstruction = uploadLink ? `\n\nYou can upload your documents here: ${uploadLink}` : "";
+      const uploadButtonHtml = uploadLink
+        ? `<div style="text-align:center;margin:24px 0;">
+            <a href="${uploadLink}" style="display:inline-block;background:linear-gradient(135deg,#0d9488,#2563eb);color:white;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">Upload Your Documents</a>
+          </div>
+          <p style="font-size:12px;color:#9ca3af;text-align:center;">This link expires in 14 days. If you need a new link, please contact HR.</p>`
+        : '';
+
+      const docTableHtml = pendingReqs.map(r =>
+        `<tr>
+          <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">${r.description || r.documentType}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:13px;">${r.documentType}</td>
+        </tr>`
+      ).join('');
+
+      const requestMessage = `Hi ${candidate.fullName},\n\nAs part of your background verification process, we require the following documents from you:\n\n${docList}${uploadInstruction}\n\nPlease submit these documents at your earliest convenience to avoid any delays in the process.\n\nThank you for your cooperation.`;
+      const reminderMessage = `Hi ${candidate.fullName},\n\nThis is a friendly reminder that we're still waiting for the following documents to complete your background verification:\n\n${docList}${uploadInstruction}\n\nPlease submit these documents at your earliest convenience.`;
+
+      const styledEmailHtml = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+        <div style="background:linear-gradient(135deg,#0d9488,#2563eb);padding:30px;border-radius:12px 12px 0 0;text-align:center;">
+          <h1 style="color:white;margin:0;font-size:24px;">${isInitialRequest ? "Document Request" : "Document Reminder"}</h1>
+          <p style="color:rgba(255,255,255,0.9);margin:10px 0 0 0;">Background Verification - ${candidate.fullName}</p>
+        </div>
+        <div style="background:#ffffff;border:1px solid #e5e7eb;border-top:none;padding:30px;border-radius:0 0 12px 12px;">
+          <p style="font-size:16px;color:#374151;">Dear ${candidate.fullName},</p>
+          <p style="font-size:14px;color:#6b7280;line-height:1.6;">${isInitialRequest
+            ? "As part of your background verification process, we require the following documents from you. Please submit them at your earliest convenience to avoid any delays."
+            : "This is a friendly reminder that we're still waiting for the following documents to complete your background verification."}</p>
+          <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:20px;margin:20px 0;">
+            <h3 style="margin:0 0 12px 0;color:#92400e;">Documents We Need From You</h3>
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+              <thead><tr style="background:#fef3c7;">
+                <th style="padding:8px 12px;text-align:left;">Document</th>
+                <th style="padding:8px 12px;text-align:left;">Type</th>
+              </tr></thead>
+              <tbody>${docTableHtml}</tbody>
+            </table>
+          </div>
+          ${uploadButtonHtml}
+          <p style="font-size:14px;color:#6b7280;margin-top:20px;">Best regards,<br><strong>HR Team</strong></p>
+        </div>
+      </div>`;
+
+      if (channel === "whatsapp") {
+        if (!candidate.phone) {
+          return res.status(400).json({ message: "Candidate has no phone number" });
+        }
+
+        const { whatsappService } = await import("./whatsapp-service");
+        const candidatePhone = candidate.phone.replace(/\D/g, '');
+        const conversation = await whatsappService.getOrCreateConversation(
+          req.tenant.id, candidatePhone, candidatePhone, candidate.fullName, candidate.id, 'document_collection'
+        );
+        await whatsappService.sendTextMessage(req.tenant.id, conversation.id, candidatePhone, isInitialRequest ? requestMessage : reminderMessage, 'ai');
+      } else {
+        await emailService.sendEmail({
+          to: candidate.email!,
+          subject: isInitialRequest ? "Document Request - Background Verification" : "Document Reminder - Background Verification",
+          html: styledEmailHtml,
+        });
+      }
+
+      // Update status and reminder tracking
+      const now = new Date();
+      const nextReminderAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      for (const req2 of pendingReqs) {
+        await storage.updateIntegrityDocumentRequirement(req.tenant.id, req2.id, {
+          status: "requested",
+          remindersSent: (req2.remindersSent || 0) + 1,
+          lastReminderAt: now,
+          nextReminderAt,
+        });
+      }
+
+      res.json({ message: isInitialRequest ? "Document requests sent" : "Reminders sent", reminded: pendingReqs.length });
+    } catch (error) {
+      console.error("Error sending remind-all:", error);
+      res.status(500).json({ message: "Failed to send reminders" });
     }
   });
 

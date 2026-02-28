@@ -356,6 +356,126 @@ app.post("/api/public/onboarding-upload/:token/:requestId", publicUpload.single(
   }
 });
 
+// PUBLIC route: Integrity document upload portal - GET info
+app.get("/api/public/integrity-upload/:token", async (req, res) => {
+  try {
+    const check = await storage.getIntegrityCheckByUploadToken(req.params.token);
+    if (!check) {
+      return res.status(404).json({ message: "Upload link not found" });
+    }
+
+    if (check.uploadTokenExpiresAt && new Date(check.uploadTokenExpiresAt) < new Date()) {
+      return res.status(410).json({ message: "This upload link has expired. Please contact HR for a new link." });
+    }
+
+    const candidate = await storage.getCandidate(check.tenantId!, check.candidateId);
+    if (!candidate) {
+      return res.status(404).json({ message: "Candidate not found" });
+    }
+
+    const docReqs = await storage.getIntegrityDocumentRequirements(check.tenantId!, check.candidateId);
+
+    const tenant = check.tenantId
+      ? await storage.getTenantById(check.tenantId)
+      : null;
+
+    res.json({
+      candidate: {
+        id: candidate.id,
+        fullName: candidate.fullName,
+        role: candidate.role,
+      },
+      documentRequirements: docReqs.map((r: any) => ({
+        id: r.id,
+        documentType: r.documentType,
+        description: r.description,
+        status: r.status,
+        isRequired: 1,
+        receivedAt: r.receivedAt,
+      })),
+      tenantConfig: tenant ? {
+        companyName: tenant.companyName,
+        primaryColor: tenant.primaryColor,
+        logoUrl: tenant.logoUrl,
+      } : null,
+      expiresAt: check.uploadTokenExpiresAt,
+    });
+  } catch (error) {
+    console.error("Error fetching integrity upload portal:", error);
+    res.status(500).json({ message: "Failed to load upload portal" });
+  }
+});
+
+// PUBLIC route: Integrity document upload - POST file
+app.post("/api/public/integrity-upload/:token/:requirementId", publicUpload.single("file"), async (req, res) => {
+  try {
+    const check = await storage.getIntegrityCheckByUploadToken(req.params.token);
+    if (!check) {
+      return res.status(404).json({ message: "Upload link not found" });
+    }
+
+    if (check.uploadTokenExpiresAt && new Date(check.uploadTokenExpiresAt) < new Date()) {
+      return res.status(410).json({ message: "This upload link has expired. Please contact HR for a new link." });
+    }
+
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    const requirement = await storage.getIntegrityDocumentRequirement(check.tenantId!, req.params.requirementId);
+    if (!requirement || requirement.candidateId !== check.candidateId) {
+      return res.status(404).json({ message: "Document requirement not found" });
+    }
+
+    if (requirement.status === 'verified') {
+      return res.status(400).json({ message: "This document has already been verified" });
+    }
+
+    // Save file to disk
+    const fileName = `integrity_${requirement.candidateId}_${requirement.documentType}_${Date.now()}${path.extname(file.originalname)}`;
+    const filePath = path.join("uploads/integrity-documents", fileName);
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, file.buffer);
+
+    // Create a document record
+    const doc = await storage.createDocument(check.tenantId!, {
+      filename: fileName,
+      originalFilename: file.originalname,
+      mimeType: file.mimetype,
+      fileSize: file.size,
+      filePath: filePath,
+      type: "integrity",
+      status: "uploaded",
+      linkedCandidateId: requirement.candidateId,
+    });
+
+    // Also create a candidateDocuments record
+    await storage.createCandidateDocument(check.tenantId!, {
+      candidateId: requirement.candidateId,
+      documentType: requirement.documentType,
+      fileName: file.originalname,
+      fileUrl: filePath,
+      fileSize: file.size,
+      mimeType: file.mimetype,
+      collectedVia: "portal",
+      status: "received",
+    });
+
+    // Mark the requirement as received with documentId
+    const updated = await storage.updateIntegrityDocumentRequirement(check.tenantId!, req.params.requirementId, {
+      status: "received",
+      receivedAt: new Date(),
+      metadata: { ...(requirement.metadata as any || {}), documentId: doc.id },
+    });
+
+    res.json({ requirement: updated, document: { id: doc.id, filename: doc.filename } });
+  } catch (error) {
+    console.error("Error uploading integrity document:", error);
+    res.status(500).json({ message: "Failed to upload document" });
+  }
+});
+
 // PUBLIC route: Candidate offer response portal - GET details
 app.get("/api/public/offer-response/:token", async (req, res) => {
   try {

@@ -81,12 +81,31 @@ export class OnboardingAgent {
     const requests: OnboardingDocumentRequest[] = [];
     const now = new Date();
 
+    // Cross-system dedup: check integrity doc requirements for already-verified docs
+    let integrityDocMap = new Map<string, string>(); // documentType -> status
+    try {
+      const integrityReqs = await this.storage.getIntegrityDocumentRequirements(tenantId, candidateId);
+      for (const req of integrityReqs) {
+        if (req.status === 'verified' || req.status === 'received') {
+          integrityDocMap.set(req.documentType, req.status);
+        }
+      }
+    } catch {
+      // Non-critical, continue without dedup
+    }
+
     for (const doc of documents) {
       const dueDate = new Date(now);
       dueDate.setDate(dueDate.getDate() + doc.dueDays);
-      
+
       const reminderDate = new Date(dueDate);
       reminderDate.setDate(reminderDate.getDate() - 1);
+
+      // If this doc type was already verified/received during integrity, pre-set status
+      const integrityStatus = integrityDocMap.get(doc.documentType);
+      const initialStatus = integrityStatus === 'verified' ? 'verified' as const
+        : integrityStatus === 'received' ? 'received' as const
+        : 'pending' as const;
 
       const request = await this.storage.createOnboardingDocumentRequest(tenantId, {
         workflowId,
@@ -95,17 +114,27 @@ export class OnboardingAgent {
         documentName: doc.documentName,
         description: doc.description,
         isRequired: doc.isRequired ? 1 : 0,
-        status: 'pending',
+        status: initialStatus,
         priority: doc.priority,
         dueDate,
-        nextReminderAt: reminderDate,
+        nextReminderAt: initialStatus === 'pending' ? reminderDate : undefined,
         maxReminders: 3,
+        ...(integrityStatus ? {
+          receivedAt: integrityStatus === 'received' || integrityStatus === 'verified' ? now : undefined,
+          verifiedAt: integrityStatus === 'verified' ? now : undefined,
+          notes: "Pre-verified during integrity checks",
+        } : {}),
       });
       requests.push(request);
 
       await this.logStep(tenantId, workflowId, candidateId, 'document_collector', 'document_request_created', {
         stepName: 'documentation',
-        details: { documentType: doc.documentType, documentName: doc.documentName, dueDate: dueDate.toISOString() },
+        details: {
+          documentType: doc.documentType,
+          documentName: doc.documentName,
+          dueDate: dueDate.toISOString(),
+          ...(integrityStatus ? { preVerified: true, fromIntegrity: integrityStatus } : {}),
+        },
         targetEntity: 'candidate',
         targetEntityId: candidateId,
       });
