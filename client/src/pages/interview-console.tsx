@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import InterviewTimeline from "@/pages/interview-timeline";
@@ -29,6 +30,12 @@ import {
   ThumbsUp,
   ThumbsDown,
   Clock3,
+  Search,
+  Mail,
+  Phone,
+  MapPin,
+  ArrowRight,
+  GitBranch,
 } from "lucide-react";
 
 interface InterviewSession {
@@ -89,11 +96,25 @@ interface InterviewDetails {
   feedback: InterviewFeedback[];
 }
 
+interface CandidateResult {
+  id: string;
+  fullName: string;
+  email: string | null;
+  phone: string | null;
+  role: string | null;
+  stage: string;
+  match: number;
+  location: string | null;
+  skills: string[] | null;
+  jobId: string | null;
+}
+
 export default function InterviewConsole() {
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [decisionNotes, setDecisionNotes] = useState("");
   const [showDecisionDialog, setShowDecisionDialog] = useState(false);
   const [pendingDecision, setPendingDecision] = useState<"accepted" | "rejected" | "pipeline" | null>(null);
+  const [candidateSearch, setCandidateSearch] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -117,7 +138,7 @@ export default function InterviewConsole() {
       if (!response.ok) throw new Error("Failed to update decision");
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/interviews", selectedSession] });
       queryClient.invalidateQueries({ queryKey: ["/api/interviews"] });
       setShowDecisionDialog(false);
@@ -126,11 +147,77 @@ export default function InterviewConsole() {
         title: "Decision Updated",
         description: "The interview decision has been recorded successfully.",
       });
+
+      // Auto-update pipeline based on decision
+      const candidateId = details?.session?.candidateId;
+      if (candidateId) {
+        const stageMap: Record<string, string> = {
+          accepted: "offer_pending",
+          rejected: "rejected",
+          pipeline: "shortlisted",
+        };
+        const targetStage = stageMap[variables.decision];
+        if (targetStage) {
+          pipelineTransitionMutation.mutate({
+            candidateId,
+            toStage: targetStage,
+            reason: `Interview decision: ${variables.decision}${variables.notes ? ` - ${variables.notes}` : ""}`,
+          });
+        }
+      }
     },
     onError: () => {
       toast({
         title: "Error",
         description: "Failed to update decision. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Candidates query for search tab
+  const { data: candidatesResponse = [] } = useQuery<CandidateResult[]>({
+    queryKey: ["/api/candidates"],
+  });
+
+  const filteredCandidates = useMemo(() => {
+    if (!candidateSearch.trim()) return candidatesResponse;
+    const q = candidateSearch.toLowerCase();
+    return candidatesResponse.filter((c) =>
+      c.fullName?.toLowerCase().includes(q) ||
+      c.email?.toLowerCase().includes(q) ||
+      c.phone?.includes(q) ||
+      c.role?.toLowerCase().includes(q) ||
+      c.skills?.some((s) => s.toLowerCase().includes(q))
+    );
+  }, [candidatesResponse, candidateSearch]);
+
+  // Pipeline transition mutation
+  const pipelineTransitionMutation = useMutation({
+    mutationFn: async ({ candidateId, toStage, reason }: { candidateId: string; toStage: string; reason: string }) => {
+      const response = await fetch(`/api/pipeline/candidates/${candidateId}/transition`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ toStage, reason }),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to transition candidate");
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/candidates"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/interviews"] });
+      toast({
+        title: "Pipeline Updated",
+        description: `Candidate moved to "${data.toStage?.replace(/_/g, " ")}" stage`,
+      });
+    },
+    onError: (err: Error) => {
+      toast({
+        title: "Pipeline Update Failed",
+        description: err.message,
         variant: "destructive",
       });
     },
@@ -314,7 +401,7 @@ export default function InterviewConsole() {
               </CardHeader>
               <CardContent>
                 <Tabs defaultValue="analysis" className="w-full">
-                  <TabsList className="grid w-full grid-cols-4">
+                  <TabsList className="grid w-full grid-cols-5">
                     <TabsTrigger value="analysis" data-testid="tab-analysis">
                       <BarChart3 className="h-4 w-4 mr-2" />
                       Analysis
@@ -330,6 +417,10 @@ export default function InterviewConsole() {
                     <TabsTrigger value="decision" data-testid="tab-decision">
                       <CheckCircle className="h-4 w-4 mr-2" />
                       Decision
+                    </TabsTrigger>
+                    <TabsTrigger value="candidates" data-testid="tab-candidates">
+                      <Search className="h-4 w-4 mr-2" />
+                      Candidates
                     </TabsTrigger>
                   </TabsList>
 
@@ -535,6 +626,15 @@ export default function InterviewConsole() {
                             </Button>
                           </div>
 
+                          {/* Pipeline stage indicator */}
+                          {details.session.candidateId && (
+                            <PipelineStageIndicator
+                              candidateId={details.session.candidateId}
+                              decision={latestFeedback.decision}
+                              isTransitioning={pipelineTransitionMutation.isPending}
+                            />
+                          )}
+
                           {latestFeedback.isFinalized === 1 && (
                             <div className="text-center text-muted-foreground bg-muted p-4 rounded-lg">
                               <CheckCircle className="h-6 w-6 mx-auto mb-2 text-foreground" />
@@ -558,6 +658,123 @@ export default function InterviewConsole() {
                           <p className="text-sm mt-1">Complete the interview first to make a decision</p>
                         </div>
                       )}
+                    </div>
+                  </TabsContent>
+
+                  {/* Search Candidates Tab */}
+                  <TabsContent value="candidates" className="mt-4">
+                    <div className="space-y-4">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search by name, email, phone, role, or skills..."
+                          value={candidateSearch}
+                          onChange={(e) => setCandidateSearch(e.target.value)}
+                          className="pl-10"
+                          data-testid="input-candidate-search"
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {filteredCandidates.length} candidate{filteredCandidates.length !== 1 ? "s" : ""} found
+                      </p>
+                      <ScrollArea className="h-[400px]">
+                        {filteredCandidates.length === 0 ? (
+                          <div className="text-center py-12 text-muted-foreground">
+                            <Search className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                            <p>No candidates found</p>
+                            <p className="text-sm mt-1">Try a different search term</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {filteredCandidates.map((candidate) => (
+                              <div
+                                key={candidate.id}
+                                className="p-4 rounded-lg border hover:border-primary/50 transition-colors"
+                              >
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                                      <span className="font-medium text-sm truncate">{candidate.fullName}</span>
+                                      <Badge variant="outline" className="text-xs shrink-0 capitalize">
+                                        {candidate.stage?.replace(/_/g, " ") || "New"}
+                                      </Badge>
+                                    </div>
+                                    {candidate.role && (
+                                      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                                        <Briefcase className="h-3 w-3 shrink-0" />
+                                        <span className="truncate">{candidate.role}</span>
+                                      </div>
+                                    )}
+                                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                      {candidate.email && (
+                                        <span className="flex items-center gap-1 truncate">
+                                          <Mail className="h-3 w-3 shrink-0" />{candidate.email}
+                                        </span>
+                                      )}
+                                      {candidate.phone && (
+                                        <span className="flex items-center gap-1">
+                                          <Phone className="h-3 w-3 shrink-0" />{candidate.phone}
+                                        </span>
+                                      )}
+                                      {candidate.location && (
+                                        <span className="flex items-center gap-1">
+                                          <MapPin className="h-3 w-3 shrink-0" />{candidate.location}
+                                        </span>
+                                      )}
+                                    </div>
+                                    {candidate.skills && candidate.skills.length > 0 && (
+                                      <div className="flex flex-wrap gap-1 mt-2">
+                                        {candidate.skills.slice(0, 5).map((skill, i) => (
+                                          <Badge key={i} variant="secondary" className="text-xs h-5">
+                                            {skill}
+                                          </Badge>
+                                        ))}
+                                        {candidate.skills.length > 5 && (
+                                          <Badge variant="secondary" className="text-xs h-5">
+                                            +{candidate.skills.length - 5}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex flex-col items-end gap-2 ml-3">
+                                    {candidate.match > 0 && (
+                                      <div className="text-center">
+                                        <span className="text-lg font-bold">{candidate.match}%</span>
+                                        <p className="text-xs text-muted-foreground">Match</p>
+                                      </div>
+                                    )}
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-xs"
+                                      onClick={() => {
+                                        // Link this candidate to the current interview session
+                                        if (!selectedSession) return;
+                                        fetch(`/api/interviews/${selectedSession}/decision`, {
+                                          method: "PATCH",
+                                          headers: { "Content-Type": "application/json" },
+                                          body: JSON.stringify({ candidateId: candidate.id }),
+                                        }).then(() => {
+                                          queryClient.invalidateQueries({ queryKey: ["/api/interviews", selectedSession] });
+                                          queryClient.invalidateQueries({ queryKey: ["/api/interviews"] });
+                                          toast({ title: "Candidate Linked", description: `${candidate.fullName} linked to this interview` });
+                                        }).catch(() => {
+                                          toast({ title: "Error", description: "Failed to link candidate", variant: "destructive" });
+                                        });
+                                      }}
+                                    >
+                                      <ArrowRight className="h-3 w-3 mr-1" />
+                                      Link
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </ScrollArea>
                     </div>
                   </TabsContent>
                 </Tabs>
@@ -629,6 +846,89 @@ function ScoreCard({ label, value }: { label: string; value: number | null }) {
       <p className={`text-2xl font-bold ${getScoreColor(value)}`}>
         {value !== null ? `${value}%` : "N/A"}
       </p>
+    </div>
+  );
+}
+
+const PIPELINE_STAGES = [
+  "sourcing", "screening", "shortlisted", "interviewing",
+  "offer_pending", "offer_declined", "integrity_checks",
+  "integrity_passed", "onboarding", "hired", "rejected",
+];
+
+function PipelineStageIndicator({ candidateId, decision, isTransitioning }: {
+  candidateId: string;
+  decision: string | null;
+  isTransitioning: boolean;
+}) {
+  const { data: pipelineStatus } = useQuery<{
+    candidate: { stage: string; fullName: string };
+    currentStage: string;
+    progressPercentage: number;
+  }>({
+    queryKey: ["/api/pipeline/candidates", candidateId, "status"],
+    queryFn: async () => {
+      const res = await fetch(`/api/pipeline/candidates/${candidateId}/status`);
+      if (!res.ok) throw new Error("Failed to fetch pipeline status");
+      return res.json();
+    },
+    enabled: !!candidateId,
+  });
+
+  if (!pipelineStatus) return null;
+
+  const currentStage = pipelineStatus.currentStage || pipelineStatus.candidate?.stage || "screening";
+  const currentIdx = PIPELINE_STAGES.indexOf(currentStage);
+
+  // Map decision to expected next stage
+  const decisionStageMap: Record<string, string> = {
+    accepted: "offer_pending",
+    rejected: "rejected",
+    pipeline: "shortlisted",
+  };
+  const nextStage = decision ? decisionStageMap[decision] : null;
+
+  return (
+    <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <GitBranch className="h-4 w-4 text-muted-foreground" />
+        <h4 className="text-sm font-semibold">Pipeline Progress</h4>
+        {isTransitioning && <Loader2 className="h-3 w-3 animate-spin" />}
+      </div>
+      <div className="flex items-center gap-1 overflow-x-auto pb-1">
+        {PIPELINE_STAGES.slice(0, 6).map((stage, i) => {
+          const isActive = stage === currentStage;
+          const isPast = i < currentIdx && currentIdx >= 0;
+          const isNext = stage === nextStage && stage !== currentStage;
+          return (
+            <div key={stage} className="flex items-center">
+              {i > 0 && <div className={`w-4 h-0.5 ${isPast ? "bg-primary" : "bg-border"}`} />}
+              <div
+                className={`px-2 py-1 rounded text-xs whitespace-nowrap ${
+                  isActive
+                    ? "bg-primary text-primary-foreground font-medium"
+                    : isPast
+                    ? "bg-primary/20 text-primary"
+                    : isNext
+                    ? "bg-amber-500/20 text-amber-600 border border-amber-500/40 border-dashed"
+                    : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {stage.replace(/_/g, " ")}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span>Current: <span className="font-medium capitalize text-foreground">{currentStage.replace(/_/g, " ")}</span></span>
+        {nextStage && nextStage !== currentStage && (
+          <span className="flex items-center gap-1">
+            <ArrowRight className="h-3 w-3" />
+            Moving to: <span className="font-medium capitalize text-amber-600">{nextStage.replace(/_/g, " ")}</span>
+          </span>
+        )}
+      </div>
     </div>
   );
 }
