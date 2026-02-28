@@ -63,9 +63,10 @@ export default function Recommendations() {
     queryKey: ["/api/recommendations"],
   });
 
-  const { data: candidates = [] } = useQuery<Candidate[]>({
+  const { data: candidatesRaw } = useQuery<{ data: Candidate[] }>({
     queryKey: ["/api/candidates"],
   });
+  const candidates = candidatesRaw?.data ?? [];
 
   const getCandidateById = (id: string) => candidates.find(c => c.id === id);
 

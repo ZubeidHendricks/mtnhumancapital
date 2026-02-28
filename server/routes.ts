@@ -2246,87 +2246,7 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     }
   });
 
-  // Interview routes - enhanced with candidate info
-  app.get("/api/interviews", async (req, res) => {
-    try {
-      const page = Math.max(1, parseInt(req.query.page as string) || 1);
-      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
-      const { data: interviewsData, total } = await storage.getInterviewsPaginated(req.tenant.id, page, limit);
-      // Enrich interviews with candidate names
-      const enrichedInterviews = await Promise.all(
-        interviewsData.map(async (interview) => {
-          let candidateName = null;
-          if (interview.candidateId) {
-            const candidate = await storage.getCandidate(req.tenant.id, interview.candidateId);
-            candidateName = candidate?.fullName || null;
-          }
-          return {
-            ...interview,
-            candidateName,
-            jobTitle: (interview.metadata as any)?.jobRole || interview.type + " Interview",
-            interviewType: interview.type,
-          };
-        })
-      );
-      res.json({ data: enrichedInterviews, total, page, limit });
-    } catch (error) {
-      console.error("Error fetching interviews:", error);
-      res.status(500).json({ message: "Failed to fetch interviews" });
-    }
-  });
-
-  app.get("/api/interviews/:id", async (req, res) => {
-    try {
-      const interview = await storage.getInterview(req.tenant.id, req.params.id);
-      if (!interview) {
-        return res.status(404).json({ message: "Interview not found" });
-      }
-      // Enrich with candidate info
-      let candidateName = null;
-      if (interview.candidateId) {
-        const candidate = await storage.getCandidate(req.tenant.id, interview.candidateId);
-        candidateName = candidate?.fullName || null;
-      }
-      
-      // Fetch transcripts and feedback if linked to a session
-      let transcripts: any[] = [];
-      let feedback: any[] = [];
-      let recordings: any[] = [];
-      
-      if (interview.sessionId) {
-        transcripts = await storage.getInterviewTranscripts(req.tenant.id, interview.sessionId);
-        feedback = await storage.getInterviewFeedback(req.tenant.id, interview.sessionId);
-        recordings = await storage.getInterviewRecordings(req.tenant.id, interview.sessionId);
-      }
-      
-      // Return in InterviewDetails format expected by frontend
-      res.json({
-        session: {
-          ...interview,
-          candidateName,
-          jobTitle: (interview.metadata as any)?.jobRole || interview.type + " Interview",
-          interviewType: interview.type,
-        },
-        recordings,
-        transcripts,
-        feedback,
-      });
-    } catch (error) {
-      console.error("Error fetching interview:", error);
-      res.status(500).json({ message: "Failed to fetch interview" });
-    }
-  });
-
-  app.get("/api/candidates/:candidateId/interviews", async (req, res) => {
-    try {
-      const interviews = await storage.getInterviewsByCandidateId(req.tenant.id, req.params.candidateId);
-      res.json(interviews);
-    } catch (error) {
-      console.error("Error fetching candidate interviews:", error);
-      res.status(500).json({ message: "Failed to fetch candidate interviews" });
-    }
-  });
-
+  // Interview routes for job-scoped queries (non-duplicate)
   app.get("/api/jobs/:jobId/interviews", async (req, res) => {
     try {
       const interviews = await storage.getInterviewsByJobId(req.tenant.id, req.params.jobId);
@@ -2334,22 +2254,6 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     } catch (error) {
       console.error("Error fetching job interviews:", error);
       res.status(500).json({ message: "Failed to fetch job interviews" });
-    }
-  });
-
-  app.post("/api/interviews", async (req, res) => {
-    try {
-      const result = insertInterviewSchema.safeParse(req.body);
-      if (!result.success) {
-        const validationError = fromZodError(result.error);
-        return res.status(400).json({ message: validationError.message });
-      }
-      
-      const interview = await storage.createInterview(req.tenant.id, result.data);
-      res.status(201).json(interview);
-    } catch (error) {
-      console.error("Error creating interview:", error);
-      res.status(500).json({ message: "Failed to create interview" });
     }
   });
 
@@ -10335,18 +10239,7 @@ Format your response as JSON:
     }
   });
 
-  // ==================== ADMIN TENANT MANAGEMENT ====================
-  
-  // Get all tenants (admin only)
-  app.get("/api/admin/tenants", async (req, res) => {
-    try {
-      const tenants = await storage.getAllTenants();
-      res.json(tenants);
-    } catch (error) {
-      console.error("Error fetching tenants:", error);
-      res.status(500).json({ message: "Failed to fetch tenants" });
-    }
-  });
+  // ==================== ADMIN TENANT MANAGEMENT (continued) ====================
 
   // Get tenant payments
   app.get("/api/admin/tenants/:tenantId/payments", async (req, res) => {

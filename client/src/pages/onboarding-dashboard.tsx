@@ -149,9 +149,10 @@ export default function OnboardingDashboard() {
     queryKey: ["/api/onboarding/workflows"],
   });
 
-  const { data: candidates = [] } = useQuery<Candidate[]>({
+  const { data: candidatesRaw } = useQuery<{ data: Candidate[] }>({
     queryKey: ["/api/candidates"],
   });
+  const candidates = candidatesRaw?.data ?? [];
 
   const { data: interventionQueue = [] } = useQuery<AgentLog[]>({
     queryKey: ["/api/onboarding/human-intervention-queue"],

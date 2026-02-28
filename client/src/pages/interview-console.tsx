@@ -181,10 +181,11 @@ export default function InterviewConsole() {
     },
   });
 
-  // Candidates query for search tab
-  const { data: candidatesResponse = [] } = useQuery<CandidateResult[]>({
+  // Candidates query for search tab (API returns { data, total, page, limit })
+  const { data: candidatesRaw } = useQuery<{ data: CandidateResult[] }>({
     queryKey: ["/api/candidates"],
   });
+  const candidatesResponse = candidatesRaw?.data ?? [];
 
   const filteredCandidates = useMemo(() => {
     if (!candidateSearch.trim()) return candidatesResponse;
