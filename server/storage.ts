@@ -650,6 +650,7 @@ export interface IStorage {
   getAllOffers(tenantId: string): Promise<Offer[]>;
   getOffer(tenantId: string, id: string): Promise<Offer | undefined>;
   getOfferByCandidateId(tenantId: string, candidateId: string): Promise<Offer | undefined>;
+  getOfferByResponseToken(token: string): Promise<Offer | undefined>;
   createOffer(tenantId: string, offer: InsertOffer): Promise<Offer>;
   updateOffer(tenantId: string, id: string, offer: Partial<InsertOffer>): Promise<Offer | undefined>;
   deleteOffer(tenantId: string, id: string): Promise<boolean>;
@@ -3846,6 +3847,11 @@ export class DatabaseStorage implements IStorage {
 
   async getOfferByCandidateId(tenantId: string, candidateId: string): Promise<Offer | undefined> {
     const [offer] = await db.select().from(offers).where(and(eq(offers.candidateId, candidateId), eq(offers.tenantId, tenantId))).orderBy(desc(offers.createdAt));
+    return offer || undefined;
+  }
+
+  async getOfferByResponseToken(token: string): Promise<Offer | undefined> {
+    const [offer] = await db.select().from(offers).where(eq(offers.responseToken, token));
     return offer || undefined;
   }
 

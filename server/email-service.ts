@@ -329,9 +329,10 @@ This is an automated notification from the AHC Onboarding System.`;
     salary: string;
     startDate: string;
     companyName?: string;
+    responseUrl?: string;
     attachments?: EmailAttachment[];
   }): Promise<boolean> {
-    const { to, candidateName, jobTitle, salary, startDate, companyName, attachments } = options;
+    const { to, candidateName, jobTitle, salary, startDate, companyName, responseUrl, attachments } = options;
     const company = companyName || "AHC Recruiting";
 
     const subject = `Job Offer: ${jobTitle} - ${company}`;
@@ -344,11 +345,19 @@ Offer Details:
 - Position: ${jobTitle}
 - Salary: ${salary}
 - Proposed Start Date: ${startDate}
-
+${responseUrl ? `\nTo respond to this offer, please visit:\n${responseUrl}\n` : ""}
 Please review the offer and respond at your earliest convenience.
 
 Best regards,
 ${company} HR Team`;
+
+    const responseButtonHtml = responseUrl ? `
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="${responseUrl}" style="display: inline-block; background: linear-gradient(135deg, #059669, #2563eb); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">
+        Respond to Offer
+      </a>
+      <p style="font-size: 12px; color: #9ca3af; margin-top: 8px;">Click the button above to accept or decline this offer</p>
+    </div>` : "";
 
     const html = `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -366,7 +375,7 @@ ${company} HR Team`;
       <p style="margin: 4px 0; color: #374151;"><strong>Position:</strong> ${jobTitle}</p>
       <p style="margin: 4px 0; color: #374151;"><strong>Salary:</strong> ${salary}</p>
       <p style="margin: 4px 0; color: #374151;"><strong>Start Date:</strong> ${startDate}</p>
-    </div>
+    </div>${responseButtonHtml}
     <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
       Please review the offer details and respond at your earliest convenience.
     </p>
@@ -377,7 +386,7 @@ ${company} HR Team`;
     return this.sendEmail({ to, subject, body, html, attachments });
   }
 
-  async notifyHROfOfferResponse(candidateName: string, jobTitle: string, response: "accepted" | "declined"): Promise<void> {
+  async notifyHROfOfferResponse(candidateName: string, jobTitle: string, response: "accepted" | "declined", declineReason?: string): Promise<void> {
     const hrEmail = await this.getHRAdminEmail();
     if (!hrEmail) {
       console.log("[EmailService] HR admin email not configured, skipping offer response notification");
@@ -389,7 +398,7 @@ ${company} HR Team`;
 
 ${response === "accepted"
       ? "Next Steps:\n- Integrity checks will be auto-launched\n- The candidate has been transitioned to the integrity verification stage"
-      : "The candidate has been marked as withdrawn from the pipeline."
+      : `The candidate has been marked as withdrawn from the pipeline.${declineReason ? `\n\nReason for declining: ${declineReason}` : ""}`
     }
 
 This is an automated notification from the AHC HR System.`;

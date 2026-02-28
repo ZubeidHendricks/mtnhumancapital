@@ -356,6 +356,141 @@ app.post("/api/public/onboarding-upload/:token/:requestId", publicUpload.single(
   }
 });
 
+// PUBLIC route: Candidate offer response portal - GET details
+app.get("/api/public/offer-response/:token", async (req, res) => {
+  try {
+    const offer = await storage.getOfferByResponseToken(req.params.token);
+    if (!offer) {
+      return res.status(404).json({ message: "Offer not found or link is invalid" });
+    }
+
+    if (offer.responseTokenExpiresAt && new Date(offer.responseTokenExpiresAt) < new Date()) {
+      return res.status(410).json({ message: "This offer response link has expired. Please contact HR for assistance." });
+    }
+
+    const candidate = await storage.getCandidate(offer.tenantId!, offer.candidateId);
+    if (!candidate) {
+      return res.status(404).json({ message: "Candidate not found" });
+    }
+
+    let jobTitle = candidate.role || "Position";
+    if (offer.jobId) {
+      const { jobs } = await import("@shared/schema");
+      const job = await storage.getJob(offer.tenantId!, offer.jobId);
+      if (job) jobTitle = job.title;
+    }
+
+    const tenant = offer.tenantId ? await storage.getTenantById(offer.tenantId) : null;
+
+    res.json({
+      candidateName: candidate.fullName,
+      jobTitle,
+      salary: `${offer.currency || "ZAR"} ${String(offer.salary).replace(/^R\s*/i, "")}`,
+      startDate: offer.startDate ? new Date(offer.startDate).toLocaleDateString() : "TBD",
+      companyName: tenant?.companyName || "AHC Recruiting",
+      status: offer.status,
+      documentUrl: offer.documentPath || null,
+      expiresAt: offer.expiresAt,
+    });
+  } catch (error) {
+    console.error("Error fetching offer response portal:", error);
+    res.status(500).json({ message: "Failed to load offer response portal" });
+  }
+});
+
+// PUBLIC route: Candidate offer response portal - POST accept/decline
+app.post("/api/public/offer-response/:token", publicUpload.single("signedDocument"), async (req, res) => {
+  try {
+    const offer = await storage.getOfferByResponseToken(req.params.token);
+    if (!offer) {
+      return res.status(404).json({ message: "Offer not found or link is invalid" });
+    }
+
+    if (offer.responseTokenExpiresAt && new Date(offer.responseTokenExpiresAt) < new Date()) {
+      return res.status(410).json({ message: "This offer response link has expired. Please contact HR for assistance." });
+    }
+
+    if (offer.status === "accepted" || offer.status === "declined") {
+      return res.status(400).json({ message: "This offer has already been responded to." });
+    }
+
+    const { response, declineReason } = req.body;
+    if (response !== "accepted" && response !== "declined") {
+      return res.status(400).json({ message: "Response must be 'accepted' or 'declined'" });
+    }
+
+    if (response === "accepted" && !req.file) {
+      return res.status(400).json({ message: "A signed document is required to accept the offer" });
+    }
+
+    const updates: any = {
+      status: response,
+      respondedAt: new Date(),
+    };
+
+    if (response === "declined" && declineReason) {
+      updates.declineReason = declineReason;
+    }
+
+    if (response === "accepted" && req.file) {
+      const uploadDir = path.join(process.cwd(), "uploads", "signed-offers");
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      const fileName = `signed_${offer.id}_${Date.now()}${path.extname(req.file.originalname)}`;
+      const filePath = path.join(uploadDir, fileName);
+      fs.writeFileSync(filePath, req.file.buffer);
+      updates.signedDocumentPath = `uploads/signed-offers/${fileName}`;
+    }
+
+    const updatedOffer = await storage.updateOffer(offer.tenantId!, offer.id, updates);
+
+    // Look up candidate and job for notifications
+    const candidate = await storage.getCandidate(offer.tenantId!, offer.candidateId);
+    let jobTitle = candidate?.role || "Position";
+    if (offer.jobId) {
+      const job = await storage.getJob(offer.tenantId!, offer.jobId);
+      if (job) jobTitle = job.title;
+    }
+
+    // Notify HR
+    try {
+      const { emailService } = await import("./email-service");
+      await emailService.notifyHROfOfferResponse(
+        candidate?.fullName || "Candidate",
+        jobTitle,
+        response,
+        response === "declined" ? declineReason : undefined,
+      );
+    } catch (emailErr) {
+      console.error("HR notification failed (non-blocking):", emailErr);
+    }
+
+    // Trigger pipeline transition
+    try {
+      const { pipelineOrchestrator } = await import("./pipeline-orchestrator");
+      const targetStage = response === "accepted" ? "integrity_checks" : "offer_declined";
+      await pipelineOrchestrator.transitionCandidate(
+        offer.candidateId,
+        targetStage,
+        offer.tenantId!,
+        {
+          triggeredBy: "candidate",
+          reason: response === "accepted" ? "Candidate accepted offer" : "Candidate declined offer",
+          skipPrerequisites: true,
+        }
+      );
+    } catch (pipelineErr) {
+      console.error("Pipeline transition failed (non-blocking):", pipelineErr);
+    }
+
+    res.json({ success: true, status: response });
+  } catch (error) {
+    console.error("Error processing offer response:", error);
+    res.status(500).json({ message: "Failed to process offer response" });
+  }
+});
+
 // Apply tenant resolution middleware ONLY to API routes to avoid blocking static assets
 app.use('/api', resolveTenant);
 

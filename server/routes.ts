@@ -11395,12 +11395,25 @@ Format your response as JSON:
         }
       }
 
+      // Generate a secure response token for the candidate portal
+      const crypto = await import("crypto");
+      const responseToken = crypto.randomBytes(24).toString("hex");
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
       const updatedOffer = await storage.updateOffer(req.tenant.id, offer.id, {
         status: "sent",
         sentAt: new Date(),
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        expiresAt,
+        responseToken,
+        responseTokenExpiresAt: expiresAt,
         ...(documentPath ? { documentPath } : {}),
       } as any);
+
+      // Build response URL for the candidate portal
+      const protocol = req.headers["x-forwarded-proto"] || req.protocol;
+      const host = req.headers["x-forwarded-host"] || req.get("host");
+      const baseUrl = `${protocol}://${host}`;
+      const responseUrl = `${baseUrl}/offer-response/${responseToken}`;
 
       let emailSent = false;
       if (candidate.email) {
@@ -11410,6 +11423,7 @@ Format your response as JSON:
           jobTitle,
           salary: `${offer.currency || "ZAR"} ${String(offer.salary).replace(/^R\s*/i, "")}`,
           startDate: offer.startDate ? new Date(offer.startDate).toLocaleDateString() : "TBD",
+          responseUrl,
           attachments: emailAttachments.length > 0 ? emailAttachments : undefined,
         });
       }

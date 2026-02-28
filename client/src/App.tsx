@@ -75,6 +75,7 @@ import TemplatesPage from "@/pages/templates";
 import AISupport from "@/pages/ai-support";
 import DemoShowcase from "@/pages/demo-showcase";
 import OnboardingUpload from "@/pages/onboarding-upload";
+import OfferResponse from "@/pages/offer-response";
 
 function Router() {
   return (
@@ -147,6 +148,7 @@ function Router() {
       <Route path="/ai-support" component={AISupport} />
       <Route path="/demo" component={DemoShowcase} />
       <Route path="/onboarding-upload/:token" component={OnboardingUpload} />
+      <Route path="/offer-response/:token" component={OfferResponse} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -155,7 +157,7 @@ function Router() {
 function AppWithLayout() {
   const [location, setLocation] = useLocation();
   
-  const publicRoutes = ['/', '/login', '/interview/invite', '/self-assessment', '/verify-certificate', '/onboarding-upload'];
+  const publicRoutes = ['/', '/login', '/interview/invite', '/self-assessment', '/verify-certificate', '/onboarding-upload', '/offer-response'];
   const exactPublicRoutes = ['/onboarding'];
   const isPublicRoute = publicRoutes.some(route => {
     if (route === '/') return location === '/';

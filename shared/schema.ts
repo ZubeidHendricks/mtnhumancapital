@@ -2911,6 +2911,10 @@ export const offers = pgTable("offers", {
   contractType: text("contract_type"),
   documentPath: text("document_path"),
   notes: text("notes"),
+  responseToken: varchar("response_token").unique(),
+  responseTokenExpiresAt: timestamp("response_token_expires_at"),
+  declineReason: text("decline_reason"),
+  signedDocumentPath: text("signed_document_path"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -2920,6 +2924,7 @@ export const insertOfferSchema = createInsertSchema(offers, {
   sentAt: z.coerce.date().optional().nullable(),
   respondedAt: z.coerce.date().optional().nullable(),
   expiresAt: z.coerce.date().optional().nullable(),
+  responseTokenExpiresAt: z.coerce.date().optional().nullable(),
 }).omit({
   id: true,
   tenantId: true,
