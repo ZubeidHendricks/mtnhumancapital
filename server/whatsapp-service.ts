@@ -133,6 +133,116 @@ export class WhatsAppService {
     return message;
   }
 
+  async sendDocumentMessage(
+    tenantId: string,
+    conversationId: string,
+    phone: string,
+    fileBuffer: Buffer,
+    filename: string,
+    mimeType: string,
+    caption?: string,
+    senderType: "ai" | "human" = "human"
+  ): Promise<WhatsappMessage | null> {
+    let whatsappMessageId: string | undefined;
+    let status: "sent" | "pending" | "failed" = "pending";
+    let apiError: string | undefined;
+
+    const actualPhone = this.getActualPhone(phone);
+
+    if (this.isConfigured()) {
+      try {
+        // Step 1: Upload media to WhatsApp
+        const formData = new FormData();
+        const blob = new Blob([fileBuffer], { type: mimeType });
+        formData.append("file", blob, filename);
+        formData.append("messaging_product", "whatsapp");
+        formData.append("type", mimeType);
+
+        const uploadResponse = await fetch(
+          `${WHATSAPP_API_URL}/${this.phoneNumberId}/media`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${this.token}`,
+            },
+            body: formData,
+          }
+        );
+
+        const uploadData = await uploadResponse.json();
+
+        if (!uploadResponse.ok || uploadData.error) {
+          throw new Error(uploadData.error?.message || "Failed to upload media");
+        }
+
+        const mediaId = uploadData.id;
+
+        // Step 2: Send document message
+        const response = await fetch(
+          `${WHATSAPP_API_URL}/${this.phoneNumberId}/messages`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${this.token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              messaging_product: "whatsapp",
+              to: actualPhone,
+              type: "document",
+              document: {
+                id: mediaId,
+                filename,
+                caption: caption || filename,
+              },
+            }),
+          }
+        );
+
+        const data: WhatsappApiResponse = await response.json();
+
+        if (response.ok && !data.error) {
+          whatsappMessageId = data.messages?.[0]?.id;
+          status = "sent";
+        } else {
+          apiError = data.error?.message || "Failed to send document message";
+          status = "failed";
+          console.warn("WhatsApp API error:", apiError);
+        }
+      } catch (error: any) {
+        apiError = error.message;
+        status = "failed";
+        console.warn("WhatsApp document send failed:", error.message);
+      }
+    } else {
+      console.warn("WhatsApp API not configured - storing document message locally");
+    }
+
+    // Store the message locally
+    const message = await storage.createWhatsappMessage(tenantId, {
+      conversationId,
+      whatsappMessageId,
+      direction: "outbound",
+      senderType,
+      messageType: "document",
+      body: caption || filename,
+      status,
+      sentAt: new Date(),
+      payload: {
+        ...(apiError ? { error: apiError } : {}),
+        filename,
+        mimeType,
+      },
+    });
+
+    await storage.updateWhatsappConversation(tenantId, conversationId, {
+      lastMessageAt: new Date(),
+      lastMessagePreview: `[Document] ${filename}`.substring(0, 100),
+    });
+
+    return message;
+  }
+
   async sendDocumentRequest(
     tenantId: string,
     conversationId: string,

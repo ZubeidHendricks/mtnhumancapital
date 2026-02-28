@@ -298,14 +298,15 @@ export const onboardingService = {
   },
   triggerOnboarding: async (
     candidateId: string,
-    options?: { requirements?: { itSetup?: boolean; buildingAccess?: boolean; equipment?: boolean }; equipmentList?: string[]; startDate?: string; files?: File[]; selectedDocuments?: string[]; generatedBatchId?: string }
-  ): Promise<{ message: string; workflow: OnboardingWorkflow }> => {
+    options?: { requirements?: { itSetup?: boolean; buildingAccess?: boolean; equipment?: boolean }; equipmentList?: string[]; startDate?: string; files?: File[]; selectedDocuments?: string[]; generatedBatchId?: string; channel?: "email" | "whatsapp" }
+  ): Promise<{ message: string; workflow: OnboardingWorkflow; conversationId?: string }> => {
     const formData = new FormData();
     if (options?.requirements) formData.append("requirements", JSON.stringify(options.requirements));
     if (options?.equipmentList) formData.append("equipmentList", JSON.stringify(options.equipmentList));
     if (options?.startDate) formData.append("startDate", options.startDate);
     if (options?.selectedDocuments) formData.append("selectedDocuments", JSON.stringify(options.selectedDocuments));
     if (options?.generatedBatchId) formData.append("generatedBatchId", options.generatedBatchId);
+    if (options?.channel) formData.append("channel", options.channel);
     if (options?.files) {
       for (const file of options.files) {
         formData.append("files", file);
@@ -352,12 +353,12 @@ export const onboardingService = {
     const response = await api.post(`/onboarding/document-requests/${requestId}/verified`, { verifiedBy });
     return response.data;
   },
-  sendReminder: async (requestId: string) => {
-    const response = await api.post(`/onboarding/document-requests/${requestId}/remind`);
+  sendReminder: async (requestId: string, channel?: "email" | "whatsapp") => {
+    const response = await api.post(`/onboarding/document-requests/${requestId}/remind`, { channel: channel || "email" });
     return response.data;
   },
-  sendBulkReminder: async (workflowId: string) => {
-    const response = await api.post(`/onboarding/workflows/${workflowId}/remind-all`);
+  sendBulkReminder: async (workflowId: string, channel?: "email" | "whatsapp") => {
+    const response = await api.post(`/onboarding/workflows/${workflowId}/remind-all`, { channel: channel || "email" });
     return response.data;
   },
 };

@@ -13,6 +13,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Building2,
   Send,
   User,
@@ -21,6 +27,7 @@ import {
   FileText,
   BookOpen,
   Mail,
+  MessageSquare,
   CheckCircle2,
   Package,
   Loader2,
@@ -39,6 +46,7 @@ import {
 import { renderAsync } from "docx-preview";
 import { toast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { OnboardingSendDialog } from "@/components/onboarding-send-dialog";
 
 const ONBOARDING_FORM_KEY = "onboarding_form_draft";
 
@@ -207,9 +215,9 @@ function WorkflowDetail({ workflowId, onViewDocument }: { workflowId: string; on
   }, [reviewDoc?.receivedDocumentId]);
 
   const sendReminderMutation = useMutation({
-    mutationFn: (requestId: string) => {
+    mutationFn: ({ requestId, channel }: { requestId: string; channel: "email" | "whatsapp" }) => {
       setRemindingRequestId(requestId);
-      return onboardingService.sendReminder(requestId);
+      return onboardingService.sendReminder(requestId, channel);
     },
     onSuccess: () => {
       setRemindingRequestId(null);
@@ -224,7 +232,7 @@ function WorkflowDetail({ workflowId, onViewDocument }: { workflowId: string; on
   });
 
   const remindAllMutation = useMutation({
-    mutationFn: () => onboardingService.sendBulkReminder(workflowId),
+    mutationFn: (channel: "email" | "whatsapp") => onboardingService.sendBulkReminder(workflowId, channel),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: docRequestsKey });
       queryClient.invalidateQueries({ queryKey: agentLogsKey });
@@ -323,15 +331,26 @@ function WorkflowDetail({ workflowId, onViewDocument }: { workflowId: string; on
             Document Requests ({docRequests.length})
           </h5>
           {docRequests.some((d: any) => d.status === "pending" || d.status === "requested" || d.status === "overdue") && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-6 text-[10px] px-2 text-amber-600 border-amber-300"
-              onClick={() => remindAllMutation.mutate()}
-              disabled={remindAllMutation.isPending}
-            >
-              {remindAllMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Bell className="h-3 w-3 mr-1" />Remind All</>}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-6 text-[10px] px-2 text-amber-600 border-amber-300"
+                  disabled={remindAllMutation.isPending}
+                >
+                  {remindAllMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Bell className="h-3 w-3 mr-1" />Remind All<ChevronDown className="h-2.5 w-2.5 ml-0.5" /></>}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => remindAllMutation.mutate("email")}>
+                  <Mail className="h-3.5 w-3.5 mr-2" />Send via Email
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => remindAllMutation.mutate("whatsapp")}>
+                  <MessageSquare className="h-3.5 w-3.5 mr-2" />Send via WhatsApp
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
         {docRequests.length === 0 ? (
@@ -369,15 +388,26 @@ function WorkflowDetail({ workflowId, onViewDocument }: { workflowId: string; on
                         >
                           {uploadMutation.isPending && uploadingRequestId === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Upload className="h-3 w-3 mr-0.5" />Upload</>}
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-5 text-[10px] px-1.5 text-amber-600"
-                          onClick={() => sendReminderMutation.mutate(doc.id)}
-                          disabled={sendReminderMutation.isPending && remindingRequestId === doc.id}
-                        >
-                          {sendReminderMutation.isPending && remindingRequestId === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Bell className="h-3 w-3 mr-0.5" />Remind</>}
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-5 text-[10px] px-1.5 text-amber-600"
+                              disabled={sendReminderMutation.isPending && remindingRequestId === doc.id}
+                            >
+                              {sendReminderMutation.isPending && remindingRequestId === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Bell className="h-3 w-3 mr-0.5" />Remind<ChevronDown className="h-2 w-2 ml-0.5" /></>}
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => sendReminderMutation.mutate({ requestId: doc.id, channel: "email" })}>
+                              <Mail className="h-3.5 w-3.5 mr-2" />Send via Email
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => sendReminderMutation.mutate({ requestId: doc.id, channel: "whatsapp" })}>
+                              <MessageSquare className="h-3.5 w-3.5 mr-2" />Send via WhatsApp
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </>
                     )}
                     {doc.status === "received" && (
@@ -391,15 +421,26 @@ function WorkflowDetail({ workflowId, onViewDocument }: { workflowId: string; on
                       </Button>
                     )}
                     {doc.status === "overdue" && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-5 text-[10px] px-1.5 text-amber-600"
-                        onClick={() => sendReminderMutation.mutate(doc.id)}
-                        disabled={sendReminderMutation.isPending && remindingRequestId === doc.id}
-                      >
-                        {sendReminderMutation.isPending && remindingRequestId === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Bell className="h-3 w-3 mr-0.5" />Remind</>}
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-5 text-[10px] px-1.5 text-amber-600"
+                            disabled={sendReminderMutation.isPending && remindingRequestId === doc.id}
+                          >
+                            {sendReminderMutation.isPending && remindingRequestId === doc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Bell className="h-3 w-3 mr-0.5" />Remind<ChevronDown className="h-2 w-2 ml-0.5" /></>}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => sendReminderMutation.mutate({ requestId: doc.id, channel: "email" })}>
+                            <Mail className="h-3.5 w-3.5 mr-2" />Send via Email
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => sendReminderMutation.mutate({ requestId: doc.id, channel: "whatsapp" })}>
+                            <MessageSquare className="h-3.5 w-3.5 mr-2" />Send via WhatsApp
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     )}
                   </div>
                 </div>
@@ -740,6 +781,7 @@ export default function EmployeeOnboarding() {
   const [selectedEquipment, setSelectedEquipment] = useState<string[]>(savedOnboarding.current?.selectedEquipment || ["Laptop", "External Monitor", "Keyboard & Mouse"]);
   const [expandedWorkflowId, setExpandedWorkflowId] = useState<string | null>(savedOnboarding.current?.expandedWorkflowId || null);
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>(savedOnboarding.current?.selectedDocuments || ["welcome_letter", "employee_handbook", "company_policies"]);
+  const [showSendDialog, setShowSendDialog] = useState(false);
 
   // Fetch real data from API
   const workflowsKey = useTenantQueryKey(['onboarding-workflows']);
@@ -909,38 +951,6 @@ export default function EmployeeOnboarding() {
     return onboardingEligibleStages.some(s => stage === s || stage.includes("onboard")) || workflowCandidateIds.has(c.id.toString());
   });
 
-  // Trigger onboarding mutation
-  const triggerOnboarding = useMutation({
-    mutationFn: (params: { candidateId: string; requirements: { itSetup: boolean; buildingAccess: boolean; equipment: boolean }; equipmentList?: string[]; startDate?: string; files?: File[]; selectedDocuments?: string[]; generatedBatchId?: string }) =>
-      onboardingService.triggerOnboarding(params.candidateId, {
-        requirements: params.requirements,
-        equipmentList: params.equipmentList,
-        startDate: params.startDate,
-        files: params.files,
-        selectedDocuments: params.selectedDocuments,
-        generatedBatchId: params.generatedBatchId,
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: workflowsKey });
-      toast({
-        title: "Onboarding Triggered",
-        description: "Onboarding workflow has been started for the employee.",
-      });
-      setSelectedEmployee("");
-      setStartDate("");
-      setSelectedDocuments(["welcome_letter", "employee_handbook", "company_policies"]);
-      setGeneratedPreviews([]);
-      setGeneratedBatchId(null);
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Onboarding Failed",
-        description: error?.response?.data?.message || error.message || "Failed to trigger onboarding",
-        variant: "destructive",
-      });
-    },
-  });
-
   // Helper: look up candidate info from a workflow
   const getCandidateForWorkflow = (workflow: OnboardingWorkflow): Candidate | undefined => {
     return candidates.find((c: Candidate) => c.id.toString() === workflow.candidateId);
@@ -974,14 +984,7 @@ export default function EmployeeOnboarding() {
       });
       return;
     }
-    triggerOnboarding.mutate({
-      candidateId: selectedEmployee,
-      requirements: { itSetup: requiresIT, buildingAccess: requiresAccess, equipment: requiresEquipment },
-      equipmentList: requiresEquipment ? selectedEquipment : [],
-      startDate,
-      selectedDocuments,
-      generatedBatchId: generatedBatchId || undefined,
-    });
+    setShowSendDialog(true);
   };
 
   const isLoading = loadingWorkflows || loadingCandidates;
@@ -1246,20 +1249,11 @@ export default function EmployeeOnboarding() {
                 <Button
                   className="bg-[#FFCB05] hover:bg-[#e6b800] text-black px-8"
                   onClick={handleSendOnboardingPack}
-                  disabled={triggerOnboarding.isPending || selectedDocuments.length === 0 || generatedPreviews.length === 0}
+                  disabled={selectedDocuments.length === 0 || generatedPreviews.length === 0}
                   data-testid="button-send-pack"
                 >
-                  {triggerOnboarding.isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4 mr-2" />
-                      Send Onboarding Pack ({selectedDocuments.length})
-                    </>
-                  )}
+                  <Send className="h-4 w-4 mr-2" />
+                  Send Onboarding Pack ({selectedDocuments.length})
                 </Button>
               </div>
 
@@ -1421,6 +1415,25 @@ export default function EmployeeOnboarding() {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Onboarding Send Dialog */}
+      <OnboardingSendDialog
+        open={showSendDialog}
+        onOpenChange={setShowSendDialog}
+        candidate={candidates.find((c: Candidate) => c.id.toString() === selectedEmployee) || null}
+        selectedDocuments={selectedDocuments}
+        requirements={{ itSetup: requiresIT, buildingAccess: requiresAccess, equipment: requiresEquipment }}
+        equipmentList={selectedEquipment}
+        startDate={startDate}
+        generatedBatchId={generatedBatchId}
+        onSuccess={() => {
+          setSelectedEmployee("");
+          setStartDate("");
+          setSelectedDocuments(["welcome_letter", "employee_handbook", "company_policies"]);
+          setGeneratedPreviews([]);
+          setGeneratedBatchId(null);
+        }}
+      />
     </div>
   );
 }

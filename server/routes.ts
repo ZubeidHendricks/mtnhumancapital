@@ -3802,7 +3802,8 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
       const orchestrator = new OnboardingOrchestrator(storage);
       const emailService = new EmailService(storage);
 
-      const { requirements, startDate, equipmentList, selectedDocuments: selectedDocsRaw, generatedBatchId } = req.body || {};
+      const { requirements, startDate, equipmentList, selectedDocuments: selectedDocsRaw, generatedBatchId, channel: channelRaw } = req.body || {};
+      const channel = (typeof channelRaw === "string" && channelRaw === "whatsapp") ? "whatsapp" : "email";
       // Parse JSON strings from multipart form data
       const parsedRequirements = typeof requirements === "string" ? JSON.parse(requirements) : requirements;
       const parsedEquipmentList = typeof equipmentList === "string" ? JSON.parse(equipmentList) : (equipmentList || []);
@@ -4008,12 +4009,55 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     </div>
     <p style="font-size:12px;color:#9ca3af;text-align:center;">This link expires in 14 days. If you need a new link, please contact HR.</p>` : '';
 
-      // Send single combined onboarding email
-      await emailService.sendEmail({
-        to: candidate.email || "no-email@placeholder.com",
-        subject: `Welcome to the Team, ${candidate.fullName}! - Onboarding Information`,
-        body: `Dear ${candidate.fullName},\n\nWelcome to the team! We're excited to have you join us.\n\n${emailAttachments.length > 0 ? `Please find attached your onboarding documents (${emailAttachments.length} file${emailAttachments.length > 1 ? 's' : ''}). Review them carefully.\n\n` : ''}${docRequests.length > 0 ? `As part of your onboarding, we need the following documents from you:\n\n${docListText}\n\nYou can upload your documents securely using this link:\n${uploadPortalUrl}\n\nThis link expires in 14 days.\n\n` : ''}Best regards,\nHR Team`,
-        html: `
+      let conversationId: string | undefined;
+
+      if (channel === "whatsapp") {
+        // Send onboarding pack via WhatsApp
+        const candidatePhone = candidate.phone || (candidate.metadata as any)?.phone;
+        if (!candidatePhone) {
+          return res.status(400).json({ message: "Candidate has no phone number for WhatsApp delivery" });
+        }
+        const { WhatsAppService } = await import("./whatsapp-service");
+        const whatsappService = new WhatsAppService();
+        const conversation = await whatsappService.getOrCreateConversation(
+          req.tenant.id, candidatePhone, candidatePhone,
+          candidate.fullName, candidate.id.toString(), "onboarding"
+        );
+        conversationId = conversation.id;
+
+        // Send each document as a WhatsApp file attachment
+        for (const att of emailAttachments) {
+          try {
+            await whatsappService.sendDocumentMessage(
+              req.tenant.id, conversation.id, candidatePhone,
+              att.content, att.filename, att.contentType,
+              att.filename, "ai"
+            );
+          } catch (docErr) {
+            console.error(`[Onboarding] WhatsApp document send failed for ${att.filename}:`, docErr);
+          }
+        }
+
+        // Send welcome text with upload portal link + required docs
+        const docsNeeded = docRequests.map(r => {
+          const dueDate = r.dueDate ? format(new Date(r.dueDate), 'dd MMM yyyy') : 'ASAP';
+          return `- ${r.documentName} (Due: ${dueDate})`;
+        }).join('\n');
+
+        const welcomeText = `Welcome to the team, ${candidate.fullName}! 🎉\n\n` +
+          (emailAttachments.length > 0 ? `We've sent you ${emailAttachments.length} onboarding document${emailAttachments.length > 1 ? 's' : ''} above. Please review them carefully.\n\n` : '') +
+          (docRequests.length > 0 ? `As part of your onboarding, we need the following documents from you:\n\n${docsNeeded}\n\n📤 Upload your documents here:\n${uploadPortalUrl}\n\nThis link expires in 14 days.\n\n` : '') +
+          `If you have any questions, please contact HR.`;
+
+        await whatsappService.sendTextMessage(req.tenant.id, conversation.id, candidatePhone, welcomeText, "ai");
+        console.log(`[Onboarding] Sent onboarding pack via WhatsApp for ${candidate.fullName} (${emailAttachments.length} documents, ${docRequests.length} document requests)`);
+      } else {
+        // Send single combined onboarding email
+        await emailService.sendEmail({
+          to: candidate.email || "no-email@placeholder.com",
+          subject: `Welcome to the Team, ${candidate.fullName}! - Onboarding Information`,
+          body: `Dear ${candidate.fullName},\n\nWelcome to the team! We're excited to have you join us.\n\n${emailAttachments.length > 0 ? `Please find attached your onboarding documents (${emailAttachments.length} file${emailAttachments.length > 1 ? 's' : ''}). Review them carefully.\n\n` : ''}${docRequests.length > 0 ? `As part of your onboarding, we need the following documents from you:\n\n${docListText}\n\nYou can upload your documents securely using this link:\n${uploadPortalUrl}\n\nThis link expires in 14 days.\n\n` : ''}Best regards,\nHR Team`,
+          html: `
 <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
   <div style="background:linear-gradient(135deg,#0d9488,#2563eb);padding:30px;border-radius:12px 12px 0 0;text-align:center;">
     <h1 style="color:white;margin:0;font-size:24px;">Welcome to the Team!</h1>
@@ -4027,10 +4071,10 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     <p style="font-size:14px;color:#6b7280;margin-top:20px;">Best regards,<br><strong>HR Team</strong></p>
   </div>
 </div>`,
-        attachments: emailAttachments,
-      });
-
-      console.log(`[Onboarding] Sent combined onboarding email for ${candidate.fullName} (${emailAttachments.length} attachments, ${docRequests.length} document requests, upload link included)`);
+          attachments: emailAttachments,
+        });
+        console.log(`[Onboarding] Sent combined onboarding email for ${candidate.fullName} (${emailAttachments.length} attachments, ${docRequests.length} document requests, upload link included)`);
+      }
 
       // Store sent documents in the workflow for tracking
       if (sentDocuments.length > 0) {
@@ -4043,6 +4087,7 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
       res.status(201).json({
         message: "Onboarding workflow started",
         workflow,
+        conversationId,
       });
     } catch (error) {
       console.error("Error starting onboarding:", error);
@@ -4453,8 +4498,9 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     try {
       const { createOnboardingAgent } = await import("./onboarding-agent");
       const agent = createOnboardingAgent(storage);
+      const channel = req.body?.channel === "whatsapp" ? "whatsapp" : "email";
 
-      const result = await agent.sendBulkReminder(req.tenant.id, req.params.workflowId);
+      const result = await agent.sendBulkReminder(req.tenant.id, req.params.workflowId, channel);
       res.json(result);
     } catch (error) {
       console.error("Error sending bulk reminder:", error);
@@ -4466,8 +4512,9 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     try {
       const { createOnboardingAgent } = await import("./onboarding-agent");
       const agent = createOnboardingAgent(storage);
-      
-      const result = await agent.sendReminder(req.tenant.id, req.params.requestId, 'whatsapp');
+      const channel = req.body?.channel === "whatsapp" ? "whatsapp" : "email";
+
+      const result = await agent.sendReminder(req.tenant.id, req.params.requestId, channel);
       res.json(result);
     } catch (error) {
       console.error("Error sending reminder:", error);

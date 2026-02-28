@@ -237,33 +237,48 @@ export class OnboardingAgent {
       nextReminderAt,
     });
 
-    // Actually send the reminder via email
+    // Send the reminder via the chosen channel
     try {
       const candidate = await this.storage.getCandidateById(tenantId, request.candidateId);
-      if (candidate?.email) {
-        const dueInfo = request.dueDate
-          ? `Due date: ${format(new Date(request.dueDate), 'dd MMM yyyy')}`
-          : '';
+      const workflow = await this.storage.getOnboardingWorkflow(tenantId, request.workflowId);
+      const uploadPortalUrl = workflow?.uploadToken && workflow?.uploadTokenExpiresAt && new Date(workflow.uploadTokenExpiresAt) > new Date()
+        ? `${process.env.BASE_URL || 'http://localhost:5000'}/onboarding-upload/${workflow.uploadToken}`
+        : null;
 
-        // Look up workflow for upload portal link
-        const workflow = await this.storage.getOnboardingWorkflow(tenantId, request.workflowId);
-        const uploadPortalUrl = workflow?.uploadToken && workflow?.uploadTokenExpiresAt && new Date(workflow.uploadTokenExpiresAt) > new Date()
-          ? `${process.env.BASE_URL || 'http://localhost:5000'}/onboarding-upload/${workflow.uploadToken}`
-          : null;
-        const uploadButtonHtml = uploadPortalUrl
-          ? `<div style="text-align:center;margin:16px 0;">
-      <a href="${uploadPortalUrl}" style="display:inline-block;background:linear-gradient(135deg,#0d9488,#2563eb);color:white;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:bold;">Upload Your Document</a>
-    </div>`
-          : '';
-        const uploadTextInfo = uploadPortalUrl
-          ? `\n\nYou can upload your document here: ${uploadPortalUrl}`
-          : '';
+      if (channel === 'whatsapp') {
+        const candidatePhone = candidate?.phone || (candidate?.metadata as any)?.phone;
+        if (candidatePhone) {
+          const { WhatsAppService } = await import("./whatsapp-service");
+          const whatsappService = new WhatsAppService();
+          const conversation = await whatsappService.getOrCreateConversation(
+            tenantId, candidatePhone, candidatePhone,
+            candidate!.fullName, candidate!.id.toString(), "onboarding"
+          );
+          const uploadInfo = uploadPortalUrl ? `\n\n📤 Upload here: ${uploadPortalUrl}` : '';
+          await whatsappService.sendTextMessage(
+            tenantId, conversation.id, candidatePhone,
+            message + uploadInfo, "ai"
+          );
+        }
+      } else {
+        if (candidate?.email) {
+          const dueInfo = request.dueDate
+            ? `Due date: ${format(new Date(request.dueDate), 'dd MMM yyyy')}`
+            : '';
+          const uploadButtonHtml = uploadPortalUrl
+            ? `<div style="text-align:center;margin:16px 0;">
+        <a href="${uploadPortalUrl}" style="display:inline-block;background:linear-gradient(135deg,#0d9488,#2563eb);color:white;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:bold;">Upload Your Document</a>
+      </div>`
+            : '';
+          const uploadTextInfo = uploadPortalUrl
+            ? `\n\nYou can upload your document here: ${uploadPortalUrl}`
+            : '';
 
-        await this.emailService.sendEmail({
-          to: candidate.email,
-          subject: `Document Reminder: ${request.documentName} - Onboarding`,
-          body: message + uploadTextInfo,
-          html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+          await this.emailService.sendEmail({
+            to: candidate.email,
+            subject: `Document Reminder: ${request.documentName} - Onboarding`,
+            body: message + uploadTextInfo,
+            html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
   <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:20px;">
     <h2 style="color:#92400e;margin:0 0 10px 0;">Document Reminder</h2>
     <p style="color:#374151;">Hi ${candidate.fullName},</p>
@@ -273,10 +288,11 @@ export class OnboardingAgent {
     <p style="color:#6b7280;font-size:13px;margin-top:16px;">If you have any questions, please contact HR.</p>
   </div>
 </div>`,
-        });
+          });
+        }
       }
     } catch (error) {
-      console.error(`[ONBOARDING AGENT] Failed to send reminder email for ${request.documentName}:`, error);
+      console.error(`[ONBOARDING AGENT] Failed to send reminder for ${request.documentName}:`, error);
     }
 
     await this.logStep(tenantId, request.workflowId, request.candidateId, 'reminder', 'reminder_sent', {
@@ -294,7 +310,8 @@ export class OnboardingAgent {
 
   async sendBulkReminder(
     tenantId: string,
-    workflowId: string
+    workflowId: string,
+    channel: 'whatsapp' | 'email' = 'email'
   ): Promise<{ sent: number; escalated: number }> {
     const requests = await this.storage.getOnboardingDocumentRequests(tenantId, workflowId);
     const outstanding = requests.filter(r => r.status === 'pending' || r.status === 'requested' || r.status === 'overdue');
@@ -345,25 +362,57 @@ export class OnboardingAgent {
       });
     }
 
-    // Send one consolidated email
-    if (candidate?.email) {
-      const docListHtml = toRemind.map(r => {
-        const dueDate = r.dueDate ? format(new Date(r.dueDate), 'dd MMM yyyy') : 'ASAP';
-        const priorityBadge = r.priority === 'urgent' ? ' <span style="color:#dc2626;">(Urgent)</span>' :
-                             r.priority === 'high' ? ' <span style="color:#ea580c;">(High Priority)</span>' : '';
-        return `<tr>
-          <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">${r.documentName}${priorityBadge}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:13px;">${r.description || ''}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">${dueDate}</td>
-        </tr>`;
-      }).join('');
+    // Look up workflow for upload portal link
+    const workflow = await this.storage.getOnboardingWorkflow(tenantId, workflowId);
+    const uploadPortalUrl = workflow?.uploadToken && workflow?.uploadTokenExpiresAt && new Date(workflow.uploadTokenExpiresAt) > new Date()
+      ? `${process.env.BASE_URL || 'http://localhost:5000'}/onboarding-upload/${workflow.uploadToken}`
+      : null;
 
-      try {
-        await this.emailService.sendEmail({
-          to: candidate.email,
-          subject: `Document Reminder: ${toRemind.length} Outstanding Document${toRemind.length > 1 ? 's' : ''} - Onboarding`,
-          body: `Hi ${candidate.fullName},\n\n${message}`,
-          html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+    // Send via the chosen channel
+    if (channel === 'whatsapp') {
+      const candidatePhone = candidate?.phone || (candidate?.metadata as any)?.phone;
+      if (candidatePhone) {
+        try {
+          const { WhatsAppService } = await import("./whatsapp-service");
+          const whatsappService = new WhatsAppService();
+          const conversation = await whatsappService.getOrCreateConversation(
+            tenantId, candidatePhone, candidatePhone,
+            candidate!.fullName, candidate!.id.toString(), "onboarding"
+          );
+          const uploadInfo = uploadPortalUrl ? `\n\n📤 Upload here: ${uploadPortalUrl}` : '';
+          await whatsappService.sendTextMessage(
+            tenantId, conversation.id, candidatePhone,
+            message + uploadInfo, "ai"
+          );
+        } catch (error) {
+          console.error(`[ONBOARDING AGENT] Failed to send bulk reminder via WhatsApp:`, error);
+        }
+      }
+    } else {
+      if (candidate?.email) {
+        const docListHtml = toRemind.map(r => {
+          const dueDate = r.dueDate ? format(new Date(r.dueDate), 'dd MMM yyyy') : 'ASAP';
+          const priorityBadge = r.priority === 'urgent' ? ' <span style="color:#dc2626;">(Urgent)</span>' :
+                               r.priority === 'high' ? ' <span style="color:#ea580c;">(High Priority)</span>' : '';
+          return `<tr>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">${r.documentName}${priorityBadge}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-size:13px;">${r.description || ''}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">${dueDate}</td>
+          </tr>`;
+        }).join('');
+
+        const uploadButtonHtml = uploadPortalUrl
+          ? `<div style="text-align:center;margin:16px 0;">
+      <a href="${uploadPortalUrl}" style="display:inline-block;background:linear-gradient(135deg,#0d9488,#2563eb);color:white;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:bold;">Upload Your Documents</a>
+    </div>`
+          : '';
+
+        try {
+          await this.emailService.sendEmail({
+            to: candidate.email,
+            subject: `Document Reminder: ${toRemind.length} Outstanding Document${toRemind.length > 1 ? 's' : ''} - Onboarding`,
+            body: `Hi ${candidate.fullName},\n\n${message}${uploadPortalUrl ? `\n\nUpload here: ${uploadPortalUrl}` : ''}`,
+            html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
   <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:20px;">
     <h2 style="color:#92400e;margin:0 0 10px 0;">Document Reminder</h2>
     <p style="color:#374151;">Hi ${candidate.fullName},</p>
@@ -376,12 +425,14 @@ export class OnboardingAgent {
       </tr></thead>
       <tbody>${docListHtml}</tbody>
     </table>
+    ${uploadButtonHtml}
     <p style="color:#6b7280;font-size:13px;">Please reply to this email or contact HR to submit your documents.</p>
   </div>
 </div>`,
-        });
-      } catch (error) {
-        console.error(`[ONBOARDING AGENT] Failed to send bulk reminder email:`, error);
+          });
+        } catch (error) {
+          console.error(`[ONBOARDING AGENT] Failed to send bulk reminder email:`, error);
+        }
       }
     }
 
@@ -392,7 +443,7 @@ export class OnboardingAgent {
       details: { documentCount: toRemind.length, documents: toRemind.map(r => r.documentType) },
       targetEntity: 'candidate',
       targetEntityId: candidateId,
-      communicationChannel: 'email',
+      communicationChannel: channel,
       messageContent: message,
     });
 
