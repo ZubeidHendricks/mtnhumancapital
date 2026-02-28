@@ -124,26 +124,24 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       collapsed ? "w-16" : "w-60"
     )}>
       {/* Logo */}
-      <div className="h-16 flex items-center justify-between px-4 border-b border-border">
-        {/* Logo temporarily hidden — will be restored later
+      <div className="flex flex-col border-b border-border">
         {!collapsed && (
-          <Link href="/">
-            <div className="bg-secondary rounded-lg px-3 py-1.5">
-              <img
-                src="/logos/mtn-new-logo.svg"
-                alt="MTN"
-                className="h-12 w-auto object-contain"
-              />
-            </div>
+          <Link href="/" className="px-4 pt-4 pb-2">
+            <img
+              src="/logos/mtn-new-logo.svg"
+              alt="MTN"
+              className="w-full object-contain"
+            />
           </Link>
         )}
-        */}
-        <button 
-          onClick={onToggle}
-          className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
-        >
-          {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-        </button>
+        <div className={`flex items-center ${collapsed ? 'justify-center py-3' : 'justify-end px-2 pb-2'}`}>
+          <button
+            onClick={onToggle}
+            className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
+        </div>
       </div>
 
       {/* Navigation */}
