@@ -125,6 +125,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     )}>
       {/* Logo */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-border">
+        {/* Logo temporarily hidden — will be restored later
         {!collapsed && (
           <Link href="/">
             <div className="bg-secondary rounded-lg px-3 py-1.5">
@@ -136,6 +137,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             </div>
           </Link>
         )}
+        */}
         <button 
           onClick={onToggle}
           className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
