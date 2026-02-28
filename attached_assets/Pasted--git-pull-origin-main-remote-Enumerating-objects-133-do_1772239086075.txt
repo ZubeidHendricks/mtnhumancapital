@@ -1,0 +1,36 @@
+ git pull origin main 
+remote: Enumerating objects: 133, done.
+remote: Counting objects: 100% (133/133), done.
+remote: Compressing objects: 100% (32/32), done.
+remote: Total 88 (delta 67), reused 72 (delta 54), pack-reused 0 (from 0)
+Unpacking objects: 100% (88/88), 97.07 KiB | 274.00 KiB/s, done.
+From https://github.com/ZubeidHendricks/mtnhumancapital
+ * branch            main       -> FETCH_HEAD
+   145c172..e7b4227  main       -> origin/main
+Auto-merging client/src/components/layout/sidebar.tsx
+Auto-merging client/src/index.css
+CONFLICT (content): Merge conflict in client/src/index.css
+Auto-merging client/src/pages/admin-dashboard.tsx
+CONFLICT (content): Merge conflict in client/src/pages/admin-dashboard.tsx
+Auto-merging client/src/pages/candidates-list.tsx
+CONFLICT (content): Merge conflict in client/src/pages/candidates-list.tsx
+Auto-merging client/src/pages/employee-onboarding.tsx
+CONFLICT (content): Merge conflict in client/src/pages/employee-onboarding.tsx
+Auto-merging client/src/pages/hr-dashboard.tsx
+CONFLICT (content): Merge conflict in client/src/pages/hr-dashboard.tsx
+Auto-merging client/src/pages/integrity-agent.tsx
+CONFLICT (content): Merge conflict in client/src/pages/integrity-agent.tsx
+Auto-merging client/src/pages/integrity-setup.tsx
+Auto-merging client/src/pages/offer-management.tsx
+CONFLICT (content): Merge conflict in client/src/pages/offer-management.tsx
+Auto-merging client/src/pages/recruitment-agent.tsx
+CONFLICT (content): Merge conflict in client/src/pages/recruitment-agent.tsx
+Auto-merging client/src/pages/social-screening-agent.tsx
+Auto-merging client/src/pages/social-screening.tsx
+Auto-merging client/src/pages/whatsapp-monitor.tsx
+CONFLICT (content): Merge conflict in client/src/pages/whatsapp-monitor.tsx
+Auto-merging package-lock.json
+CONFLICT (content): Merge conflict in package-lock.json
+Auto-merging server/email-service.ts
+CONFLICT (content): Merge conflict in server/email-service.ts
+Automatic merge failed; fix conflicts and then commit the result.
