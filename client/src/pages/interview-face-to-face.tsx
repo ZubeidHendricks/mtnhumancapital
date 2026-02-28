@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,8 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
-import { 
-  Users, 
+import {
+  Users,
   Calendar,
   Clock,
   MapPin,
@@ -17,9 +17,12 @@ import {
   XCircle,
   Send,
   Plus,
-  Building2
+  Building2,
+  Upload,
+  Loader2
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { recordingService } from "@/lib/api";
 
 interface Interview {
   id: string;
@@ -41,6 +44,32 @@ export default function InterviewFaceToFace() {
   const [location, setLocation] = useState("");
   const [interviewer, setInterviewer] = useState("");
   const [notes, setNotes] = useState("");
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadTargetRef = useRef<string | null>(null);
+
+  const handleUploadRecording = async (interviewId: string, file: File) => {
+    setUploadingId(interviewId);
+    try {
+      const blob = new Blob([file], { type: file.type });
+      await recordingService.uploadRecording(interviewId, blob, {
+        sourceType: "upload",
+      });
+      toast({
+        title: "Recording Uploaded",
+        description: "The recording has been saved and transcription will begin automatically.",
+      });
+    } catch (err) {
+      console.error("Failed to upload recording:", err);
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload the recording. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingId(null);
+    }
+  };
 
   const interviews: Interview[] = [
     { 
@@ -309,12 +338,49 @@ export default function InterviewFaceToFace() {
                     <span>{interview.interviewer}</span>
                   </div>
                   {getStatusBadge(interview.status)}
+                  {interview.status === "completed" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={uploadingId === interview.id}
+                      onClick={() => {
+                        uploadTargetRef.current = interview.id;
+                        fileInputRef.current?.click();
+                      }}
+                    >
+                      {uploadingId === interview.id ? (
+                        <>
+                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-3 h-3 mr-1" />
+                          Upload Recording
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         </CardContent>
       </Card>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="audio/*,video/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file && uploadTargetRef.current) {
+            handleUploadRecording(uploadTargetRef.current, file);
+          }
+          e.target.value = "";
+        }}
+      />
     </div>
   );
 }

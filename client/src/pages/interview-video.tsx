@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { interviewService } from "@/lib/api";
+import { interviewService, recordingService } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -36,6 +36,9 @@ export default function InterviewVideo() {
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string>(jobParam || COMMON_ROLES[0]);
   const [customRole, setCustomRole] = useState<string>("");
+  const [tavusConversationId, setTavusConversationId] = useState<string | null>(null);
+  const [tavusSessionId, setTavusSessionId] = useState<string | null>(null);
+  const [isFetchingRecording, setIsFetchingRecording] = useState(false);
 
   const createSessionMutation = useMutation({
     mutationFn: () => {
@@ -48,6 +51,8 @@ export default function InterviewVideo() {
     onSuccess: (data) => {
       setSessionUrl(data.sessionUrl);
       setIsSessionActive(true);
+      setTavusConversationId(data.sessionId);
+      setTavusSessionId(data.interviewId || null);
       toast.success("Video session created successfully");
     },
     onError: (error: any) => {
@@ -64,10 +69,32 @@ export default function InterviewVideo() {
     createSessionMutation.mutate();
   };
 
-  const handleEndSession = () => {
+  const handleEndSession = async () => {
     setIsSessionActive(false);
     setSessionUrl(null);
     toast.success("Interview ended");
+
+    // Attempt to fetch and store the Tavus recording
+    if (tavusConversationId && tavusSessionId) {
+      setIsFetchingRecording(true);
+      try {
+        await recordingService.fetchTavusRecording(
+          tavusSessionId,
+          tavusConversationId,
+          candidateId || undefined
+        );
+        toast.success("Video recording saved successfully");
+      } catch (err: any) {
+        if (err.response?.status === 404) {
+          toast.info("Recording not yet ready. Tavus is still processing — you can retry later from the Interview Console.");
+        } else {
+          console.error("Failed to fetch Tavus recording:", err);
+          toast.error("Failed to save video recording. You can retry from the Interview Console.");
+        }
+      } finally {
+        setIsFetchingRecording(false);
+      }
+    }
   };
 
   return (
@@ -185,8 +212,8 @@ export default function InterviewVideo() {
 
           {isSessionActive && (
             <div className="h-20 rounded-2xl bg-card/50 border border-border dark:border-white/10 flex items-center justify-center gap-6 backdrop-blur-md">
-              <Button 
-                variant="destructive" 
+              <Button
+                variant="destructive"
                 size="lg"
                 onClick={handleEndSession}
                 className="rounded-full"
@@ -195,6 +222,12 @@ export default function InterviewVideo() {
                 <PhoneOff className="mr-2 h-5 w-5" />
                 End Interview
               </Button>
+            </div>
+          )}
+          {isFetchingRecording && (
+            <div className="h-12 rounded-xl bg-muted/10 border border-border/20 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Saving video recording...
             </div>
           )}
         </div>

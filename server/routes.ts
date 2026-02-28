@@ -33,8 +33,11 @@ import { registerWeighbridgeRoutes } from "./routes/weighbridge";
 import type { EmployeeData } from "./document-generator";
 import { registerFleetLogixRoutes } from "./fleetlogix-routes";
 import { ragSupportService } from "./rag-support-service";
+import { recordingStorage } from "./recording-storage";
+import axios from "axios";
 
 const upload = multer({ storage: multer.memoryStorage() });
+const uploadLarge = multer({ storage: multer.memoryStorage(), limits: { fileSize: 200 * 1024 * 1024 } });
 
 // Helper function to infer department from job title
 function inferDepartmentFromTitle(title: string): string {
@@ -7656,6 +7659,177 @@ Format your response as JSON:
     } catch (error) {
       console.error("Error creating recording source:", error);
       res.status(500).json({ message: "Failed to create recording source" });
+    }
+  });
+
+  // Upload interview recording to Object Storage
+  app.post("/api/interviews/:sessionId/upload-recording", uploadLarge.single("recording"), async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      const file = req.file;
+      if (!file) return res.status(400).json({ message: "No recording file provided" });
+
+      const tenantId = req.tenant.id;
+      const timestamp = Date.now();
+      const ext = file.originalname.split(".").pop() || "webm";
+      const recordingType = file.mimetype.startsWith("video/") ? "video" : "audio";
+      const filename = `${timestamp}_${recordingType}.${ext}`;
+
+      const { key, size } = await recordingStorage.uploadRecording(tenantId, sessionId, filename, file.buffer, file.mimetype);
+      const mediaUrl = `/api/recordings/${key}`;
+
+      const recording = await storage.createInterviewRecording(tenantId, {
+        sessionId,
+        candidateId: req.body.candidateId || null,
+        recordingType: recordingType as "video" | "audio",
+        mediaUrl,
+        storageProvider: "local",
+        fileSize: size,
+        mimeType: file.mimetype,
+        duration: req.body.duration ? parseInt(req.body.duration) : null,
+        metadata: { objectStorageKey: key },
+      });
+
+      const sourceType = req.body.sourceType || "browser_mediarecorder";
+      await storage.createRecordingSource(tenantId, {
+        sessionId,
+        recordingId: recording.id,
+        sourceType,
+        status: "completed",
+        isAudioOnly: recordingType === "audio",
+        hasVideo: recordingType === "video",
+      });
+
+      // Fire-and-forget: auto-trigger transcript providers
+      try {
+        const absoluteUrl = `${req.protocol}://${req.get("host")}${mediaUrl}`;
+        transcriptProviderManager.transcribeWithAllProviders(
+          tenantId, sessionId, absoluteUrl, {}
+        ).catch((err: any) => console.error("Auto-transcription failed:", err));
+      } catch {}
+
+      res.status(201).json(recording);
+    } catch (error) {
+      console.error("Error uploading recording:", error);
+      res.status(500).json({ message: "Failed to upload recording" });
+    }
+  });
+
+  // Stream proxy for recordings from Object Storage
+  app.get("/api/recordings/*", async (req, res) => {
+    try {
+      // Extract key: everything after /api/recordings/
+      const key = req.params[0] || req.path.replace("/api/recordings/", "");
+      if (!key) return res.status(400).json({ message: "Missing recording key" });
+
+      const buffer = await recordingStorage.downloadRecording(key);
+
+      // Determine content type from extension
+      const ext = key.split(".").pop()?.toLowerCase();
+      const mimeMap: Record<string, string> = {
+        webm: "audio/webm",
+        mp4: "video/mp4",
+        mp3: "audio/mpeg",
+        wav: "audio/wav",
+        ogg: "audio/ogg",
+        m4a: "audio/mp4",
+      };
+      const contentType = mimeMap[ext || ""] || "application/octet-stream";
+
+      // Support HTTP Range requests for seeking
+      const rangeHeader = req.headers.range;
+      if (rangeHeader) {
+        const parts = rangeHeader.replace(/bytes=/, "").split("-");
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] ? parseInt(parts[1], 10) : buffer.length - 1;
+        const chunkSize = end - start + 1;
+
+        res.writeHead(206, {
+          "Content-Range": `bytes ${start}-${end}/${buffer.length}`,
+          "Accept-Ranges": "bytes",
+          "Content-Length": chunkSize,
+          "Content-Type": contentType,
+          "Cache-Control": "private, max-age=3600",
+        });
+        res.end(buffer.subarray(start, end + 1));
+      } else {
+        res.writeHead(200, {
+          "Content-Length": buffer.length,
+          "Content-Type": contentType,
+          "Accept-Ranges": "bytes",
+          "Cache-Control": "private, max-age=3600",
+        });
+        res.end(buffer);
+      }
+    } catch (error: any) {
+      console.error("Error streaming recording:", error);
+      if (error.message?.includes("not found")) {
+        res.status(404).json({ message: "Recording not found" });
+      } else {
+        res.status(500).json({ message: "Failed to stream recording" });
+      }
+    }
+  });
+
+  // Fetch Tavus recording and store in Object Storage
+  app.post("/api/interviews/:sessionId/fetch-tavus-recording", async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      const { conversationId, candidateId } = req.body;
+      if (!conversationId) return res.status(400).json({ message: "conversationId is required" });
+
+      const tenantId = req.tenant.id;
+      const tavusApiKey = process.env.TAVUS_API_KEY;
+      if (!tavusApiKey) return res.status(500).json({ message: "Tavus API key not configured" });
+
+      // Fetch conversation details from Tavus
+      const tavusRes = await axios.get(`https://tavusapi.com/v2/conversations/${conversationId}`, {
+        headers: { "x-api-key": tavusApiKey },
+      });
+
+      const recordingUrl = tavusRes.data?.recording_url;
+      if (!recordingUrl) {
+        return res.status(404).json({ message: "Recording not yet available. Tavus may still be processing." });
+      }
+
+      // Download the video
+      const videoRes = await axios.get(recordingUrl, { responseType: "arraybuffer" });
+      const videoBuffer = Buffer.from(videoRes.data);
+
+      const timestamp = Date.now();
+      const filename = `${timestamp}_video.mp4`;
+      const { key, size } = await recordingStorage.uploadRecording(tenantId, sessionId, filename, videoBuffer, "video/mp4");
+      const mediaUrl = `/api/recordings/${key}`;
+
+      const recording = await storage.createInterviewRecording(tenantId, {
+        sessionId,
+        candidateId: candidateId || null,
+        recordingType: "video",
+        mediaUrl,
+        storageProvider: "tavus",
+        externalId: conversationId,
+        fileSize: size,
+        mimeType: "video/mp4",
+        metadata: { objectStorageKey: key, tavusConversationId: conversationId },
+      });
+
+      await storage.createRecordingSource(tenantId, {
+        sessionId,
+        recordingId: recording.id,
+        sourceType: "tavus",
+        sourceId: conversationId,
+        sourceUrl: recordingUrl,
+        status: "completed",
+        hasVideo: true,
+      });
+
+      res.status(201).json(recording);
+    } catch (error: any) {
+      console.error("Error fetching Tavus recording:", error);
+      if (error.response?.status === 404) {
+        return res.status(404).json({ message: "Recording not yet available. Tavus may still be processing." });
+      }
+      res.status(500).json({ message: "Failed to fetch Tavus recording" });
     }
   });
 

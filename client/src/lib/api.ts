@@ -224,6 +224,31 @@ export const timelineService = {
   },
 };
 
+// Recording Capture & Storage Service
+export const recordingService = {
+  uploadRecording: async (sessionId: string, blob: Blob, metadata?: { candidateId?: string; sourceType?: string; duration?: number }) => {
+    const formData = new FormData();
+    const ext = blob.type.includes("mp4") ? "mp4" : blob.type.includes("webm") ? "webm" : "webm";
+    formData.append("recording", blob, `recording.${ext}`);
+    if (metadata?.candidateId) formData.append("candidateId", metadata.candidateId);
+    if (metadata?.sourceType) formData.append("sourceType", metadata.sourceType);
+    if (metadata?.duration) formData.append("duration", String(metadata.duration));
+    const res = await api.post(`/interviews/${sessionId}/upload-recording`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 300000,
+    });
+    return res.data;
+  },
+  fetchTavusRecording: async (sessionId: string, conversationId: string, candidateId?: string) => {
+    const res = await api.post(`/interviews/${sessionId}/fetch-tavus-recording`, { conversationId, candidateId });
+    return res.data;
+  },
+  getRecordings: async (sessionId: string) => {
+    const res = await api.get(`/interviews/${sessionId}/recordings`);
+    return res.data;
+  },
+};
+
 export const integrityChecksService = {
   getAll: async (): Promise<IntegrityCheck[]> => {
     const response = await api.get("/integrity-checks");

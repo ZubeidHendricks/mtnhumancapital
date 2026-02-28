@@ -21,6 +21,7 @@ import {
   Loader2, Send, Plus, Trash2, Filter, Download,
   Sparkles, AlertTriangle, ThumbsUp, Search,
   Zap, FileText, BarChart3, ListChecks,
+  Video, HardDrive, Upload,
 } from "lucide-react";
 import { api } from "@/lib/api";
 
@@ -93,6 +94,18 @@ function formatMs(ms: number): string {
   return `${min.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
 }
 
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatDurationSec(sec: number): string {
+  const m = Math.floor(sec / 60);
+  const s = Math.round(sec % 60);
+  return `${m}m ${s}s`;
+}
+
 function getTagColor(tagType: string): string {
   const colors: Record<string, string> = {
     auto_emotion: "bg-purple-500/20 text-purple-400 border-purple-500/30",
@@ -160,6 +173,26 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
     },
     enabled: !!sessionId,
   });
+
+  // Fetch recordings for this session
+  const { data: recordings = [] } = useQuery<any[]>({
+    queryKey: ["/api/interviews", sessionId, "recordings"],
+    queryFn: async () => {
+      const res = await api.get(`/interviews/${sessionId}/recordings`);
+      return res.data;
+    },
+    enabled: !!sessionId,
+  });
+
+  // Wire up audio src when recordings load
+  useEffect(() => {
+    if (recordings.length > 0 && audioRef.current) {
+      const firstRecording = recordings[0];
+      if (firstRecording.mediaUrl && audioRef.current.src !== window.location.origin + firstRecording.mediaUrl) {
+        audioRef.current.src = firstRecording.mediaUrl;
+      }
+    }
+  }, [recordings]);
 
   // Fetch timeline tags
   const { data: tags = [], isLoading: tagsLoading } = useQuery<TimelineTag[]>({
@@ -274,6 +307,26 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/interviews", sessionId, "timeline-tags"] });
       toast({ title: "Tag deleted" });
+    },
+  });
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadRecordingMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("recording", file);
+      const res = await api.post(`/interviews/${sessionId}/upload-recording`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/interviews", sessionId, "recordings"] });
+      toast({ title: "Recording uploaded successfully" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Upload failed", description: err.response?.data?.message || "Failed to upload recording", variant: "destructive" });
     },
   });
 
@@ -625,6 +678,9 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
               </TabsTrigger>
               <TabsTrigger value="insights" className="text-xs">
                 <BarChart3 className="h-3.5 w-3.5 mr-1" />Insights
+              </TabsTrigger>
+              <TabsTrigger value="recordings" className="text-xs">
+                <HardDrive className="h-3.5 w-3.5 mr-1" />Recordings
               </TabsTrigger>
             </TabsList>
 
@@ -989,6 +1045,112 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
                   )}
                 </div>
               </ScrollArea>
+            </TabsContent>
+
+            {/* Recordings Tab */}
+            <TabsContent value="recordings" className="flex-1 m-0 flex flex-col overflow-hidden">
+              <ScrollArea className="flex-1">
+                <div className="p-4 space-y-3">
+                  {recordings.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <HardDrive className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No recordings available</p>
+                      <p className="text-xs mt-1">Upload an audio or video recording to get started</p>
+                    </div>
+                  ) : (
+                    recordings.map((rec: any) => (
+                      <Card key={rec.id} className="bg-muted/30">
+                        <CardContent className="p-3">
+                          <div className="flex items-start gap-3">
+                            <div className="mt-0.5">
+                              {rec.recordingType === "video" ? (
+                                <Video className="h-4 w-4 text-muted-foreground" />
+                              ) : (
+                                <Mic className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium">
+                                {rec.recordingType === "video" ? "Video" : "Audio"} Recording
+                              </p>
+                              <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                                {rec.duration != null && <span>{formatDurationSec(rec.duration)}</span>}
+                                {rec.fileSize != null && <span>{formatFileSize(rec.fileSize)}</span>}
+                                {rec.createdAt && <span>{format(new Date(rec.createdAt), "MMM d, HH:mm")}</span>}
+                              </div>
+                              <div className="mt-1">
+                                <Badge variant="outline" className={`text-xs ${
+                                  rec.transcriptionStatus === "completed" ? "bg-green-500/10 text-green-400 border-green-500/30" :
+                                  rec.transcriptionStatus === "processing" ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/30" :
+                                  rec.transcriptionStatus === "failed" ? "bg-red-500/10 text-red-400 border-red-500/30" :
+                                  "bg-gray-500/10 text-gray-400 border-gray-500/30"
+                                }`}>
+                                  {rec.transcriptionStatus || "pending"}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-xs"
+                                onClick={() => {
+                                  if (audioRef.current && rec.mediaUrl) {
+                                    audioRef.current.src = rec.mediaUrl;
+                                    audioRef.current.load();
+                                    setIsPlaying(false);
+                                    setCurrentTimeMs(0);
+                                    toast({ title: "Recording loaded", description: "Ready to play" });
+                                  }
+                                }}
+                              >
+                                <Play className="h-3 w-3 mr-1" />Load
+                              </Button>
+                              {rec.mediaUrl && (
+                                <a href={rec.mediaUrl} download>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7">
+                                    <Download className="h-3.5 w-3.5" />
+                                  </Button>
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+
+              {/* Upload Section */}
+              <div className="border-t p-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="audio/*,video/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      uploadRecordingMutation.mutate(file);
+                      e.target.value = "";
+                    }
+                  }}
+                />
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadRecordingMutation.isPending}
+                >
+                  {uploadRecordingMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Upload className="h-4 w-4 mr-2" />
+                  )}
+                  {uploadRecordingMutation.isPending ? "Uploading..." : "Upload Recording"}
+                </Button>
+              </div>
             </TabsContent>
           </Tabs>
         </div>

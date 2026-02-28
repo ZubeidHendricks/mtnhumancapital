@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { interviewService } from "@/lib/api";
+import { interviewService, recordingService } from "@/lib/api";
 import { HumeVisualizer } from "@/components/voice-agent/hume-visualizer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,9 +22,12 @@ export default function InterviewVoice() {
   const [currentEmotion, setCurrentEmotion] = useState<string>("Neutral");
   const [isStarted, setIsStarted] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const socketRef = useRef<WebSocket | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const recordingChunksRef = useRef<Blob[]>([]);
+  const recordingStartTimeRef = useRef<number>(0);
 
   const { data: voiceConfig, isLoading, error } = useQuery({
     queryKey: ['voice-config'],
@@ -148,18 +151,25 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
 
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const mediaRecorder = new MediaRecorder(stream);
-        
+        recordingChunksRef.current = [];
+        recordingStartTimeRef.current = Date.now();
+
         mediaRecorder.ondataavailable = (event) => {
-          if (event.data.size > 0 && ws.readyState === WebSocket.OPEN) {
-            const reader = new FileReader();
-            reader.onload = () => {
-              const base64Audio = (reader.result as string).split(',')[1];
-              ws.send(JSON.stringify({
-                type: "audio_input",
-                data: base64Audio
-              }));
-            };
-            reader.readAsDataURL(event.data);
+          if (event.data.size > 0) {
+            // Accumulate chunks for later upload
+            recordingChunksRef.current.push(event.data);
+
+            if (ws.readyState === WebSocket.OPEN) {
+              const reader = new FileReader();
+              reader.onload = () => {
+                const base64Audio = (reader.result as string).split(',')[1];
+                ws.send(JSON.stringify({
+                  type: "audio_input",
+                  data: base64Audio
+                }));
+              };
+              reader.readAsDataURL(event.data);
+            }
           }
         };
 
@@ -213,7 +223,7 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
     }
   };
 
-  const handleEndInterview = () => {
+  const handleEndInterview = async () => {
     if (socketRef.current) {
       socketRef.current.close();
     }
@@ -223,6 +233,31 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
     setIsStarted(false);
     setIsConnected(false);
     toast.success("Interview ended");
+
+    // Upload accumulated recording
+    const chunks = recordingChunksRef.current;
+    if (chunks.length > 0) {
+      setIsUploading(true);
+      try {
+        const blob = new Blob(chunks, { type: "audio/webm" });
+        const durationSec = Math.round((Date.now() - recordingStartTimeRef.current) / 1000);
+        // Get sessionId from URL params if available
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get("sessionId") || urlParams.get("id") || `voice-${Date.now()}`;
+        await recordingService.uploadRecording(sessionId, blob, {
+          sourceType: "browser_mediarecorder",
+          duration: durationSec,
+          candidateId: urlParams.get("candidateId") || undefined,
+        });
+        toast.success("Recording saved successfully");
+      } catch (err) {
+        console.error("Failed to upload recording:", err);
+        toast.error("Failed to save recording. You may upload it manually later.");
+      } finally {
+        setIsUploading(false);
+        recordingChunksRef.current = [];
+      }
+    }
   };
 
   if (error) {
@@ -276,21 +311,28 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
                 This is an AI-led voice interview. Speak naturally as if you were talking to a person.
               </p>
             </div>
-            <Button 
-              size="lg" 
-              onClick={() => setIsStarted(true)}
-              disabled={isLoading}
-              className="h-14 px-8 rounded-full bg-white text-black hover:bg-white/90 font-medium text-lg transition-transform hover:scale-105"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Connecting...
-                </>
-              ) : (
-                "Start Conversation"
-              )}
-            </Button>
+            {isUploading ? (
+              <div className="flex items-center gap-3 text-foreground/70">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Saving recording...</span>
+              </div>
+            ) : (
+              <Button
+                size="lg"
+                onClick={() => setIsStarted(true)}
+                disabled={isLoading}
+                className="h-14 px-8 rounded-full bg-white text-black hover:bg-white/90 font-medium text-lg transition-transform hover:scale-105"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Connecting...
+                  </>
+                ) : (
+                  "Start Conversation"
+                )}
+              </Button>
+            )}
           </motion.div>
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center">
