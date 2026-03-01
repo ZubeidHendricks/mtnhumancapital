@@ -1982,13 +1982,13 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
         },
         body: JSON.stringify({
           name: "Roleplay Facilitator",
-          evi_version: "2",
+          evi_version: "3",
           voice: {
             name: "ITO"
           },
           language_model: {
             model_provider: "OPEN_AI",
-            model_resource: "gpt-3.5-turbo"
+            model_resource: "gpt-4o-mini"
           },
           ellm_model: {
             allow_short_responses: false
@@ -2000,7 +2000,10 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
             }
           },
           timeouts: {
-            inactivity: 600000
+            inactivity: {
+              enabled: true,
+              duration_secs: 600
+            }
           }
         })
       });

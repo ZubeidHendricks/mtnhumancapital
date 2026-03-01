@@ -4,7 +4,11 @@
       "Bash(wsl -e bash -ic \"pgrep -f ''node.*server/index.ts'' | xargs -r kill; sleep 1; echo killed\")",
       "Bash(wsl:*)",
       "Bash(npx tsc:*)",
-      "Bash(npx vite:*)"
+      "Bash(npx vite:*)",
+      "mcp__ide__getDiagnostics",
+      "WebFetch(domain:dev.hume.ai)",
+      "WebSearch",
+      "WebFetch(domain:www.hume.ai)"
     ]
   }
 }

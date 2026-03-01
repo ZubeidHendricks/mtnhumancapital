@@ -631,7 +631,7 @@ BENEFITS:
 
   // Fetch integrity checks for all candidates
   const integrityChecksKey = useTenantQueryKey(['integrity-checks']);
-  const { data: allIntegrityChecks = [] } = useQuery({
+  const { data: allIntegrityChecks = [], isLoading: loadingIntegrityChecks } = useQuery({
     queryKey: integrityChecksKey,
     queryFn: async () => {
       try {
@@ -2097,7 +2097,12 @@ BENEFITS:
                     <p className="text-sm text-foreground font-semibold mb-3">Recent integrity checks across all candidates:</p>
                     <ScrollArea className="h-[300px]">
                       <div className="space-y-2">
-                        {allIntegrityChecks.length === 0 ? (
+                        {loadingIntegrityChecks ? (
+                          <div className="flex flex-col items-center justify-center py-12 gap-3">
+                            <Loader2 className="w-6 h-6 animate-spin text-[#FFCB00]" />
+                            <p className="text-sm text-muted-foreground">Loading verifications...</p>
+                          </div>
+                        ) : allIntegrityChecks.length === 0 ? (
                           <div className="text-center text-foreground font-semibold py-8">
                             <FileCheck className="w-8 h-8 mx-auto mb-2 opacity-50" />
                             <p className="text-sm">No integrity checks pending</p>
@@ -2363,7 +2368,12 @@ BENEFITS:
                       <p className="text-sm text-foreground font-semibold mb-3">Select a candidate to view risk analysis:</p>
                       <ScrollArea className="h-[300px]">
                         <div className="space-y-2">
-                          {sortedRiskCandidates.length > 0 ? sortedRiskCandidates.map((candidate: any) => {
+                          {(loadingCandidates || loadingIntegrityChecks) ? (
+                            <div className="flex flex-col items-center justify-center py-12 gap-3">
+                              <Loader2 className="w-6 h-6 animate-spin text-[#FFCB00]" />
+                              <p className="text-sm text-muted-foreground">Loading risk assessments...</p>
+                            </div>
+                          ) : sortedRiskCandidates.length > 0 ? sortedRiskCandidates.map((candidate: any) => {
                             const riskData = getCandidateRiskData(candidate.id);
                             const isIntegrityStage = candidate.stage === "integrity_checks";
                             return (

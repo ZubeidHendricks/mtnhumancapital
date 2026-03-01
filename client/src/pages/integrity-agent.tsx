@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTenantQueryKey } from "@/hooks/useTenant";
 import { Button } from "@/components/ui/button";
@@ -59,6 +60,7 @@ type WorkflowStep = {
 };
 
 export default function IntegrityAgent() {
+  const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const [selectedCandidateId, setSelectedCandidateId] = useState<string>("");
   const [isRunningEvaluation, setIsRunningEvaluation] = useState(false);
@@ -233,14 +235,18 @@ export default function IntegrityAgent() {
             });
           }
 
-          // Check if completed
-          if (updatedCheck.status === "Completed" || updatedCheck.completedAt) {
+          // Check if completed (including "Documents Required" which is a terminal state)
+          if (updatedCheck.status === "Completed" || updatedCheck.status === "Documents Required" || updatedCheck.completedAt) {
             clearInterval(pollInterval);
             setIsRunningEvaluation(false);
             setCurrentStepIndex(checkTypes.length - 1);
             await refetchCandidateChecks();
             queryClient.invalidateQueries({ queryKey: integrityChecksKey });
-            toast.success("AI integrity evaluation completed!");
+            if (updatedCheck.status === "Documents Required") {
+              toast.success("AI integrity evaluation completed - documents required from candidate.");
+            } else {
+              toast.success("AI integrity evaluation completed!");
+            }
           } else if (updatedCheck.status === "Failed") {
             clearInterval(pollInterval);
             setIsRunningEvaluation(false);
@@ -270,6 +276,7 @@ export default function IntegrityAgent() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "Completed": return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+      case "Documents Required": return <FileText className="w-4 h-4 text-amber-500" />;
       case "Pending": return <Clock className="w-4 h-4 text-yellow-500" />;
       case "Failed": return <XCircle className="w-4 h-4 text-red-500" />;
       default: return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />;
@@ -314,10 +321,16 @@ export default function IntegrityAgent() {
       <div className="pt-20 container mx-auto px-4 py-6">
         <div className="mb-6">
           <BackButton fallbackPath="/hr-dashboard?tab=integrity" className="mb-4" />
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <ShieldCheck className="w-8 h-8 text-primary" />
-            Integrity Evaluation Agent
-          </h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold flex items-center gap-3">
+              <ShieldCheck className="w-8 h-8 text-primary" />
+              Integrity Evaluation Agent
+            </h1>
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => setLocation("/hr-dashboard?tab=integrity")}>
+              <ShieldCheck className="w-4 h-4" />
+              Go to Integrity Tab
+            </Button>
+          </div>
           <p className="text-muted-foreground mt-2">
             AI-powered automated background checks and risk assessments
           </p>
