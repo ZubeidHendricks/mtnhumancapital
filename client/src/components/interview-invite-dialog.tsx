@@ -101,9 +101,10 @@ interface InterviewInviteDialogProps {
   onOpenChange: (open: boolean) => void;
   candidate: Candidate | null;
   job?: Job | null;
+  onInviteSent?: () => void;
 }
 
-export function InterviewInviteDialog({ open, onOpenChange, candidate, job }: InterviewInviteDialogProps) {
+export function InterviewInviteDialog({ open, onOpenChange, candidate, job, onInviteSent }: InterviewInviteDialogProps) {
   const queryClient = useQueryClient();
   const whatsappConversationsKey = useTenantQueryKey(['whatsapp', 'conversations']);
   const [, setLocation] = useLocation();
@@ -161,6 +162,7 @@ export function InterviewInviteDialog({ open, onOpenChange, candidate, job }: In
 
         setSentRecipient(candidate.email);
         setInviteSent(true);
+        onInviteSent?.();
       } catch (error: any) {
         console.error('Email invite error:', error);
         toast.error(error.response?.data?.message || 'Failed to send email invitation.');
@@ -207,6 +209,7 @@ AHC Recruiting Team`;
 
         setSentRecipient(phone);
         setInviteSent(true);
+        onInviteSent?.();
         queryClient.invalidateQueries({ queryKey: whatsappConversationsKey });
       } catch (error: any) {
         console.error('WhatsApp invite error:', error);

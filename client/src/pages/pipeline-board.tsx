@@ -6,13 +6,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { 
-  ChevronRight, 
-  Loader2, 
-  Users, 
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import {
+  ChevronRight,
+  Loader2,
+  Users,
   Briefcase,
   Star,
   ArrowRight,
@@ -24,24 +33,34 @@ import {
   FileText,
   GripVertical,
   Eye,
-  X
+  X,
+  AlertTriangle
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "wouter";
 import type { Candidate, Job } from "@shared/schema";
+import { InterviewInviteDialog } from "@/components/interview-invite-dialog";
 
-const PIPELINE_STAGES = [
+const MAIN_STAGES = [
   { key: "sourcing", name: "Sourcing", color: "from-slate-500 to-slate-600", bgColor: "bg-slate-500/10", borderColor: "border-slate-500/30" },
   { key: "screening", name: "Screening", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
   { key: "shortlisted", name: "Shortlisted", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
   { key: "interviewing", name: "Interviewing", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
   { key: "offer_pending", name: "Offer Pending", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
-  { key: "offer_declined", name: "Offer Declined", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
   { key: "integrity_checks", name: "Integrity", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
   { key: "integrity_passed", name: "Checks Passed", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
   { key: "onboarding", name: "Onboarding", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
   { key: "hired", name: "Hired", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
 ];
+
+const TERMINAL_STAGES = [
+  { key: "offer_declined", name: "Declined", color: "from-zinc-500 to-zinc-600", bgColor: "bg-zinc-500/10", borderColor: "border-zinc-500/30" },
+  { key: "integrity_failed", name: "Checks Failed", color: "from-zinc-500 to-zinc-600", bgColor: "bg-zinc-500/10", borderColor: "border-zinc-500/30" },
+  { key: "rejected", name: "Rejected", color: "from-zinc-500 to-zinc-600", bgColor: "bg-zinc-500/10", borderColor: "border-zinc-500/30" },
+  { key: "withdrawn", name: "Withdrawn", color: "from-zinc-500 to-zinc-600", bgColor: "bg-zinc-500/10", borderColor: "border-zinc-500/30" },
+];
+
+const ALL_STAGES = [...MAIN_STAGES, ...TERMINAL_STAGES];
 
 export default function PipelineBoard() {
   const queryClient = useQueryClient();
@@ -50,7 +69,18 @@ export default function PipelineBoard() {
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [draggedCandidate, setDraggedCandidate] = useState<Candidate | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
-  
+  const [overrideDialog, setOverrideDialog] = useState<{
+    candidate: Candidate;
+    toStage: string;
+    blockerMessage: string;
+  } | null>(null);
+  const [overrideLoading, setOverrideLoading] = useState(false);
+  const [interviewDialog, setInterviewDialog] = useState<{
+    candidate: Candidate;
+    fromStage: string;
+  } | null>(null);
+  const [interviewInviteSent, setInterviewInviteSent] = useState(false);
+
   const jobsKey = useTenantQueryKey(['jobs']);
   const candidatesKey = useTenantQueryKey(['candidates']);
 
@@ -70,60 +100,112 @@ export default function PipelineBoard() {
     ? (candidates || [])
     : (candidates || []).filter((c: Candidate) => c.jobId === selectedJobId);
 
-  const getStageIndex = (stage: string): number => {
+  const getMainStageIndex = (stage: string): number => {
     const normalizedStage = (stage || '').toLowerCase().replace(/\s+/g, '_');
-    const index = PIPELINE_STAGES.findIndex(s => 
+    const index = MAIN_STAGES.findIndex(s =>
       s.key.toLowerCase() === normalizedStage || s.name.toLowerCase() === normalizedStage.replace(/_/g, ' ')
     );
-    return index === -1 ? 0 : index;
+    return index;
   };
 
   const getNextStage = (currentStage: string): string | null => {
-    const stageIndex = getStageIndex(currentStage);
-    if (stageIndex < 0 || stageIndex >= PIPELINE_STAGES.length - 1) return null;
-    return PIPELINE_STAGES[stageIndex + 1].key;
+    const stageIndex = getMainStageIndex(currentStage);
+    if (stageIndex < 0 || stageIndex >= MAIN_STAGES.length - 1) return null;
+    return MAIN_STAGES[stageIndex + 1].key;
   };
 
   const getStageName = (stageKey: string): string => {
-    const found = PIPELINE_STAGES.find(s => s.key === stageKey);
+    const found = ALL_STAGES.find(s => s.key === stageKey);
     return found?.name || stageKey;
+  };
+
+  const isTerminalStage = (stageKey: string): boolean => {
+    return TERMINAL_STAGES.some(s => s.key === stageKey);
   };
 
   const getCandidatesForStage = (stageKey: string): Candidate[] => {
     return filteredCandidates.filter((c: Candidate) => {
       const candidateStage = (c.stage || 'sourcing').toLowerCase().replace(/\s+/g, '_');
-      return candidateStage === stageKey || 
-             PIPELINE_STAGES.find(s => s.key === stageKey)?.name.toLowerCase() === candidateStage.replace(/_/g, ' ');
+      return candidateStage === stageKey ||
+             ALL_STAGES.find(s => s.key === stageKey)?.name.toLowerCase() === candidateStage.replace(/_/g, ' ');
     });
   };
 
-  const moveCandidate = async (candidate: Candidate, toStage: string) => {
+  const moveCandidate = async (candidate: Candidate, toStage: string, skipPrerequisites: boolean = false) => {
     setAdvancingCandidate(candidate.id);
-    
+    const fromStage = (candidate.stage || 'sourcing').toLowerCase().replace(/\s+/g, '_');
+
     try {
       const response = await api.post(`/pipeline/candidates/${candidate.id}/transition`, {
-        toStage: toStage
+        toStage,
+        skipPrerequisites,
       });
-      
+
       if (response.data.success) {
         queryClient.invalidateQueries({ queryKey: candidatesKey });
-        toast.success(`${candidate.fullName} moved to ${getStageName(toStage)}`, {
-          description: response.data.triggeredActions?.length 
-            ? response.data.triggeredActions.join(", ")
-            : undefined
-        });
+
+        if (toStage === "interviewing") {
+          // Open interview invite dialog — if user doesn't send, we'll roll back
+          setInterviewInviteSent(false);
+          setInterviewDialog({ candidate, fromStage });
+        } else {
+          toast.success(`${candidate.fullName} moved to ${getStageName(toStage)}`, {
+            description: response.data.triggeredActions?.length
+              ? response.data.triggeredActions.join(", ")
+              : undefined
+          });
+        }
       } else {
         toast.error("Cannot move candidate", {
           description: response.data.blockers?.[0] || response.data.error
         });
       }
     } catch (error: any) {
-      toast.error("Cannot move candidate", { 
-        description: error.response?.data?.blockers?.[0] || "Failed to move candidate" 
-      });
+      const blockerMsg = error.response?.data?.blockers?.[0] || error.response?.data?.message || "Failed to move candidate";
+      if (!skipPrerequisites && error.response?.status === 400) {
+        setOverrideDialog({ candidate, toStage, blockerMessage: blockerMsg });
+      } else {
+        toast.error("Cannot move candidate", { description: blockerMsg });
+      }
     } finally {
       setAdvancingCandidate(null);
     }
+  };
+
+  const handleOverrideConfirm = async () => {
+    if (!overrideDialog) return;
+    setOverrideLoading(true);
+    try {
+      await moveCandidate(overrideDialog.candidate, overrideDialog.toStage, true);
+    } finally {
+      setOverrideLoading(false);
+      setOverrideDialog(null);
+    }
+  };
+
+  const handleInterviewDialogClose = async (open: boolean) => {
+    if (open) return;
+    // Dialog is closing — if no invite was sent, roll back to previous stage
+    if (!interviewInviteSent && interviewDialog) {
+      const { candidate, fromStage } = interviewDialog;
+      try {
+        await api.post(`/pipeline/candidates/${candidate.id}/transition`, {
+          toStage: fromStage,
+          skipPrerequisites: true,
+        });
+        queryClient.invalidateQueries({ queryKey: candidatesKey });
+        toast.info(`${candidate.fullName} moved back to ${getStageName(fromStage)}`, {
+          description: "No interview invite was sent"
+        });
+      } catch {
+        toast.error("Failed to revert candidate stage");
+      }
+    } else if (interviewInviteSent && interviewDialog) {
+      toast.success(`${interviewDialog.candidate.fullName} moved to Interviewing`, {
+        description: "Interview invite sent"
+      });
+    }
+    setInterviewDialog(null);
   };
 
   const handleAdvanceCandidate = async (candidate: Candidate) => {
@@ -225,14 +307,16 @@ export default function PipelineBoard() {
         ) : (
           <div className="overflow-x-auto pb-4">
             <div className="flex gap-3 min-w-max">
-              {PIPELINE_STAGES.map((stage, stageIndex) => {
+              {/* Main flow stages */}
+              {MAIN_STAGES.map((stage, stageIndex) => {
                 const stageCandidates = getCandidatesForStage(stage.key);
-                const isLastStage = stageIndex === PIPELINE_STAGES.length - 1;
+                const isHired = stage.key === "hired";
+                const hasNextStage = stageIndex < MAIN_STAGES.length - 1;
                 const isDragOver = dragOverStage === stage.key;
-                
+
                 return (
                   <div key={stage.key} className="flex items-start gap-2">
-                    <div 
+                    <div
                       className={`w-80 flex-shrink-0 transition-all ${isDragOver ? 'scale-[1.02]' : ''}`}
                       onDragOver={(e) => handleDragOver(e, stage.key)}
                       onDragLeave={handleDragLeave}
@@ -246,18 +330,18 @@ export default function PipelineBoard() {
                           </Badge>
                         </div>
                       </div>
-                      
+
                       <div className={`rounded-b-lg ${stage.bgColor} border-2 ${isDragOver ? 'border-primary' : stage.borderColor} border-t-0 min-h-[500px] transition-colors`}>
-                        <ScrollArea className="h-[500px] p-2">
-                          <div className="space-y-2">
+                        <div className="h-[500px] overflow-y-auto">
+                          <div className="space-y-2 p-2">
                             {stageCandidates.length === 0 ? (
                               <div className="text-center py-8 text-muted-foreground text-sm">
                                 {isDragOver ? 'Drop candidate here' : 'No candidates'}
                               </div>
                             ) : (
                               stageCandidates.map((candidate: Candidate) => (
-                                <Card 
-                                  key={candidate.id} 
+                                <Card
+                                  key={candidate.id}
                                   className={`bg-card/90 border-border dark:border-white/10 hover:border-primary/50 transition-all cursor-grab active:cursor-grabbing ${draggedCandidate?.id === candidate.id ? 'opacity-50' : ''}`}
                                   draggable
                                   onDragStart={(e) => handleDragStart(e, candidate)}
@@ -280,7 +364,7 @@ export default function PipelineBoard() {
                                         )}
                                       </div>
                                     </div>
-                                    
+
                                     {candidate.match !== null && candidate.match !== undefined && (
                                       <div className="flex items-center gap-1 mb-2 ml-6">
                                         <Star className="h-3 w-3 text-foreground" />
@@ -299,11 +383,11 @@ export default function PipelineBoard() {
                                         <Eye className="h-3 w-3 mr-1" />
                                         View
                                       </Button>
-                                      
-                                      {!isLastStage && (
+
+                                      {!isHired && hasNextStage && (
                                         <Button
                                           size="sm"
-                                          className="flex-1 h-7 text-xs bg-gradient-to-r from-primary/80 to-background/80 hover:from-primary hover:to-background"
+                                          className="flex-1 h-7 text-xs bg-amber-500 hover:bg-amber-600 text-black"
                                           onClick={() => handleAdvanceCandidate(candidate)}
                                           disabled={advancingCandidate === candidate.id}
                                           data-testid={`button-advance-${candidate.id}`}
@@ -320,7 +404,7 @@ export default function PipelineBoard() {
                                       )}
                                     </div>
 
-                                    {isLastStage && (
+                                    {isHired && (
                                       <div className="flex items-center justify-center gap-1 text-foreground text-xs mt-2 ml-6">
                                         <CheckCircle2 className="h-3 w-3" />
                                         Completed
@@ -331,15 +415,97 @@ export default function PipelineBoard() {
                               ))
                             )}
                           </div>
-                        </ScrollArea>
+                        </div>
                       </div>
                     </div>
-                    
-                    {!isLastStage && (
+
+                    {hasNextStage && (
                       <div className="flex items-center h-[540px]">
                         <ArrowRight className="h-5 w-5 text-muted-foreground" />
                       </div>
                     )}
+                  </div>
+                );
+              })}
+
+              {/* Separator between main flow and terminal states */}
+              <div className="flex items-center h-[540px] px-2">
+                <div className="w-px h-3/4 bg-border" />
+              </div>
+
+              {/* Terminal state columns */}
+              {TERMINAL_STAGES.map((stage) => {
+                const stageCandidates = getCandidatesForStage(stage.key);
+                const isDragOver = dragOverStage === stage.key;
+
+                return (
+                  <div key={stage.key} className="flex items-start">
+                    <div
+                      className={`w-64 flex-shrink-0 transition-all opacity-75 ${isDragOver ? 'scale-[1.02] opacity-100' : ''}`}
+                      onDragOver={(e) => handleDragOver(e, stage.key)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, stage.key)}
+                    >
+                      <div className={`rounded-t-lg bg-gradient-to-r ${stage.color} p-3`}>
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold text-white text-sm">{stage.name}</h3>
+                          <Badge className="bg-white/20 text-white border-0 text-xs">
+                            {stageCandidates.length}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      <div className={`rounded-b-lg ${stage.bgColor} border-2 ${isDragOver ? 'border-primary' : stage.borderColor} border-t-0 min-h-[500px] transition-colors`}>
+                        <div className="h-[500px] overflow-y-auto">
+                          <div className="space-y-2 p-2">
+                            {stageCandidates.length === 0 ? (
+                              <div className="text-center py-8 text-muted-foreground text-sm">
+                                {isDragOver ? 'Drop candidate here' : 'No candidates'}
+                              </div>
+                            ) : (
+                              stageCandidates.map((candidate: Candidate) => (
+                                <Card
+                                  key={candidate.id}
+                                  className={`bg-card/90 border-border dark:border-white/10 hover:border-primary/50 transition-all cursor-grab active:cursor-grabbing ${draggedCandidate?.id === candidate.id ? 'opacity-50' : ''}`}
+                                  draggable
+                                  onDragStart={(e) => handleDragStart(e, candidate)}
+                                  onDragEnd={handleDragEnd}
+                                  data-testid={`card-candidate-${candidate.id}`}
+                                >
+                                  <CardContent className="p-3">
+                                    <div className="flex items-start gap-2 mb-2">
+                                      <GripVertical className="h-4 w-4 text-muted-foreground mt-1 flex-shrink-0" />
+                                      <Avatar className="h-8 w-8 border border-border dark:border-white/10">
+                                        <AvatarFallback className="bg-muted text-muted-foreground text-xs">
+                                          {candidate.fullName?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'NA'}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="font-medium text-sm truncate">{candidate.fullName}</p>
+                                        <p className="text-xs text-muted-foreground truncate">{candidate.role || 'No role'}</p>
+                                      </div>
+                                    </div>
+
+                                    <div className="flex gap-2 ml-6">
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="flex-1 h-7 text-xs"
+                                        onClick={() => setSelectedCandidate(candidate)}
+                                        data-testid={`button-view-${candidate.id}`}
+                                      >
+                                        <Eye className="h-3 w-3 mr-1" />
+                                        View
+                                      </Button>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 );
               })}
@@ -351,7 +517,7 @@ export default function PipelineBoard() {
           <CardContent className="p-4">
             <div className="flex items-center gap-6 text-sm flex-wrap">
               <span className="text-muted-foreground">Pipeline Summary:</span>
-              {PIPELINE_STAGES.slice(0, 6).map((stage) => {
+              {MAIN_STAGES.slice(0, 6).map((stage) => {
                 const count = getCandidatesForStage(stage.key).length;
                 return (
                   <div key={stage.key} className="flex items-center gap-1">
@@ -459,6 +625,53 @@ export default function PipelineBoard() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Interview Invite Dialog — opens when moving to interviewing */}
+      <InterviewInviteDialog
+        open={!!interviewDialog}
+        onOpenChange={handleInterviewDialogClose}
+        candidate={interviewDialog?.candidate ?? null}
+        job={jobs?.find((j: Job) => j.id === interviewDialog?.candidate?.jobId) ?? null}
+        onInviteSent={() => setInterviewInviteSent(true)}
+      />
+
+      {/* Override Confirmation Dialog */}
+      <AlertDialog open={!!overrideDialog} onOpenChange={(open) => { if (!open) setOverrideDialog(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Transition Blocked
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  Moving <span className="font-medium text-foreground">{overrideDialog?.candidate.fullName}</span> to{" "}
+                  <span className="font-medium text-foreground">{overrideDialog ? getStageName(overrideDialog.toStage) : ""}</span> is blocked:
+                </p>
+                <div className="rounded-md bg-amber-500/10 border border-amber-500/30 p-3 text-sm text-amber-700 dark:text-amber-400">
+                  {overrideDialog?.blockerMessage}
+                </div>
+                <p>Do you want to override this check and move the candidate anyway?</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={overrideLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleOverrideConfirm();
+              }}
+              disabled={overrideLoading}
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              {overrideLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Override & Move
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

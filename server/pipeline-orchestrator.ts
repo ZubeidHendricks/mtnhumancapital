@@ -7,6 +7,8 @@ import {
   integrityChecks,
   integrityDocumentRequirements,
   onboardingWorkflows,
+  interviewSessions,
+  jobs,
   pipelineStages,
   type PipelineStage
 } from "@shared/schema";
@@ -38,6 +40,7 @@ const stagePrerequisites: StagePrerequisites = {
     requiredConditions: async (candidateId: string) => {
       const candidate = await db.select().from(candidates).where(eq(candidates.id, candidateId)).limit(1);
       if (candidate.length === 0) return { met: false, reason: "Candidate not found" };
+      if (!candidate[0].jobId) return { met: false, reason: "Candidate has no job assigned" };
       if ((candidate[0].match ?? 0) < 50) return { met: false, reason: "Match score too low (min 50%)" };
       return { met: true };
     },
@@ -47,6 +50,20 @@ const stagePrerequisites: StagePrerequisites = {
   },
   offer_pending: {
     allowedFromStages: ["interviewing"],
+    requiredConditions: async (candidateId: string, tenantId: string) => {
+      const sessions = await db.select().from(interviewSessions)
+        .where(and(
+          eq(interviewSessions.candidateId, candidateId),
+          eq(interviewSessions.tenantId, tenantId)
+        ));
+
+      if (sessions.length === 0) return { met: false, reason: "No interview session found" };
+
+      const completed = sessions.some(s => s.status === "completed");
+      if (!completed) return { met: false, reason: "Interview not yet completed" };
+
+      return { met: true };
+    },
   },
   offer_declined: {
     allowedFromStages: ["offer_pending"],
@@ -147,7 +164,7 @@ export class PipelineOrchestrator {
         };
       }
       
-      const fromStage = (candidate.stage || "sourcing") as PipelineStage;
+      const fromStage = (candidate.stage || "sourcing").toLowerCase().replace(/\s+/g, '_') as PipelineStage;
       
       if (!skipPrerequisites) {
         const prereqs = stagePrerequisites[toStage];
@@ -257,12 +274,12 @@ export class PipelineOrchestrator {
           actions.push("Launched integrity checks");
         }
         break;
-        
+
       case "integrity_passed":
         if (!config || config.autoLaunchOnboarding) {
           await this.launchOnboarding(candidateId, tenantId, jobId);
           actions.push("Launched onboarding workflow");
-          
+
           await this.transitionCandidate(candidateId, "onboarding", tenantId, {
             triggeredBy: "auto",
             reason: "Auto-launched after integrity passed",
@@ -301,6 +318,66 @@ export class PipelineOrchestrator {
     }
   }
   
+  private async launchInterviewSession(
+    candidateId: string,
+    tenantId: string,
+    jobId: string | null
+  ): Promise<void> {
+    // Check if there's already a pending/sent session
+    const existing = await db.select().from(interviewSessions)
+      .where(and(
+        eq(interviewSessions.candidateId, candidateId),
+        eq(interviewSessions.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (existing.length > 0) return;
+
+    const [candidate] = await db.select().from(candidates)
+      .where(eq(candidates.id, candidateId));
+    if (!candidate) return;
+
+    let jobTitle = "Open Position";
+    if (jobId) {
+      const [job] = await db.select().from(jobs).where(eq(jobs.id, jobId));
+      if (job) jobTitle = job.title;
+    }
+
+    const token = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+      .map(b => b.toString(16).padStart(2, '0')).join('');
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    await db.insert(interviewSessions).values({
+      tenantId,
+      candidateId,
+      candidateName: candidate.fullName,
+      candidatePhone: candidate.phone || undefined,
+      jobTitle,
+      token,
+      interviewType: "voice",
+      status: "pending",
+      expiresAt,
+    });
+
+    // Send email invite if candidate has an email
+    if (candidate.email) {
+      try {
+        const { EmailService } = await import("./email-service");
+        const emailService = new EmailService();
+        const interviewUrl = `${process.env.APP_URL || 'http://localhost:5000'}/interview/invite/${token}`;
+        await emailService.sendInterviewInvitation({
+          to: candidate.email,
+          candidateName: candidate.fullName || "Candidate",
+          jobTitle,
+          interviewUrl,
+        });
+      } catch (e) {
+        console.error("[Pipeline] Failed to send interview invite email:", e);
+      }
+    }
+  }
+
   private async launchOnboarding(
     candidateId: string, 
     tenantId: string, 

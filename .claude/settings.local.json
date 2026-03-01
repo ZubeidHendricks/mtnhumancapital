@@ -8,7 +8,11 @@
       "Bash(grep -r \"saveVideo\\\\|SaveVideo\\\\|save.*video\\\\|saveRecording\\\\|SaveRecording\" /home/runner/workspace --include=\"*.ts\" --include=\"*.tsx\" ! -path \"*/node_modules/*\" 2>/dev/null)",
       "Bash(mkdir -p test-results && npx playwright test test-video-saving-ai.spec.ts --reporter=list 2>&1)",
       "Bash(curl -s http://localhost:5000/api/tenant/current | python3 -m json.tool 2>/dev/null | head -10)",
-      "Bash(npx playwright test test-video-saving-ai.spec.ts --grep \"API Tests\" --reporter=list 2>&1)"
+      "Bash(npx playwright test test-video-saving-ai.spec.ts --grep \"API Tests\" --reporter=list 2>&1)",
+      "mcp__ide__getDiagnostics",
+      "WebFetch(domain:dev.hume.ai)",
+      "WebSearch",
+      "WebFetch(domain:www.hume.ai)"
     ]
   }
 }

@@ -223,9 +223,19 @@ export class IntegrityOrchestrator {
     // Final update - remove progress marker since check is complete
     const finalFindings = { ...allFindings };
     delete (finalFindings as any)._progress;
-    
+
+    // Create document requirements BEFORE setting final status to avoid race condition
+    // (client polls for "Completed" status and stops polling, missing the subsequent "Documents Required" update)
+    await this.createDocumentRequirementsFromFindings(tenantId, checkId, candidateId, finalFindings);
+
+    // Determine final status: "Documents Required" if any agent identified missing docs
+    const hasMissingDocs = Object.values(finalFindings).some(
+      (data: any) => data?.missingDocuments && Array.isArray(data.missingDocuments) && data.missingDocuments.length > 0
+    );
+    const finalStatus = hasMissingDocs ? "Documents Required" : "Completed";
+
     const finalCheck = await this.storage.updateIntegrityCheck(tenantId, checkId, {
-      status: "Completed",
+      status: finalStatus,
       result: this.generateOverallAssessment(finalFindings, overallRiskScore),
       riskScore: Math.round(overallRiskScore),
       findings: finalFindings,
@@ -236,13 +246,7 @@ export class IntegrityOrchestrator {
       onProgress(progress);
     }
 
-    console.log(`Completed integrity check ${checkId} with risk score ${Math.round(overallRiskScore)}`);
-
-    // Create document requirements for any missing documents identified
-    await this.createDocumentRequirementsFromFindings(tenantId, checkId, candidateId, finalFindings);
-
-    // Update the comprehensive check status based on whether documents are required
-    await this.updateComprehensiveCheckStatus(tenantId, candidateId, finalFindings);
+    console.log(`Completed integrity check ${checkId} with status ${finalStatus} and risk score ${Math.round(overallRiskScore)}`);
 
     return finalCheck!;
   }
@@ -351,38 +355,6 @@ export class IntegrityOrchestrator {
       } catch (error) {
         console.error(`Failed to create document requirement ${reqData.type}:`, error);
       }
-    }
-  }
-
-  private async updateComprehensiveCheckStatus(
-    tenantId: string,
-    candidateId: string,
-    findings: Record<string, any>
-  ): Promise<void> {
-    // Find the comprehensive check for this candidate
-    const checks = await this.storage.getIntegrityChecksByCandidateId(tenantId, candidateId);
-    const comprehensiveCheck = checks.find(c => c.checkType === "Comprehensive" || c.checkType === "comprehensive");
-    if (!comprehensiveCheck) return;
-
-    // Check if any missing documents were identified across all findings
-    let hasMissingDocs = false;
-    for (const [, data] of Object.entries(findings)) {
-      if (data?.missingDocuments && Array.isArray(data.missingDocuments) && data.missingDocuments.length > 0) {
-        hasMissingDocs = true;
-        break;
-      }
-    }
-
-    if (hasMissingDocs) {
-      await this.storage.updateIntegrityCheck(tenantId, comprehensiveCheck.id, {
-        status: "Documents Required",
-        result: comprehensiveCheck.result || "Pending document verification",
-      });
-    } else {
-      await this.storage.updateIntegrityCheck(tenantId, comprehensiveCheck.id, {
-        status: "Completed",
-        result: comprehensiveCheck.result || "Clear",
-      });
     }
   }
 
