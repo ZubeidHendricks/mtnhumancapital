@@ -28,6 +28,7 @@ export default function InterviewVoice() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const recordingChunksRef = useRef<Blob[]>([]);
   const recordingStartTimeRef = useRef<number>(0);
+  const isMutedRef = useRef(false);
 
   const { data: voiceConfig, isLoading, error } = useQuery({
     queryKey: ['voice-config'],
@@ -122,6 +123,7 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
               setState("processing");
             } else if (message.type === "audio_output") {
               console.log("Audio output received, length:", message.data?.length);
+              isMutedRef.current = true; // Mute mic while AI speaks
               if (message.data) {
                 playAudio(message.data);
               }
@@ -165,6 +167,9 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
           if (event.data.size > 0) {
             // Accumulate chunks for later upload
             recordingChunksRef.current.push(event.data);
+
+            // Mute mic while AI is speaking to prevent echo
+            if (isMutedRef.current) return;
 
             if (ws.readyState === WebSocket.OPEN) {
               const reader = new FileReader();
@@ -223,6 +228,7 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
         source.start(0);
         source.onended = () => {
           setState("listening");
+          isMutedRef.current = false; // Unmute mic after AI finishes speaking
         };
       });
     } catch (err) {

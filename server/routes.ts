@@ -68,6 +68,99 @@ function inferDepartmentFromTitle(title: string): string {
   return 'General';
 }
 
+// In-memory cache for Hume AI OAuth token and EVI config
+let humeTokenCache: { token: string; expiresAt: number } | null = null;
+let humeConfigIdCache: string | null = null;
+
+async function getHumeAccessToken(apiKey: string, secretKey: string): Promise<string> {
+  // Return cached token if still valid (with 60s buffer)
+  if (humeTokenCache && Date.now() < humeTokenCache.expiresAt - 60000) {
+    return humeTokenCache.token;
+  }
+
+  const credentials = Buffer.from(`${apiKey}:${secretKey}`).toString('base64');
+  const tokenResponse = await fetch("https://api.hume.ai/oauth2-cc/token", {
+    method: "POST",
+    headers: {
+      "Authorization": `Basic ${credentials}`,
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body: "grant_type=client_credentials"
+  });
+
+  if (!tokenResponse.ok) {
+    const error = await tokenResponse.text();
+    throw new Error(`Hume token error (${tokenResponse.status}): ${error}`);
+  }
+
+  const tokenData = await tokenResponse.json() as { access_token: string; expires_in?: number };
+  const expiresIn = (tokenData.expires_in || 3600) * 1000; // default 1 hour
+  humeTokenCache = {
+    token: tokenData.access_token,
+    expiresAt: Date.now() + expiresIn
+  };
+  console.log("Obtained new Hume AI access token");
+  return humeTokenCache.token;
+}
+
+async function getOrCreateHumeConfig(apiKey: string): Promise<string | null> {
+  if (humeConfigIdCache) {
+    return humeConfigIdCache;
+  }
+
+  const configResponse = await fetch("https://api.hume.ai/v0/evi/configs", {
+    method: "POST",
+    headers: {
+      "X-Hume-Api-Key": apiKey,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      name: "Roleplay Facilitator",
+      evi_version: "3",
+      voice: { name: "ITO" },
+      language_model: {
+        model_provider: "OPEN_AI",
+        model_resource: "gpt-4o-mini"
+      },
+      ellm_model: {
+        allow_short_responses: true
+      },
+      event_messages: {
+        on_new_chat: {
+          enabled: true,
+          text: "Hey! I'm your roleplay practice partner. Tell me who you'd like me to be and what scenario you want to practice."
+        }
+      },
+      timeouts: {
+        inactivity: { enabled: true, duration_secs: 600 }
+      }
+    })
+  });
+
+  if (configResponse.ok) {
+    const configData = await configResponse.json() as { id: string };
+    humeConfigIdCache = configData.id;
+    console.log("Created EVI config:", humeConfigIdCache);
+    return humeConfigIdCache;
+  }
+
+  // Fallback: use existing config
+  const listResponse = await fetch("https://api.hume.ai/v0/evi/configs", {
+    headers: { "X-Hume-Api-Key": apiKey }
+  });
+
+  if (listResponse.ok) {
+    const configsList = await listResponse.json() as { configs_page?: { id: string }[] };
+    if (configsList.configs_page && configsList.configs_page.length > 0) {
+      humeConfigIdCache = configsList.configs_page[0].id;
+      console.log("Using existing config:", humeConfigIdCache);
+      return humeConfigIdCache;
+    }
+  }
+
+  return null;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
 
   const { EmailService } = await import("./email-service");
@@ -1936,123 +2029,29 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
       const HUMAI_SECRET_KEY = process.env.HUMAI_SECRET_KEY;
 
       if (!HUMAI_API_KEY || !HUMAI_SECRET_KEY) {
-        console.error("Hume AI credentials missing:", { 
-          hasApiKey: !!HUMAI_API_KEY, 
-          hasSecretKey: !!HUMAI_SECRET_KEY 
-        });
-        return res.status(500).json({ 
-          message: "Hume AI credentials not configured. Please add HUMAI_API_KEY and HUMAI_SECRET_KEY to your environment secrets." 
+        return res.status(500).json({
+          message: "Hume AI credentials not configured. Please add HUMAI_API_KEY and HUMAI_SECRET_KEY to your environment secrets."
         });
       }
 
-      console.log("Requesting Hume AI access token...");
-      
-      // Encode credentials as Basic Auth (base64 of "apiKey:secretKey")
-      const credentials = Buffer.from(`${HUMAI_API_KEY}:${HUMAI_SECRET_KEY}`).toString('base64');
-      
-      const tokenResponse = await fetch("https://api.hume.ai/oauth2-cc/token", {
-        method: "POST",
-        headers: {
-          "Authorization": `Basic ${credentials}`,
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: "grant_type=client_credentials"
-      });
+      const accessToken = await getHumeAccessToken(HUMAI_API_KEY, HUMAI_SECRET_KEY);
+      const configId = await getOrCreateHumeConfig(HUMAI_API_KEY);
 
-      if (!tokenResponse.ok) {
-        const error = await tokenResponse.text();
-        console.error("Hume AI token error - Status:", tokenResponse.status);
-        console.error("Hume AI token error - Response:", error);
-        return res.status(tokenResponse.status).json({ 
-          message: `Failed to get Hume AI access token: ${error}`,
-          status: tokenResponse.status
-        });
-      }
-
-      const tokenData = await tokenResponse.json();
-      console.log("Successfully obtained Hume AI access token");
-
-      // Create or retrieve EVI configuration
-      console.log("Creating/retrieving EVI configuration...");
-      const configResponse = await fetch("https://api.hume.ai/v0/evi/configs", {
-        method: "POST",
-        headers: {
-          "X-Hume-Api-Key": HUMAI_API_KEY,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          name: "Roleplay Facilitator",
-          evi_version: "3",
-          voice: {
-            name: "ITO"
-          },
-          language_model: {
-            model_provider: "OPEN_AI",
-            model_resource: "gpt-4o-mini"
-          },
-          ellm_model: {
-            allow_short_responses: false
-          },
-          event_messages: {
-            on_new_chat: {
-              enabled: true,
-              text: "Hey there! I'm your roleplay practice partner. I can transform into any character you need to practice with—a tough interviewer, a friendly recruiter, a difficult stakeholder, you name it. Just tell me who you want me to be and what scenario you want to practice. What role should I take on?"
-            }
-          },
-          timeouts: {
-            inactivity: {
-              enabled: true,
-              duration_secs: 600
-            }
-          }
-        })
-      });
-
-      let configId: string | null = null;
-      
-      if (configResponse.ok) {
-        const configData = await configResponse.json();
-        configId = configData.id;
-        console.log("Successfully created EVI config:", configId);
-      } else {
-        const errorText = await configResponse.text();
-        console.error("Config creation failed:", configResponse.status, errorText);
-        
-        // Try to list existing configs and use the first one
-        console.log("Trying to list existing configs...");
-        const listResponse = await fetch("https://api.hume.ai/v0/evi/configs", {
-          headers: {
-            "X-Hume-Api-Key": HUMAI_API_KEY
-          }
-        });
-        
-        if (listResponse.ok) {
-          const configsList = await listResponse.json();
-          console.log("Configs list response:", JSON.stringify(configsList));
-          if (configsList.configs_page && configsList.configs_page.length > 0) {
-            configId = configsList.configs_page[0].id;
-            console.log("Using existing config:", configId);
-          } else {
-            console.warn("No existing configs found");
-          }
-        } else {
-          const listError = await listResponse.text();
-          console.error("List configs failed:", listResponse.status, listError);
-        }
-      }
-      
-      // Only include configId if we have a valid one
-      const response: any = { 
-        accessToken: tokenData.access_token,
+      const response: any = {
+        accessToken,
         websocketUrl: "wss://api.hume.ai/v0/evi/chat"
       };
-      
+
       if (configId) {
         response.configId = configId;
       }
-      
+
       res.json(response);
     } catch (error) {
+      // Invalidate cache on auth errors
+      if (error instanceof Error && error.message.includes('401')) {
+        humeTokenCache = null;
+      }
       console.error("Error getting Hume AI config:", error);
       res.status(500).json({ message: `Failed to connect to Hume AI: ${error instanceof Error ? error.message : 'Unknown error'}` });
     }
