@@ -8149,7 +8149,7 @@ Format your response as JSON:
     }
   });
 
-  // Fetch Tavus recording and store in Object Storage
+  // Fetch Tavus recording, transcript, and trigger AI scoring
   app.post("/api/interviews/:sessionId/fetch-tavus-recording", async (req, res) => {
     try {
       const { sessionId } = req.params;
@@ -8165,7 +8165,8 @@ Format your response as JSON:
         headers: { "x-api-key": tavusApiKey },
       });
 
-      const recordingUrl = tavusRes.data?.recording_url;
+      const tavusData = tavusRes.data;
+      const recordingUrl = tavusData?.recording_url;
       if (!recordingUrl) {
         return res.status(404).json({ message: "Recording not yet available. Tavus may still be processing." });
       }
@@ -8200,6 +8201,61 @@ Format your response as JSON:
         status: "completed",
         hasVideo: true,
       });
+
+      // Extract transcript from Tavus and trigger AI analysis/scoring
+      const transcript = tavusData.conversation_transcript || tavusData.transcript || [];
+      if (transcript.length > 0) {
+        const mappedTranscripts = transcript.map((t: any) => ({
+          role: t.role === 'user' || t.role === 'candidate' ? 'candidate' as const : 'ai' as const,
+          text: t.content || t.text || '',
+          timestamp: t.timestamp,
+        }));
+
+        console.log(`[Interview] Tavus transcript available (${mappedTranscripts.length} segments), running AI analysis for session ${sessionId}...`);
+
+        // Run completeInterview to save transcripts, run AI analysis, and create feedback
+        await interviewOrchestrator.completeInterview(
+          tenantId,
+          sessionId,
+          mappedTranscripts,
+          undefined,
+          undefined,
+          undefined,
+          'video'
+        );
+        console.log(`[Interview] AI analysis completed for Tavus session ${sessionId}`);
+      } else {
+        console.log(`[Interview] No transcript available from Tavus for ${conversationId}, scoring skipped. Will retry in background.`);
+
+        // Start background retry for transcript (Tavus may still be processing)
+        (async () => {
+          const delays = Array.from({ length: 10 }, () => 30000); // retry every 30s for 5 min
+          for (const delay of delays) {
+            await new Promise(resolve => setTimeout(resolve, delay));
+            try {
+              const retryRes = await axios.get(`https://tavusapi.com/v2/conversations/${conversationId}`, {
+                headers: { "x-api-key": tavusApiKey },
+              });
+              const retryData = retryRes.data;
+              const retryTranscript = retryData?.conversation_transcript || retryData?.transcript || [];
+              if (retryTranscript.length > 0) {
+                const mappedRetry = retryTranscript.map((t: any) => ({
+                  role: t.role === 'user' || t.role === 'candidate' ? 'candidate' as const : 'ai' as const,
+                  text: t.content || t.text || '',
+                  timestamp: t.timestamp,
+                }));
+                console.log(`[Interview] Tavus transcript now available (${mappedRetry.length} segments), running analysis...`);
+                await interviewOrchestrator.completeInterview(tenantId, sessionId, mappedRetry, undefined, undefined, undefined, 'video');
+                console.log(`[Interview] Background AI analysis completed for session ${sessionId}`);
+                return;
+              }
+            } catch (err) {
+              console.warn(`[Interview] Background Tavus transcript retry failed:`, err);
+            }
+          }
+          console.warn(`[Interview] Could not get Tavus transcript for ${conversationId} after retries`);
+        })();
+      }
 
       res.status(201).json(recording);
     } catch (error: any) {

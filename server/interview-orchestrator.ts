@@ -411,7 +411,7 @@ Return ONLY valid JSON, no additional text.`
       decision,
       isFinalized: 1,
       finalizedAt: new Date(),
-      finalizedBy: userId,
+      finalizedBy: userId === 'system' ? null : userId,
       recommendations: notes,
     });
 

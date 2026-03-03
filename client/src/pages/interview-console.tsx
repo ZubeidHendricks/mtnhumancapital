@@ -144,6 +144,7 @@ export default function InterviewConsole() {
   const [activeFlowView, setActiveFlowView] = useState<"voice" | "video" | "f2f" | "offer" | null>(null);
   const [showPractice, setShowPractice] = useState<"voice" | "video" | null>(null);
   const [f2fMarkedComplete, setF2fMarkedComplete] = useState(false);
+  const f2fIsComplete = f2fMarkedComplete || (details?.session as any)?.f2fStatus === "completed";
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteType, setInviteType] = useState<"voice" | "video">("voice");
   const [playingRecordingId, setPlayingRecordingId] = useState<string | null>(null);
@@ -248,6 +249,12 @@ export default function InterviewConsole() {
         description: "The interview decision has been recorded successfully.",
       });
 
+      // Navigate to offer tab after accepting
+      if (variables.decision === "accepted") {
+        setActiveFlowView("offer");
+        setActiveFlowStep("offer");
+      }
+
       // Auto-update pipeline based on decision
       const candidateId = details?.session?.candidateId;
       if (candidateId) {
@@ -309,7 +316,7 @@ export default function InterviewConsole() {
       (s) => s.candidateId === session.candidateId && !s.candidateName?.startsWith("[Practice]")
     );
     const f2fSession = candidateSessions.find((s) => s.interviewType === "f2f" || s.interviewType === "face_to_face");
-    const f2fCompleted = f2fSession?.status === "completed" || (session as any).f2fStatus === "completed" || f2fMarkedComplete;
+    const f2fCompleted = f2fSession?.status === "completed" || (session as any).f2fStatus === "completed" || f2fIsComplete;
 
     return [
       {
@@ -341,7 +348,7 @@ export default function InterviewConsole() {
         score: null,
       },
     ];
-  }, [details?.session, sessions, f2fMarkedComplete]);
+  }, [details?.session, sessions, f2fIsComplete]);
 
   // Pipeline transition mutation
   const pipelineTransitionMutation = useMutation({
@@ -1000,6 +1007,7 @@ export default function InterviewConsole() {
                                   onClick={() => handleDecision("accepted")}
                                   disabled={latestFeedback.isFinalized === 1}
                                   data-testid="button-decision-accept"
+                                  className="bg-yellow-500 hover:bg-yellow-600 text-black"
                                 >
                                   <Gift className="h-5 w-5 mr-2" />
                                   Make Offer
@@ -1106,7 +1114,7 @@ export default function InterviewConsole() {
                       }}
                     />
 
-                    {f2fMarkedComplete && (
+                    {f2fIsComplete && (
                       <div className="border-t pt-6 space-y-4">
                         <h4 className="font-semibold flex items-center gap-2">
                           <CheckCircle className="h-4 w-4 text-primary" />
@@ -1127,6 +1135,7 @@ export default function InterviewConsole() {
                             size="lg"
                             onClick={() => handleDecision("accepted")}
                             data-testid="button-f2f-offer"
+                            className="bg-yellow-500 hover:bg-yellow-600 text-black"
                           >
                             <Gift className="h-5 w-5 mr-2" />
                             Make Offer
@@ -1167,6 +1176,7 @@ export default function InterviewConsole() {
                           size="lg"
                           onClick={() => handleDecision("accepted")}
                           data-testid="button-offer-accept"
+                          className="bg-yellow-500 hover:bg-yellow-600 text-black"
                         >
                           <Gift className="h-5 w-5 mr-2" />
                           Proceed to Offer Management
@@ -1221,7 +1231,7 @@ export default function InterviewConsole() {
               disabled={updateDecisionMutation.isPending}
               data-testid="button-confirm-decision"
               className={
-                pendingDecision === "accepted" ? "bg-muted hover:bg-muted" :
+                pendingDecision === "accepted" ? "bg-yellow-500 hover:bg-yellow-600 text-black" :
                 pendingDecision === "rejected" ? "bg-destructive hover:bg-destructive" :
                 "bg-muted hover:bg-muted"
               }

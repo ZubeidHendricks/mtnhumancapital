@@ -46,7 +46,7 @@ interface InterviewFaceToFaceProps {
 export default function InterviewFaceToFace(props: InterviewFaceToFaceProps & Record<string, any> = {}) {
   const { embedded, candidateId, candidateName, onMarkComplete } = props;
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
-  const [selectedCandidate, setSelectedCandidate] = useState("");
+  const [selectedCandidate, setSelectedCandidate] = useState(candidateId || candidateName || "");
   const [interviewDate, setInterviewDate] = useState("");
   const [interviewTime, setInterviewTime] = useState("");
   const [location, setLocation] = useState("");
@@ -235,7 +235,7 @@ export default function InterviewFaceToFace(props: InterviewFaceToFaceProps & Re
               </DialogContent>
             </Dialog>
             {onMarkComplete && (
-              <Button size="sm" onClick={onMarkComplete}>
+              <Button size="sm" onClick={onMarkComplete} className="bg-yellow-500 hover:bg-yellow-600 text-black">
                 <CheckCircle2 className="w-3 h-3 mr-1" />
                 Mark Complete
               </Button>
