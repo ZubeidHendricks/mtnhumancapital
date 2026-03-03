@@ -176,6 +176,7 @@ export function InterviewInviteDialog({ open, onOpenChange, candidate, job, onIn
           candidateName,
           jobTitle,
           interviewUrl,
+          interviewType,
         });
 
         setSentRecipient(candidate.email);
@@ -203,7 +204,7 @@ export function InterviewInviteDialog({ open, onOpenChange, candidate, job, onIn
 
         const message = `Dear ${candidateName},
 
-We are impressed with your profile and would like to invite you to a${interviewType === "video" ? " video" : "n initial voice"} interview with our AI interview system.
+We are impressed with your profile and would like to invite you to a${interviewType === "video" ? " follow up video" : "n initial voice"} interview with our AI interview system.
 
 Please click the link below to start the session:
 ${interviewUrl}
@@ -357,7 +358,7 @@ AHC Recruiting Team`;
                   readOnly
                   value={`Dear ${candidate?.fullName || 'Candidate'},
 
-We are impressed with your profile and would like to invite you to a${interviewType === "video" ? " video" : "n initial voice"} interview with our AI interview system.
+We are impressed with your profile and would like to invite you to a${interviewType === "video" ? " follow up video" : "n initial voice"} interview with our AI interview system.
 
 ${inviteChannel === "email" ? "This allows us to get to know you better at your convenience. " : ""}Please click the link below to start the session:
 

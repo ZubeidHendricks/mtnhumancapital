@@ -2333,7 +2333,7 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
   // Send interview invitation via email
   app.post("/api/interview-sessions/send-email-invite", async (req, res) => {
     try {
-      const { to, candidateName, jobTitle, interviewUrl } = req.body;
+      const { to, candidateName, jobTitle, interviewUrl, interviewType } = req.body;
 
       if (!to || !interviewUrl) {
         return res.status(400).json({ message: "Recipient email and interview URL are required" });
@@ -2344,6 +2344,7 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
         candidateName: candidateName || "Candidate",
         jobTitle: jobTitle || "Open Position",
         interviewUrl,
+        interviewType: interviewType || "voice",
       });
 
       if (result) {
