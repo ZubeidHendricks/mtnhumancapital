@@ -144,7 +144,6 @@ export default function InterviewConsole() {
   const [activeFlowView, setActiveFlowView] = useState<"voice" | "video" | "f2f" | "offer" | null>(null);
   const [showPractice, setShowPractice] = useState<"voice" | "video" | null>(null);
   const [f2fMarkedComplete, setF2fMarkedComplete] = useState(false);
-  const f2fIsComplete = f2fMarkedComplete || (details?.session as any)?.f2fStatus === "completed";
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteType, setInviteType] = useState<"voice" | "video">("voice");
   const [playingRecordingId, setPlayingRecordingId] = useState<string | null>(null);
@@ -228,6 +227,8 @@ export default function InterviewConsole() {
     },
     enabled: !!selectedSession,
   });
+
+  const f2fIsComplete = f2fMarkedComplete || (details?.session as any)?.f2fStatus === "completed";
 
   const updateDecisionMutation = useMutation({
     mutationFn: async ({ feedbackId, decision, notes }: { feedbackId: string; decision: string; notes?: string }) => {
