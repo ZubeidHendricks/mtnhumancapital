@@ -1032,11 +1032,6 @@ BENEFITS:
             <p className="text-foreground font-semibold">AI-Driven Human Capital Management</p>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/workflow-showcase">
-              <Button className="bg-[#FFCB00] hover:bg-[#E6B800] text-black font-semibold" data-testid="button-start-workflow">
-                <ArrowRight className="w-4 h-4 mr-2" /> Start Workflow
-              </Button>
-            </Link>
             <Badge variant="outline" className="bg-muted dark:bg-muted text-primary border-border px-3 py-1">
               <BrainCircuit className="w-3 h-3 mr-2" /> AI Agents Active
             </Badge>
