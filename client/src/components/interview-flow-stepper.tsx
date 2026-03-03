@@ -72,10 +72,12 @@ export function InterviewFlowStepper({
                       disabled={step.status === "locked"}
                       className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border-2 ${
                         step.status === "completed"
-                          ? "bg-primary border-primary text-primary-foreground cursor-pointer hover:ring-2 hover:ring-primary/30"
+                          ? isSelected
+                            ? "bg-primary border-primary text-primary-foreground cursor-pointer ring-2 ring-primary/40 ring-offset-2 ring-offset-background"
+                            : "bg-primary border-primary text-primary-foreground cursor-pointer hover:ring-2 hover:ring-primary/30"
                           : step.status === "active"
                           ? isSelected
-                            ? "bg-primary/20 border-primary text-primary ring-2 ring-primary/30"
+                            ? "bg-primary/20 border-primary text-primary ring-2 ring-primary/40 ring-offset-2 ring-offset-background"
                             : "bg-primary/10 border-primary text-primary cursor-pointer hover:bg-primary/20"
                           : "bg-muted border-muted-foreground/30 text-muted-foreground cursor-not-allowed opacity-50"
                       }`}
@@ -103,7 +105,9 @@ export function InterviewFlowStepper({
 
               <span
                 className={`text-xs mt-1.5 font-medium ${
-                  step.status === "locked"
+                  isSelected
+                    ? "text-primary font-bold"
+                    : step.status === "locked"
                     ? "text-muted-foreground/50"
                     : step.status === "active"
                     ? "text-primary"

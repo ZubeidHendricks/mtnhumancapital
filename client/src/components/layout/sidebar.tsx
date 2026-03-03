@@ -2,9 +2,9 @@ import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useEffect, useRef } from "react";
 import { 
-  LayoutDashboard, 
-  UserSearch, 
-  Users, 
+  LayoutDashboard,
+  UserSearch,
+  Users,
   Briefcase,
   TrendingUp,
   Shield,
@@ -17,8 +17,6 @@ import {
   UserCheck,
   Settings,
   BookOpen,
-  Mic,
-  Video,
   ClipboardList,
   Sparkles,
   LayoutGrid,
@@ -84,9 +82,6 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       items: [
         { name: "Command Centre", href: "/hr-dashboard", icon: Users, module: "hr_management" },
         { name: "AI Recruitment", href: "/recruitment-agent", icon: UserSearch, module: "recruitment" },
-        { name: "Voice Interview", href: "/interview/voice", icon: Mic },
-        { name: "Video Interview", href: "/interview/video", icon: Video },
-        { name: "Face-to-Face Interview", href: "/interview/face-to-face", icon: Users },
         { name: "Interview Console", href: "/interview-console", icon: ClipboardList },
         { name: "Pipeline Board", href: "/pipeline-board", icon: LayoutGrid },
       ]

@@ -102,9 +102,10 @@ interface InterviewInviteDialogProps {
   candidate: Candidate | null;
   job?: Job | null;
   onInviteSent?: () => void;
+  interviewType?: "voice" | "video";
 }
 
-export function InterviewInviteDialog({ open, onOpenChange, candidate, job, onInviteSent }: InterviewInviteDialogProps) {
+export function InterviewInviteDialog({ open, onOpenChange, candidate, job, onInviteSent, interviewType = "voice" }: InterviewInviteDialogProps) {
   const queryClient = useQueryClient();
   const whatsappConversationsKey = useTenantQueryKey(['whatsapp', 'conversations']);
   const [, setLocation] = useLocation();
@@ -149,6 +150,7 @@ export function InterviewInviteDialog({ open, onOpenChange, candidate, job, onIn
           candidateId: candidate.id,
           candidateName,
           jobTitle,
+          interviewType,
           prompt: interviewPrompt,
         });
         const interviewUrl = `${window.location.origin}/interview/invite/${sessionRes.data.token}`;
@@ -183,6 +185,7 @@ export function InterviewInviteDialog({ open, onOpenChange, candidate, job, onIn
           candidateName,
           candidatePhone: phone,
           jobTitle,
+          interviewType,
           prompt: interviewPrompt,
         });
         const interviewUrl = `${window.location.origin}/interview/invite/${sessionRes.data.token}`;
@@ -192,12 +195,12 @@ export function InterviewInviteDialog({ open, onOpenChange, candidate, job, onIn
 
         const message = `Dear ${candidateName},
 
-We are impressed with your profile and would like to invite you to an initial voice interview with our AI interview system.
+We are impressed with your profile and would like to invite you to a${interviewType === "video" ? " video" : "n initial voice"} interview with our AI interview system.
 
 Please click the link below to start the session:
 ${interviewUrl}
 
-This link expires in 7 days. Please ensure you have a quiet environment and allow microphone access.
+This link expires in 7 days. Please ensure you have a quiet environment and allow ${interviewType === "video" ? "camera and microphone" : "microphone"} access.
 
 Best regards,
 AHC Recruiting Team`;
@@ -272,9 +275,9 @@ AHC Recruiting Team`;
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>Invite to Voice Interview</DialogTitle>
+              <DialogTitle>Invite to {interviewType === "video" ? "Video" : "Voice"} Interview</DialogTitle>
               <DialogDescription>
-                Send an interview invitation to {candidate?.fullName || 'candidate'}.
+                Send a {interviewType} interview invitation to {candidate?.fullName || 'candidate'}.
               </DialogDescription>
             </DialogHeader>
 
@@ -346,7 +349,7 @@ AHC Recruiting Team`;
                   readOnly
                   value={`Dear ${candidate?.fullName || 'Candidate'},
 
-We are impressed with your profile and would like to invite you to an initial voice interview with our AI interview system.
+We are impressed with your profile and would like to invite you to a${interviewType === "video" ? " video" : "n initial voice"} interview with our AI interview system.
 
 ${inviteChannel === "email" ? "This allows us to get to know you better at your convenience. " : ""}Please click the link below to start the session:
 

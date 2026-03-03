@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import InterviewTimeline from "@/pages/interview-timeline";
 import { InterviewFlowStepper, type FlowStep } from "@/components/interview-flow-stepper";
+import { InterviewInviteDialog } from "@/components/interview-invite-dialog";
+import InterviewFaceToFace from "@/pages/interview-face-to-face";
 import { PracticeVoicePanel } from "@/components/practice-voice-panel";
 import { PracticeVideoPanel } from "@/components/practice-video-panel";
 import { AnimatePresence } from "framer-motion";
@@ -41,6 +43,9 @@ import {
   MapPin,
   ArrowRight,
   GitBranch,
+  Users,
+  Gift,
+  Send,
 } from "lucide-react";
 
 interface InterviewSession {
@@ -122,7 +127,11 @@ export default function InterviewConsole() {
   const [candidateSearch, setCandidateSearch] = useState("");
   const [positionFilter, setPositionFilter] = useState<string>("all");
   const [activeFlowStep, setActiveFlowStep] = useState<string | null>(null);
+  const [activeFlowView, setActiveFlowView] = useState<"voice" | "video" | "f2f" | "offer" | null>(null);
   const [showPractice, setShowPractice] = useState<"voice" | "video" | null>(null);
+  const [f2fMarkedComplete, setF2fMarkedComplete] = useState(false);
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [inviteType, setInviteType] = useState<"voice" | "video">("voice");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -140,6 +149,24 @@ export default function InterviewConsole() {
     if (positionFilter === "all") return sessions;
     return sessions.filter(s => s.jobTitle === positionFilter);
   }, [sessions, positionFilter]);
+
+  // Reset states when selected session changes
+  useEffect(() => {
+    setShowPractice(null);
+    setF2fMarkedComplete(false);
+    if (selectedSession) {
+      // Auto-set view based on the session's interview type
+      const session = sessions.find(s => s.id === selectedSession);
+      if (session) {
+        const viewType = session.interviewType === "video" ? "video" : "voice";
+        setActiveFlowView(viewType);
+        setActiveFlowStep(viewType);
+      }
+    } else {
+      setActiveFlowView(null);
+      setActiveFlowStep(null);
+    }
+  }, [selectedSession]);
 
   const { data: details, isLoading: loadingDetails } = useQuery<InterviewDetails>({
     queryKey: ["/api/interviews", selectedSession],
@@ -229,7 +256,7 @@ export default function InterviewConsole() {
 
     const voiceCompleted = hasCompletedType("voice");
     const videoCompleted = hasCompletedType("video");
-    const f2fCompleted = hasCompletedType("f2f") || hasCompletedType("face_to_face");
+    const f2fCompleted = hasCompletedType("f2f") || hasCompletedType("face_to_face") || f2fMarkedComplete;
 
     const voiceSession = getSessionForType("voice");
     const videoSession = getSessionForType("video");
@@ -265,7 +292,7 @@ export default function InterviewConsole() {
         score: null,
       },
     ];
-  }, [details?.session?.candidateId, sessions]);
+  }, [details?.session?.candidateId, sessions, f2fMarkedComplete]);
 
   // Pipeline transition mutation
   const pipelineTransitionMutation = useMutation({
@@ -495,12 +522,13 @@ export default function InterviewConsole() {
                 <div className="px-6 pb-2">
                   <InterviewFlowStepper
                     steps={flowSteps}
-                    activeStepId={activeFlowStep || undefined}
+                    activeStepId={activeFlowView || activeFlowStep || undefined}
                     onStepClick={(step) => {
                       setActiveFlowStep(step.id);
+                      setActiveFlowView(step.id as "voice" | "video" | "f2f" | "offer");
                       setShowPractice(null);
-                      // If clicking a completed step with a sessionId, switch to that session
-                      if (step.sessionId && step.status === "completed") {
+                      // If clicking a completed step with a sessionId, switch to that session's data
+                      if (step.sessionId && step.status === "completed" && (step.id === "voice" || step.id === "video")) {
                         setSelectedSession(step.sessionId);
                       }
                     }}
@@ -542,384 +570,545 @@ export default function InterviewConsole() {
               </AnimatePresence>
 
               <CardContent>
-                <Tabs defaultValue="analysis" className="w-full">
-                  <TabsList className="grid w-full grid-cols-5">
-                    <TabsTrigger value="analysis" data-testid="tab-analysis">
-                      <BarChart3 className="h-4 w-4 mr-2" />
-                      Analysis
-                    </TabsTrigger>
-                    <TabsTrigger value="transcript" data-testid="tab-transcript">
-                      <FileText className="h-4 w-4 mr-2" />
-                      Transcript
-                    </TabsTrigger>
-                    <TabsTrigger value="recordings" data-testid="tab-recordings">
-                      <Play className="h-4 w-4 mr-2" />
-                      Recordings
-                    </TabsTrigger>
-                    <TabsTrigger value="decision" data-testid="tab-decision">
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Decision
-                    </TabsTrigger>
-                    <TabsTrigger value="candidates" data-testid="tab-candidates">
-                      <Search className="h-4 w-4 mr-2" />
-                      Candidates
-                    </TabsTrigger>
-                  </TabsList>
+                {/* View content based on activeFlowView */}
+                {(activeFlowView === "voice" || activeFlowView === "video" || !activeFlowView) ? (
+                  <Tabs defaultValue="analysis" className="w-full">
+                    <TabsList className="grid w-full grid-cols-5">
+                      <TabsTrigger value="analysis" data-testid="tab-analysis">
+                        <BarChart3 className="h-4 w-4 mr-2" />
+                        Analysis
+                      </TabsTrigger>
+                      <TabsTrigger value="transcript" data-testid="tab-transcript">
+                        <FileText className="h-4 w-4 mr-2" />
+                        Transcript
+                      </TabsTrigger>
+                      <TabsTrigger value="recordings" data-testid="tab-recordings">
+                        <Play className="h-4 w-4 mr-2" />
+                        Recordings
+                      </TabsTrigger>
+                      <TabsTrigger value="decision" data-testid="tab-decision">
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Decision
+                      </TabsTrigger>
+                      <TabsTrigger value="candidates" data-testid="tab-candidates">
+                        <Search className="h-4 w-4 mr-2" />
+                        Candidates
+                      </TabsTrigger>
+                    </TabsList>
 
-                  <TabsContent value="analysis" className="mt-4">
-                    {latestFeedback && (
-                      <div className="space-y-6 mb-6">
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                          <ScoreCard label="Overall" value={latestFeedback.overallScore} />
-                          <ScoreCard label="Technical" value={latestFeedback.technicalScore} />
-                          <ScoreCard label="Communication" value={latestFeedback.communicationScore} />
-                          <ScoreCard label="Culture Fit" value={latestFeedback.cultureFitScore} />
-                          <ScoreCard label="Problem Solving" value={latestFeedback.problemSolvingScore} />
+                    <TabsContent value="analysis" className="mt-4">
+                      {latestFeedback && (
+                        <div className="space-y-6 mb-6">
+                          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                            <ScoreCard label="Overall" value={latestFeedback.overallScore} />
+                            <ScoreCard label="Technical" value={latestFeedback.technicalScore} />
+                            <ScoreCard label="Communication" value={latestFeedback.communicationScore} />
+                            <ScoreCard label="Culture Fit" value={latestFeedback.cultureFitScore} />
+                            <ScoreCard label="Problem Solving" value={latestFeedback.problemSolvingScore} />
+                          </div>
+
+                          <div className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <h4 className="font-semibold text-foreground flex items-center gap-2">
+                                <ThumbsUp className="h-4 w-4" />
+                                Strengths
+                              </h4>
+                              <ul className="list-disc list-inside text-sm space-y-1">
+                                {latestFeedback.strengths?.map((s, i) => (
+                                  <li key={i} className="text-muted-foreground">{s}</li>
+                                )) || <li className="text-muted-foreground">No strengths identified</li>}
+                              </ul>
+                            </div>
+                            <div className="space-y-2">
+                              <h4 className="font-semibold text-destructive flex items-center gap-2">
+                                <ThumbsDown className="h-4 w-4" />
+                                Weaknesses
+                              </h4>
+                              <ul className="list-disc list-inside text-sm space-y-1">
+                                {latestFeedback.weaknesses?.map((w, i) => (
+                                  <li key={i} className="text-muted-foreground">{w}</li>
+                                )) || <li className="text-muted-foreground">No weaknesses identified</li>}
+                              </ul>
+                            </div>
+                          </div>
+
+                          {latestFeedback.keyInsights && latestFeedback.keyInsights.length > 0 && (
+                            <div className="space-y-2">
+                              <h4 className="font-semibold flex items-center gap-2">
+                                <AlertCircle className="h-4 w-4" />
+                                Key Insights
+                              </h4>
+                              <ul className="list-disc list-inside text-sm space-y-1">
+                                {latestFeedback.keyInsights.map((insight, i) => (
+                                  <li key={i} className="text-muted-foreground">{insight}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {latestFeedback.rationale && (
+                            <div className="space-y-2">
+                              <h4 className="font-semibold">AI Rationale</h4>
+                              <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
+                                {latestFeedback.rationale}
+                              </p>
+                            </div>
+                          )}
+
+                          {latestFeedback.flaggedConcerns && latestFeedback.flaggedConcerns.length > 0 && (
+                            <div className="space-y-2 border-t pt-4">
+                              <h4 className="font-semibold text-foreground flex items-center gap-2">
+                                <AlertCircle className="h-4 w-4" />
+                                Flagged Concerns
+                              </h4>
+                              <ul className="list-disc list-inside text-sm space-y-1">
+                                {latestFeedback.flaggedConcerns.map((concern, i) => (
+                                  <li key={i} className="text-foreground">{concern}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                         </div>
+                      )}
 
-                        <div className="grid md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <h4 className="font-semibold text-foreground flex items-center gap-2">
-                              <ThumbsUp className="h-4 w-4" />
-                              Strengths
-                            </h4>
-                            <ul className="list-disc list-inside text-sm space-y-1">
-                              {latestFeedback.strengths?.map((s, i) => (
-                                <li key={i} className="text-muted-foreground">{s}</li>
-                              )) || <li className="text-muted-foreground">No strengths identified</li>}
-                            </ul>
-                          </div>
-                          <div className="space-y-2">
-                            <h4 className="font-semibold text-destructive flex items-center gap-2">
-                              <ThumbsDown className="h-4 w-4" />
-                              Weaknesses
-                            </h4>
-                            <ul className="list-disc list-inside text-sm space-y-1">
-                              {latestFeedback.weaknesses?.map((w, i) => (
-                                <li key={i} className="text-muted-foreground">{w}</li>
-                              )) || <li className="text-muted-foreground">No weaknesses identified</li>}
-                            </ul>
-                          </div>
+                      {/* Interview Timeline - embedded */}
+                      {selectedSession && (
+                        <div className="border rounded-lg overflow-hidden">
+                          <InterviewTimeline sessionId={selectedSession} embedded />
                         </div>
+                      )}
+                    </TabsContent>
 
-                        {latestFeedback.keyInsights && latestFeedback.keyInsights.length > 0 && (
-                          <div className="space-y-2">
-                            <h4 className="font-semibold flex items-center gap-2">
-                              <AlertCircle className="h-4 w-4" />
-                              Key Insights
-                            </h4>
-                            <ul className="list-disc list-inside text-sm space-y-1">
-                              {latestFeedback.keyInsights.map((insight, i) => (
-                                <li key={i} className="text-muted-foreground">{insight}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {latestFeedback.rationale && (
-                          <div className="space-y-2">
-                            <h4 className="font-semibold">AI Rationale</h4>
-                            <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
-                              {latestFeedback.rationale}
-                            </p>
-                          </div>
-                        )}
-
-                        {latestFeedback.flaggedConcerns && latestFeedback.flaggedConcerns.length > 0 && (
-                          <div className="space-y-2 border-t pt-4">
-                            <h4 className="font-semibold text-foreground flex items-center gap-2">
-                              <AlertCircle className="h-4 w-4" />
-                              Flagged Concerns
-                            </h4>
-                            <ul className="list-disc list-inside text-sm space-y-1">
-                              {latestFeedback.flaggedConcerns.map((concern, i) => (
-                                <li key={i} className="text-foreground">{concern}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Interview Timeline - embedded */}
-                    {selectedSession && (
-                      <div className="border rounded-lg overflow-hidden">
-                        <InterviewTimeline sessionId={selectedSession} embedded />
-                      </div>
-                    )}
-                  </TabsContent>
-
-                  <TabsContent value="transcript" className="mt-4">
-                    <ScrollArea className="h-[400px]">
-                      {details.transcripts.length > 0 ? (
-                        <div className="space-y-4">
-                          {details.transcripts.map((segment) => (
-                            <div
-                              key={segment.id}
-                              data-testid={`transcript-segment-${segment.segmentIndex}`}
-                              className={`p-3 rounded-lg ${
-                                segment.speakerRole === "candidate"
-                                  ? "bg-muted/20 ml-0 mr-8"
-                                  : "bg-secondary/20 ml-8 mr-0"
-                              }`}
-                            >
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-xs font-semibold uppercase">
-                                  {segment.speakerRole}
-                                </span>
-                                {segment.sentiment && (
-                                  <span className={`text-xs ${getSentimentColor(segment.sentiment)}`}>
-                                    {segment.sentiment}
+                    <TabsContent value="transcript" className="mt-4">
+                      <ScrollArea className="h-[400px]">
+                        {details.transcripts.length > 0 ? (
+                          <div className="space-y-4">
+                            {details.transcripts.map((segment) => (
+                              <div
+                                key={segment.id}
+                                data-testid={`transcript-segment-${segment.segmentIndex}`}
+                                className={`p-3 rounded-lg ${
+                                  segment.speakerRole === "candidate"
+                                    ? "bg-muted/20 ml-0 mr-8"
+                                    : "bg-secondary/20 ml-8 mr-0"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-xs font-semibold uppercase">
+                                    {segment.speakerRole}
+                                  </span>
+                                  {segment.sentiment && (
+                                    <span className={`text-xs ${getSentimentColor(segment.sentiment)}`}>
+                                      {segment.sentiment}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-sm">{segment.text}</p>
+                                {segment.startTime && (
+                                  <span className="text-xs text-muted-foreground mt-1">
+                                    {Math.floor(segment.startTime / 1000)}s
                                   </span>
                                 )}
                               </div>
-                              <p className="text-sm">{segment.text}</p>
-                              {segment.startTime && (
-                                <span className="text-xs text-muted-foreground mt-1">
-                                  {Math.floor(segment.startTime / 1000)}s
-                                </span>
-                              )}
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-12 text-muted-foreground">
+                            <FileText className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                            <p>No transcript available</p>
+                            <p className="text-sm mt-1">Transcript will appear after the interview</p>
+                          </div>
+                        )}
+                      </ScrollArea>
+                    </TabsContent>
+
+                    <TabsContent value="recordings" className="mt-4">
+                      {details.recordings.length > 0 ? (
+                        <div className="space-y-4">
+                          {details.recordings.map((recording) => (
+                            <div
+                              key={recording.id}
+                              className="p-4 rounded-lg border flex items-center justify-between"
+                            >
+                              <div className="flex items-center gap-3">
+                                {recording.recordingType === "video" ? (
+                                  <Video className="h-8 w-8 text-foreground" />
+                                ) : (
+                                  <Mic className="h-8 w-8 text-foreground" />
+                                )}
+                                <div>
+                                  <p className="font-medium capitalize">{recording.recordingType} Recording</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {recording.duration ? `${Math.floor(recording.duration / 60)}m ${recording.duration % 60}s` : "Duration unknown"}
+                                  </p>
+                                </div>
+                              </div>
+                              <Button variant="outline" size="sm" data-testid={`button-play-recording-${recording.id}`}>
+                                <Play className="h-4 w-4 mr-2" />
+                                Play
+                              </Button>
                             </div>
                           ))}
                         </div>
                       ) : (
                         <div className="text-center py-12 text-muted-foreground">
-                          <FileText className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                          <p>No transcript available</p>
-                          <p className="text-sm mt-1">Transcript will appear after the interview</p>
+                          <Play className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                          <p>No recordings available</p>
+                          <p className="text-sm mt-1">Recordings will appear after the interview is completed</p>
                         </div>
                       )}
-                    </ScrollArea>
-                  </TabsContent>
+                    </TabsContent>
 
-                  <TabsContent value="recordings" className="mt-4">
-                    {details.recordings.length > 0 ? (
-                      <div className="space-y-4">
-                        {details.recordings.map((recording) => (
-                          <div
-                            key={recording.id}
-                            className="p-4 rounded-lg border flex items-center justify-between"
-                          >
-                            <div className="flex items-center gap-3">
-                              {recording.recordingType === "video" ? (
-                                <Video className="h-8 w-8 text-foreground" />
-                              ) : (
-                                <Mic className="h-8 w-8 text-foreground" />
-                              )}
-                              <div>
-                                <p className="font-medium capitalize">{recording.recordingType} Recording</p>
-                                <p className="text-sm text-muted-foreground">
-                                  {recording.duration ? `${Math.floor(recording.duration / 60)}m ${recording.duration % 60}s` : "Duration unknown"}
+                    <TabsContent value="decision" className="mt-4">
+                      <div className="space-y-6">
+                        {latestFeedback ? (
+                          <>
+                            {/* Context-sensitive decision buttons based on interview stage */}
+                            {activeFlowView === "voice" ? (
+                              <div className="grid grid-cols-2 gap-4">
+                                <Button
+                                  size="lg"
+                                  variant="outline"
+                                  className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                                  onClick={() => handleDecision("rejected")}
+                                  disabled={latestFeedback.isFinalized === 1}
+                                  data-testid="button-decision-reject"
+                                >
+                                  <ThumbsDown className="h-5 w-5 mr-2" />
+                                  Reject
+                                </Button>
+                                <Button
+                                  size="lg"
+                                  onClick={() => {
+                                    // Build candidate for invite dialog
+                                    setInviteType("video");
+                                    setShowInviteDialog(true);
+                                  }}
+                                  disabled={latestFeedback.isFinalized === 1}
+                                  data-testid="button-invite-video"
+                                >
+                                  <Video className="h-5 w-5 mr-2" />
+                                  Invite to Video Interview
+                                </Button>
+                              </div>
+                            ) : activeFlowView === "video" ? (
+                              <div className="grid grid-cols-3 gap-4">
+                                <Button
+                                  size="lg"
+                                  variant="outline"
+                                  className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                                  onClick={() => handleDecision("rejected")}
+                                  disabled={latestFeedback.isFinalized === 1}
+                                  data-testid="button-decision-reject"
+                                >
+                                  <ThumbsDown className="h-5 w-5 mr-2" />
+                                  Reject
+                                </Button>
+                                <Button
+                                  size="lg"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setActiveFlowView("f2f");
+                                    setActiveFlowStep("f2f");
+                                    toast({
+                                      title: "Face-to-Face Interview",
+                                      description: "Schedule the in-person interview below.",
+                                    });
+                                  }}
+                                  disabled={latestFeedback.isFinalized === 1}
+                                  data-testid="button-invite-f2f"
+                                >
+                                  <Users className="h-5 w-5 mr-2" />
+                                  Invite to Face-to-Face
+                                </Button>
+                                <Button
+                                  size="lg"
+                                  onClick={() => handleDecision("accepted")}
+                                  disabled={latestFeedback.isFinalized === 1}
+                                  data-testid="button-decision-accept"
+                                >
+                                  <Gift className="h-5 w-5 mr-2" />
+                                  Make Offer
+                                </Button>
+                              </div>
+                            ) : (
+                              /* Default/fallback buttons */
+                              <div className="grid grid-cols-3 gap-4">
+                                <Button
+                                  size="lg"
+                                  variant={latestFeedback.decision === "accepted" ? "default" : "outline"}
+                                  className={latestFeedback.decision === "accepted" ? "bg-muted hover:bg-muted" : ""}
+                                  onClick={() => handleDecision("accepted")}
+                                  disabled={latestFeedback.isFinalized === 1}
+                                  data-testid="button-decision-accept"
+                                >
+                                  <ThumbsUp className="h-5 w-5 mr-2" />
+                                  Accept
+                                </Button>
+                                <Button
+                                  size="lg"
+                                  variant={latestFeedback.decision === "pipeline" ? "default" : "outline"}
+                                  className={latestFeedback.decision === "pipeline" ? "bg-muted hover:bg-muted" : ""}
+                                  onClick={() => handleDecision("pipeline")}
+                                  disabled={latestFeedback.isFinalized === 1}
+                                  data-testid="button-decision-pipeline"
+                                >
+                                  <Clock3 className="h-5 w-5 mr-2" />
+                                  Pipeline
+                                </Button>
+                                <Button
+                                  size="lg"
+                                  variant={latestFeedback.decision === "rejected" ? "destructive" : "outline"}
+                                  onClick={() => handleDecision("rejected")}
+                                  disabled={latestFeedback.isFinalized === 1}
+                                  data-testid="button-decision-reject"
+                                >
+                                  <ThumbsDown className="h-5 w-5 mr-2" />
+                                  Reject
+                                </Button>
+                              </div>
+                            )}
+
+                            {/* Pipeline stage indicator */}
+                            {details.session.candidateId && (
+                              <PipelineStageIndicator
+                                candidateId={details.session.candidateId}
+                                decision={latestFeedback.decision}
+                                isTransitioning={pipelineTransitionMutation.isPending}
+                              />
+                            )}
+
+                            {latestFeedback.isFinalized === 1 && (
+                              <div className="text-center text-muted-foreground bg-muted p-4 rounded-lg">
+                                <CheckCircle className="h-6 w-6 mx-auto mb-2 text-foreground" />
+                                <p>Decision finalized on {latestFeedback.finalizedAt ? format(new Date(latestFeedback.finalizedAt), "MMM d, yyyy HH:mm") : "unknown"}</p>
+                              </div>
+                            )}
+
+                            {latestFeedback.recommendations && (
+                              <div className="space-y-2">
+                                <h4 className="font-semibold">AI Recommendations</h4>
+                                <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
+                                  {latestFeedback.recommendations}
                                 </p>
                               </div>
-                            </div>
-                            <Button variant="outline" size="sm" data-testid={`button-play-recording-${recording.id}`}>
-                              <Play className="h-4 w-4 mr-2" />
-                              Play
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-12 text-muted-foreground">
-                        <Play className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                        <p>No recordings available</p>
-                        <p className="text-sm mt-1">Recordings will appear after the interview is completed</p>
-                      </div>
-                    )}
-                  </TabsContent>
-
-                  <TabsContent value="decision" className="mt-4">
-                    <div className="space-y-6">
-                      {latestFeedback ? (
-                        <>
-                          <div className="grid grid-cols-3 gap-4">
-                            <Button
-                              size="lg"
-                              variant={latestFeedback.decision === "accepted" ? "default" : "outline"}
-                              className={latestFeedback.decision === "accepted" ? "bg-muted hover:bg-muted" : ""}
-                              onClick={() => handleDecision("accepted")}
-                              disabled={latestFeedback.isFinalized === 1}
-                              data-testid="button-decision-accept"
-                            >
-                              <ThumbsUp className="h-5 w-5 mr-2" />
-                              Accept
-                            </Button>
-                            <Button
-                              size="lg"
-                              variant={latestFeedback.decision === "pipeline" ? "default" : "outline"}
-                              className={latestFeedback.decision === "pipeline" ? "bg-muted hover:bg-muted" : ""}
-                              onClick={() => handleDecision("pipeline")}
-                              disabled={latestFeedback.isFinalized === 1}
-                              data-testid="button-decision-pipeline"
-                            >
-                              <Clock3 className="h-5 w-5 mr-2" />
-                              Pipeline
-                            </Button>
-                            <Button
-                              size="lg"
-                              variant={latestFeedback.decision === "rejected" ? "destructive" : "outline"}
-                              onClick={() => handleDecision("rejected")}
-                              disabled={latestFeedback.isFinalized === 1}
-                              data-testid="button-decision-reject"
-                            >
-                              <ThumbsDown className="h-5 w-5 mr-2" />
-                              Reject
-                            </Button>
-                          </div>
-
-                          {/* Pipeline stage indicator */}
-                          {details.session.candidateId && (
-                            <PipelineStageIndicator
-                              candidateId={details.session.candidateId}
-                              decision={latestFeedback.decision}
-                              isTransitioning={pipelineTransitionMutation.isPending}
-                            />
-                          )}
-
-                          {latestFeedback.isFinalized === 1 && (
-                            <div className="text-center text-muted-foreground bg-muted p-4 rounded-lg">
-                              <CheckCircle className="h-6 w-6 mx-auto mb-2 text-foreground" />
-                              <p>Decision finalized on {latestFeedback.finalizedAt ? format(new Date(latestFeedback.finalizedAt), "MMM d, yyyy HH:mm") : "unknown"}</p>
-                            </div>
-                          )}
-
-                          {latestFeedback.recommendations && (
-                            <div className="space-y-2">
-                              <h4 className="font-semibold">AI Recommendations</h4>
-                              <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
-                                {latestFeedback.recommendations}
-                              </p>
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <div className="text-center py-12 text-muted-foreground">
-                          <CheckCircle className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                          <p>No feedback available for decision</p>
-                          <p className="text-sm mt-1">Complete the interview first to make a decision</p>
-                        </div>
-                      )}
-                    </div>
-                  </TabsContent>
-
-                  {/* Search Candidates Tab */}
-                  <TabsContent value="candidates" className="mt-4">
-                    <div className="space-y-4">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Search by name, email, phone, role, or skills..."
-                          value={candidateSearch}
-                          onChange={(e) => setCandidateSearch(e.target.value)}
-                          className="pl-10"
-                          data-testid="input-candidate-search"
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {filteredCandidates.length} candidate{filteredCandidates.length !== 1 ? "s" : ""} found
-                      </p>
-                      <ScrollArea className="h-[400px]">
-                        {filteredCandidates.length === 0 ? (
-                          <div className="text-center py-12 text-muted-foreground">
-                            <Search className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                            <p>No candidates found</p>
-                            <p className="text-sm mt-1">Try a different search term</p>
-                          </div>
+                            )}
+                          </>
                         ) : (
-                          <div className="space-y-3">
-                            {filteredCandidates.map((candidate) => (
-                              <div
-                                key={candidate.id}
-                                className="p-4 rounded-lg border hover:border-primary/50 transition-colors"
-                              >
-                                <div className="flex items-start justify-between">
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <User className="h-4 w-4 text-muted-foreground shrink-0" />
-                                      <span className="font-medium text-sm truncate">{candidate.fullName}</span>
-                                      <Badge variant="outline" className="text-xs shrink-0 capitalize">
-                                        {candidate.stage?.replace(/_/g, " ") || "New"}
-                                      </Badge>
-                                    </div>
-                                    {candidate.role && (
-                                      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                                        <Briefcase className="h-3 w-3 shrink-0" />
-                                        <span className="truncate">{candidate.role}</span>
-                                      </div>
-                                    )}
-                                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                      {candidate.email && (
-                                        <span className="flex items-center gap-1 truncate">
-                                          <Mail className="h-3 w-3 shrink-0" />{candidate.email}
-                                        </span>
-                                      )}
-                                      {candidate.phone && (
-                                        <span className="flex items-center gap-1">
-                                          <Phone className="h-3 w-3 shrink-0" />{candidate.phone}
-                                        </span>
-                                      )}
-                                      {candidate.location && (
-                                        <span className="flex items-center gap-1">
-                                          <MapPin className="h-3 w-3 shrink-0" />{candidate.location}
-                                        </span>
-                                      )}
-                                    </div>
-                                    {candidate.skills && candidate.skills.length > 0 && (
-                                      <div className="flex flex-wrap gap-1 mt-2">
-                                        {candidate.skills.slice(0, 5).map((skill, i) => (
-                                          <Badge key={i} variant="secondary" className="text-xs h-5">
-                                            {skill}
-                                          </Badge>
-                                        ))}
-                                        {candidate.skills.length > 5 && (
-                                          <Badge variant="secondary" className="text-xs h-5">
-                                            +{candidate.skills.length - 5}
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="flex flex-col items-end gap-2 ml-3">
-                                    {candidate.match > 0 && (
-                                      <div className="text-center">
-                                        <span className="text-lg font-bold">{candidate.match}%</span>
-                                        <p className="text-xs text-muted-foreground">Match</p>
-                                      </div>
-                                    )}
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="text-xs"
-                                      onClick={() => {
-                                        // Link this candidate to the current interview session
-                                        if (!selectedSession) return;
-                                        fetch(`/api/interviews/${selectedSession}/decision`, {
-                                          method: "PATCH",
-                                          headers: { "Content-Type": "application/json" },
-                                          body: JSON.stringify({ candidateId: candidate.id }),
-                                        }).then(() => {
-                                          queryClient.invalidateQueries({ queryKey: ["/api/interviews", selectedSession] });
-                                          queryClient.invalidateQueries({ queryKey: ["/api/interviews"] });
-                                          toast({ title: "Candidate Linked", description: `${candidate.fullName} linked to this interview` });
-                                        }).catch(() => {
-                                          toast({ title: "Error", description: "Failed to link candidate", variant: "destructive" });
-                                        });
-                                      }}
-                                    >
-                                      <ArrowRight className="h-3 w-3 mr-1" />
-                                      Link
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
+                          <div className="text-center py-12 text-muted-foreground">
+                            <CheckCircle className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                            <p>No feedback available for decision</p>
+                            <p className="text-sm mt-1">Complete the interview first to make a decision</p>
                           </div>
                         )}
-                      </ScrollArea>
+                      </div>
+                    </TabsContent>
+
+                    {/* Search Candidates Tab */}
+                    <TabsContent value="candidates" className="mt-4">
+                      <div className="space-y-4">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            placeholder="Search by name, email, phone, role, or skills..."
+                            value={candidateSearch}
+                            onChange={(e) => setCandidateSearch(e.target.value)}
+                            className="pl-10"
+                            data-testid="input-candidate-search"
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {filteredCandidates.length} candidate{filteredCandidates.length !== 1 ? "s" : ""} found
+                        </p>
+                        <ScrollArea className="h-[400px]">
+                          {filteredCandidates.length === 0 ? (
+                            <div className="text-center py-12 text-muted-foreground">
+                              <Search className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                              <p>No candidates found</p>
+                              <p className="text-sm mt-1">Try a different search term</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              {filteredCandidates.map((candidate) => (
+                                <div
+                                  key={candidate.id}
+                                  className="p-4 rounded-lg border hover:border-primary/50 transition-colors"
+                                >
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                                        <span className="font-medium text-sm truncate">{candidate.fullName}</span>
+                                        <Badge variant="outline" className="text-xs shrink-0 capitalize">
+                                          {candidate.stage?.replace(/_/g, " ") || "New"}
+                                        </Badge>
+                                      </div>
+                                      {candidate.role && (
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                                          <Briefcase className="h-3 w-3 shrink-0" />
+                                          <span className="truncate">{candidate.role}</span>
+                                        </div>
+                                      )}
+                                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                        {candidate.email && (
+                                          <span className="flex items-center gap-1 truncate">
+                                            <Mail className="h-3 w-3 shrink-0" />{candidate.email}
+                                          </span>
+                                        )}
+                                        {candidate.phone && (
+                                          <span className="flex items-center gap-1">
+                                            <Phone className="h-3 w-3 shrink-0" />{candidate.phone}
+                                          </span>
+                                        )}
+                                        {candidate.location && (
+                                          <span className="flex items-center gap-1">
+                                            <MapPin className="h-3 w-3 shrink-0" />{candidate.location}
+                                          </span>
+                                        )}
+                                      </div>
+                                      {candidate.skills && candidate.skills.length > 0 && (
+                                        <div className="flex flex-wrap gap-1 mt-2">
+                                          {candidate.skills.slice(0, 5).map((skill, i) => (
+                                            <Badge key={i} variant="secondary" className="text-xs h-5">
+                                              {skill}
+                                            </Badge>
+                                          ))}
+                                          {candidate.skills.length > 5 && (
+                                            <Badge variant="secondary" className="text-xs h-5">
+                                              +{candidate.skills.length - 5}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="flex flex-col items-end gap-2 ml-3">
+                                      {candidate.match > 0 && (
+                                        <div className="text-center">
+                                          <span className="text-lg font-bold">{candidate.match}%</span>
+                                          <p className="text-xs text-muted-foreground">Match</p>
+                                        </div>
+                                      )}
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-xs"
+                                        onClick={() => {
+                                          // Link this candidate to the current interview session
+                                          if (!selectedSession) return;
+                                          fetch(`/api/interviews/${selectedSession}/decision`, {
+                                            method: "PATCH",
+                                            headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify({ candidateId: candidate.id }),
+                                          }).then(() => {
+                                            queryClient.invalidateQueries({ queryKey: ["/api/interviews", selectedSession] });
+                                            queryClient.invalidateQueries({ queryKey: ["/api/interviews"] });
+                                            toast({ title: "Candidate Linked", description: `${candidate.fullName} linked to this interview` });
+                                          }).catch(() => {
+                                            toast({ title: "Error", description: "Failed to link candidate", variant: "destructive" });
+                                          });
+                                        }}
+                                      >
+                                        <ArrowRight className="h-3 w-3 mr-1" />
+                                        Link
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </ScrollArea>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                ) : activeFlowView === "f2f" ? (
+                  /* Face-to-Face View */
+                  <div className="space-y-6">
+                    <InterviewFaceToFace
+                      embedded
+                      candidateId={details.session.candidateId || undefined}
+                      candidateName={details.session.candidateName || undefined}
+                      onMarkComplete={() => {
+                        setF2fMarkedComplete(true);
+                        toast({
+                          title: "Face-to-Face Complete",
+                          description: "Interview marked as completed. Make a decision below.",
+                        });
+                      }}
+                    />
+
+                    {f2fMarkedComplete && (
+                      <div className="border-t pt-6 space-y-4">
+                        <h4 className="font-semibold flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4 text-primary" />
+                          Face-to-Face Interview Decision
+                        </h4>
+                        <div className="grid grid-cols-2 gap-4">
+                          <Button
+                            size="lg"
+                            variant="outline"
+                            className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                            onClick={() => handleDecision("rejected")}
+                            data-testid="button-f2f-reject"
+                          >
+                            <ThumbsDown className="h-5 w-5 mr-2" />
+                            Reject
+                          </Button>
+                          <Button
+                            size="lg"
+                            onClick={() => handleDecision("accepted")}
+                            data-testid="button-f2f-offer"
+                          >
+                            <Gift className="h-5 w-5 mr-2" />
+                            Make Offer
+                          </Button>
+                        </div>
+
+                        {/* Pipeline stage indicator */}
+                        {details.session.candidateId && (
+                          <PipelineStageIndicator
+                            candidateId={details.session.candidateId}
+                            decision={latestFeedback?.decision || null}
+                            isTransitioning={pipelineTransitionMutation.isPending}
+                          />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : activeFlowView === "offer" ? (
+                  /* Offer View */
+                  <div className="space-y-6">
+                    <div className="text-center py-8">
+                      <Gift className="h-16 w-16 mx-auto mb-4 text-primary opacity-60" />
+                      <h3 className="text-xl font-semibold mb-2">Make Offer</h3>
+                      <p className="text-muted-foreground mb-6">
+                        {details.session.candidateName} is ready for an offer for the {details.session.jobTitle} position.
+                      </p>
+
+                      {details.session.candidateId && (
+                        <PipelineStageIndicator
+                          candidateId={details.session.candidateId}
+                          decision={latestFeedback?.decision || null}
+                          isTransitioning={pipelineTransitionMutation.isPending}
+                        />
+                      )}
+
+                      <div className="mt-6">
+                        <Button
+                          size="lg"
+                          onClick={() => handleDecision("accepted")}
+                          data-testid="button-offer-accept"
+                        >
+                          <Gift className="h-5 w-5 mr-2" />
+                          Proceed to Offer Management
+                        </Button>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Candidate will move to "Offer Pending" stage and appear in the Offer Management dropdown
+                        </p>
+                      </div>
                     </div>
-                  </TabsContent>
-                </Tabs>
+                  </div>
+                ) : null}
               </CardContent>
             </>
           ) : null}
@@ -970,6 +1159,36 @@ export default function InterviewConsole() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Interview Invite Dialog */}
+      <InterviewInviteDialog
+        open={showInviteDialog}
+        onOpenChange={setShowInviteDialog}
+        interviewType={inviteType}
+        candidate={
+          details?.session?.candidateId
+            ? {
+                id: parseInt(details.session.candidateId),
+                fullName: details.session.candidateName || "Unknown",
+                email: candidatesResponse.find(c => c.id === details.session.candidateId)?.email || null,
+                phone: candidatesResponse.find(c => c.id === details.session.candidateId)?.phone || null,
+                role: details.session.jobTitle,
+                stage: "interviewing",
+                match: 0,
+                skills: [],
+                metadata: {},
+              } as any
+            : null
+        }
+        job={details?.session?.jobTitle ? { title: details.session.jobTitle } as any : null}
+        onInviteSent={() => {
+          refetchSessions();
+          toast({
+            title: "Interview Invitation Sent",
+            description: `${inviteType === "video" ? "Video" : "Voice"} interview invitation sent successfully.`,
+          });
+        }}
+      />
     </div>
   );
 }

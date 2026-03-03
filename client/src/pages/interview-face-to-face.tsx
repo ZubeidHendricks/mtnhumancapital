@@ -36,7 +36,15 @@ interface Interview {
   notes?: string;
 }
 
-export default function InterviewFaceToFace() {
+interface InterviewFaceToFaceProps {
+  embedded?: boolean;
+  candidateId?: string;
+  candidateName?: string;
+  onMarkComplete?: () => void;
+}
+
+export default function InterviewFaceToFace(props: InterviewFaceToFaceProps & Record<string, any> = {}) {
+  const { embedded, candidateId, candidateName, onMarkComplete } = props;
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState("");
   const [interviewDate, setInterviewDate] = useState("");
@@ -155,6 +163,151 @@ export default function InterviewFaceToFace() {
         return <Badge variant="outline">{status}</Badge>;
     }
   };
+
+  if (embedded) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-primary" />
+            <h3 className="font-semibold">Face-to-Face Interview</h3>
+            {candidateName && (
+              <Badge variant="outline" className="text-xs">{candidateName}</Badge>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline">
+                  <Plus className="w-3 h-3 mr-1" />
+                  Schedule
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Schedule Face-to-Face Interview</DialogTitle>
+                  <DialogDescription>
+                    Set up an in-person interview{candidateName ? ` with ${candidateName}` : ''}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>Candidate</Label>
+                    <Input value={candidateName || ''} disabled className="bg-muted border-border" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Date</Label>
+                      <Input type="date" value={interviewDate} onChange={(e) => setInterviewDate(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Time</Label>
+                      <Input type="time" value={interviewTime} onChange={(e) => setInterviewTime(e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Location</Label>
+                    <Input placeholder="e.g., Conference Room A" value={location} onChange={(e) => setLocation(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Interviewer</Label>
+                    <Select value={interviewer} onValueChange={setInterviewer}>
+                      <SelectTrigger><SelectValue placeholder="Select an interviewer" /></SelectTrigger>
+                      <SelectContent>
+                        {interviewers.map((int) => (
+                          <SelectItem key={int.id} value={int.id}>{int.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Notes (optional)</Label>
+                    <Textarea placeholder="Any additional notes..." value={notes} onChange={(e) => setNotes(e.target.value)} />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setScheduleDialogOpen(false)}>Cancel</Button>
+                  <Button onClick={handleScheduleInterview}>
+                    <Send className="w-4 h-4 mr-2" />
+                    Schedule
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            {onMarkComplete && (
+              <Button size="sm" onClick={onMarkComplete}>
+                <CheckCircle2 className="w-3 h-3 mr-1" />
+                Mark Complete
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Compact interview list */}
+        <div className="space-y-2">
+          {interviews.map((interview) => (
+            <div key={interview.id} className="flex items-center justify-between p-3 rounded-lg border border-border text-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Users className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <span className="font-medium">{interview.candidateName}</span>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Calendar className="w-3 h-3" />{interview.date}
+                    <Clock className="w-3 h-3 ml-1" />{interview.time}
+                    <MapPin className="w-3 h-3 ml-1" />{interview.location}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {getStatusBadge(interview.status)}
+                {interview.status === "completed" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    disabled={uploadingId === interview.id}
+                    onClick={() => {
+                      uploadTargetRef.current = interview.id;
+                      fileInputRef.current?.click();
+                    }}
+                  >
+                    {uploadingId === interview.id ? (
+                      <><Loader2 className="w-3 h-3 mr-1 animate-spin" />Uploading...</>
+                    ) : (
+                      <><Upload className="w-3 h-3 mr-1" />Upload</>
+                    )}
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+          {interviews.length === 0 && (
+            <div className="text-center py-6 text-muted-foreground text-sm">
+              <Users className="w-8 h-8 mx-auto mb-2 opacity-30" />
+              <p>No face-to-face interviews scheduled yet</p>
+              <p className="text-xs mt-1">Click "Schedule" to set one up</p>
+            </div>
+          )}
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="audio/*,video/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file && uploadTargetRef.current) {
+              handleUploadRecording(uploadTargetRef.current, file);
+            }
+            e.target.value = "";
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-6xl">
