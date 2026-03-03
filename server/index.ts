@@ -131,6 +131,85 @@ app.get("/api/public/interview-session/:token", async (req, res) => {
   }
 });
 
+// In-memory cache for Hume AI OAuth token (shared with interview config)
+let humePublicTokenCache: { token: string; expiresAt: number } | null = null;
+// Cache for interview-specific EVI configs keyed by session token
+const interviewConfigCache = new Map<string, string>();
+
+async function getCachedHumeToken(apiKey: string, secretKey: string): Promise<string> {
+  if (humePublicTokenCache && Date.now() < humePublicTokenCache.expiresAt - 60000) {
+    return humePublicTokenCache.token;
+  }
+
+  const credentials = Buffer.from(`${apiKey}:${secretKey}`).toString('base64');
+  const tokenResponse = await fetch('https://api.hume.ai/oauth2-cc/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': `Basic ${credentials}`
+    },
+    body: 'grant_type=client_credentials'
+  });
+
+  if (!tokenResponse.ok) {
+    throw new Error("Failed to authenticate with voice service");
+  }
+
+  const tokenData = await tokenResponse.json() as { access_token: string; expires_in?: number };
+  const expiresIn = (tokenData.expires_in || 3600) * 1000;
+  humePublicTokenCache = {
+    token: tokenData.access_token,
+    expiresAt: Date.now() + expiresIn
+  };
+  return humePublicTokenCache.token;
+}
+
+async function getOrCreateInterviewConfig(apiKey: string, sessionToken: string, prompt: string): Promise<string | null> {
+  const cached = interviewConfigCache.get(sessionToken);
+  if (cached) return cached;
+
+  const configResponse = await fetch("https://api.hume.ai/v0/evi/configs", {
+    method: "POST",
+    headers: {
+      "X-Hume-Api-Key": apiKey,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      name: `Interview ${sessionToken.substring(0, 8)}`,
+      evi_version: "3",
+      voice: { name: "ITO" },
+      language_model: {
+        model_provider: "OPEN_AI",
+        model_resource: "gpt-4o-mini"
+      },
+      ellm_model: {
+        allow_short_responses: true
+      },
+      prompt: {
+        text: prompt
+      },
+      event_messages: {
+        on_new_chat: {
+          enabled: true,
+          text: "Hello! I'll be conducting your interview today. Let's get started — could you briefly introduce yourself?"
+        }
+      },
+      timeouts: {
+        inactivity: { enabled: true, duration_secs: 600 }
+      }
+    })
+  });
+
+  if (configResponse.ok) {
+    const configData = await configResponse.json() as { id: string };
+    interviewConfigCache.set(sessionToken, configData.id);
+    return configData.id;
+  }
+
+  console.error("Interview config creation failed:", configResponse.status);
+  return null;
+}
+
 // PUBLIC route for getting Hume AI config for the interview (uses session token)
 app.get("/api/public/interview-session/:token/config", async (req, res) => {
   try {
@@ -138,36 +217,26 @@ app.get("/api/public/interview-session/:token/config", async (req, res) => {
     if (!session) {
       return res.status(404).json({ message: "Interview session not found" });
     }
-    
+
     // Check if session has expired
     if (session.expiresAt && new Date(session.expiresAt) < new Date()) {
       return res.status(410).json({ message: "Interview link has expired" });
     }
-    
-    // Get Hume AI access token
+
     const apiKey = process.env.HUMAI_API_KEY;
     const secretKey = process.env.HUMAI_SECRET_KEY;
-    
+
     if (!apiKey || !secretKey) {
       return res.status(500).json({ message: "Voice interview is not configured" });
     }
-    
-    // Fetch Hume AI access token
-    const tokenResponse = await fetch('https://api.hume.ai/oauth2-cc/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': 'Basic ' + Buffer.from(`${apiKey}:${secretKey}`).toString('base64')
-      },
-      body: 'grant_type=client_credentials'
-    });
-    
-    if (!tokenResponse.ok) {
-      return res.status(500).json({ message: "Failed to authenticate with voice service" });
-    }
-    
-    const tokenData = await tokenResponse.json() as { access_token: string };
-    
+
+    // Use cached token
+    const accessToken = await getCachedHumeToken(apiKey, secretKey);
+
+    // Create EVI config with the interview prompt pre-embedded
+    const prompt = session.prompt || `You are an HR interviewer conducting a screening interview. Ask ONE question at a time. Keep responses brief (2-3 sentences). Start by introducing yourself and ask the candidate to tell you about themselves.`;
+    const configId = await getOrCreateInterviewConfig(apiKey, req.params.token, prompt);
+
     // Mark session as started if it's the first time
     if (session.status === 'pending' || session.status === 'sent') {
       await storage.updateInterviewSessionByToken(req.params.token, {
@@ -175,14 +244,19 @@ app.get("/api/public/interview-session/:token/config", async (req, res) => {
         startedAt: new Date()
       });
     }
-    
-    res.json({ 
-      accessToken: tokenData.access_token,
+
+    res.json({
+      accessToken,
       sessionId: session.id,
-      prompt: session.prompt
+      prompt: session.prompt,
+      configId
     });
   } catch (error) {
     console.error("Error getting interview config:", error);
+    // Invalidate token cache on auth failures
+    if (error instanceof Error && error.message.includes('authenticate')) {
+      humePublicTokenCache = null;
+    }
     res.status(500).json({ message: "Failed to get interview configuration" });
   }
 });

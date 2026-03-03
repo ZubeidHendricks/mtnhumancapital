@@ -25,7 +25,6 @@ import {
   Briefcase,
   Star,
   ArrowRight,
-  CheckCircle2,
   Mail,
   Phone,
   MapPin,
@@ -50,10 +49,10 @@ const MAIN_STAGES = [
   { key: "integrity_checks", name: "Integrity", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
   { key: "integrity_passed", name: "Checks Passed", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
   { key: "onboarding", name: "Onboarding", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
-  { key: "hired", name: "Hired", color: "from-muted to-background", bgColor: "bg-muted/10", borderColor: "border-border/30" },
 ];
 
 const TERMINAL_STAGES = [
+  { key: "hired", name: "Hired", color: "from-zinc-500 to-zinc-600", bgColor: "bg-zinc-500/10", borderColor: "border-zinc-500/30" },
   { key: "offer_declined", name: "Declined", color: "from-zinc-500 to-zinc-600", bgColor: "bg-zinc-500/10", borderColor: "border-zinc-500/30" },
   { key: "integrity_failed", name: "Checks Failed", color: "from-zinc-500 to-zinc-600", bgColor: "bg-zinc-500/10", borderColor: "border-zinc-500/30" },
   { key: "rejected", name: "Rejected", color: "from-zinc-500 to-zinc-600", bgColor: "bg-zinc-500/10", borderColor: "border-zinc-500/30" },
@@ -310,7 +309,6 @@ export default function PipelineBoard() {
               {/* Main flow stages */}
               {MAIN_STAGES.map((stage, stageIndex) => {
                 const stageCandidates = getCandidatesForStage(stage.key);
-                const isHired = stage.key === "hired";
                 const hasNextStage = stageIndex < MAIN_STAGES.length - 1;
                 const isDragOver = dragOverStage === stage.key;
 
@@ -384,7 +382,7 @@ export default function PipelineBoard() {
                                         View
                                       </Button>
 
-                                      {!isHired && hasNextStage && (
+                                      {hasNextStage && (
                                         <Button
                                           size="sm"
                                           className="flex-1 h-7 text-xs bg-amber-500 hover:bg-amber-600 text-black"
@@ -404,12 +402,6 @@ export default function PipelineBoard() {
                                       )}
                                     </div>
 
-                                    {isHired && (
-                                      <div className="flex items-center justify-center gap-1 text-foreground text-xs mt-2 ml-6">
-                                        <CheckCircle2 className="h-3 w-3" />
-                                        Completed
-                                      </div>
-                                    )}
                                   </CardContent>
                                 </Card>
                               ))

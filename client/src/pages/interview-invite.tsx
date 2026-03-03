@@ -25,7 +25,6 @@ type InterviewSession = {
 
 // Hume EVI audio constants
 const INPUT_SAMPLE_RATE = 16000;
-const OUTPUT_SAMPLE_RATE = 24000;
 
 export default function InterviewInvite() {
   const { token } = useParams<{ token: string }>();
@@ -45,14 +44,21 @@ export default function InterviewInvite() {
   const streamRef = useRef<MediaStream | null>(null);
   const startTimeRef = useRef<number | null>(null);
   const stateRef = useRef(state);
-  const audioQueueRef = useRef<Float32Array[]>([]);
+  const audioQueueRef = useRef<AudioBuffer[]>([]);
   const isPlayingRef = useRef(false);
   const endedRef = useRef(false);
+  const assistantEndRef = useRef(false);
+  const isMutedRef = useRef(false);
+  const transcriptsRef = useRef<Transcript[]>([]);
 
-  // Keep stateRef in sync
+  // Keep refs in sync with state
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  useEffect(() => {
+    transcriptsRef.current = transcripts;
+  }, [transcripts]);
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -108,51 +114,52 @@ export default function InterviewInvite() {
   const playNextInQueue = useCallback(() => {
     if (audioQueueRef.current.length === 0) {
       isPlayingRef.current = false;
-      if (stateRef.current !== "completed" && stateRef.current !== "error") {
+      // Only transition to listening if assistant_end was received (AI fully done)
+      if (assistantEndRef.current && stateRef.current !== "completed" && stateRef.current !== "error") {
         setState("listening");
+        isMutedRef.current = false;
       }
       return;
     }
 
     isPlayingRef.current = true;
-    const float32Data = audioQueueRef.current.shift()!;
+    const buffer = audioQueueRef.current.shift()!;
 
     if (!playbackContextRef.current || playbackContextRef.current.state === "closed") {
       playbackContextRef.current = new AudioContext();
     }
     const ctx = playbackContextRef.current;
 
-    const audioBuffer = ctx.createBuffer(1, float32Data.length, OUTPUT_SAMPLE_RATE);
-    audioBuffer.getChannelData(0).set(float32Data);
-
     const source = ctx.createBufferSource();
-    source.buffer = audioBuffer;
+    source.buffer = buffer;
     source.connect(ctx.destination);
     source.onended = () => playNextInQueue();
     source.start();
   }, []);
 
-  // Decode base64 PCM Int16 and queue for playback
+  // Decode base64 WAV audio and queue for playback
   const playAudio = useCallback((base64Audio: string) => {
     try {
       const binaryString = atob(base64Audio);
-      const bytes = new Uint8Array(binaryString.length);
+      const arrayBuffer = new ArrayBuffer(binaryString.length);
+      const view = new Uint8Array(arrayBuffer);
       for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
+        view[i] = binaryString.charCodeAt(i);
       }
 
-      // Convert Int16 PCM to Float32
-      const int16 = new Int16Array(bytes.buffer);
-      const float32 = new Float32Array(int16.length);
-      for (let i = 0; i < int16.length; i++) {
-        float32[i] = int16[i] / 32768.0;
+      if (!playbackContextRef.current || playbackContextRef.current.state === "closed") {
+        playbackContextRef.current = new AudioContext();
       }
 
-      // Queue and play
-      audioQueueRef.current.push(float32);
-      if (!isPlayingRef.current) {
-        playNextInQueue();
-      }
+      // Use decodeAudioData to properly handle WAV container format
+      playbackContextRef.current.decodeAudioData(arrayBuffer, (decodedBuffer) => {
+        audioQueueRef.current.push(decodedBuffer);
+        if (!isPlayingRef.current) {
+          playNextInQueue();
+        }
+      }, (err) => {
+        console.error("Error decoding audio data:", err);
+      });
     } catch (error) {
       console.error("Error decoding audio:", error);
     }
@@ -166,31 +173,38 @@ export default function InterviewInvite() {
       isPlayingRef.current = false;
 
       const configResponse = await axios.get(`/api/public/interview-session/${token}/config`);
-      const { accessToken, prompt } = configResponse.data;
+      const { accessToken, configId, prompt } = configResponse.data;
 
-      const wsUrl = `wss://api.hume.ai/v0/evi/chat?access_token=${accessToken}`;
+      // Include config_id in WebSocket URL so Hume uses the pre-loaded config
+      let wsUrl = `wss://api.hume.ai/v0/evi/chat?access_token=${accessToken}`;
+      if (configId) {
+        wsUrl += `&config_id=${configId}`;
+      }
       const ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
         setIsConnected(true);
         startTimeRef.current = Date.now();
         setState("processing"); // AI is preparing to speak
+        assistantEndRef.current = false;
 
-        // Send session settings with system prompt and audio config
-        const defaultPrompt = `You are an HR interviewer conducting a screening interview. The interview should last approximately 12 minutes, with a maximum of 15 minutes. Ask ONE question at a time.
+        // Always send the interview prompt via session_settings to ensure it's applied
+        const defaultPrompt = `You are an HR interviewer conducting a screening interview. You have exactly 12 minutes.
 
-Speech and listening rules:
-- Speak at a normal, natural conversational pace. Do not speak slowly or drag out words. Keep your delivery brisk and professional.
-- CRITICAL: Always wait for the candidate to fully finish their response before you speak. Do not interrupt or talk over them mid-sentence.
-- Be patient with pauses. The candidate may need a moment to think before answering. Allow at least 3-4 seconds of silence before assuming they are done.
-- Only interrupt if the candidate is significantly exceeding the time allocated for a question and you need to keep the interview on schedule. In that case, politely redirect.
-- Do not rush to fill silences—give the candidate space to complete their answer.
+TIME MANAGEMENT (STRICT):
+- Introduction under 20 seconds: your name, the company, the role, that it takes 12 minutes, then your first question.
+- Between questions: one brief acknowledgment sentence (under 10 seconds), then immediately ask the next question. Do NOT summarize or repeat what the candidate said.
+- 6–8 questions total. After question 5, if time feels short, skip to your most important remaining question and close.
+- If a candidate runs over 90 seconds, wait for a pause and say: "Thanks — let me move us to the next question."
 
-Interview conduct:
-- When you are speaking, do not process candidate input. Only listen when you have finished speaking.
-- Encourage concise responses of 60–90 seconds per question.
-- Maintain a friendly, professional, and conversational tone.
-- Start by introducing yourself briefly and warmly, explain the interview will take about 12 minutes, then ask the candidate to tell you about themselves.`;
+TURN-TAKING:
+- After asking a question, remain silent until the candidate is clearly done.
+- Allow 3 seconds of silence before assuming they are finished.
+- Never interrupt mid-sentence.
+
+CLOSING (CRITICAL):
+- After all questions, thank the candidate, say the team will be in touch, and wish them well.
+- Then remain silent. Do NOT disconnect. Let the candidate end the call.`;
 
         const sessionSettings = {
           type: "session_settings",
@@ -204,6 +218,17 @@ Interview conduct:
         };
         ws.send(JSON.stringify(sessionSettings));
 
+        // Send an initial text message to prompt the AI to begin speaking.
+        // Hume's session_settings alone won't trigger the AI's opening greeting.
+        setTimeout(() => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+              type: "user_input",
+              text: "Hello, I'm ready to begin the interview."
+            }));
+          }
+        }, 500);
+
         // Start microphone to begin streaming audio
         startMicrophone(ws);
 
@@ -216,6 +241,8 @@ Interview conduct:
 
           if (message.type === "assistant_message") {
             setState("speaking");
+            isMutedRef.current = true;
+            assistantEndRef.current = false;
             if (message.message?.content) {
               setTranscripts(prev => [...prev, {
                 role: "ai",
@@ -235,12 +262,16 @@ Interview conduct:
           } else if (message.type === "audio_output") {
             if (message.data) {
               setState("speaking");
+              isMutedRef.current = true; // Mute mic while AI speaks
+              assistantEndRef.current = false;
               playAudio(message.data);
             }
           } else if (message.type === "assistant_end") {
-            // AI finished speaking — switch to listening after audio queue drains
+            // AI finished generating — transition to listening once audio queue drains
+            assistantEndRef.current = true;
             if (!isPlayingRef.current) {
               setState("listening");
+              isMutedRef.current = false;
             }
           } else if (message.type === "error") {
             console.error("Hume AI error:", message);
@@ -254,8 +285,26 @@ Interview conduct:
       ws.onclose = (event) => {
         console.log("WebSocket closed:", event.code, event.reason);
         setIsConnected(false);
-        // Only go back to "ready" if not intentionally ended or errored
-        if (!endedRef.current && stateRef.current !== "completed" && stateRef.current !== "error") {
+        if (endedRef.current || stateRef.current === "completed" || stateRef.current === "error") {
+          return; // Already handled
+        }
+
+        // If interview was in progress (we have transcripts), complete it gracefully
+        // rather than bouncing back to the start screen
+        if (transcriptsRef.current.length > 0) {
+          endedRef.current = true;
+          setState("completed");
+          // Save results
+          axios.post(`/api/public/interview-session/${token}/complete`, {
+            transcripts: transcriptsRef.current,
+            duration: startTimeRef.current ? Math.floor((Date.now() - startTimeRef.current) / 1000) : 0,
+            emotionAnalysis: { lastEmotion: currentEmotion },
+          }).then(() => {
+            toast.success("Interview completed successfully!");
+          }).catch((err) => {
+            console.error("Error saving interview:", err);
+          });
+        } else {
           setState("ready");
           toast.info("Connection ended. Click Start Interview to reconnect.");
         }
@@ -307,6 +356,8 @@ Interview conduct:
 
       processor.onaudioprocess = (event) => {
         if (ws.readyState !== WebSocket.OPEN) return;
+        // Mute microphone while AI is speaking to prevent echo and interruptions
+        if (isMutedRef.current) return;
 
         const float32Data = event.inputBuffer.getChannelData(0);
         const base64Audio = float32ToBase64PCM(float32Data);
