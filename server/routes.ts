@@ -11820,6 +11820,184 @@ Format your response as JSON:
     }
   });
 
+  // ============= INTEREST CHECKS =============
+
+  app.get("/api/interest-checks", async (req, res) => {
+    try {
+      const checks = await storage.getAllInterestChecks(req.tenant.id);
+      res.json(checks);
+    } catch (error) {
+      console.error("Error fetching interest checks:", error);
+      res.status(500).json({ message: "Failed to fetch interest checks" });
+    }
+  });
+
+  app.get("/api/interest-checks/candidate/:candidateId", async (req, res) => {
+    try {
+      const checks = await storage.getInterestChecksByCandidateId(req.tenant.id, req.params.candidateId);
+      res.json(checks);
+    } catch (error) {
+      console.error("Error fetching candidate interest checks:", error);
+      res.status(500).json({ message: "Failed to fetch interest checks" });
+    }
+  });
+
+  app.post("/api/interest-checks", async (req, res) => {
+    try {
+      const { candidateId, jobId, channel } = req.body;
+
+      if (!candidateId || !jobId) {
+        return res.status(400).json({ message: "candidateId and jobId are required" });
+      }
+
+      const candidate = await storage.getCandidate(req.tenant.id, candidateId);
+      if (!candidate) {
+        return res.status(404).json({ message: "Candidate not found" });
+      }
+
+      const job = await storage.getJob(req.tenant.id, jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+
+      const tenant = await storage.getTenantById(req.tenant.id);
+      const companyName = tenant?.companyName || "AHC Recruiting";
+
+      // Generate token
+      const interestToken = crypto.randomBytes(24).toString("hex");
+      const baseUrl = `${req.protocol}://${req.get("host")}`;
+      const interestUrl = `${baseUrl}/interest-check/${interestToken}`;
+
+      // Generate job spec .docx
+      const { Document, Paragraph, TextRun, AlignmentType, HeadingLevel } = await import("docx");
+
+      const docSections: any[] = [];
+      docSections.push(
+        new Paragraph({ text: job.title, heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER }),
+        new Paragraph({ text: "" }),
+      );
+      if (job.department) {
+        docSections.push(new Paragraph({ children: [new TextRun({ text: "Department: ", bold: true }), new TextRun(job.department)] }));
+      }
+      if (job.location) {
+        docSections.push(new Paragraph({ children: [new TextRun({ text: "Location: ", bold: true }), new TextRun(job.location)] }));
+      }
+      if (job.employmentType) {
+        docSections.push(new Paragraph({ children: [new TextRun({ text: "Employment Type: ", bold: true }), new TextRun(job.employmentType)] }));
+      }
+      if (job.salaryRange) {
+        docSections.push(new Paragraph({ children: [new TextRun({ text: "Salary Range: ", bold: true }), new TextRun(job.salaryRange)] }));
+      }
+      docSections.push(new Paragraph({ text: "" }));
+      if (job.description) {
+        docSections.push(
+          new Paragraph({ text: "Job Description", heading: HeadingLevel.HEADING_2 }),
+          new Paragraph({ text: job.description }),
+          new Paragraph({ text: "" }),
+        );
+      }
+      if (job.requirements) {
+        docSections.push(
+          new Paragraph({ text: "Requirements", heading: HeadingLevel.HEADING_2 }),
+          new Paragraph({ text: job.requirements }),
+        );
+      }
+
+      const doc = new Document({
+        sections: [{ properties: {}, children: docSections }],
+      });
+      const docBuffer = await Packer.toBuffer(doc);
+      const docFilename = `Job_Description_${job.title.replace(/[^a-zA-Z0-9]/g, "_")}_${Date.now()}.docx`;
+
+      // Create interest check record
+      const check = await storage.createInterestCheck(req.tenant.id, {
+        candidateId,
+        jobId,
+        interestToken,
+        status: "sent",
+        sentVia: channel || "email",
+        sentAt: new Date(),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      });
+
+      // Send notification
+      const sendChannel = channel || "email";
+
+      if (sendChannel === "email") {
+        if (!candidate.email) {
+          return res.status(400).json({ message: "Candidate has no email address on file" });
+        }
+
+        await emailService.sendInterestCheckNotification({
+          to: candidate.email,
+          candidateName: candidate.fullName || "Candidate",
+          jobTitle: job.title,
+          companyName,
+          interestUrl,
+          attachments: [{
+            filename: docFilename,
+            content: docBuffer as Buffer,
+            contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          }],
+        });
+      } else if (sendChannel === "whatsapp") {
+        const phone = candidate.phone || (candidate.metadata as any)?.phone;
+        if (!phone) {
+          return res.status(400).json({ message: "Candidate has no phone number on file" });
+        }
+
+        try {
+          const { whatsappService } = await import("./whatsapp-service");
+
+          // Get or create conversation
+          const existingConvs = await storage.getWhatsappConversationsByCandidateId(req.tenant.id, candidateId);
+          let conversationId: string;
+          if (existingConvs.length > 0) {
+            conversationId = existingConvs[0].id;
+          } else {
+            const newConv = await storage.createWhatsappConversation(req.tenant.id, {
+              candidateId,
+              phoneNumber: phone,
+              candidateName: candidate.fullName || "Candidate",
+              status: "active",
+            });
+            conversationId = newConv.id;
+          }
+
+          // Send text message with link
+          const message = `Dear ${candidate.fullName || "Candidate"},
+
+We have an exciting career opportunity for the position of *${job.title}* at *${companyName}* that may interest you.
+
+Please click the link below to view the full job description and let us know if you're interested:
+${interestUrl}
+
+This link expires in 7 days.
+
+Best regards,
+${companyName} HR Team`;
+
+          await whatsappService.sendTextMessage(req.tenant.id, conversationId, phone, message, "ai");
+
+          // Send document attachment
+          await whatsappService.sendDocumentMessage(
+            req.tenant.id, conversationId, phone,
+            docBuffer as Buffer, docFilename,
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            docFilename, "ai"
+          );
+        } catch (waErr) {
+          console.error("WhatsApp send failed (record still created):", waErr);
+        }
+      }
+
+      res.status(201).json(check);
+    } catch (error) {
+      console.error("Error creating interest check:", error);
+      res.status(500).json({ message: "Failed to create interest check" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

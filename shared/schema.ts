@@ -2951,3 +2951,42 @@ export const insertOfferSchema = createInsertSchema(offers, {
 
 export type InsertOffer = z.infer<typeof insertOfferSchema>;
 export type Offer = typeof offers.$inferSelect;
+
+// ============================================
+// CANDIDATE INTEREST CHECKS
+// ============================================
+
+export const candidateInterestChecks = pgTable("candidate_interest_checks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id"),
+  candidateId: varchar("candidate_id").notNull().references(() => candidates.id),
+  jobId: varchar("job_id").references(() => jobs.id),
+  interestToken: varchar("interest_token").unique(),
+  status: text("status").notNull().default("pending"),
+  sentVia: text("sent_via"),
+  sentAt: timestamp("sent_at"),
+  respondedAt: timestamp("responded_at"),
+  expiresAt: timestamp("expires_at"),
+  cvFilePath: text("cv_file_path"),
+  consentGiven: boolean("consent_given").default(false),
+  consentText: text("consent_text"),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertInterestCheckSchema = createInsertSchema(candidateInterestChecks, {
+  sentAt: z.coerce.date().optional().nullable(),
+  respondedAt: z.coerce.date().optional().nullable(),
+  expiresAt: z.coerce.date().optional().nullable(),
+}).omit({
+  id: true,
+  tenantId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertInterestCheck = z.infer<typeof insertInterestCheckSchema>;
+export type InterestCheck = typeof candidateInterestChecks.$inferSelect;

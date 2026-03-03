@@ -386,6 +386,61 @@ ${company} HR Team`;
     return this.sendEmail({ to, subject, body, html, attachments });
   }
 
+  async sendInterestCheckNotification(options: {
+    to: string;
+    candidateName: string;
+    jobTitle: string;
+    companyName?: string;
+    interestUrl: string;
+    attachments?: EmailAttachment[];
+  }): Promise<boolean> {
+    const { to, candidateName, jobTitle, companyName, interestUrl, attachments } = options;
+    const company = companyName || "AHC Recruiting";
+
+    const subject = `Career Opportunity: ${jobTitle} - ${company}`;
+
+    const body = `Dear ${candidateName},
+
+We have an exciting career opportunity that may interest you!
+
+Position: ${jobTitle}
+Company: ${company}
+
+To view the full job description and express your interest, please visit:
+${interestUrl}
+
+Please review the opportunity and respond at your earliest convenience. The attached document contains the full job specification.
+
+Best regards,
+${company} HR Team`;
+
+    const html = `
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #059669, #2563eb); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">Career Opportunity</h1>
+    <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">${jobTitle}</p>
+  </div>
+  <div style="background: #ffffff; border: 1px solid #e5e7eb; border-top: none; padding: 30px; border-radius: 0 0 12px 12px;">
+    <p style="font-size: 16px; color: #374151;">Dear ${candidateName},</p>
+    <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
+      We have an exciting career opportunity that may interest you for the position of <strong>${jobTitle}</strong> at <strong>${company}</strong>.
+    </p>
+    <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
+      Please click the button below to view the full job description and let us know if you're interested. The attached document contains the full job specification.
+    </p>
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="${interestUrl}" style="display: inline-block; background: linear-gradient(135deg, #059669, #2563eb); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">
+        View Opportunity
+      </a>
+      <p style="font-size: 12px; color: #9ca3af; margin-top: 8px;">Click the button above to view the job details and respond</p>
+    </div>
+    <p style="font-size: 14px; color: #6b7280;">Best regards,<br><strong>${company} HR Team</strong></p>
+  </div>
+</div>`;
+
+    return this.sendEmail({ to, subject, body, html, attachments });
+  }
+
   async notifyHROfOfferResponse(candidateName: string, jobTitle: string, response: "accepted" | "declined", declineReason?: string): Promise<void> {
     const hrEmail = await this.getHRAdminEmail();
     if (!hrEmail) {

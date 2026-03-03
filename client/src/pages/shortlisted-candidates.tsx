@@ -1,40 +1,44 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { candidateService } from "@/lib/api";
+import { candidateService, jobsService } from "@/lib/api";
 import { useTenantQueryKey } from "@/hooks/useTenant";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { 
-  Mail, 
-  Phone, 
-  Linkedin, 
+import {
+  Mail,
+  Phone,
+  Linkedin,
   Search,
   ArrowLeft,
   Bot,
   Send,
-  Copy,
   Loader2,
   Star,
-  X
+  X,
+  Clock,
+  CheckCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { InterestCheckDialog } from "@/components/interest-check-dialog";
+import { InterviewInviteDialog } from "@/components/interview-invite-dialog";
+import { api } from "@/lib/api";
 
 export default function ShortlistedCandidates() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [inviteOpen, setInviteOpen] = useState(false);
+  const [interestCheckOpen, setInterestCheckOpen] = useState(false);
+  const [interviewInviteOpen, setInterviewInviteOpen] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
-  const [inviteLink, setInviteLink] = useState("");
+  const [selectedJob, setSelectedJob] = useState<any>(null);
 
   const queryClient = useQueryClient();
   const candidatesKey = useTenantQueryKey(['candidates']);
+  const interestChecksKey = useTenantQueryKey(['interest-checks']);
+  const jobsKey = useTenantQueryKey(['jobs']);
 
   // Fetch all candidates from API
   const { data: candidates, isLoading: loadingCandidates } = useQuery({
@@ -43,9 +47,24 @@ export default function ShortlistedCandidates() {
     retry: 1,
   });
 
+  // Fetch all interest checks
+  const { data: interestChecks } = useQuery({
+    queryKey: interestChecksKey,
+    queryFn: async () => {
+      const res = await api.get("/interest-checks");
+      return res.data;
+    },
+  });
+
+  // Fetch all jobs
+  const { data: jobs } = useQuery({
+    queryKey: jobsKey,
+    queryFn: jobsService.getAll,
+  });
+
   // Mutation to update candidate
   const updateCandidateMutation = useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: any }) => 
+    mutationFn: ({ id, updates }: { id: string; updates: any }) =>
       candidateService.update(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: candidatesKey });
@@ -70,8 +89,16 @@ export default function ShortlistedCandidates() {
     });
   }, [shortlistedCandidates, searchQuery]);
 
+  // Get latest interest check status for a candidate
+  const getInterestStatus = (candidateId: string) => {
+    if (!interestChecks) return null;
+    const checks = interestChecks.filter((c: any) => c.candidateId === candidateId);
+    if (checks.length === 0) return null;
+    return checks[0]; // Already sorted by createdAt desc from API
+  };
+
   const handleRemoveFromShortlist = async (id: string) => {
-    const candidate = filteredCandidates.find(c => c.id === id);
+    const candidate = filteredCandidates.find((c: any) => c.id === id);
     try {
       await updateCandidateMutation.mutateAsync({
         id,
@@ -83,24 +110,18 @@ export default function ShortlistedCandidates() {
     }
   };
 
-  const handleAIContact = (candidate: any) => {
+  const handleSendInterestCheck = (candidate: any) => {
     setSelectedCandidate(candidate);
-    setInviteLink(`${window.location.origin}/interview/voice?candidate=${encodeURIComponent(candidate.fullName || 'candidate')}`);
-    setInviteOpen(true);
+    const job = jobs?.find((j: any) => j.id === candidate.jobId) || null;
+    setSelectedJob(job);
+    setInterestCheckOpen(true);
   };
 
-  const handleSendInvite = () => {
-    if (!selectedCandidate?.email) {
-      toast.error(`Cannot send invitation: No email address on file for ${selectedCandidate?.fullName || 'this candidate'}`);
-      return;
-    }
-    setInviteOpen(false);
-    toast.success(`Interview invitation sent to ${selectedCandidate.email}`);
-  };
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(inviteLink);
-    toast.success("Link copied to clipboard");
+  const handleAIInterview = (candidate: any) => {
+    setSelectedCandidate(candidate);
+    const job = jobs?.find((j: any) => j.id === candidate.jobId) || null;
+    setSelectedJob(job);
+    setInterviewInviteOpen(true);
   };
 
   // Helper function to get source color
@@ -125,12 +146,12 @@ export default function ShortlistedCandidates() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-foreground flex flex-col">
-      
+
       <div className="flex-1 flex overflow-hidden pt-16">
         {/* LEFT PANEL */}
         <div className="w-[400px] border-r border-border dark:border-white/10 bg-[#0a0a0a] flex flex-col h-full overflow-hidden">
           <div className="p-6 space-y-6 overflow-y-auto flex-1">
-            
+
             {/* Header */}
             <div className="flex items-center gap-4">
               <Link href="/hr-dashboard">
@@ -159,8 +180,8 @@ export default function ShortlistedCandidates() {
             <div className="bg-white/5 border border-border dark:border-white/10 rounded-lg p-4 space-y-2">
               <p className="text-sm font-medium text-foreground">About Shortlisted</p>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                These candidates have passed initial screening and are ready for interviews or offers. 
-                Schedule AI interviews or move them forward in the hiring process.
+                These candidates have passed initial screening and are ready for the next step.
+                Send an interest check first, then schedule AI interviews once interest is confirmed.
               </p>
             </div>
 
@@ -169,13 +190,13 @@ export default function ShortlistedCandidates() {
 
         {/* RIGHT PANEL: CANDIDATES LIST */}
         <div className="flex-1 flex flex-col bg-[#0a0a0a]">
-          
+
           {/* Search Bar */}
           <div className="border-b border-border dark:border-white/10 p-6 flex items-center gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search shortlisted candidates..." 
+              <Input
+                placeholder="Search shortlisted candidates..."
                 className="pl-10 bg-white/5 border-border dark:border-white/10 text-white placeholder:text-muted-foreground"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -192,94 +213,133 @@ export default function ShortlistedCandidates() {
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />
                   <p>Loading candidates...</p>
                 </div>
-              ) : filteredCandidates.map((candidate) => (
-                <motion.div 
-                  key={candidate.id}
-                  layout
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-white/5 hover:bg-white/10 border border-border dark:border-white/10 rounded-lg p-4 transition-all cursor-pointer group"
-                  data-testid={`card-candidate-${candidate.id}`}
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    {/* Left: Avatar & Info */}
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <Avatar className="h-10 w-10 border-2 border-border dark:border-white/20">
-                        <AvatarFallback className="bg-gradient-to-br from-muted to-background text-white font-semibold">
-                          {candidate.fullName?.split(' ')?.map((n: string) => n[0])?.join('')?.toUpperCase() || '?'}
-                        </AvatarFallback>
-                      </Avatar>
-                      
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-foreground truncate" data-testid={`text-candidate-name-${candidate.id}`}>
-                          {candidate.fullName}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {candidate.role || 'No role specified'}
-                        </p>
+              ) : filteredCandidates.map((candidate: any) => {
+                const interestCheck = getInterestStatus(candidate.id);
+                const interestStatus = interestCheck?.status;
+
+                return (
+                  <motion.div
+                    key={candidate.id}
+                    layout
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white/5 hover:bg-white/10 border border-border dark:border-white/10 rounded-lg p-4 transition-all cursor-pointer group"
+                    data-testid={`card-candidate-${candidate.id}`}
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      {/* Left: Avatar & Info */}
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <Avatar className="h-10 w-10 border-2 border-border dark:border-white/20">
+                          <AvatarFallback className="bg-gradient-to-br from-muted to-background text-white font-semibold">
+                            {candidate.fullName?.split(' ')?.map((n: string) => n[0])?.join('')?.toUpperCase() || '?'}
+                          </AvatarFallback>
+                        </Avatar>
+
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-foreground truncate" data-testid={`text-candidate-name-${candidate.id}`}>
+                            {candidate.fullName}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {candidate.role || 'No role specified'}
+                          </p>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Middle: Badges */}
-                    <div className="flex items-center gap-2">
-                      {candidate.source && (
-                        <Badge className={`${getSourceColor(candidate.source)} border-0 font-medium text-xs px-2 py-0.5`}>
-                          {candidate.source}
-                        </Badge>
-                      )}
-                      {candidate.match !== null && candidate.match !== undefined && (
-                        <Badge className={`${getMatchColor(candidate.match)} border-0 font-medium text-xs px-2 py-0.5`}>
-                          {candidate.match}% Match
-                        </Badge>
-                      )}
-                      <Star className="h-4 w-4 text-foreground fill-yellow-400" />
-                    </div>
-
-                    {/* Right: Contact Icons & Actions */}
-                    <div className="flex items-center gap-3">
+                      {/* Middle: Badges */}
                       <div className="flex items-center gap-2">
-                        {candidate.email && (
-                          <Mail className="h-3.5 w-3.5 text-white cursor-pointer hover:text-primary" />
+                        {candidate.source && (
+                          <Badge className={`${getSourceColor(candidate.source)} border-0 font-medium text-xs px-2 py-0.5`}>
+                            {candidate.source}
+                          </Badge>
                         )}
-                        {candidate.phone && (
-                          <Phone className="h-3.5 w-3.5 text-white cursor-pointer hover:text-primary" />
+                        {candidate.match !== null && candidate.match !== undefined && (
+                          <Badge className={`${getMatchColor(candidate.match)} border-0 font-medium text-xs px-2 py-0.5`}>
+                            {candidate.match}% Match
+                          </Badge>
                         )}
-                        <Linkedin className="h-3.5 w-3.5 text-white cursor-pointer hover:text-primary" />
+                        {/* Interest status badge */}
+                        {interestStatus === "sent" || interestStatus === "pending" ? (
+                          <Badge className="bg-yellow-500/10 text-yellow-400 border-0 font-medium text-xs px-2 py-0.5 gap-1">
+                            <Clock className="h-3 w-3" />
+                            Awaiting Response
+                          </Badge>
+                        ) : interestStatus === "interested" ? (
+                          <Badge className="bg-green-500/10 text-green-400 border-0 font-medium text-xs px-2 py-0.5 gap-1">
+                            <CheckCircle className="h-3 w-3" />
+                            Interested
+                          </Badge>
+                        ) : null}
+                        <Star className="h-4 w-4 text-foreground fill-yellow-400" />
+                      </div>
+
+                      {/* Right: Contact Icons & Actions */}
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          {candidate.email && (
+                            <Mail className="h-3.5 w-3.5 text-white cursor-pointer hover:text-primary" />
+                          )}
+                          {candidate.phone && (
+                            <Phone className="h-3.5 w-3.5 text-white cursor-pointer hover:text-primary" />
+                          )}
+                          <Linkedin className="h-3.5 w-3.5 text-white cursor-pointer hover:text-primary" />
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2">
+                        {interestStatus === "interested" ? (
+                          <Button
+                            size="sm"
+                            className="h-8 bg-white text-black hover:bg-secondary border-0 gap-1.5 font-medium text-xs px-3"
+                            onClick={() => handleAIInterview(candidate)}
+                            data-testid={`button-ai-interview-${candidate.id}`}
+                          >
+                            <Bot className="h-3 w-3" />
+                            AI Interview
+                          </Button>
+                        ) : interestStatus === "sent" || interestStatus === "pending" ? (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10 gap-1.5 font-medium text-xs px-3"
+                            disabled
+                          >
+                            <Clock className="h-3 w-3" />
+                            Pending
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            className="h-8 bg-blue-600 text-white hover:bg-blue-500 border-0 gap-1.5 font-medium text-xs px-3"
+                            onClick={() => handleSendInterestCheck(candidate)}
+                            data-testid={`button-interest-check-${candidate.id}`}
+                          >
+                            <Send className="h-3 w-3" />
+                            Interest Check
+                          </Button>
+                        )}
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-muted-foreground hover:text-white hover:bg-white/10"
+                          onClick={() => handleRemoveFromShortlist(candidate.id)}
+                          data-testid={`button-remove-${candidate.id}`}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
+                  </motion.div>
+                );
+              })}
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        size="sm" 
-                        className="h-8 bg-white text-black hover:bg-secondary border-0 gap-1.5 font-medium text-xs px-3"
-                        onClick={() => handleAIContact(candidate)}
-                        data-testid={`button-ai-interview-${candidate.id}`}
-                      >
-                        <Bot className="h-3 w-3" />
-                        AI Interview
-                      </Button>
-                      <Button 
-                        size="icon" 
-                        variant="ghost" 
-                        className="h-8 w-8 text-muted-foreground hover:text-white hover:bg-white/10"
-                        onClick={() => handleRemoveFromShortlist(candidate.id)}
-                        data-testid={`button-remove-${candidate.id}`}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-              
               {!loadingCandidates && filteredCandidates.length === 0 && (
                 <div className="text-center py-20 text-muted-foreground">
                   <Star className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p className="text-lg font-medium">No shortlisted candidates yet</p>
                   <p className="text-sm mt-2">
-                    {searchQuery 
-                      ? 'Try adjusting your search query.' 
+                    {searchQuery
+                      ? 'Try adjusting your search query.'
                       : 'Shortlist candidates from the candidates list to see them here.'}
                   </p>
                   <Link href="/candidates-list">
@@ -296,66 +356,27 @@ export default function ShortlistedCandidates() {
         </div>
       </div>
 
-      {/* Email Invitation Dialog */}
-      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-        <DialogContent className="bg-[#1a1a1a] border-border dark:border-white/10 text-white sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Invite to Voice Interview</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Customize the email invitation for {selectedCandidate?.fullName || 'candidate'}.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label>Recipient</Label>
-              <Input value={selectedCandidate?.email || selectedCandidate?.fullName || ""} disabled className="bg-black/50 border-border dark:border-white/10" />
-            </div>
-            
-            <div className="grid gap-2">
-              <Label>Subject</Label>
-              <Input defaultValue={`Interview Invitation: ${selectedCandidate?.role || 'Position'}`} className="bg-black/50 border-border dark:border-white/10" />
-            </div>
+      {/* Interest Check Dialog */}
+      <InterestCheckDialog
+        open={interestCheckOpen}
+        onOpenChange={setInterestCheckOpen}
+        candidate={selectedCandidate}
+        job={selectedJob}
+        onSent={() => {
+          queryClient.invalidateQueries({ queryKey: interestChecksKey });
+        }}
+      />
 
-            <div className="grid gap-2">
-              <Label>Message</Label>
-              <Textarea 
-                className="min-h-[150px] bg-black/50 border-border dark:border-white/10 font-sans" 
-                defaultValue={`Dear ${selectedCandidate?.fullName || 'Candidate'},
-
-We are impressed with your profile and would like to invite you to an initial voice interview with our AI interview system.
-
-This allows us to get to know you better at your convenience. Please click the link below to start the session:
-
-${inviteLink}
-
-Best regards,
-MTN - Human Capital Team`}
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label>Interview Link</Label>
-              <div className="flex gap-2">
-                <Input value={inviteLink} readOnly className="bg-black/50 border-border dark:border-white/10 font-mono text-xs" />
-                <Button size="icon" variant="outline" className="border-border dark:border-white/10" onClick={handleCopyLink}>
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="flex gap-2">
-            <Button variant="outline" className="border-border dark:border-white/10" onClick={() => setInviteOpen(false)}>
-              Cancel
-            </Button>
-            <Button className="bg-muted hover:bg-muted" onClick={handleSendInvite}>
-              <Send className="h-4 w-4 mr-2" />
-              Send Invitation
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Interview Invite Dialog */}
+      <InterviewInviteDialog
+        open={interviewInviteOpen}
+        onOpenChange={setInterviewInviteOpen}
+        candidate={selectedCandidate}
+        job={selectedJob}
+        onInviteSent={() => {
+          queryClient.invalidateQueries({ queryKey: candidatesKey });
+        }}
+      />
 
     </div>
   );

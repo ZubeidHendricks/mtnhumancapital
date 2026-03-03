@@ -77,6 +77,7 @@ import DemoShowcase from "@/pages/demo-showcase";
 import OnboardingUpload from "@/pages/onboarding-upload";
 import IntegrityUpload from "@/pages/integrity-upload";
 import OfferResponse from "@/pages/offer-response";
+import InterestCheck from "@/pages/interest-check";
 
 function Router() {
   return (
@@ -151,6 +152,7 @@ function Router() {
       <Route path="/onboarding-upload/:token" component={OnboardingUpload} />
       <Route path="/integrity-upload/:token" component={IntegrityUpload} />
       <Route path="/offer-response/:token" component={OfferResponse} />
+      <Route path="/interest-check/:token" component={InterestCheck} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -159,7 +161,7 @@ function Router() {
 function AppWithLayout() {
   const [location, setLocation] = useLocation();
   
-  const publicRoutes = ['/', '/login', '/interview/invite', '/self-assessment', '/verify-certificate', '/onboarding-upload', '/integrity-upload', '/offer-response'];
+  const publicRoutes = ['/', '/login', '/interview/invite', '/self-assessment', '/verify-certificate', '/onboarding-upload', '/integrity-upload', '/offer-response', '/interest-check'];
   const exactPublicRoutes = ['/onboarding'];
   const isPublicRoute = publicRoutes.some(route => {
     if (route === '/') return location === '/';

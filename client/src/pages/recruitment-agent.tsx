@@ -24,6 +24,7 @@ import { api, candidateService } from "@/lib/api";
 import { toast } from "sonner";
 import type { Job, RecruitmentSession, Candidate } from "@shared/schema";
 import { InterviewInviteDialog } from "@/components/interview-invite-dialog";
+import { InterestCheckDialog } from "@/components/interest-check-dialog";
 
 const AGENT_STEPS = [
   { id: "analyzing", name: "Analyzing Job", icon: FileSearch, description: "Understanding requirements and skills needed" },
@@ -219,6 +220,8 @@ export default function RecruitmentAgent() {
   const [showShortlistDialog, setShowShortlistDialog] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteCandidate, setInviteCandidate] = useState<Candidate | null>(null);
+  const [interestCheckOpen, setInterestCheckOpen] = useState(false);
+  const [interestCheckCandidate, setInterestCheckCandidate] = useState<Candidate | null>(null);
   const [shortlistingId, setShortlistingId] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
 
@@ -233,6 +236,7 @@ export default function RecruitmentAgent() {
   const jobsKey = useTenantQueryKey(['jobs']);
   const recruitmentSessionsKey = useTenantQueryKey(['recruitment-sessions']);
   const candidatesKey = useTenantQueryKey(['candidates']);
+  const interestChecksKey = useTenantQueryKey(['interest-checks']);
 
   const { data: jobs, isLoading: jobsLoading } = useQuery<Job[]>({
     queryKey: jobsKey,
@@ -265,6 +269,14 @@ export default function RecruitmentAgent() {
       const response = await api.get("/candidates");
       const body = response.data;
       return Array.isArray(body) ? body : body.data ?? [];
+    },
+  });
+
+  const { data: interestChecks } = useQuery<any[]>({
+    queryKey: interestChecksKey,
+    queryFn: async () => {
+      const response = await api.get("/interest-checks");
+      return response.data;
     },
   });
 
@@ -1056,18 +1068,48 @@ export default function RecruitmentAgent() {
                             <Eye className="h-3 w-3 mr-1" />
                             Profile
                           </Button>
-                          <Button
-                            size="sm"
-                            className="bg-[#FFCB00] hover:bg-[#E6B800] text-black h-8 text-xs"
-                            data-testid={`ai-interview-${candidate.id}`}
-                            onClick={() => {
-                              setInviteCandidate(candidate);
-                              setInviteOpen(true);
-                            }}
-                          >
-                            <Bot className="h-3 w-3 mr-1" />
-                            AI Interview
-                          </Button>
+                          {(() => {
+                            const check = interestChecks?.filter((c: any) => c.candidateId === candidate.id)?.[0];
+                            const status = check?.status;
+                            if (status === "interested") {
+                              return (
+                                <Button
+                                  size="sm"
+                                  className="bg-[#FFCB00] hover:bg-[#E6B800] text-black h-8 text-xs"
+                                  data-testid={`ai-interview-${candidate.id}`}
+                                  onClick={() => {
+                                    setInviteCandidate(candidate);
+                                    setInviteOpen(true);
+                                  }}
+                                >
+                                  <Bot className="h-3 w-3 mr-1" />
+                                  AI Interview
+                                </Button>
+                              );
+                            } else if (status === "sent" || status === "pending") {
+                              return (
+                                <Badge className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/30 text-xs px-2 py-1 gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  Awaiting Response
+                                </Badge>
+                              );
+                            } else {
+                              return (
+                                <Button
+                                  size="sm"
+                                  className="bg-blue-600 hover:bg-blue-500 text-white h-8 text-xs"
+                                  data-testid={`interest-check-${candidate.id}`}
+                                  onClick={() => {
+                                    setInterestCheckCandidate(candidate);
+                                    setInterestCheckOpen(true);
+                                  }}
+                                >
+                                  <Send className="h-3 w-3 mr-1" />
+                                  Interest Check
+                                </Button>
+                              );
+                            }
+                          })()}
                           <Button
                             size="sm"
                             variant="outline"
@@ -1272,6 +1314,17 @@ export default function RecruitmentAgent() {
         onOpenChange={setInviteOpen}
         candidate={inviteCandidate}
         job={selectedJob}
+      />
+
+      {/* Interest Check Dialog */}
+      <InterestCheckDialog
+        open={interestCheckOpen}
+        onOpenChange={setInterestCheckOpen}
+        candidate={interestCheckCandidate}
+        job={interestCheckCandidate?.jobId ? jobs?.find(j => j.id === interestCheckCandidate.jobId) : selectedJob}
+        onSent={() => {
+          queryClient.invalidateQueries({ queryKey: interestChecksKey });
+        }}
       />
     </div>
   );

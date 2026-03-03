@@ -1018,6 +1018,146 @@ app.post("/api/public/offer-response/:token", publicUpload.single("signedDocumen
   }
 });
 
+// PUBLIC route: Candidate interest check portal - GET details
+app.get("/api/public/interest-check/:token", async (req, res) => {
+  try {
+    const check = await storage.getInterestCheckByToken(req.params.token);
+    if (!check) {
+      return res.status(404).json({ message: "Interest check not found or link is invalid" });
+    }
+
+    if (check.expiresAt && new Date(check.expiresAt) < new Date()) {
+      return res.status(410).json({ message: "This link has expired. Please contact the recruiter for assistance." });
+    }
+
+    if (check.status === "interested" || check.status === "not_interested") {
+      const candidate = await storage.getCandidate(check.tenantId!, check.candidateId);
+      return res.json({
+        candidateName: candidate?.fullName || "Candidate",
+        jobTitle: "",
+        companyName: "",
+        status: check.status,
+      });
+    }
+
+    const candidate = await storage.getCandidate(check.tenantId!, check.candidateId);
+    if (!candidate) {
+      return res.status(404).json({ message: "Candidate not found" });
+    }
+
+    let jobTitle = candidate.role || "Position";
+    let jobDescription = "";
+    let jobDepartment = "";
+    let jobLocation = "";
+    if (check.jobId) {
+      const job = await storage.getJob(check.tenantId!, check.jobId);
+      if (job) {
+        jobTitle = job.title;
+        jobDescription = job.description || "";
+        jobDepartment = job.department || "";
+        jobLocation = job.location || "";
+      }
+    }
+
+    const tenant = check.tenantId ? await storage.getTenantById(check.tenantId) : null;
+
+    res.json({
+      candidateName: candidate.fullName,
+      jobTitle,
+      jobDescription,
+      jobDepartment,
+      jobLocation,
+      companyName: tenant?.companyName || "AHC Recruiting",
+      status: check.status,
+      expiresAt: check.expiresAt,
+    });
+  } catch (error) {
+    console.error("Error fetching interest check portal:", error);
+    res.status(500).json({ message: "Failed to load interest check portal" });
+  }
+});
+
+// PUBLIC route: Candidate interest check portal - POST response
+app.post("/api/public/interest-check/:token", publicUpload.single("cv"), async (req, res) => {
+  try {
+    const check = await storage.getInterestCheckByToken(req.params.token);
+    if (!check) {
+      return res.status(404).json({ message: "Interest check not found or link is invalid" });
+    }
+
+    if (check.expiresAt && new Date(check.expiresAt) < new Date()) {
+      return res.status(410).json({ message: "This link has expired. Please contact the recruiter for assistance." });
+    }
+
+    if (check.status === "interested" || check.status === "not_interested") {
+      return res.status(400).json({ message: "You have already responded to this interest check." });
+    }
+
+    const { response } = req.body;
+    if (response !== "interested" && response !== "not_interested") {
+      return res.status(400).json({ message: "Response must be 'interested' or 'not_interested'" });
+    }
+
+    const updates: any = {
+      status: response,
+      respondedAt: new Date(),
+      ipAddress: req.ip || req.headers["x-forwarded-for"]?.toString() || "",
+      userAgent: req.headers["user-agent"] || "",
+    };
+
+    if (response === "interested") {
+      updates.consentGiven = true;
+      updates.consentText = "Candidate consented to collection, use, and processing of personal information for recruitment purposes in accordance with POPIA.";
+
+      if (req.file) {
+        const uploadDir = path.join(process.cwd(), "uploads", "interest-cvs");
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        const fileName = `cv_${check.candidateId}_${Date.now()}${path.extname(req.file.originalname)}`;
+        const filePath = path.join(uploadDir, fileName);
+        fs.writeFileSync(filePath, req.file.buffer);
+        updates.cvFilePath = `uploads/interest-cvs/${fileName}`;
+
+        // Update candidate's CV URL
+        try {
+          await storage.updateCandidate(check.tenantId!, check.candidateId, {
+            cvUrl: `uploads/interest-cvs/${fileName}`,
+          } as any);
+        } catch (cvErr) {
+          console.error("Failed to update candidate CV (non-blocking):", cvErr);
+        }
+      }
+    }
+
+    if (response === "not_interested") {
+      // Transition candidate to withdrawn
+      try {
+        const { pipelineOrchestrator } = await import("./pipeline-orchestrator");
+        await pipelineOrchestrator.transitionCandidate(
+          check.candidateId,
+          "withdrawn",
+          check.tenantId!,
+          {
+            triggeredBy: "candidate",
+            reason: "Candidate declined interest in the position",
+            skipPrerequisites: true,
+          }
+        );
+      } catch (pipelineErr) {
+        console.error("Pipeline transition failed (non-blocking):", pipelineErr);
+      }
+    }
+
+    await storage.updateInterestCheck(check.tenantId!, check.id, updates);
+
+    res.json({ success: true, status: response });
+  } catch (error) {
+    console.error("Error processing interest check response:", error);
+    res.status(500).json({ message: "Failed to process interest check response" });
+  }
+});
+
 // Apply tenant resolution middleware ONLY to API routes to avoid blocking static assets
 app.use('/api', resolveTenant);
 

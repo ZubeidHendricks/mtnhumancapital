@@ -79,6 +79,9 @@ import {
   type InsertModelTrainingEvent,
   type Offer,
   type InsertOffer,
+  type InterestCheck,
+  type InsertInterestCheck,
+  candidateInterestChecks,
   users,
   jobs,
   candidates,
@@ -656,6 +659,13 @@ export interface IStorage {
   createOffer(tenantId: string, offer: InsertOffer): Promise<Offer>;
   updateOffer(tenantId: string, id: string, offer: Partial<InsertOffer>): Promise<Offer | undefined>;
   deleteOffer(tenantId: string, id: string): Promise<boolean>;
+
+  // Interest Checks
+  getAllInterestChecks(tenantId: string): Promise<InterestCheck[]>;
+  getInterestCheckByToken(token: string): Promise<InterestCheck | undefined>;
+  getInterestChecksByCandidateId(tenantId: string, candidateId: string): Promise<InterestCheck[]>;
+  createInterestCheck(tenantId: string, data: InsertInterestCheck): Promise<InterestCheck>;
+  updateInterestCheck(tenantId: string, id: string, updates: Partial<InsertInterestCheck>): Promise<InterestCheck | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3914,6 +3924,46 @@ export class DatabaseStorage implements IStorage {
   async deleteOffer(tenantId: string, id: string): Promise<boolean> {
     const result = await db.delete(offers).where(and(eq(offers.id, id), eq(offers.tenantId, tenantId)));
     return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // ========== INTEREST CHECKS ==========
+
+  async getAllInterestChecks(tenantId: string): Promise<InterestCheck[]> {
+    return await db.select().from(candidateInterestChecks).where(eq(candidateInterestChecks.tenantId, tenantId)).orderBy(desc(candidateInterestChecks.createdAt));
+  }
+
+  async getInterestCheckByToken(token: string): Promise<InterestCheck | undefined> {
+    const [check] = await db.select().from(candidateInterestChecks).where(eq(candidateInterestChecks.interestToken, token));
+    return check || undefined;
+  }
+
+  async getInterestChecksByCandidateId(tenantId: string, candidateId: string): Promise<InterestCheck[]> {
+    return await db.select().from(candidateInterestChecks).where(and(eq(candidateInterestChecks.candidateId, candidateId), eq(candidateInterestChecks.tenantId, tenantId))).orderBy(desc(candidateInterestChecks.createdAt));
+  }
+
+  async createInterestCheck(tenantId: string, data: InsertInterestCheck): Promise<InterestCheck> {
+    const cleanedData = Object.fromEntries(
+      Object.entries(data).filter(([_, v]) => v !== null && v !== undefined)
+    ) as any;
+
+    const [check] = await db
+      .insert(candidateInterestChecks)
+      .values({ ...cleanedData, tenantId })
+      .returning();
+    return check;
+  }
+
+  async updateInterestCheck(tenantId: string, id: string, updates: Partial<InsertInterestCheck>): Promise<InterestCheck | undefined> {
+    const cleanedUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([_, v]) => v !== null && v !== undefined)
+    ) as any;
+
+    const [check] = await db
+      .update(candidateInterestChecks)
+      .set({ ...cleanedUpdates, updatedAt: new Date() })
+      .where(and(eq(candidateInterestChecks.id, id), eq(candidateInterestChecks.tenantId, tenantId)))
+      .returning();
+    return check || undefined;
   }
 }
 
