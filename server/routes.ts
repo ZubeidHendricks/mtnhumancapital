@@ -11950,6 +11950,18 @@ Format your response as JSON:
         return res.status(404).json({ message: "Job not found" });
       }
 
+      // Validate channel-specific contact info before doing any work
+      const sendChannel = channel || "email";
+      if (sendChannel === "email" && !candidate.email) {
+        return res.status(400).json({ message: "Candidate has no email address on file" });
+      }
+      if (sendChannel === "whatsapp") {
+        const phone = candidate.phone || (candidate.metadata as any)?.phone;
+        if (!phone) {
+          return res.status(400).json({ message: "Candidate has no phone number on file" });
+        }
+      }
+
       const tenant = await storage.getTenantById(req.tenant.id);
       const companyName = tenant?.companyName || "AHC Recruiting";
 
@@ -12037,15 +12049,9 @@ Format your response as JSON:
       });
 
       // Send notification
-      const sendChannel = channel || "email";
-
       if (sendChannel === "email") {
-        if (!candidate.email) {
-          return res.status(400).json({ message: "Candidate has no email address on file" });
-        }
-
-        await emailService.sendInterestCheckNotification({
-          to: candidate.email,
+        const sent = await emailService.sendInterestCheckNotification({
+          to: candidate.email!,
           candidateName: candidate.fullName || "Candidate",
           jobTitle: job.title,
           companyName,
@@ -12056,11 +12062,13 @@ Format your response as JSON:
             contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
           }],
         });
+        if (!sent) {
+          // Clean up the DB record since the email wasn't delivered
+          await storage.updateInterestCheck(req.tenant.id, check.id, { status: "pending" });
+          return res.status(500).json({ message: "Failed to send email. Please check email configuration and try again." });
+        }
       } else if (sendChannel === "whatsapp") {
         const phone = candidate.phone || (candidate.metadata as any)?.phone;
-        if (!phone) {
-          return res.status(400).json({ message: "Candidate has no phone number on file" });
-        }
 
         try {
           const { whatsappService } = await import("./whatsapp-service");
