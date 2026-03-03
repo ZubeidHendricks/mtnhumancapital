@@ -1930,6 +1930,21 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
         minYearsExperience: parseOptionalNumber(rawJobSpec.minYearsExperience),
       };
 
+      // Compose a rich description from structured fields when description is empty
+      if (!jobSpec.description && (jobSpec.introduction || jobSpec.duties || jobSpec.attributes || jobSpec.qualifications || jobSpec.requirements || jobSpec.responsibilities || jobSpec.benefits || jobSpec.remuneration || jobSpec.skills)) {
+        let desc = "";
+        if (jobSpec.introduction) desc += jobSpec.introduction + "\n\n";
+        if (Array.isArray(jobSpec.duties) && jobSpec.duties.length) desc += "Key Duties:\n" + jobSpec.duties.map((d: string) => "- " + d).join("\n") + "\n\n";
+        if (Array.isArray(jobSpec.attributes) && jobSpec.attributes.length) desc += "Key Attributes:\n" + jobSpec.attributes.map((a: string) => "- " + a).join("\n") + "\n\n";
+        if (Array.isArray(jobSpec.qualifications) && jobSpec.qualifications.length) desc += "Qualifications:\n" + jobSpec.qualifications.map((q: string) => "- " + q).join("\n") + "\n\n";
+        if (Array.isArray(jobSpec.requirements) && jobSpec.requirements.length) desc += "Requirements:\n" + jobSpec.requirements.map((r: string) => "- " + r).join("\n") + "\n\n";
+        if (Array.isArray(jobSpec.responsibilities) && jobSpec.responsibilities.length) desc += "Responsibilities:\n" + jobSpec.responsibilities.map((r: string) => "- " + r).join("\n") + "\n\n";
+        if (Array.isArray(jobSpec.benefits) && jobSpec.benefits.length) desc += "Benefits:\n" + jobSpec.benefits.map((b: string) => "- " + b).join("\n") + "\n\n";
+        if (jobSpec.remuneration) desc += "Remuneration: " + jobSpec.remuneration + "\n\n";
+        if (Array.isArray(jobSpec.skills) && jobSpec.skills.length) desc += "Skills:\n" + jobSpec.skills.map((s: string) => "- " + s).join("\n") + "\n\n";
+        jobSpec.description = desc.trim();
+      }
+
       // Validate required fields (only title is strictly required for active jobs)
       if (!isDraft && !jobSpec.title) {
         return res.status(400).json({ message: "Missing required job information (title required)" });
@@ -11886,22 +11901,48 @@ Format your response as JSON:
       if (job.employmentType) {
         docSections.push(new Paragraph({ children: [new TextRun({ text: "Employment Type: ", bold: true }), new TextRun(job.employmentType)] }));
       }
-      if (job.salaryRange) {
-        docSections.push(new Paragraph({ children: [new TextRun({ text: "Salary Range: ", bold: true }), new TextRun(job.salaryRange)] }));
+      // Build salary range from actual DB columns
+      const salaryRange = job.salaryMin || job.salaryMax
+        ? `R${job.salaryMin?.toLocaleString() || "??"} - R${job.salaryMax?.toLocaleString() || "??"}${job.payRateUnit ? ` / ${job.payRateUnit}` : ""}`
+        : null;
+      if (salaryRange) {
+        docSections.push(new Paragraph({ children: [new TextRun({ text: "Salary Range: ", bold: true }), new TextRun(salaryRange)] }));
       }
       docSections.push(new Paragraph({ text: "" }));
+
+      // Parse structured sections from the composed description
       if (job.description) {
-        docSections.push(
-          new Paragraph({ text: "Job Description", heading: HeadingLevel.HEADING_2 }),
-          new Paragraph({ text: job.description }),
-          new Paragraph({ text: "" }),
-        );
-      }
-      if (job.requirements) {
-        docSections.push(
-          new Paragraph({ text: "Requirements", heading: HeadingLevel.HEADING_2 }),
-          new Paragraph({ text: job.requirements }),
-        );
+        const blocks = job.description.split(/\n(?=(?:Key Duties|Key Attributes|Qualifications|Requirements|Responsibilities|Benefits|Skills|Remuneration):?\s*$)/m);
+
+        for (const block of blocks) {
+          const lines = block.trim().split("\n");
+          if (!lines.length || !lines[0].trim()) continue;
+
+          const headingMatch = lines[0].trim().match(/^(Key Duties|Key Attributes|Qualifications|Requirements|Responsibilities|Benefits|Skills|Remuneration):?\s*$/);
+          if (headingMatch) {
+            // This block starts with a known heading
+            docSections.push(new Paragraph({ text: headingMatch[1], heading: HeadingLevel.HEADING_2 }));
+            for (let i = 1; i < lines.length; i++) {
+              const line = lines[i].trim();
+              if (!line) continue;
+              if (line.startsWith("- ")) {
+                docSections.push(new Paragraph({ text: line.substring(2), bullet: { level: 0 } }));
+              } else {
+                docSections.push(new Paragraph({ text: line }));
+              }
+            }
+            docSections.push(new Paragraph({ text: "" }));
+          } else {
+            // Introductory text or unstructured content
+            docSections.push(new Paragraph({ text: "Job Description", heading: HeadingLevel.HEADING_2 }));
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (!trimmed) continue;
+              docSections.push(new Paragraph({ text: trimmed }));
+            }
+            docSections.push(new Paragraph({ text: "" }));
+          }
+        }
       }
 
       const doc = new Document({
