@@ -184,12 +184,32 @@ export default function InterviewConsole() {
     setShowPractice(null);
     setF2fMarkedComplete(false);
     if (selectedSession) {
-      // Auto-set view based on the session's interview type
+      // Auto-detect the most relevant stage to show based on session state
       const session = sessions.find(s => s.id === selectedSession);
       if (session) {
-        setActiveFlowView("voice");
-        setActiveFlowStep("voice");
-        setCurrentStage("voice");
+        const voiceDone = session.voiceStatus === "completed"
+          || (session.voiceStatus === "pending" && (session.status === "completed" || session.status === "voice_completed"));
+        const hasVideo = session.videoStatus != null;
+        const videoDone = session.videoStatus === "completed";
+        const f2fDone = (session as any).f2fStatus === "completed";
+
+        if (f2fDone) {
+          setActiveFlowView("offer");
+          setActiveFlowStep("offer");
+          setCurrentStage("video");
+        } else if (videoDone) {
+          setActiveFlowView("f2f");
+          setActiveFlowStep("f2f");
+          setCurrentStage("video");
+        } else if (hasVideo && voiceDone) {
+          setActiveFlowView("video");
+          setActiveFlowStep("video");
+          setCurrentStage("video");
+        } else {
+          setActiveFlowView("voice");
+          setActiveFlowStep("voice");
+          setCurrentStage("voice");
+        }
       }
     } else {
       setActiveFlowView(null);
@@ -289,7 +309,7 @@ export default function InterviewConsole() {
       (s) => s.candidateId === session.candidateId && !s.candidateName?.startsWith("[Practice]")
     );
     const f2fSession = candidateSessions.find((s) => s.interviewType === "f2f" || s.interviewType === "face_to_face");
-    const f2fCompleted = f2fSession?.status === "completed" || f2fMarkedComplete;
+    const f2fCompleted = f2fSession?.status === "completed" || (session as any).f2fStatus === "completed" || f2fMarkedComplete;
 
     return [
       {
@@ -309,14 +329,14 @@ export default function InterviewConsole() {
       {
         id: "f2f",
         label: "Face to Face",
-        status: f2fCompleted ? "completed" : (videoCompleted && f2fSession) ? "active" : "locked",
+        status: f2fCompleted ? "completed" : videoCompleted ? "active" : "locked",
         sessionId: f2fSession?.id || null,
         score: f2fSession?.overallScore || null,
       },
       {
         id: "offer",
         label: "Make Offer",
-        status: f2fCompleted ? "active" : "locked",
+        status: f2fCompleted ? "active" : videoCompleted ? "active" : "locked",
         sessionId: null,
         score: null,
       },
@@ -1066,12 +1086,23 @@ export default function InterviewConsole() {
                       embedded
                       candidateId={details.session.candidateId || undefined}
                       candidateName={details.session.candidateName || undefined}
-                      onMarkComplete={() => {
-                        setF2fMarkedComplete(true);
-                        toast({
-                          title: "Face-to-Face Complete",
-                          description: "Interview marked as completed. Make a decision below.",
-                        });
+                      onMarkComplete={async () => {
+                        try {
+                          await fetch(`/api/interviews/${selectedSession}/complete-f2f`, { method: "POST" });
+                          setF2fMarkedComplete(true);
+                          queryClient.invalidateQueries({ queryKey: ["/api/interviews"] });
+                          queryClient.invalidateQueries({ queryKey: ["/api/interviews", selectedSession] });
+                          toast({
+                            title: "Face-to-Face Complete",
+                            description: "Interview marked as completed. Make a decision below.",
+                          });
+                        } catch {
+                          toast({
+                            title: "Error",
+                            description: "Failed to mark face-to-face as complete.",
+                            variant: "destructive",
+                          });
+                        }
                       }}
                     />
 

@@ -59,7 +59,7 @@ const stagePrerequisites: StagePrerequisites = {
 
       if (sessions.length === 0) return { met: false, reason: "No interview session found" };
 
-      const completed = sessions.some(s => s.status === "completed");
+      const completed = sessions.some(s => s.status === "completed" || s.status === "voice_completed");
       if (!completed) return { met: false, reason: "Interview not yet completed" };
 
       return { met: true };

@@ -7598,6 +7598,24 @@ Format your response as JSON:
     }
   });
 
+  // Mark face-to-face stage as complete on an existing interview session
+  app.post("/api/interviews/:id/complete-f2f", async (req, res) => {
+    try {
+      const session = await storage.getInterviewSession(req.tenant.id, req.params.id);
+      if (!session) {
+        return res.status(404).json({ message: "Interview not found" });
+      }
+      const updated = await storage.updateInterviewSession(req.tenant.id, req.params.id, {
+        f2fStatus: 'completed',
+        f2fCompletedAt: new Date(),
+      } as any);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error completing f2f stage:", error);
+      res.status(500).json({ message: "Failed to complete f2f stage" });
+    }
+  });
+
   // Get interviews by candidate
   app.get("/api/candidates/:candidateId/interviews", async (req, res) => {
     try {

@@ -1174,6 +1174,9 @@ export const interviewSessions = pgTable("interview_sessions", {
   videoScore: integer("video_score"), // AI score for video stage (0-100)
   videoSentAt: timestamp("video_sent_at"),
   videoExpiresAt: timestamp("video_expires_at"),
+  // Face-to-face stage fields
+  f2fStatus: text("f2f_status"), // null = not scheduled, 'scheduled', 'completed'
+  f2fCompletedAt: timestamp("f2f_completed_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => ({

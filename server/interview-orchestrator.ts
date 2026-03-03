@@ -194,7 +194,7 @@ export class InterviewOrchestrator {
 
     const analysis = await this.analyzeInterview(session, transcripts);
 
-    const feedback = await storage.createInterviewFeedback(tenantId, {
+    const feedbackData = {
       sessionId,
       candidateId: session.candidateId || undefined,
       evaluatorType: 'ai',
@@ -213,7 +213,16 @@ export class InterviewOrchestrator {
       flaggedConcerns: analysis.flaggedConcerns,
       competencyScores: analysis.competencyScores,
       interviewStage: stage,
-    } as any);
+    } as any;
+
+    // Check for existing feedback for this stage to avoid duplicates (e.g. Tavus re-analysis)
+    const existingFeedback = await storage.getInterviewFeedback(tenantId, sessionId, stage);
+    let feedback;
+    if (existingFeedback.length > 0 && existingFeedback[0].evaluatorType === 'ai' && !existingFeedback[0].isFinalized) {
+      feedback = await storage.updateInterviewFeedback(tenantId, existingFeedback[0].id, feedbackData) || existingFeedback[0];
+    } else {
+      feedback = await storage.createInterviewFeedback(tenantId, feedbackData);
+    }
 
     if (stage === 'video') {
       await storage.updateInterviewSession(tenantId, sessionId, {
