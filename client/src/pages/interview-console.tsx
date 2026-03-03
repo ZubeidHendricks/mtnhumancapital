@@ -138,6 +138,7 @@ export default function InterviewConsole() {
   const [showDecisionDialog, setShowDecisionDialog] = useState(false);
   const [pendingDecision, setPendingDecision] = useState<"accepted" | "rejected" | "pipeline" | null>(null);
   const [candidateSearch, setCandidateSearch] = useState("");
+  const [sessionSearch, setSessionSearch] = useState("");
   const [positionFilter, setPositionFilter] = useState<string>("all");
   const [activeFlowStep, setActiveFlowStep] = useState<string | null>(null);
   const [activeFlowView, setActiveFlowView] = useState<"voice" | "video" | "f2f" | "offer" | null>(null);
@@ -151,7 +152,7 @@ export default function InterviewConsole() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: sessionsResponse, isLoading: loadingSessions, refetch: refetchSessions } = useQuery<{ data: InterviewSession[]; total: number } | InterviewSession[]>({
+  const { data: sessionsResponse, isLoading: loadingSessions, isFetching: fetchingSessions, refetch: refetchSessions } = useQuery<{ data: InterviewSession[]; total: number } | InterviewSession[]>({
     queryKey: ["/api/interviews"],
   });
   const sessions: InterviewSession[] = Array.isArray(sessionsResponse) ? sessionsResponse : (sessionsResponse?.data || []);
@@ -162,9 +163,21 @@ export default function InterviewConsole() {
   }, [sessions]);
 
   const filteredSessions = useMemo(() => {
-    if (positionFilter === "all") return sessions;
-    return sessions.filter(s => s.jobTitle === positionFilter);
-  }, [sessions, positionFilter]);
+    let result = sessions;
+    if (positionFilter !== "all") {
+      result = result.filter(s => s.jobTitle === positionFilter);
+    }
+    if (sessionSearch.trim()) {
+      const q = sessionSearch.toLowerCase();
+      result = result.filter(s =>
+        s.candidateName?.toLowerCase().includes(q) ||
+        s.jobTitle?.toLowerCase().includes(q) ||
+        s.candidatePhone?.includes(q) ||
+        s.status?.toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [sessions, positionFilter, sessionSearch]);
 
   // Reset states when selected session changes
   useEffect(() => {
@@ -185,7 +198,7 @@ export default function InterviewConsole() {
     }
   }, [selectedSession]);
 
-  const { data: details, isLoading: loadingDetails } = useQuery<InterviewDetails>({
+  const { data: details, isLoading: loadingDetails, isFetching: fetchingDetails } = useQuery<InterviewDetails>({
     queryKey: ["/api/interviews", selectedSession, "stage", currentStage],
     queryFn: async () => {
       const res = await fetch(`/api/interviews/${selectedSession}?stage=${currentStage}`);
@@ -401,14 +414,29 @@ export default function InterviewConsole() {
           <h1 className="text-3xl font-bold" data-testid="text-page-title">AI Interview Console</h1>
           <p className="text-muted-foreground">Manage AI-powered candidate interviews</p>
         </div>
-        <Button onClick={() => refetchSessions()} variant="outline" data-testid="button-refresh-interviews">
-          <RefreshCw className="h-4 w-4 mr-2" />
+        <Button
+          onClick={() => {
+            refetchSessions();
+            if (selectedSession) {
+              queryClient.invalidateQueries({ queryKey: ["/api/interviews", selectedSession] });
+            }
+          }}
+          variant="outline"
+          disabled={fetchingSessions}
+          data-testid="button-refresh-interviews"
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${fetchingSessions ? "animate-spin" : ""}`} />
           Refresh
         </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-1">
+        <Card className="lg:col-span-1 relative overflow-hidden">
+          {fetchingSessions && !loadingSessions && (
+            <div className="absolute inset-0 bg-background/50 z-20 flex items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          )}
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Mic className="h-5 w-5" />
@@ -419,6 +447,16 @@ export default function InterviewConsole() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="relative mb-3">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, position, phone..."
+                value={sessionSearch}
+                onChange={(e) => setSessionSearch(e.target.value)}
+                className="pl-10"
+                data-testid="input-session-search"
+              />
+            </div>
             {uniquePositions.length > 1 && (
               <div className="mb-3">
                 <Select value={positionFilter} onValueChange={setPositionFilter}>
@@ -434,7 +472,7 @@ export default function InterviewConsole() {
                 </Select>
               </div>
             )}
-            <ScrollArea className="h-[600px]">
+            <ScrollArea className="h-[360px]">
               {loadingSessions ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -512,16 +550,21 @@ export default function InterviewConsole() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 relative overflow-hidden">
+          {fetchingDetails && !loadingDetails && (
+            <div className="absolute inset-0 bg-background/50 z-20 flex items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          )}
           {!selectedSession ? (
-            <div className="h-[700px] flex items-center justify-center">
+            <div className="h-[450px] flex items-center justify-center">
               <div className="text-center text-muted-foreground">
                 <User className="h-16 w-16 mx-auto mb-4 opacity-30" />
                 <p>Select an interview session to view details</p>
               </div>
             </div>
           ) : loadingDetails ? (
-            <div className="h-[700px] flex items-center justify-center">
+            <div className="h-[450px] flex items-center justify-center">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : details ? (
@@ -607,7 +650,7 @@ export default function InterviewConsole() {
                 {/* View content based on activeFlowView */}
                 {(activeFlowView === "voice" || activeFlowView === "video" || !activeFlowView) ? (
                   <Tabs defaultValue="analysis" className="w-full">
-                    <TabsList className="grid w-full grid-cols-5">
+                    <TabsList className="grid w-full grid-cols-4">
                       <TabsTrigger value="analysis" data-testid="tab-analysis">
                         <BarChart3 className="h-4 w-4 mr-2" />
                         Analysis
@@ -622,11 +665,7 @@ export default function InterviewConsole() {
                       </TabsTrigger>
                       <TabsTrigger value="decision" data-testid="tab-decision">
                         <CheckCircle className="h-4 w-4 mr-2" />
-                        Decision
-                      </TabsTrigger>
-                      <TabsTrigger value="candidates" data-testid="tab-candidates">
-                        <Search className="h-4 w-4 mr-2" />
-                        Candidates
+                        Assessment
                       </TabsTrigger>
                     </TabsList>
 
@@ -705,12 +744,6 @@ export default function InterviewConsole() {
                         </div>
                       )}
 
-                      {/* Interview Timeline - embedded */}
-                      {selectedSession && (
-                        <div className="border rounded-lg overflow-hidden">
-                          <InterviewTimeline sessionId={selectedSession} embedded />
-                        </div>
-                      )}
                     </TabsContent>
 
                     <TabsContent value="transcript" className="mt-4">
@@ -900,6 +933,7 @@ export default function InterviewConsole() {
                                 </Button>
                                 <Button
                                   size="lg"
+                                  className="bg-yellow-500 hover:bg-yellow-600 text-black"
                                   onClick={() => {
                                     setInviteType("video");
                                     setShowInviteDialog(true);
@@ -1024,122 +1058,6 @@ export default function InterviewConsole() {
                       </div>
                     </TabsContent>
 
-                    {/* Search Candidates Tab */}
-                    <TabsContent value="candidates" className="mt-4">
-                      <div className="space-y-4">
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            placeholder="Search by name, email, phone, role, or skills..."
-                            value={candidateSearch}
-                            onChange={(e) => setCandidateSearch(e.target.value)}
-                            className="pl-10"
-                            data-testid="input-candidate-search"
-                          />
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {filteredCandidates.length} candidate{filteredCandidates.length !== 1 ? "s" : ""} found
-                        </p>
-                        <ScrollArea className="h-[400px]">
-                          {filteredCandidates.length === 0 ? (
-                            <div className="text-center py-12 text-muted-foreground">
-                              <Search className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                              <p>No candidates found</p>
-                              <p className="text-sm mt-1">Try a different search term</p>
-                            </div>
-                          ) : (
-                            <div className="space-y-3">
-                              {filteredCandidates.map((candidate) => (
-                                <div
-                                  key={candidate.id}
-                                  className="p-4 rounded-lg border hover:border-primary/50 transition-colors"
-                                >
-                                  <div className="flex items-start justify-between">
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 mb-1">
-                                        <User className="h-4 w-4 text-muted-foreground shrink-0" />
-                                        <span className="font-medium text-sm truncate">{candidate.fullName}</span>
-                                        <Badge variant="outline" className="text-xs shrink-0 capitalize">
-                                          {candidate.stage?.replace(/_/g, " ") || "New"}
-                                        </Badge>
-                                      </div>
-                                      {candidate.role && (
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                                          <Briefcase className="h-3 w-3 shrink-0" />
-                                          <span className="truncate">{candidate.role}</span>
-                                        </div>
-                                      )}
-                                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                        {candidate.email && (
-                                          <span className="flex items-center gap-1 truncate">
-                                            <Mail className="h-3 w-3 shrink-0" />{candidate.email}
-                                          </span>
-                                        )}
-                                        {candidate.phone && (
-                                          <span className="flex items-center gap-1">
-                                            <Phone className="h-3 w-3 shrink-0" />{candidate.phone}
-                                          </span>
-                                        )}
-                                        {candidate.location && (
-                                          <span className="flex items-center gap-1">
-                                            <MapPin className="h-3 w-3 shrink-0" />{candidate.location}
-                                          </span>
-                                        )}
-                                      </div>
-                                      {candidate.skills && candidate.skills.length > 0 && (
-                                        <div className="flex flex-wrap gap-1 mt-2">
-                                          {candidate.skills.slice(0, 5).map((skill, i) => (
-                                            <Badge key={i} variant="secondary" className="text-xs h-5">
-                                              {skill}
-                                            </Badge>
-                                          ))}
-                                          {candidate.skills.length > 5 && (
-                                            <Badge variant="secondary" className="text-xs h-5">
-                                              +{candidate.skills.length - 5}
-                                            </Badge>
-                                          )}
-                                        </div>
-                                      )}
-                                    </div>
-                                    <div className="flex flex-col items-end gap-2 ml-3">
-                                      {candidate.match > 0 && (
-                                        <div className="text-center">
-                                          <span className="text-lg font-bold">{candidate.match}%</span>
-                                          <p className="text-xs text-muted-foreground">Match</p>
-                                        </div>
-                                      )}
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="text-xs"
-                                        onClick={() => {
-                                          // Link this candidate to the current interview session
-                                          if (!selectedSession) return;
-                                          fetch(`/api/interviews/${selectedSession}/decision`, {
-                                            method: "PATCH",
-                                            headers: { "Content-Type": "application/json" },
-                                            body: JSON.stringify({ candidateId: candidate.id }),
-                                          }).then(() => {
-                                            queryClient.invalidateQueries({ queryKey: ["/api/interviews", selectedSession] });
-                                            queryClient.invalidateQueries({ queryKey: ["/api/interviews"] });
-                                            toast({ title: "Candidate Linked", description: `${candidate.fullName} linked to this interview` });
-                                          }).catch(() => {
-                                            toast({ title: "Error", description: "Failed to link candidate", variant: "destructive" });
-                                          });
-                                        }}
-                                      >
-                                        <ArrowRight className="h-3 w-3 mr-1" />
-                                        Link
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </ScrollArea>
-                      </div>
-                    </TabsContent>
                   </Tabs>
                 ) : activeFlowView === "f2f" ? (
                   /* Face-to-Face View */
@@ -1234,6 +1152,12 @@ export default function InterviewConsole() {
           ) : null}
         </Card>
       </div>
+
+      {selectedSession && (
+        <div className="border rounded-lg overflow-hidden mt-6">
+          <InterviewTimeline sessionId={selectedSession} embedded stage={currentStage} />
+        </div>
+      )}
 
       <Dialog open={showDecisionDialog} onOpenChange={setShowDecisionDialog}>
         <DialogContent>

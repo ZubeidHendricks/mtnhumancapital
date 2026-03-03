@@ -94,6 +94,13 @@ function formatMs(ms: number): string {
   return `${min.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
 }
 
+function formatSec(seconds: number): string {
+  const s = Math.floor(seconds);
+  const min = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${min.toString().padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+}
+
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -139,10 +146,11 @@ function getCategoryIcon(category?: string) {
 export interface InterviewTimelineProps {
   sessionId?: string;
   embedded?: boolean;
+  stage?: string;
 }
 
 export default function InterviewTimeline(props: InterviewTimelineProps & Record<string, any> = {}) {
-  const { sessionId: propSessionId, embedded } = props;
+  const { sessionId: propSessionId, embedded, stage } = props;
   const params = useParams<{ sessionId: string }>();
   const sessionId = propSessionId || params.sessionId || "";
   const { toast } = useToast();
@@ -206,9 +214,12 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
 
   // Fetch transcripts
   const { data: transcripts = [] } = useQuery<TranscriptSegment[]>({
-    queryKey: ["/api/interviews", sessionId, "transcripts"],
+    queryKey: ["/api/interviews", sessionId, "transcripts", stage],
     queryFn: async () => {
-      const res = await api.get(`/interviews/${sessionId}/transcripts`);
+      const url = stage
+        ? `/interviews/${sessionId}/transcripts?stage=${stage}`
+        : `/interviews/${sessionId}/transcripts`;
+      const res = await api.get(url);
       return res.data;
     },
     enabled: !!sessionId,
@@ -246,7 +257,7 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
   // Mutations
   const askQuestionMutation = useMutation({
     mutationFn: async (question: string) => {
-      const res = await api.post(`/interviews/${sessionId}/ask`, { question });
+      const res = await api.post(`/interviews/${sessionId}/ask`, { question, stage });
       return res.data;
     },
     onSuccess: () => {
@@ -260,7 +271,7 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
 
   const autoTagMutation = useMutation({
     mutationFn: async () => {
-      const res = await api.post(`/interviews/${sessionId}/auto-tag`);
+      const res = await api.post(`/interviews/${sessionId}/auto-tag`, { stage });
       return res.data;
     },
     onSuccess: (data) => {
@@ -274,7 +285,7 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
 
   const reanalyzeMutation = useMutation({
     mutationFn: async () => {
-      const res = await api.post(`/interviews/${sessionId}/reanalyze`);
+      const res = await api.post(`/interviews/${sessionId}/reanalyze`, { stage });
       return res.data;
     },
     onSuccess: () => {
@@ -297,6 +308,9 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
       setNewTagLabel("");
       setNewTagNotes("");
       toast({ title: "Tag added" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.response?.data?.message || "Failed to add tag", variant: "destructive" });
     },
   });
 
@@ -465,7 +479,7 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
 
       <div className={`flex ${embedded ? "h-[500px]" : "h-[calc(100vh-80px)]"}`}>
         {/* Left Panel: Timeline + Playback */}
-        <div className="flex-1 flex flex-col border-r">
+        <div className="flex-1 flex flex-col border-r min-h-0">
           {/* Audio Player */}
           <div className="border-b p-4 bg-card">
             <audio
@@ -527,7 +541,7 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
                         </TooltipTrigger>
                         <TooltipContent>
                           <p className="font-medium">{tag.label}</p>
-                          <p className="text-xs text-muted-foreground">{formatMs(tag.offsetMs)}</p>
+                          <p className="text-xs text-muted-foreground">{formatSec(tag.offsetMs)}</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -569,7 +583,7 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
           </div>
 
           {/* Timeline Tags List */}
-          <ScrollArea className="flex-1">
+          <div className="flex-1 overflow-y-auto">
             <div className="p-4 space-y-2">
               {tagsLoading ? (
                 <div className="flex items-center justify-center py-12">
@@ -594,7 +608,7 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
                   >
                     {/* Timestamp */}
                     <div className="text-xs font-mono text-muted-foreground min-w-[48px] pt-0.5">
-                      {formatMs(tag.offsetMs)}
+                      {formatSec(tag.offsetMs)}
                     </div>
 
                     {/* Tag badge */}
@@ -660,12 +674,12 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
                 ))
               )}
             </div>
-          </ScrollArea>
+          </div>
         </div>
 
         {/* Right Panel: Transcript + AI Q&A */}
-        <div className="w-[420px] flex flex-col">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+        <div className="w-[500px] flex flex-col min-h-0">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
             <TabsList className="w-full rounded-none border-b justify-start px-2">
               <TabsTrigger value="timeline" className="text-xs">
                 <FileText className="h-3.5 w-3.5 mr-1" />Transcript
@@ -685,9 +699,8 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
             </TabsList>
 
             {/* Transcript Tab */}
-            <TabsContent value="timeline" className="flex-1 m-0 overflow-hidden">
-              <ScrollArea className="h-full">
-                <div className="p-4 space-y-3">
+            <TabsContent value="timeline" className="m-0">
+              <div className="overflow-y-auto max-h-[calc(500px-40px)] p-4 space-y-3">
                   {transcripts.length === 0 ? (
                     <div className="text-center py-12 text-muted-foreground">
                       <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
@@ -703,7 +716,7 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
                         onClick={() => seg.startTime != null && seekTo(seg.startTime)}
                       >
                         <div className="text-xs font-mono text-muted-foreground min-w-[40px] pt-1">
-                          {seg.startTime != null ? formatMs(seg.startTime) : ""}
+                          {seg.startTime != null ? `${Math.floor(seg.startTime / 60)}:${String(seg.startTime % 60).padStart(2, "0")}` : ""}
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-1 mb-0.5">
@@ -728,13 +741,11 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
                     ))
                   )}
                 </div>
-              </ScrollArea>
             </TabsContent>
 
             {/* Q&A Tab */}
-            <TabsContent value="qa" className="flex-1 m-0 flex flex-col overflow-hidden">
-              <ScrollArea className="flex-1">
-                <div className="p-4 space-y-4">
+            <TabsContent value="qa" className="m-0 flex flex-col">
+              <div className="overflow-y-auto max-h-[calc(500px-100px)] p-4 space-y-4">
                   <div className="text-sm text-muted-foreground">
                     Ask questions about this interview. The AI will analyze the transcript and provide answers with relevant timestamps.
                   </div>
@@ -853,7 +864,6 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
                     </Card>
                   )}
                 </div>
-              </ScrollArea>
 
               {/* Q&A Input */}
               <div className="border-t p-3">
@@ -881,9 +891,8 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
             </TabsContent>
 
             {/* Providers Tab */}
-            <TabsContent value="providers" className="flex-1 m-0 overflow-hidden">
-              <ScrollArea className="h-full">
-                <div className="p-4 space-y-4">
+            <TabsContent value="providers" className="m-0">
+              <div className="overflow-y-auto max-h-[calc(500px-40px)] p-4 space-y-4">
                   <h4 className="text-sm font-medium">Transcript Providers</h4>
                   <div className="grid gap-3">
                     {["assemblyai", "deepgram", "whisper", "hume"].map((provider) => {
@@ -943,13 +952,11 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
                     </div>
                   )}
                 </div>
-              </ScrollArea>
             </TabsContent>
 
             {/* Insights Tab */}
-            <TabsContent value="insights" className="flex-1 m-0 overflow-hidden">
-              <ScrollArea className="h-full">
-                <div className="p-4 space-y-4">
+            <TabsContent value="insights" className="m-0">
+              <div className="overflow-y-auto max-h-[calc(500px-40px)] p-4 space-y-4">
                   <h4 className="text-sm font-medium">Tag Statistics</h4>
                   <div className="grid grid-cols-2 gap-2">
                     <Card>
@@ -1035,7 +1042,7 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
                         <Clock className="h-3 w-3 mr-2 shrink-0" />
                         <div className="min-w-0">
                           <p className="text-sm truncate">{tag.label}</p>
-                          <p className="text-xs text-muted-foreground">{formatMs(tag.offsetMs)} · Importance: {tag.importance}/10</p>
+                          <p className="text-xs text-muted-foreground">{formatSec(tag.offsetMs)} · Importance: {tag.importance}/10</p>
                         </div>
                       </Button>
                     ))
@@ -1044,13 +1051,11 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
                     <p className="text-sm text-muted-foreground">No high-priority tags found. Run Auto-Tag to generate them.</p>
                   )}
                 </div>
-              </ScrollArea>
             </TabsContent>
 
             {/* Recordings Tab */}
-            <TabsContent value="recordings" className="flex-1 m-0 flex flex-col overflow-hidden">
-              <ScrollArea className="flex-1">
-                <div className="p-4 space-y-3">
+            <TabsContent value="recordings" className="m-0">
+              <div className="overflow-y-auto max-h-[calc(500px-40px)] p-4 space-y-3">
                   {recordings.length === 0 ? (
                     <div className="text-center py-12 text-muted-foreground">
                       <HardDrive className="h-8 w-8 mx-auto mb-2 opacity-50" />
@@ -1120,7 +1125,6 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
                     ))
                   )}
                 </div>
-              </ScrollArea>
 
               {/* Upload Section */}
               <div className="border-t p-3">

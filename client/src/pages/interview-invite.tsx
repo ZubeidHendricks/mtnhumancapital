@@ -50,6 +50,7 @@ export default function InterviewInvite() {
   const assistantEndRef = useRef(false);
   const isMutedRef = useRef(false);
   const transcriptsRef = useRef<Transcript[]>([]);
+  const humeChatIdRef = useRef<string | null>(null);
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -239,7 +240,13 @@ CLOSING (CRITICAL):
         try {
           const message = JSON.parse(event.data);
 
-          if (message.type === "assistant_message") {
+          if (message.type === "chat_metadata") {
+            console.log("Hume chat_metadata received:", message);
+            if (message.chat_id) {
+              humeChatIdRef.current = message.chat_id;
+              console.log("Hume chat ID captured:", message.chat_id);
+            }
+          } else if (message.type === "assistant_message") {
             setState("speaking");
             isMutedRef.current = true;
             assistantEndRef.current = false;
@@ -299,6 +306,7 @@ CLOSING (CRITICAL):
             transcripts: transcriptsRef.current,
             duration: startTimeRef.current ? Math.floor((Date.now() - startTimeRef.current) / 1000) : 0,
             emotionAnalysis: { lastEmotion: currentEmotion },
+            humeChatId: humeChatIdRef.current,
           }).then(() => {
             toast.success("Interview completed successfully!");
           }).catch((err) => {
@@ -412,6 +420,7 @@ CLOSING (CRITICAL):
         transcripts,
         duration,
         emotionAnalysis: { lastEmotion: currentEmotion },
+        humeChatId: humeChatIdRef.current,
       });
       toast.success("Interview completed successfully!");
     } catch (error) {

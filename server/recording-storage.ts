@@ -1,18 +1,23 @@
-import { Client } from "@replit/object-storage";
+import fs from "fs";
+import path from "path";
 
-let client: Client | null = null;
+const RECORDINGS_DIR = path.join(process.cwd(), "uploads", "recordings");
 
-function getClient(): Client {
-  if (!client) {
-    client = new Client();
-  }
-  return client;
+// Ensure directory exists on startup
+if (!fs.existsSync(RECORDINGS_DIR)) {
+  fs.mkdirSync(RECORDINGS_DIR, { recursive: true });
 }
 
-const BUCKET_PREFIX = "recordings";
+function buildPath(tenantId: string, sessionId: string, filename: string): string {
+  const dir = path.join(RECORDINGS_DIR, tenantId, sessionId);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  return path.join(dir, filename);
+}
 
 function buildKey(tenantId: string, sessionId: string, filename: string): string {
-  return `${BUCKET_PREFIX}/${tenantId}/${sessionId}/${filename}`;
+  return `${tenantId}/${sessionId}/${filename}`;
 }
 
 export const recordingStorage = {
@@ -24,26 +29,28 @@ export const recordingStorage = {
     _mimeType: string
   ): Promise<{ key: string; size: number }> {
     const key = buildKey(tenantId, sessionId, filename);
-    await getClient().uploadFromBytes(key, buffer);
+    const filePath = buildPath(tenantId, sessionId, filename);
+    fs.writeFileSync(filePath, buffer);
     return { key, size: buffer.length };
   },
 
   async downloadRecording(key: string): Promise<Buffer> {
-    const { value } = await getClient().downloadAsBytes(key);
-    if (!value) throw new Error(`Recording not found: ${key}`);
-    return Buffer.from(value as unknown as ArrayBuffer);
+    const filePath = path.join(RECORDINGS_DIR, key);
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`Recording not found: ${key}`);
+    }
+    return fs.readFileSync(filePath);
   },
 
   async exists(key: string): Promise<boolean> {
-    try {
-      const { value } = await getClient().downloadAsBytes(key);
-      return !!value;
-    } catch {
-      return false;
-    }
+    const filePath = path.join(RECORDINGS_DIR, key);
+    return fs.existsSync(filePath);
   },
 
   async deleteRecording(key: string): Promise<void> {
-    await getClient().delete(key);
+    const filePath = path.join(RECORDINGS_DIR, key);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
   },
 };

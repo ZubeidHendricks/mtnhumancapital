@@ -1,13 +1,14 @@
 import Groq from "groq-sdk";
 import { Hume, HumeClient } from "hume";
 import { storage } from "./storage";
-import type { 
-  InterviewSession, 
+import { recordingStorage } from "./recording-storage";
+import type {
+  InterviewSession,
   InsertInterviewSession,
   InterviewRecording,
   InterviewTranscript,
   InterviewFeedback,
-  Candidate 
+  Candidate
 } from "@shared/schema";
 
 interface TranscriptSegment {
@@ -151,13 +152,40 @@ export class InterviewOrchestrator {
     if (!updated) return null;
 
     if (recordingUrl) {
+      let finalMediaUrl = recordingUrl;
+      let finalStorageProvider = 'hume';
+      let fileSize: number | null = null;
+
+      // Download the recording from the provider and save locally
+      // to avoid signed URL expiry issues
+      try {
+        console.log(`[Interview] Downloading recording from provider for session ${sessionId}...`);
+        const response = await fetch(recordingUrl);
+        if (response.ok) {
+          const arrayBuffer = await response.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          const ext = stage === 'video' ? 'mp4' : 'mp4';
+          const filename = `${Date.now()}_${stage}.${ext}`;
+          const { key, size } = await recordingStorage.uploadRecording(tenantId, sessionId, filename, buffer, `${stage === 'video' ? 'video' : 'audio'}/mp4`);
+          finalMediaUrl = `/api/recordings/${key}`;
+          finalStorageProvider = 'local';
+          fileSize = size;
+          console.log(`[Interview] Recording saved locally: ${key} (${size} bytes)`);
+        } else {
+          console.warn(`[Interview] Failed to download recording (${response.status}), storing signed URL as fallback`);
+        }
+      } catch (err) {
+        console.warn(`[Interview] Error downloading recording, storing signed URL as fallback:`, err);
+      }
+
       await storage.createInterviewRecording(tenantId, {
         sessionId,
         candidateId: session.candidateId || undefined,
         recordingType: stage === 'video' ? 'video' : 'audio',
-        mediaUrl: recordingUrl,
+        mediaUrl: finalMediaUrl,
         duration,
-        storageProvider: 'hume',
+        storageProvider: finalStorageProvider,
+        fileSize,
         interviewStage: stage,
       } as any);
     }

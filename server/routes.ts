@@ -7799,7 +7799,8 @@ Format your response as JSON:
   // Get interview transcripts
   app.get("/api/interviews/:id/transcripts", async (req, res) => {
     try {
-      const transcripts = await storage.getInterviewTranscripts(req.tenant.id, req.params.id);
+      const stage = req.query.stage as string | undefined;
+      const transcripts = await storage.getInterviewTranscripts(req.tenant.id, req.params.id, stage);
       res.json(transcripts);
     } catch (error) {
       console.error("Error fetching transcripts:", error);
@@ -7870,8 +7871,10 @@ Format your response as JSON:
   // Create a manual timeline tag
   app.post("/api/interviews/:sessionId/timeline-tags", async (req, res) => {
     try {
+      const { tagTime, ...rest } = req.body;
       const tag = await storage.createTimelineTag(req.tenant.id, {
-        ...req.body,
+        ...rest,
+        tagTime: tagTime ? new Date(tagTime) : new Date(),
         sessionId: req.params.sessionId,
         tagSource: "manual",
         createdBy: req.user?.id,
@@ -8177,11 +8180,11 @@ Format your response as JSON:
   // LeMUR Q&A - Ask a question about the interview
   app.post("/api/interviews/:sessionId/ask", async (req, res) => {
     try {
-      const { question } = req.body;
+      const { question, stage } = req.body;
       if (!question) return res.status(400).json({ message: "Question is required" });
 
       const result = await transcriptAnalysisAgent.askQuestion(
-        { tenantId: req.tenant.id, sessionId: req.params.sessionId, userId: req.user?.id },
+        { tenantId: req.tenant.id, sessionId: req.params.sessionId, userId: req.user?.id, stage },
         question
       );
       res.json(result);
@@ -8194,10 +8197,12 @@ Format your response as JSON:
   // Generate interview summary
   app.post("/api/interviews/:sessionId/summary", async (req, res) => {
     try {
+      const { stage } = req.body || {};
       const summary = await transcriptAnalysisAgent.generateSummary({
         tenantId: req.tenant.id,
         sessionId: req.params.sessionId,
         userId: req.user?.id,
+        stage,
       });
       res.json({ summary });
     } catch (error: any) {
@@ -8209,10 +8214,12 @@ Format your response as JSON:
   // Extract action items
   app.post("/api/interviews/:sessionId/action-items", async (req, res) => {
     try {
+      const { stage } = req.body || {};
       const result = await transcriptAnalysisAgent.extractActionItems({
         tenantId: req.tenant.id,
         sessionId: req.params.sessionId,
         userId: req.user?.id,
+        stage,
       });
       res.json(result);
     } catch (error: any) {
@@ -8224,10 +8231,12 @@ Format your response as JSON:
   // Auto-tag transcript
   app.post("/api/interviews/:sessionId/auto-tag", async (req, res) => {
     try {
+      const { stage } = req.body || {};
       const result = await transcriptAnalysisAgent.autoTagTranscript({
         tenantId: req.tenant.id,
         sessionId: req.params.sessionId,
         userId: req.user?.id,
+        stage,
       });
       res.json(result);
     } catch (error: any) {
@@ -8239,10 +8248,12 @@ Format your response as JSON:
   // Full re-analysis
   app.post("/api/interviews/:sessionId/reanalyze", async (req, res) => {
     try {
+      const { stage } = req.body || {};
       const result = await transcriptAnalysisAgent.fullReanalysis({
         tenantId: req.tenant.id,
         sessionId: req.params.sessionId,
         userId: req.user?.id,
+        stage,
       });
       res.json(result);
     } catch (error: any) {
@@ -8254,10 +8265,12 @@ Format your response as JSON:
   // Get sentiment timeline
   app.post("/api/interviews/:sessionId/sentiment-timeline", async (req, res) => {
     try {
+      const { stage } = req.body || {};
       const result = await transcriptAnalysisAgent.generateSentimentTimeline({
         tenantId: req.tenant.id,
         sessionId: req.params.sessionId,
         userId: req.user?.id,
+        stage,
       });
       res.json(result);
     } catch (error: any) {

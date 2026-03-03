@@ -13,6 +13,8 @@ import { dataCollectionService } from "./data-collection-service";
 import whatsappWebhookRouter from "./routes/whatsapp-webhook";
 import { authService } from "./auth-service";
 import { registerFleetLogixRoutes } from "./fleetlogix-routes";
+import { interviewOrchestrator } from "./interview-orchestrator";
+import { recordingStorage } from "./recording-storage";
 
 // Simple logging function
 function log(message: string, source = "express") {
@@ -302,36 +304,102 @@ app.post("/api/public/interview-session/:token/complete", async (req, res) => {
       return res.status(404).json({ message: "Interview session not found" });
     }
 
-    const { transcripts, emotionAnalysis, overallScore, feedback, duration } = req.body;
+    const { transcripts, emotionAnalysis, duration, humeChatId } = req.body;
 
-    // Build stage-specific updates
-    const updates: Record<string, any> = {
-      transcripts,
-      emotionAnalysis,
-    };
+    console.log(`[Interview] Public complete called for session ${session.id}, humeChatId: ${humeChatId || 'none'}, transcripts: ${(transcripts || []).length}`);
 
-    if (stage === 'video') {
-      updates.videoStatus = 'completed';
-      updates.videoCompletedAt = new Date();
-      updates.videoDuration = duration;
-      updates.videoScore = overallScore;
-      updates.status = 'completed';
-    } else {
-      updates.voiceStatus = 'completed';
-      updates.status = session.videoStatus != null ? 'voice_completed' : 'completed';
-      updates.completedAt = new Date();
-      updates.duration = duration;
-      updates.overallScore = overallScore;
-      updates.feedback = feedback;
-    }
+    // Map transcripts to the format expected by the orchestrator
+    const mappedTranscripts = (transcripts || []).map((t: any) => ({
+      role: t.role === 'user' ? 'candidate' : (t.role || 'ai'),
+      text: t.text || '',
+      emotion: t.emotion,
+      timestamp: t.timestamp,
+    }));
 
-    const updatedSession = await storage.updateInterviewSession(
+    // Use the full orchestrator flow: saves transcripts, runs AI analysis, creates feedback
+    const result = await interviewOrchestrator.completeInterview(
       session.tenantId || '',
       session.id,
-      updates as any
+      mappedTranscripts,
+      emotionAnalysis,
+      undefined, // recording fetched async below
+      duration,
+      stage
     );
 
-    res.json(updatedSession);
+    if (!result) {
+      return res.status(500).json({ message: "Failed to complete interview" });
+    }
+
+    // Fetch Hume audio in the background with retries (Hume needs time to process)
+    if (humeChatId) {
+      const tenantId = session.tenantId || '';
+      const sessionId = session.id;
+      const candidateId = session.candidateId;
+      const sessionDuration = duration;
+
+      (async () => {
+        const HUMAI_API_KEY = process.env.HUMAI_API_KEY;
+        const HUMAI_SECRET_KEY = process.env.HUMAI_SECRET_KEY;
+        if (!HUMAI_API_KEY || !HUMAI_SECRET_KEY) return;
+
+        // Retry every 15s for up to 5 minutes (20 attempts)
+        const delays = Array.from({ length: 20 }, () => 15000);
+        for (const delay of delays) {
+          await new Promise(resolve => setTimeout(resolve, delay));
+          try {
+            const tokenRes = await fetch("https://api.hume.ai/oauth2-cc/token", {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: new URLSearchParams({
+                grant_type: "client_credentials",
+                client_id: HUMAI_API_KEY,
+                client_secret: HUMAI_SECRET_KEY,
+              }),
+            });
+            if (!tokenRes.ok) continue;
+
+            const tokenData = await tokenRes.json() as { access_token: string };
+            const audioRes = await fetch(`https://api.hume.ai/v0/evi/chats/${humeChatId}/audio`, {
+              headers: { Authorization: `Bearer ${tokenData.access_token}`, "X-Hume-Api-Key": HUMAI_API_KEY },
+            });
+            if (!audioRes.ok) continue;
+
+            const audioData = await audioRes.json() as { signed_audio_url?: string };
+            if (!audioData.signed_audio_url) {
+              console.log(`[Interview] Hume audio not ready yet for chat ${humeChatId}, retrying...`);
+              continue;
+            }
+
+            console.log(`[Interview] Hume audio ready for session ${sessionId}, downloading...`);
+            // Download and save locally
+            const downloadRes = await fetch(audioData.signed_audio_url);
+            if (downloadRes.ok) {
+              const buffer = Buffer.from(await downloadRes.arrayBuffer());
+              const filename = `${Date.now()}_voice.mp4`;
+              const { key, size } = await recordingStorage.uploadRecording(tenantId, sessionId, filename, buffer, 'audio/mp4');
+              await storage.createInterviewRecording(tenantId, {
+                sessionId,
+                candidateId: candidateId || undefined,
+                recordingType: 'audio',
+                mediaUrl: `/api/recordings/${key}`,
+                duration: sessionDuration,
+                storageProvider: 'local',
+                fileSize: size,
+                interviewStage: stage,
+              } as any);
+              console.log(`[Interview] Recording saved locally for session ${sessionId}: ${key} (${size} bytes)`);
+            }
+            return; // success, stop retrying
+          } catch (err) {
+            console.warn(`[Interview] Hume audio fetch attempt failed:`, err);
+          }
+        }
+        console.warn(`[Interview] Could not fetch Hume audio for chat ${humeChatId} after all retries`);
+      })();
+    }
+
+    res.json(result);
   } catch (error) {
     console.error("Error completing interview session:", error);
     res.status(500).json({ message: "Failed to complete interview session" });

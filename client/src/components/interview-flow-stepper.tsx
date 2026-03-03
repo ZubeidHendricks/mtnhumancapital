@@ -73,8 +73,8 @@ export function InterviewFlowStepper({
                       className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border-2 ${
                         step.status === "completed"
                           ? isSelected
-                            ? "bg-primary border-primary text-primary-foreground cursor-pointer ring-2 ring-primary/40 ring-offset-2 ring-offset-background"
-                            : "bg-primary border-primary text-primary-foreground cursor-pointer hover:ring-2 hover:ring-primary/30"
+                            ? "bg-yellow-500 border-yellow-500 text-black cursor-pointer ring-2 ring-yellow-400/40 ring-offset-2 ring-offset-background"
+                            : "bg-yellow-500 border-yellow-500 text-black cursor-pointer hover:ring-2 hover:ring-yellow-400/30"
                           : step.status === "active"
                           ? isSelected
                             ? "bg-primary/20 border-primary text-primary ring-2 ring-primary/40 ring-offset-2 ring-offset-background"

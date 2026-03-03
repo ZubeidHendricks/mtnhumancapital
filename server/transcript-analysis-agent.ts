@@ -17,6 +17,7 @@ interface AnalysisConfig {
   sessionId: string;
   tenantId: string;
   userId?: string;
+  stage?: string;
 }
 
 interface QAResult {
@@ -55,7 +56,7 @@ export class TranscriptAnalysisAgent {
   async askQuestion(config: AnalysisConfig, question: string): Promise<QAResult> {
     if (!this.groq) throw new Error("Groq API not configured");
 
-    const transcripts = await storage.getInterviewTranscripts(config.tenantId, config.sessionId);
+    const transcripts = await storage.getInterviewTranscripts(config.tenantId, config.sessionId, config.stage);
     const session = await storage.getInterviewSession(config.tenantId, config.sessionId);
 
     if (!transcripts.length) throw new Error("No transcripts found for this session");
@@ -128,7 +129,7 @@ Return ONLY valid JSON.`,
   async generateSummary(config: AnalysisConfig): Promise<string> {
     if (!this.groq) throw new Error("Groq API not configured");
 
-    const transcripts = await storage.getInterviewTranscripts(config.tenantId, config.sessionId);
+    const transcripts = await storage.getInterviewTranscripts(config.tenantId, config.sessionId, config.stage);
     const session = await storage.getInterviewSession(config.tenantId, config.sessionId);
 
     const transcriptText = transcripts
@@ -176,7 +177,7 @@ Be specific and reference timestamps [MM:SS].`,
   async extractActionItems(config: AnalysisConfig): Promise<{ items: string[]; followUpQuestions: string[] }> {
     if (!this.groq) throw new Error("Groq API not configured");
 
-    const transcripts = await storage.getInterviewTranscripts(config.tenantId, config.sessionId);
+    const transcripts = await storage.getInterviewTranscripts(config.tenantId, config.sessionId, config.stage);
 
     const transcriptText = transcripts
       .map(t => `${(t.speakerRole || '').toUpperCase()}: ${t.text}`)
@@ -230,11 +231,11 @@ Return ONLY valid JSON.`,
   async autoTagTranscript(config: AnalysisConfig): Promise<AutoTagResult> {
     if (!this.groq) throw new Error("Groq API not configured");
 
-    const transcripts = await storage.getInterviewTranscripts(config.tenantId, config.sessionId);
+    const transcripts = await storage.getInterviewTranscripts(config.tenantId, config.sessionId, config.stage);
     const session = await storage.getInterviewSession(config.tenantId, config.sessionId);
 
     const transcriptText = transcripts
-      .map(t => `[${t.startTime || 0}ms] ${(t.speakerRole || '').toUpperCase()}: ${t.text}`)
+      .map(t => `[${t.startTime || 0}s] ${(t.speakerRole || '').toUpperCase()}: ${t.text}`)
       .join("\n");
 
     const response = await this.groq.chat.completions.create({
@@ -247,7 +248,7 @@ Return ONLY valid JSON.`,
 Tag types: question, answer, highlight, concern, topic_shift
 Categories: technical, behavioral, communication, emotion, red_flag, positive_signal
 
-For each tag, provide the timestamp (in ms from the transcript), type, category, and a short label.
+For each tag, provide the timestamp (in seconds from the transcript), type, category, and a short label.
 
 Respond in JSON:
 {
@@ -316,10 +317,10 @@ Focus on the most significant 10-15 moments. Return ONLY valid JSON.`,
   async generateSentimentTimeline(config: AnalysisConfig): Promise<{ timeline: { startMs: number; endMs: number; sentiment: string; score: number; text: string }[] }> {
     if (!this.groq) throw new Error("Groq API not configured");
 
-    const transcripts = await storage.getInterviewTranscripts(config.tenantId, config.sessionId);
+    const transcripts = await storage.getInterviewTranscripts(config.tenantId, config.sessionId, config.stage);
 
     const transcriptText = transcripts
-      .map(t => `[${t.startTime || 0}ms-${t.endTime || 0}ms] ${(t.speakerRole || '').toUpperCase()}: ${t.text}`)
+      .map(t => `[${t.startTime || 0}s-${t.endTime || 0}s] ${(t.speakerRole || '').toUpperCase()}: ${t.text}`)
       .join("\n");
 
     const response = await this.groq.chat.completions.create({
