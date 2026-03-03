@@ -79,6 +79,31 @@ export class InterviewOrchestrator {
     return session;
   }
 
+  async addVideoStage(
+    tenantId: string,
+    sessionId: string,
+    prompt?: string
+  ): Promise<InterviewSession | null> {
+    const session = await storage.getInterviewSession(tenantId, sessionId);
+    if (!session) return null;
+
+    const videoToken = this.generateToken();
+    const videoExpiresAt = new Date();
+    videoExpiresAt.setHours(videoExpiresAt.getHours() + 72);
+
+    const updated = await storage.updateInterviewSession(tenantId, sessionId, {
+      videoToken,
+      videoStatus: 'pending',
+      videoPrompt: prompt || this.getDefaultPrompt(session.jobTitle || 'the position'),
+      videoSentAt: new Date(),
+      videoExpiresAt,
+      status: 'video_pending',
+    } as any);
+
+    console.log(`[Interview] Added video stage to session ${sessionId}, videoToken: ${videoToken}`);
+    return updated || null;
+  }
+
   async startInterview(tenantId: string, sessionId: string): Promise<InterviewSession | null> {
     const session = await storage.getInterviewSession(tenantId, sessionId);
     if (!session) return null;
@@ -98,33 +123,46 @@ export class InterviewOrchestrator {
     transcripts: TranscriptSegment[],
     emotionAnalysis?: Record<string, any>,
     recordingUrl?: string,
-    duration?: number
+    duration?: number,
+    stage: 'voice' | 'video' = 'voice'
   ): Promise<{ session: InterviewSession; feedback: InterviewFeedback } | null> {
     const session = await storage.getInterviewSession(tenantId, sessionId);
     if (!session) return null;
 
-    const updated = await storage.updateInterviewSession(tenantId, sessionId, {
-      status: 'completed',
-      completedAt: new Date(),
+    // Build stage-specific updates
+    const sessionUpdates: Record<string, any> = {
       transcripts: transcripts as any,
       emotionAnalysis: emotionAnalysis as any,
-      duration,
-    });
+    };
 
+    if (stage === 'video') {
+      sessionUpdates.videoStatus = 'completed';
+      sessionUpdates.videoCompletedAt = new Date();
+      sessionUpdates.videoDuration = duration;
+      sessionUpdates.status = 'completed';
+    } else {
+      sessionUpdates.voiceStatus = 'completed';
+      sessionUpdates.status = session.videoStatus != null ? 'voice_completed' : 'completed';
+      sessionUpdates.completedAt = new Date();
+      sessionUpdates.duration = duration;
+    }
+
+    const updated = await storage.updateInterviewSession(tenantId, sessionId, sessionUpdates as any);
     if (!updated) return null;
 
     if (recordingUrl) {
       await storage.createInterviewRecording(tenantId, {
         sessionId,
         candidateId: session.candidateId || undefined,
-        recordingType: session.interviewType === 'video' ? 'video' : 'audio',
+        recordingType: stage === 'video' ? 'video' : 'audio',
         mediaUrl: recordingUrl,
         duration,
         storageProvider: 'hume',
-      });
+        interviewStage: stage,
+      } as any);
     }
 
-    await this.saveTranscriptSegments(tenantId, sessionId, transcripts);
+    await this.saveTranscriptSegments(tenantId, sessionId, transcripts, stage);
 
     const analysis = await this.analyzeInterview(session, transcripts);
 
@@ -146,32 +184,41 @@ export class InterviewOrchestrator {
       recommendations: analysis.recommendations,
       flaggedConcerns: analysis.flaggedConcerns,
       competencyScores: analysis.competencyScores,
-    });
+      interviewStage: stage,
+    } as any);
 
-    await storage.updateInterviewSession(tenantId, sessionId, {
-      overallScore: analysis.overallScore,
-      feedback: analysis.rationale,
-    });
+    if (stage === 'video') {
+      await storage.updateInterviewSession(tenantId, sessionId, {
+        videoScore: analysis.overallScore,
+      } as any);
+    } else {
+      await storage.updateInterviewSession(tenantId, sessionId, {
+        overallScore: analysis.overallScore,
+        feedback: analysis.rationale,
+      });
+    }
 
     await this.createTrainingEvent(tenantId, sessionId, session.candidateId, analysis);
 
-    console.log(`[Interview] Session ${sessionId} completed with score ${analysis.overallScore}`);
+    console.log(`[Interview] Session ${sessionId} ${stage} stage completed with score ${analysis.overallScore}`);
     return { session: updated, feedback };
   }
 
   private async saveTranscriptSegments(
     tenantId: string,
     sessionId: string,
-    transcripts: TranscriptSegment[]
+    transcripts: TranscriptSegment[],
+    stage: 'voice' | 'video' = 'voice'
   ): Promise<void> {
     const segments = transcripts.map((t, index) => ({
       sessionId,
       segmentIndex: index,
       speakerRole: t.role,
       text: t.text,
-      startTime: t.timestamp,
+      startTime: t.timestamp != null && t.timestamp > 2147483647 ? Math.round(t.timestamp / 1000) : t.timestamp,
       sentiment: t.emotion,
       emotionScores: t.emotionScores,
+      interviewStage: stage,
     }));
 
     await storage.createInterviewTranscriptsBatch(tenantId, segments);
@@ -298,7 +345,7 @@ Return ONLY valid JSON, no additional text.`
     });
   }
 
-  async getInterviewDetails(tenantId: string, sessionId: string): Promise<{
+  async getInterviewDetails(tenantId: string, sessionId: string, stage?: 'voice' | 'video'): Promise<{
     session: InterviewSession;
     recordings: InterviewRecording[];
     transcripts: InterviewTranscript[];
@@ -308,9 +355,9 @@ Return ONLY valid JSON, no additional text.`
     if (!session) return null;
 
     const [recordings, transcripts, feedback] = await Promise.all([
-      storage.getInterviewRecordings(tenantId, sessionId),
-      storage.getInterviewTranscripts(tenantId, sessionId),
-      storage.getInterviewFeedback(tenantId, sessionId),
+      storage.getInterviewRecordings(tenantId, sessionId, stage),
+      storage.getInterviewTranscripts(tenantId, sessionId, stage),
+      storage.getInterviewFeedback(tenantId, sessionId, stage),
     ]);
 
     return { session, recordings, transcripts, feedback };

@@ -98,32 +98,41 @@ app.get("/api/health", (req, res) => {
 // PUBLIC route for interview session by token (for candidates accessing their interview link)
 app.get("/api/public/interview-session/:token", async (req, res) => {
   try {
-    const session = await storage.getInterviewSessionByToken(req.params.token);
+    // Dual-token lookup: try voice token first, then video token
+    let session = await storage.getInterviewSessionByToken(req.params.token);
+    let stage: 'voice' | 'video' = 'voice';
+    if (!session) {
+      session = await storage.getInterviewSessionByVideoToken(req.params.token);
+      stage = 'video';
+    }
     if (!session) {
       return res.status(404).json({ message: "Interview session not found" });
     }
-    
-    // Check if session has expired
-    if (session.expiresAt && new Date(session.expiresAt) < new Date()) {
+
+    // Check stage-appropriate expiration
+    const expiresAt = stage === 'video' ? session.videoExpiresAt : session.expiresAt;
+    if (expiresAt && new Date(expiresAt) < new Date()) {
       return res.status(410).json({ message: "Interview link has expired" });
     }
-    
-    // Check if session was already completed
-    if (session.status === 'completed') {
+
+    // Check stage-appropriate status
+    const stageStatus = stage === 'video' ? session.videoStatus : session.voiceStatus;
+    if (stageStatus === 'completed') {
       return res.status(410).json({ message: "Interview has already been completed" });
     }
-    
+
     // Get candidate info for display
-    const candidate = session.candidateId 
+    const candidate = session.candidateId
       ? await storage.getCandidateById(session.tenantId || '', session.candidateId)
       : null;
-    
-    res.json({ 
-      session, 
-      candidate: candidate ? { 
-        id: candidate.id, 
-        fullName: candidate.fullName 
-      } : null 
+
+    res.json({
+      session,
+      stage,
+      candidate: candidate ? {
+        id: candidate.id,
+        fullName: candidate.fullName
+      } : null
     });
   } catch (error) {
     console.error("Error fetching interview session:", error);
@@ -213,13 +222,20 @@ async function getOrCreateInterviewConfig(apiKey: string, sessionToken: string, 
 // PUBLIC route for getting Hume AI config for the interview (uses session token)
 app.get("/api/public/interview-session/:token/config", async (req, res) => {
   try {
-    const session = await storage.getInterviewSessionByToken(req.params.token);
+    // Dual-token lookup
+    let session = await storage.getInterviewSessionByToken(req.params.token);
+    let stage: 'voice' | 'video' = 'voice';
+    if (!session) {
+      session = await storage.getInterviewSessionByVideoToken(req.params.token);
+      stage = 'video';
+    }
     if (!session) {
       return res.status(404).json({ message: "Interview session not found" });
     }
 
-    // Check if session has expired
-    if (session.expiresAt && new Date(session.expiresAt) < new Date()) {
+    // Check stage-appropriate expiration
+    const expiresAt = stage === 'video' ? session.videoExpiresAt : session.expiresAt;
+    if (expiresAt && new Date(expiresAt) < new Date()) {
       return res.status(410).json({ message: "Interview link has expired" });
     }
 
@@ -233,22 +249,33 @@ app.get("/api/public/interview-session/:token/config", async (req, res) => {
     // Use cached token
     const accessToken = await getCachedHumeToken(apiKey, secretKey);
 
-    // Create EVI config with the interview prompt pre-embedded
-    const prompt = session.prompt || `You are an HR interviewer conducting a screening interview. Ask ONE question at a time. Keep responses brief (2-3 sentences). Start by introducing yourself and ask the candidate to tell you about themselves.`;
+    // Use stage-appropriate prompt
+    const prompt = (stage === 'video' ? session.videoPrompt : session.prompt) || `You are an HR interviewer conducting a screening interview. Ask ONE question at a time. Keep responses brief (2-3 sentences). Start by introducing yourself and ask the candidate to tell you about themselves.`;
     const configId = await getOrCreateInterviewConfig(apiKey, req.params.token, prompt);
 
-    // Mark session as started if it's the first time
-    if (session.status === 'pending' || session.status === 'sent') {
-      await storage.updateInterviewSessionByToken(req.params.token, {
-        status: 'started',
-        startedAt: new Date()
-      });
+    // Mark stage-appropriate status as started
+    if (stage === 'video') {
+      if (session.videoStatus === 'pending') {
+        await storage.updateInterviewSession(session.tenantId || '', session.id, {
+          videoStatus: 'started',
+          videoStartedAt: new Date(),
+        } as any);
+      }
+    } else {
+      if (session.status === 'pending' || session.status === 'sent') {
+        await storage.updateInterviewSessionByToken(req.params.token, {
+          status: 'started',
+          voiceStatus: 'started',
+          startedAt: new Date()
+        } as any);
+      }
     }
 
     res.json({
       accessToken,
       sessionId: session.id,
-      prompt: session.prompt,
+      stage,
+      prompt,
       configId
     });
   } catch (error) {
@@ -264,23 +291,46 @@ app.get("/api/public/interview-session/:token/config", async (req, res) => {
 // PUBLIC route for saving interview results
 app.post("/api/public/interview-session/:token/complete", async (req, res) => {
   try {
-    const session = await storage.getInterviewSessionByToken(req.params.token);
+    // Dual-token lookup
+    let session = await storage.getInterviewSessionByToken(req.params.token);
+    let stage: 'voice' | 'video' = 'voice';
+    if (!session) {
+      session = await storage.getInterviewSessionByVideoToken(req.params.token);
+      stage = 'video';
+    }
     if (!session) {
       return res.status(404).json({ message: "Interview session not found" });
     }
-    
+
     const { transcripts, emotionAnalysis, overallScore, feedback, duration } = req.body;
-    
-    const updatedSession = await storage.updateInterviewSessionByToken(req.params.token, {
-      status: 'completed',
+
+    // Build stage-specific updates
+    const updates: Record<string, any> = {
       transcripts,
       emotionAnalysis,
-      overallScore,
-      feedback,
-      duration,
-      completedAt: new Date()
-    });
-    
+    };
+
+    if (stage === 'video') {
+      updates.videoStatus = 'completed';
+      updates.videoCompletedAt = new Date();
+      updates.videoDuration = duration;
+      updates.videoScore = overallScore;
+      updates.status = 'completed';
+    } else {
+      updates.voiceStatus = 'completed';
+      updates.status = session.videoStatus != null ? 'voice_completed' : 'completed';
+      updates.completedAt = new Date();
+      updates.duration = duration;
+      updates.overallScore = overallScore;
+      updates.feedback = feedback;
+    }
+
+    const updatedSession = await storage.updateInterviewSession(
+      session.tenantId || '',
+      session.id,
+      updates as any
+    );
+
     res.json(updatedSession);
   } catch (error) {
     console.error("Error completing interview session:", error);

@@ -2308,10 +2308,21 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
         expiresAt,
       });
       
+      // Transition candidate to "interviewing" stage
+      if (candidateId) {
+        try {
+          const { pipelineOrchestrator } = await import("./pipeline-orchestrator");
+          await pipelineOrchestrator.transitionCandidate(candidateId, "interviewing", req.tenant.id);
+        } catch (stageErr) {
+          // Non-blocking: log but don't fail the session creation
+          console.log(`[Interview] Could not transition candidate ${candidateId} to interviewing:`, (stageErr as Error).message);
+        }
+      }
+
       // Generate the interview URL
       const baseUrl = req.headers.origin || `https://${req.headers.host}`;
       const interviewUrl = `${baseUrl}/interview/invite/${token}`;
-      
+
       res.status(201).json({ ...session, interviewUrl });
     } catch (error) {
       console.error("Error creating interview session:", error);
@@ -7539,7 +7550,8 @@ Format your response as JSON:
   // Get interview session by ID
   app.get("/api/interviews/:id", async (req, res) => {
     try {
-      const details = await interviewOrchestrator.getInterviewDetails(req.tenant.id, req.params.id);
+      const stage = req.query.stage as 'voice' | 'video' | undefined;
+      const details = await interviewOrchestrator.getInterviewDetails(req.tenant.id, req.params.id, stage);
       if (!details) {
         return res.status(404).json({ message: "Interview not found" });
       }
@@ -7547,6 +7559,26 @@ Format your response as JSON:
     } catch (error) {
       console.error("Error fetching interview:", error);
       res.status(500).json({ message: "Failed to fetch interview" });
+    }
+  });
+
+  // Add video stage to an existing interview session
+  app.post("/api/interviews/:id/add-video-stage", async (req, res) => {
+    try {
+      const { prompt } = req.body || {};
+      const session = await interviewOrchestrator.addVideoStage(
+        req.tenant.id,
+        req.params.id,
+        prompt
+      );
+      if (!session) {
+        return res.status(404).json({ message: "Interview not found" });
+      }
+      const videoInterviewUrl = `${req.protocol}://${req.get('host')}/interview/invite/${session.videoToken}`;
+      res.json({ ...session, videoInterviewUrl });
+    } catch (error) {
+      console.error("Error adding video stage:", error);
+      res.status(500).json({ message: "Failed to add video stage" });
     }
   });
 
@@ -7580,6 +7612,7 @@ Format your response as JSON:
     emotionAnalysis: z.record(z.string(), z.any()).optional(),
     recordingUrl: z.string().url().optional(),
     duration: z.number().int().positive().optional(),
+    stage: z.enum(['voice', 'video']).optional().default('voice'),
   });
 
   const updateDecisionRequestSchema = z.object({
@@ -7634,8 +7667,8 @@ Format your response as JSON:
       if (!parsed.success) {
         return res.status(400).json({ message: fromZodError(parsed.error).message });
       }
-      
-      const { transcripts, emotionAnalysis, recordingUrl, duration } = parsed.data;
+
+      const { transcripts, emotionAnalysis, recordingUrl, duration, stage } = parsed.data;
 
       const result = await interviewOrchestrator.completeInterview(
         req.tenant.id,
@@ -7643,7 +7676,8 @@ Format your response as JSON:
         transcripts,
         emotionAnalysis,
         recordingUrl,
-        duration
+        duration,
+        stage
       );
       
       if (!result) {
@@ -7654,6 +7688,60 @@ Format your response as JSON:
     } catch (error) {
       console.error("Error completing interview:", error);
       res.status(500).json({ message: "Failed to complete interview" });
+    }
+  });
+
+  // Fetch Hume EVI chat audio recording and save it
+  app.post("/api/interviews/:id/fetch-hume-audio", async (req, res) => {
+    try {
+      const { chatId } = req.body;
+      if (!chatId) {
+        return res.status(400).json({ message: "chatId is required" });
+      }
+
+      const HUMAI_API_KEY = process.env.HUMAI_API_KEY;
+      const HUMAI_SECRET_KEY = process.env.HUMAI_SECRET_KEY;
+      if (!HUMAI_API_KEY || !HUMAI_SECRET_KEY) {
+        return res.status(500).json({ message: "Hume AI credentials not configured" });
+      }
+
+      // Get access token
+      const accessToken = await getHumeAccessToken(HUMAI_API_KEY, HUMAI_SECRET_KEY);
+
+      // Fetch audio metadata with signed URL
+      const audioRes = await fetch(`https://api.hume.ai/v0/evi/chats/${chatId}/audio`, {
+        headers: { Authorization: `Bearer ${accessToken}`, "X-Hume-Api-Key": HUMAI_API_KEY },
+      });
+
+      if (!audioRes.ok) {
+        const errText = await audioRes.text();
+        return res.status(audioRes.status).json({ message: `Hume audio fetch failed: ${errText}` });
+      }
+
+      const audioData = await audioRes.json() as { signed_audio_url?: string; status?: string };
+      if (!audioData.signed_audio_url) {
+        return res.status(404).json({ message: "Audio not yet available", status: audioData.status });
+      }
+
+      // Save as a recording entry pointing to the signed URL
+      const session = await storage.getInterviewSession(req.tenant.id, req.params.id);
+      if (!session) {
+        return res.status(404).json({ message: "Interview session not found" });
+      }
+
+      const recording = await storage.createInterviewRecording(req.tenant.id, {
+        sessionId: req.params.id,
+        candidateId: session.candidateId || undefined,
+        recordingType: "audio",
+        mediaUrl: audioData.signed_audio_url,
+        duration: session.duration || undefined,
+        storageProvider: "hume",
+      });
+
+      res.json({ recording, signedUrl: audioData.signed_audio_url });
+    } catch (error) {
+      console.error("Error fetching Hume audio:", error);
+      res.status(500).json({ message: "Failed to fetch Hume audio recording" });
     }
   });
 

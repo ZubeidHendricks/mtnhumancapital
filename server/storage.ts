@@ -406,27 +406,28 @@ export interface IStorage {
   // Interview Sessions
   getInterviewSession(tenantId: string, id: string): Promise<InterviewSession | undefined>;
   getInterviewSessionByToken(token: string): Promise<InterviewSession | undefined>;
+  getInterviewSessionByVideoToken(token: string): Promise<InterviewSession | undefined>;
   getInterviewSessionsByCandidateId(tenantId: string, candidateId: string): Promise<InterviewSession[]>;
   getInterviewSessionsByConversationId(tenantId: string, conversationId: string): Promise<InterviewSession[]>;
   getAllInterviewSessions(tenantId: string): Promise<InterviewSession[]>;
   createInterviewSession(tenantId: string, session: InsertInterviewSession): Promise<InterviewSession>;
   updateInterviewSession(tenantId: string, id: string, updates: Partial<InsertInterviewSession>): Promise<InterviewSession | undefined>;
   updateInterviewSessionByToken(token: string, updates: Partial<InsertInterviewSession>): Promise<InterviewSession | undefined>;
-  
+
   // Interview Recordings
-  getInterviewRecordings(tenantId: string, sessionId: string): Promise<InterviewRecording[]>;
+  getInterviewRecordings(tenantId: string, sessionId: string, stage?: string): Promise<InterviewRecording[]>;
   getInterviewRecording(tenantId: string, id: string): Promise<InterviewRecording | undefined>;
   createInterviewRecording(tenantId: string, recording: InsertInterviewRecording): Promise<InterviewRecording>;
   updateInterviewRecording(tenantId: string, id: string, updates: Partial<InsertInterviewRecording>): Promise<InterviewRecording | undefined>;
-  
+
   // Interview Transcripts
-  getInterviewTranscripts(tenantId: string, sessionId: string): Promise<InterviewTranscript[]>;
+  getInterviewTranscripts(tenantId: string, sessionId: string, stage?: string): Promise<InterviewTranscript[]>;
   getInterviewTranscript(tenantId: string, id: string): Promise<InterviewTranscript | undefined>;
   createInterviewTranscript(tenantId: string, transcript: InsertInterviewTranscript): Promise<InterviewTranscript>;
   createInterviewTranscriptsBatch(tenantId: string, transcripts: InsertInterviewTranscript[]): Promise<InterviewTranscript[]>;
-  
+
   // Interview Feedback
-  getInterviewFeedback(tenantId: string, sessionId: string): Promise<InterviewFeedback[]>;
+  getInterviewFeedback(tenantId: string, sessionId: string, stage?: string): Promise<InterviewFeedback[]>;
   getInterviewFeedbackById(tenantId: string, id: string): Promise<InterviewFeedback | undefined>;
   getInterviewFeedbackByCandidate(tenantId: string, candidateId: string): Promise<InterviewFeedback[]>;
   createInterviewFeedback(tenantId: string, feedback: InsertInterviewFeedback): Promise<InterviewFeedback>;
@@ -1876,6 +1877,12 @@ export class DatabaseStorage implements IStorage {
     return session || undefined;
   }
 
+  async getInterviewSessionByVideoToken(token: string): Promise<InterviewSession | undefined> {
+    const [session] = await db.select().from(interviewSessions)
+      .where(eq(interviewSessions.videoToken, token));
+    return session || undefined;
+  }
+
   async getInterviewSessionsByCandidateId(tenantId: string, candidateId: string): Promise<InterviewSession[]> {
     return await db.select().from(interviewSessions)
       .where(and(eq(interviewSessions.candidateId, candidateId), eq(interviewSessions.tenantId, tenantId)))
@@ -1916,9 +1923,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Interview Recordings Implementation
-  async getInterviewRecordings(tenantId: string, sessionId: string): Promise<InterviewRecording[]> {
+  async getInterviewRecordings(tenantId: string, sessionId: string, stage?: string): Promise<InterviewRecording[]> {
+    const conditions = [eq(interviewRecordings.tenantId, tenantId), eq(interviewRecordings.sessionId, sessionId)];
+    if (stage) conditions.push(eq(interviewRecordings.interviewStage, stage));
     return await db.select().from(interviewRecordings)
-      .where(and(eq(interviewRecordings.tenantId, tenantId), eq(interviewRecordings.sessionId, sessionId)))
+      .where(and(...conditions))
       .orderBy(desc(interviewRecordings.createdAt));
   }
 
@@ -1942,9 +1951,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Interview Transcripts Implementation
-  async getInterviewTranscripts(tenantId: string, sessionId: string): Promise<InterviewTranscript[]> {
+  async getInterviewTranscripts(tenantId: string, sessionId: string, stage?: string): Promise<InterviewTranscript[]> {
+    const conditions = [eq(interviewTranscripts.tenantId, tenantId), eq(interviewTranscripts.sessionId, sessionId)];
+    if (stage) conditions.push(eq(interviewTranscripts.interviewStage, stage));
     return await db.select().from(interviewTranscripts)
-      .where(and(eq(interviewTranscripts.tenantId, tenantId), eq(interviewTranscripts.sessionId, sessionId)))
+      .where(and(...conditions))
       .orderBy(interviewTranscripts.segmentIndex);
   }
 
@@ -1966,9 +1977,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Interview Feedback Implementation
-  async getInterviewFeedback(tenantId: string, sessionId: string): Promise<InterviewFeedback[]> {
+  async getInterviewFeedback(tenantId: string, sessionId: string, stage?: string): Promise<InterviewFeedback[]> {
+    const conditions = [eq(interviewFeedback.tenantId, tenantId), eq(interviewFeedback.sessionId, sessionId)];
+    if (stage) conditions.push(eq(interviewFeedback.interviewStage, stage));
     return await db.select().from(interviewFeedback)
-      .where(and(eq(interviewFeedback.tenantId, tenantId), eq(interviewFeedback.sessionId, sessionId)))
+      .where(and(...conditions))
       .orderBy(desc(interviewFeedback.createdAt));
   }
 

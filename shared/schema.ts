@@ -1163,6 +1163,17 @@ export const interviewSessions = pgTable("interview_sessions", {
   startedAt: timestamp("started_at"), // When candidate started the interview
   completedAt: timestamp("completed_at"),
   expiresAt: timestamp("expires_at"), // Link expiration time
+  // Video stage fields
+  videoToken: varchar("video_token").unique(), // Separate invite token for video stage
+  voiceStatus: text("voice_status").default("pending"), // Voice stage status
+  videoStatus: text("video_status"), // Video stage status; null = not invited yet
+  videoPrompt: text("video_prompt"), // Custom prompt for video interview
+  videoStartedAt: timestamp("video_started_at"),
+  videoCompletedAt: timestamp("video_completed_at"),
+  videoDuration: integer("video_duration"),
+  videoScore: integer("video_score"), // AI score for video stage (0-100)
+  videoSentAt: timestamp("video_sent_at"),
+  videoExpiresAt: timestamp("video_expires_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => ({
@@ -1171,6 +1182,7 @@ export const interviewSessions = pgTable("interview_sessions", {
   conversationIdIdx: index("interview_sessions_conversation_id_idx").on(table.conversationId),
   tokenIdx: index("interview_sessions_token_idx").on(table.token),
   statusIdx: index("interview_sessions_status_idx").on(table.status),
+  videoTokenIdx: index("interview_sessions_video_token_idx").on(table.videoToken),
 }));
 
 export const insertInterviewSessionSchema = createInsertSchema(interviewSessions).omit({
@@ -1329,6 +1341,7 @@ export const interviewRecordings = pgTable("interview_recordings", {
   mimeType: text("mime_type"), // 'video/mp4', 'audio/webm', etc.
   transcriptionJobId: text("transcription_job_id"), // For async transcription
   transcriptionStatus: text("transcription_status").default("pending"), // 'pending', 'processing', 'completed', 'failed'
+  interviewStage: text("interview_stage").notNull().default("voice"), // 'voice' or 'video'
   metadata: jsonb("metadata"), // Additional recording metadata
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -1356,6 +1369,7 @@ export const interviewTranscripts = pgTable("interview_transcripts", {
   sentiment: text("sentiment"), // 'positive', 'negative', 'neutral'
   emotionScores: jsonb("emotion_scores"), // { joy: 0.8, sadness: 0.1, anger: 0.05, ... }
   keywords: text("keywords").array(), // Extracted key terms
+  interviewStage: text("interview_stage").notNull().default("voice"), // 'voice' or 'video'
   embedding: vector("embedding", { dimensions: 1536 }), // For semantic search
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => ({
@@ -1391,6 +1405,7 @@ export const interviewFeedback = pgTable("interview_feedback", {
   isFinalized: integer("is_finalized").default(0), // 0 = draft, 1 = finalized
   finalizedAt: timestamp("finalized_at"),
   finalizedBy: varchar("finalized_by").references(() => users.id),
+  interviewStage: text("interview_stage").notNull().default("voice"), // 'voice' or 'video'
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => ({

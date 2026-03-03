@@ -13,6 +13,7 @@ type Transcript = {
   role: "user" | "ai";
   text: string;
   emotion?: string;
+  timestamp?: number;
 };
 
 export default function InterviewVoice() {
@@ -29,6 +30,7 @@ export default function InterviewVoice() {
   const recordingChunksRef = useRef<Blob[]>([]);
   const recordingStartTimeRef = useRef<number>(0);
   const isMutedRef = useRef(false);
+  const humeChatIdRef = useRef<string | null>(null);
 
   const { data: voiceConfig, isLoading, error } = useQuery({
     queryKey: ['voice-config'],
@@ -101,23 +103,30 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
             
             if (message.type === "chat_metadata") {
               console.log("Chat initialized:", message);
+              if (message.chat_id) {
+                humeChatIdRef.current = message.chat_id;
+              }
             } else if (message.type === "assistant_message") {
               console.log("Assistant message received:", message);
               setState("speaking");
               if (message.message?.content) {
+                const elapsed = recordingStartTimeRef.current ? Math.round((Date.now() - recordingStartTimeRef.current) / 1000) : undefined;
                 setTranscripts(prev => [...prev, {
                   role: "ai",
                   text: message.message.content,
-                  emotion: message.models?.prosody?.scores?.[0]?.name || "Neutral"
+                  emotion: message.models?.prosody?.scores?.[0]?.name || "Neutral",
+                  timestamp: elapsed,
                 }]);
                 setCurrentEmotion(message.models?.prosody?.scores?.[0]?.name || "Neutral");
               }
             } else if (message.type === "user_message") {
               console.log("User message received:", message);
               if (message.message?.content) {
+                const elapsed = recordingStartTimeRef.current ? Math.round((Date.now() - recordingStartTimeRef.current) / 1000) : undefined;
                 setTranscripts(prev => [...prev, {
                   role: "user",
-                  text: message.message.content
+                  text: message.message.content,
+                  timestamp: elapsed,
                 }]);
               }
               setState("processing");
@@ -247,16 +256,16 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
     setIsConnected(false);
     toast.success("Interview ended");
 
-    // Upload accumulated recording
+    // Upload accumulated recording and complete interview
     const chunks = recordingChunksRef.current;
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get("sessionId") || urlParams.get("id") || `voice-${Date.now()}`;
+    const durationSec = Math.round((Date.now() - recordingStartTimeRef.current) / 1000);
+
     if (chunks.length > 0) {
       setIsUploading(true);
       try {
         const blob = new Blob(chunks, { type: "audio/webm" });
-        const durationSec = Math.round((Date.now() - recordingStartTimeRef.current) / 1000);
-        // Get sessionId from URL params if available
-        const urlParams = new URLSearchParams(window.location.search);
-        const sessionId = urlParams.get("sessionId") || urlParams.get("id") || `voice-${Date.now()}`;
         await recordingService.uploadRecording(sessionId, blob, {
           sourceType: "browser_mediarecorder",
           duration: durationSec,
@@ -266,11 +275,43 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
       } catch (err) {
         console.error("Failed to upload recording:", err);
         toast.error("Failed to save recording. You may upload it manually later.");
-      } finally {
-        setIsUploading(false);
-        recordingChunksRef.current = [];
       }
     }
+
+    // Send transcripts + analysis to complete the interview session
+    if (transcripts.length > 0) {
+      if (!isUploading) setIsUploading(true);
+      try {
+        const mappedTranscripts = transcripts.map((t) => ({
+          role: t.role === "user" ? "candidate" : "ai",
+          text: t.text,
+          emotion: t.emotion,
+          timestamp: t.timestamp,
+        }));
+        await interviewService.completeInterview(sessionId, {
+          transcripts: mappedTranscripts,
+          duration: durationSec,
+          stage: 'voice',
+        });
+        toast.success("Interview completed and analysis submitted");
+      } catch (err) {
+        console.error("Failed to complete interview:", err);
+        toast.error("Failed to submit interview analysis.");
+      }
+    }
+
+    // Fetch Hume audio recording if we have the chat ID
+    if (humeChatIdRef.current) {
+      try {
+        await interviewService.fetchHumeAudio(sessionId, humeChatIdRef.current);
+        toast.success("Interview recording saved");
+      } catch (err) {
+        console.error("Failed to fetch Hume audio:", err);
+      }
+    }
+
+    setIsUploading(false);
+    recordingChunksRef.current = [];
   };
 
   if (error) {

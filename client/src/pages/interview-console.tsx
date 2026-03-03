@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { interviewService } from "@/lib/api";
 import { format } from "date-fns";
 import InterviewTimeline from "@/pages/interview-timeline";
 import { InterviewFlowStepper, type FlowStep } from "@/components/interview-flow-stepper";
@@ -46,6 +47,7 @@ import {
   Users,
   Gift,
   Send,
+  Square,
 } from "lucide-react";
 
 interface InterviewSession {
@@ -64,6 +66,17 @@ interface InterviewSession {
   overallScore: number | null;
   feedback: string | null;
   createdAt: string;
+  // Video stage fields
+  videoToken: string | null;
+  voiceStatus: string | null;
+  videoStatus: string | null;
+  videoPrompt: string | null;
+  videoStartedAt: string | null;
+  videoCompletedAt: string | null;
+  videoDuration: number | null;
+  videoScore: number | null;
+  videoSentAt: string | null;
+  videoExpiresAt: string | null;
 }
 
 interface TranscriptSegment {
@@ -132,6 +145,9 @@ export default function InterviewConsole() {
   const [f2fMarkedComplete, setF2fMarkedComplete] = useState(false);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteType, setInviteType] = useState<"voice" | "video">("voice");
+  const [playingRecordingId, setPlayingRecordingId] = useState<string | null>(null);
+  const [currentStage, setCurrentStage] = useState<"voice" | "video">("voice");
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -158,18 +174,24 @@ export default function InterviewConsole() {
       // Auto-set view based on the session's interview type
       const session = sessions.find(s => s.id === selectedSession);
       if (session) {
-        const viewType = session.interviewType === "video" ? "video" : "voice";
-        setActiveFlowView(viewType);
-        setActiveFlowStep(viewType);
+        setActiveFlowView("voice");
+        setActiveFlowStep("voice");
+        setCurrentStage("voice");
       }
     } else {
       setActiveFlowView(null);
       setActiveFlowStep(null);
+      setCurrentStage("voice");
     }
   }, [selectedSession]);
 
   const { data: details, isLoading: loadingDetails } = useQuery<InterviewDetails>({
-    queryKey: ["/api/interviews", selectedSession],
+    queryKey: ["/api/interviews", selectedSession, "stage", currentStage],
+    queryFn: async () => {
+      const res = await fetch(`/api/interviews/${selectedSession}?stage=${currentStage}`);
+      if (!res.ok) throw new Error("Failed to fetch interview details");
+      return res.json();
+    },
     enabled: !!selectedSession,
   });
 
@@ -238,49 +260,43 @@ export default function InterviewConsole() {
     );
   }, [candidatesResponse, candidateSearch]);
 
-  // Derive interview flow steps for the selected session's candidate
+  // Derive interview flow steps from the single session's stage fields
   const flowSteps = useMemo((): FlowStep[] | null => {
     if (!details?.session?.candidateId) return null;
-    const candidateId = details.session.candidateId;
+    const session = details.session;
 
-    // Get all sessions for this candidate, excluding [Practice] sessions
+    // Backward compat: old sessions may have voiceStatus='pending' but status='completed'
+    const voiceCompleted = session.voiceStatus === "completed"
+      || (session.voiceStatus === "pending" && (session.status === "completed" || session.status === "voice_completed"));
+    const hasVideoStage = session.videoStatus != null;
+    const videoCompleted = session.videoStatus === "completed";
+
+    // Check for f2f sessions from other sessions for this candidate
     const candidateSessions = sessions.filter(
-      (s) => s.candidateId === candidateId && !s.candidateName?.startsWith("[Practice]")
+      (s) => s.candidateId === session.candidateId && !s.candidateName?.startsWith("[Practice]")
     );
-
-    const hasCompletedType = (type: string) =>
-      candidateSessions.some((s) => s.interviewType === type && s.status === "completed");
-
-    const getSessionForType = (type: string) =>
-      candidateSessions.find((s) => s.interviewType === type && s.status === "completed");
-
-    const voiceCompleted = hasCompletedType("voice");
-    const videoCompleted = hasCompletedType("video");
-    const f2fCompleted = hasCompletedType("f2f") || hasCompletedType("face_to_face") || f2fMarkedComplete;
-
-    const voiceSession = getSessionForType("voice");
-    const videoSession = getSessionForType("video");
-    const f2fSession = getSessionForType("f2f") || getSessionForType("face_to_face");
+    const f2fSession = candidateSessions.find((s) => s.interviewType === "f2f" || s.interviewType === "face_to_face");
+    const f2fCompleted = f2fSession?.status === "completed" || f2fMarkedComplete;
 
     return [
       {
         id: "voice",
         label: "Voice",
         status: voiceCompleted ? "completed" : "active",
-        sessionId: voiceSession?.id || null,
-        score: voiceSession?.overallScore || null,
+        sessionId: session.id,
+        score: session.overallScore || null,
       },
       {
         id: "video",
         label: "Video",
-        status: videoCompleted ? "completed" : voiceCompleted ? "active" : "locked",
-        sessionId: videoSession?.id || null,
-        score: videoSession?.overallScore || null,
+        status: videoCompleted ? "completed" : hasVideoStage ? "active" : "locked",
+        sessionId: session.id,
+        score: session.videoScore || null,
       },
       {
         id: "f2f",
         label: "Face to Face",
-        status: f2fCompleted ? "completed" : videoCompleted ? "active" : "locked",
+        status: f2fCompleted ? "completed" : (videoCompleted && f2fSession) ? "active" : "locked",
         sessionId: f2fSession?.id || null,
         score: f2fSession?.overallScore || null,
       },
@@ -292,7 +308,7 @@ export default function InterviewConsole() {
         score: null,
       },
     ];
-  }, [details?.session?.candidateId, sessions, f2fMarkedComplete]);
+  }, [details?.session, sessions, f2fMarkedComplete]);
 
   // Pipeline transition mutation
   const pipelineTransitionMutation = useMutation({
@@ -444,16 +460,34 @@ export default function InterviewConsole() {
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          {session.interviewType === "video" ? (
+                          <Mic className="h-4 w-4 text-foreground" />
+                          {session.videoStatus != null && (
                             <Video className="h-4 w-4 text-foreground" />
-                          ) : (
-                            <Mic className="h-4 w-4 text-foreground" />
                           )}
                           <span className="font-medium text-sm">{session.candidateName || "Unknown"}</span>
                         </div>
-                        <Badge className={getStatusColor(session.status)}>
-                          {session.status}
-                        </Badge>
+                        <div className="flex gap-1">
+                          {(() => {
+                            // Derive effective voice status (backward compat: old sessions have voiceStatus='pending' but status='completed')
+                            const effectiveVoiceStatus = (session.voiceStatus && session.voiceStatus !== 'pending')
+                              ? session.voiceStatus
+                              : (session.status === 'completed' || session.status === 'voice_completed' || session.status === 'started')
+                                ? session.status === 'voice_completed' ? 'completed' : session.status
+                                : session.voiceStatus || session.status;
+                            return (
+                              <Badge className={getStatusColor(effectiveVoiceStatus)} variant="outline">
+                                <Mic className="h-3 w-3 mr-1" />
+                                {effectiveVoiceStatus}
+                              </Badge>
+                            );
+                          })()}
+                          {session.videoStatus != null && (
+                            <Badge className={getStatusColor(session.videoStatus)} variant="outline">
+                              <Video className="h-3 w-3 mr-1" />
+                              {session.videoStatus}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
                         <Briefcase className="h-3 w-3" />
@@ -527,9 +561,9 @@ export default function InterviewConsole() {
                       setActiveFlowStep(step.id);
                       setActiveFlowView(step.id as "voice" | "video" | "f2f" | "offer");
                       setShowPractice(null);
-                      // If clicking a completed step with a sessionId, switch to that session's data
-                      if (step.sessionId && step.status === "completed" && (step.id === "voice" || step.id === "video")) {
-                        setSelectedSession(step.sessionId);
+                      // Set currentStage for stage-filtered data (same session ID for both stages)
+                      if (step.id === "voice" || step.id === "video") {
+                        setCurrentStage(step.id as "voice" | "video");
                       }
                     }}
                     onStartInterview={(step) => {
@@ -537,9 +571,9 @@ export default function InterviewConsole() {
                       const candidateId = details?.session?.candidateId;
                       const candidateName = details?.session?.candidateName;
                       if (step.id === "voice") {
-                        window.open(`/interview-voice?candidateId=${candidateId}&candidate=${encodeURIComponent(candidateName || "")}`, "_blank");
+                        window.open(`/interview/voice?sessionId=${selectedSession}&candidateId=${candidateId}&candidate=${encodeURIComponent(candidateName || "")}`, "_blank");
                       } else if (step.id === "video") {
-                        window.open(`/interview-video?id=${candidateId}&candidate=${encodeURIComponent(candidateName || "")}`, "_blank");
+                        window.open(`/interview/video?sessionId=${selectedSession}&id=${candidateId}&candidate=${encodeURIComponent(candidateName || "")}`, "_blank");
                       }
                     }}
                     onPractice={(step) => {
@@ -704,9 +738,9 @@ export default function InterviewConsole() {
                                   )}
                                 </div>
                                 <p className="text-sm">{segment.text}</p>
-                                {segment.startTime && (
+                                {segment.startTime != null && (
                                   <span className="text-xs text-muted-foreground mt-1">
-                                    {Math.floor(segment.startTime / 1000)}s
+                                    {Math.floor(segment.startTime / 60)}:{String(segment.startTime % 60).padStart(2, "0")}
                                   </span>
                                 )}
                               </div>
@@ -743,9 +777,38 @@ export default function InterviewConsole() {
                                   </p>
                                 </div>
                               </div>
-                              <Button variant="outline" size="sm" data-testid={`button-play-recording-${recording.id}`}>
-                                <Play className="h-4 w-4 mr-2" />
-                                Play
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                data-testid={`button-play-recording-${recording.id}`}
+                                onClick={() => {
+                                  if (playingRecordingId === recording.id) {
+                                    // Stop playback
+                                    if (audioRef.current) {
+                                      audioRef.current.pause();
+                                      audioRef.current.currentTime = 0;
+                                    }
+                                    setPlayingRecordingId(null);
+                                  } else {
+                                    // Start playback
+                                    if (audioRef.current) {
+                                      audioRef.current.pause();
+                                    }
+                                    const audio = new Audio(recording.mediaUrl);
+                                    audio.onended = () => setPlayingRecordingId(null);
+                                    audio.play().catch(() => {
+                                      toast({ title: "Playback Error", description: "Unable to play this recording", variant: "destructive" });
+                                    });
+                                    audioRef.current = audio;
+                                    setPlayingRecordingId(recording.id);
+                                  }
+                                }}
+                              >
+                                {playingRecordingId === recording.id ? (
+                                  <><Square className="h-4 w-4 mr-2" />Stop</>
+                                ) : (
+                                  <><Play className="h-4 w-4 mr-2" />Play</>
+                                )}
                               </Button>
                             </div>
                           ))}
@@ -763,6 +826,64 @@ export default function InterviewConsole() {
                       <div className="space-y-6">
                         {latestFeedback ? (
                           <>
+                            {/* AI Analysis Summary Card */}
+                            <div className="rounded-lg border p-4 space-y-4 bg-muted/30">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <Badge
+                                    variant={
+                                      latestFeedback.decision === "accepted" ? "default" :
+                                      latestFeedback.decision === "rejected" ? "destructive" :
+                                      "secondary"
+                                    }
+                                    className="capitalize"
+                                  >
+                                    {latestFeedback.decision || "Pending"}
+                                  </Badge>
+                                  {latestFeedback.decisionConfidence != null && (
+                                    <span className="text-sm text-muted-foreground">
+                                      {Math.round(latestFeedback.decisionConfidence)}% confidence
+                                    </span>
+                                  )}
+                                </div>
+                                {latestFeedback.overallScore != null && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-medium">Overall</span>
+                                    <div className="w-24">
+                                      <Progress value={latestFeedback.overallScore} />
+                                    </div>
+                                    <span className="text-sm font-bold">{latestFeedback.overallScore}%</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                {latestFeedback.strengths && latestFeedback.strengths.length > 0 && (
+                                  <div>
+                                    <p className="font-semibold text-foreground mb-1 flex items-center gap-1">
+                                      <ThumbsUp className="h-3 w-3" /> Strengths
+                                    </p>
+                                    <ul className="list-disc list-inside text-muted-foreground space-y-0.5">
+                                      {latestFeedback.strengths.slice(0, 3).map((s, i) => (
+                                        <li key={i}>{s}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                {latestFeedback.weaknesses && latestFeedback.weaknesses.length > 0 && (
+                                  <div>
+                                    <p className="font-semibold text-destructive mb-1 flex items-center gap-1">
+                                      <ThumbsDown className="h-3 w-3" /> Weaknesses
+                                    </p>
+                                    <ul className="list-disc list-inside text-muted-foreground space-y-0.5">
+                                      {latestFeedback.weaknesses.slice(0, 3).map((w, i) => (
+                                        <li key={i}>{w}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
                             {/* Context-sensitive decision buttons based on interview stage */}
                             {activeFlowView === "voice" ? (
                               <div className="grid grid-cols-2 gap-4">
@@ -780,7 +901,6 @@ export default function InterviewConsole() {
                                 <Button
                                   size="lg"
                                   onClick={() => {
-                                    // Build candidate for invite dialog
                                     setInviteType("video");
                                     setShowInviteDialog(true);
                                   }}
@@ -1165,6 +1285,7 @@ export default function InterviewConsole() {
         open={showInviteDialog}
         onOpenChange={setShowInviteDialog}
         interviewType={inviteType}
+        existingSessionId={inviteType === "video" && selectedSession ? selectedSession : undefined}
         candidate={
           details?.session?.candidateId
             ? {
@@ -1183,6 +1304,7 @@ export default function InterviewConsole() {
         job={details?.session?.jobTitle ? { title: details.session.jobTitle } as any : null}
         onInviteSent={() => {
           refetchSessions();
+          queryClient.invalidateQueries({ queryKey: ["/api/interviews", selectedSession, "stage", currentStage] });
           toast({
             title: "Interview Invitation Sent",
             description: `${inviteType === "video" ? "Video" : "Voice"} interview invitation sent successfully.`,

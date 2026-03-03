@@ -169,6 +169,23 @@ export const interviewService = {
   update: async (id: string, updates: Partial<Interview>): Promise<Interview> => {
     const response = await api.patch(`/interviews/${id}`, updates);
     return response.data;
+  },
+  completeInterview: async (sessionId: string, data: {
+    transcripts: { role: string; text: string; timestamp?: number; emotion?: string; emotionScores?: Record<string, number> }[];
+    emotionAnalysis?: Record<string, any>;
+    duration?: number;
+    stage?: 'voice' | 'video';
+  }) => {
+    const response = await api.post(`/interviews/${sessionId}/complete`, data);
+    return response.data;
+  },
+  fetchHumeAudio: async (sessionId: string, chatId: string) => {
+    const response = await api.post(`/interviews/${sessionId}/fetch-hume-audio`, { chatId });
+    return response.data;
+  },
+  addVideoStage: async (sessionId: string, prompt?: string) => {
+    const response = await api.post(`/interviews/${sessionId}/add-video-stage`, { prompt });
+    return response.data;
   }
 };
 

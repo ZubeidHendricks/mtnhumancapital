@@ -103,9 +103,10 @@ interface InterviewInviteDialogProps {
   job?: Job | null;
   onInviteSent?: () => void;
   interviewType?: "voice" | "video";
+  existingSessionId?: string;
 }
 
-export function InterviewInviteDialog({ open, onOpenChange, candidate, job, onInviteSent, interviewType = "voice" }: InterviewInviteDialogProps) {
+export function InterviewInviteDialog({ open, onOpenChange, candidate, job, onInviteSent, interviewType = "voice", existingSessionId }: InterviewInviteDialogProps) {
   const queryClient = useQueryClient();
   const whatsappConversationsKey = useTenantQueryKey(['whatsapp', 'conversations']);
   const [, setLocation] = useLocation();
@@ -138,6 +139,28 @@ export function InterviewInviteDialog({ open, onOpenChange, candidate, job, onIn
     const candidateName = candidate.fullName || 'Candidate';
     const jobTitle = job?.title || candidate.role || 'Open Position';
 
+    // Helper: get the interview URL — either by adding a video stage to existing session, or creating a new session
+    const getInterviewUrl = async (phone?: string): Promise<string> => {
+      if (existingSessionId && interviewType === "video") {
+        // Add video stage to existing session instead of creating a new one
+        const result = await api.post(`/interviews/${existingSessionId}/add-video-stage`, {
+          prompt: interviewPrompt,
+        });
+        return result.data.videoInterviewUrl;
+      } else {
+        // Create a brand-new session
+        const sessionRes = await api.post('/interview-sessions', {
+          candidateId: candidate.id,
+          candidateName,
+          candidatePhone: phone,
+          jobTitle,
+          interviewType,
+          prompt: interviewPrompt,
+        });
+        return `${window.location.origin}/interview/invite/${sessionRes.data.token}`;
+      }
+    };
+
     if (inviteChannel === "email") {
       if (!candidate.email) {
         toast.error(`Cannot send invitation: No email address on file for ${candidateName}`);
@@ -146,14 +169,7 @@ export function InterviewInviteDialog({ open, onOpenChange, candidate, job, onIn
 
       setSendingInvite(true);
       try {
-        const sessionRes = await api.post('/interview-sessions', {
-          candidateId: candidate.id,
-          candidateName,
-          jobTitle,
-          interviewType,
-          prompt: interviewPrompt,
-        });
-        const interviewUrl = `${window.location.origin}/interview/invite/${sessionRes.data.token}`;
+        const interviewUrl = await getInterviewUrl();
 
         await api.post('/interview-sessions/send-email-invite', {
           to: candidate.email,
@@ -180,15 +196,7 @@ export function InterviewInviteDialog({ open, onOpenChange, candidate, job, onIn
 
       setSendingInvite(true);
       try {
-        const sessionRes = await api.post('/interview-sessions', {
-          candidateId: candidate.id,
-          candidateName,
-          candidatePhone: phone,
-          jobTitle,
-          interviewType,
-          prompt: interviewPrompt,
-        });
-        const interviewUrl = `${window.location.origin}/interview/invite/${sessionRes.data.token}`;
+        const interviewUrl = await getInterviewUrl(phone);
 
         const convRes = await api.post(`/whatsapp/candidates/${candidate.id}/conversation`);
         const conversation = convRes.data;
