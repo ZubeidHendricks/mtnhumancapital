@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Mic, MicOff, PhoneOff, Loader2, CheckCircle2, AlertCircle, Volume2 } from "lucide-react";
+import { Mic, MicOff, PhoneOff, Loader2, CheckCircle2, AlertCircle, Volume2, Video } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import axios from "axios";
@@ -21,6 +21,7 @@ type InterviewSession = {
   status: string;
   prompt?: string;
   candidateId?: string;
+  jobTitle?: string;
 };
 
 // Hume EVI audio constants
@@ -30,12 +31,20 @@ export default function InterviewInvite() {
   const { token } = useParams<{ token: string }>();
   const [session, setSession] = useState<InterviewSession | null>(null);
   const [candidateName, setCandidateName] = useState<string>("");
+  const [interviewStage, setInterviewStage] = useState<'voice' | 'video'>('voice');
   const [state, setState] = useState<"loading" | "ready" | "listening" | "processing" | "speaking" | "completed" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [transcripts, setTranscripts] = useState<Transcript[]>([]);
   const [currentEmotion, setCurrentEmotion] = useState<string>("Neutral");
   const [isConnected, setIsConnected] = useState(false);
   const [duration, setDuration] = useState(0);
+
+  // Video interview state
+  const [videoSessionUrl, setVideoSessionUrl] = useState<string | null>(null);
+  const [videoConversationId, setVideoConversationId] = useState<string | null>(null);
+  const [videoInterviewId, setVideoInterviewId] = useState<string | null>(null);
+  const [isVideoActive, setIsVideoActive] = useState(false);
+  const [isCreatingVideoSession, setIsCreatingVideoSession] = useState(false);
 
   const socketRef = useRef<WebSocket | null>(null);
   const captureContextRef = useRef<AudioContext | null>(null);
@@ -67,6 +76,7 @@ export default function InterviewInvite() {
         const response = await axios.get(`/api/public/interview-session/${token}`);
         setSession(response.data.session);
         setCandidateName(response.data.candidate?.fullName || "");
+        setInterviewStage(response.data.stage || 'voice');
         setState("ready");
       } catch (error: any) {
         console.error("Error fetching session:", error);
@@ -82,19 +92,69 @@ export default function InterviewInvite() {
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (isConnected && startTimeRef.current) {
+    if ((isConnected || isVideoActive) && startTimeRef.current) {
       interval = setInterval(() => {
         setDuration(Math.floor((Date.now() - startTimeRef.current!) / 1000));
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isConnected]);
+  }, [isConnected, isVideoActive]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  // ==================== VIDEO INTERVIEW (TAVUS) ====================
+
+  const startVideoInterview = async () => {
+    try {
+      setIsCreatingVideoSession(true);
+      setState("loading");
+
+      const response = await axios.post(`/api/public/interview-session/${token}/video-session`);
+      const { sessionUrl, conversationId, interviewId } = response.data;
+
+      setVideoSessionUrl(sessionUrl);
+      setVideoConversationId(conversationId);
+      setVideoInterviewId(interviewId);
+      setIsVideoActive(true);
+      startTimeRef.current = Date.now();
+      setState("listening");
+      toast.success("Video interview started! You'll be speaking with Charles Molapisi, Group CTIO at MTN.");
+    } catch (error: any) {
+      console.error("Error starting video interview:", error);
+      setErrorMessage(error.response?.data?.message || "Failed to start video interview");
+      setState("error");
+    } finally {
+      setIsCreatingVideoSession(false);
+    }
+  };
+
+  const endVideoInterview = async () => {
+    setIsVideoActive(false);
+    setVideoSessionUrl(null);
+    setState("completed");
+
+    const interviewDuration = startTimeRef.current ? Math.floor((Date.now() - startTimeRef.current) / 1000) : 0;
+
+    try {
+      await axios.post(`/api/public/interview-session/${token}/complete`, {
+        transcripts: [],
+        duration: interviewDuration,
+        emotionAnalysis: {},
+        tavusConversationId: videoConversationId,
+        tavusInterviewId: videoInterviewId,
+      });
+      toast.success("Interview completed! Your recording and analysis will be processed shortly.");
+    } catch (err) {
+      console.error("Error completing video interview:", err);
+      toast.error("Interview ended, but there was an issue saving. The recruiter can still access your session.");
+    }
+  };
+
+  // ==================== VOICE INTERVIEW (HUME) ====================
 
   // Convert Float32 PCM samples to base64-encoded Int16 PCM
   const float32ToBase64PCM = (float32Data: Float32Array): string => {
@@ -436,6 +496,8 @@ CLOSING (CRITICAL):
     };
   }, []);
 
+  // ==================== SHARED UI STATES ====================
+
   if (state === "loading" && !session) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
@@ -483,16 +545,128 @@ CLOSING (CRITICAL):
             </motion.div>
             <h2 className="text-2xl font-bold text-foreground mb-2">Interview Complete!</h2>
             <p className="text-muted-foreground text-center mb-4">
-              Thank you for completing the interview. The recruiter will review your responses and be in touch soon.
+              Thank you for completing the {interviewStage === 'video' ? 'video' : 'voice'} interview. The recruiter will review your responses and be in touch soon.
             </p>
-            <p className="text-sm text-muted-foreground">
-              Duration: {formatDuration(duration)}
-            </p>
+            {duration > 0 && (
+              <p className="text-sm text-muted-foreground">
+                Duration: {formatDuration(duration)}
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
     );
   }
+
+  // ==================== VIDEO INTERVIEW UI (TAVUS) ====================
+
+  if (interviewStage === 'video') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex flex-col">
+        <header className="p-4 border-b border-border dark:border-white/10 bg-background/50 backdrop-blur">
+          <div className="max-w-5xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-muted/20 flex items-center justify-center">
+                <Video className="w-4 h-4 text-foreground" />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-foreground">Video Interview</h1>
+                {candidateName && <p className="text-sm text-muted-foreground">{candidateName}</p>}
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {isVideoActive && (
+                <Badge variant="outline" className="border-border/50 text-foreground">
+                  {formatDuration(duration)}
+                </Badge>
+              )}
+              {isVideoActive && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 rounded-full border border-green-500/30">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-xs text-green-400">Live</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full p-4">
+          {!isVideoActive ? (
+            <Card className="flex-1 bg-card/50 backdrop-blur border-border dark:border-white/10 flex flex-col items-center justify-center">
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl text-foreground">Video Interview with MTN</CardTitle>
+                <CardDescription className="text-muted-foreground max-w-md">
+                  You'll be speaking with Charles Molapisi, Group Chief Technology and Information Officer at MTN.
+                  This is a video interview — please ensure your camera and microphone are ready.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col items-center gap-6">
+                <div className="w-32 h-32 rounded-full bg-muted/20 border-2 border-border/50 flex items-center justify-center">
+                  <Video className="h-12 w-12 text-foreground dark:text-foreground" />
+                </div>
+                {session?.jobTitle && (
+                  <Badge variant="outline" className="text-sm px-4 py-1">
+                    Position: {session.jobTitle}
+                  </Badge>
+                )}
+                <div className="text-center text-sm text-muted-foreground space-y-1">
+                  <p>Ensure you're in a well-lit, quiet environment</p>
+                  <p>Allow camera and microphone access when prompted</p>
+                  <p>The interview will last approximately 20-25 minutes</p>
+                </div>
+                <Button
+                  size="lg"
+                  onClick={startVideoInterview}
+                  disabled={isCreatingVideoSession}
+                  className="bg-muted hover:bg-muted text-white px-8"
+                  data-testid="btn-start-video-interview"
+                >
+                  {isCreatingVideoSession ? (
+                    <>
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                      Connecting...
+                    </>
+                  ) : (
+                    <>
+                      <Video className="h-5 w-5 mr-2" />
+                      Start Video Interview
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              <div className="flex-1 relative min-h-[500px]">
+                <iframe
+                  src={videoSessionUrl!}
+                  className="w-full h-full rounded-2xl border border-border dark:border-white/10 shadow-2xl"
+                  style={{ minHeight: "500px" }}
+                  allow="camera; microphone; fullscreen; display-capture"
+                  data-testid="tavus-video-frame"
+                />
+              </div>
+
+              <div className="mt-4 flex justify-center">
+                <Button
+                  size="lg"
+                  variant="destructive"
+                  onClick={endVideoInterview}
+                  className="px-8 rounded-full"
+                  data-testid="btn-end-video-interview"
+                >
+                  <PhoneOff className="h-5 w-5 mr-2" />
+                  End Interview
+                </Button>
+              </div>
+            </>
+          )}
+        </main>
+      </div>
+    );
+  }
+
+  // ==================== VOICE INTERVIEW UI (HUME) ====================
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex flex-col">

@@ -304,9 +304,9 @@ app.post("/api/public/interview-session/:token/complete", async (req, res) => {
       return res.status(404).json({ message: "Interview session not found" });
     }
 
-    const { transcripts, emotionAnalysis, duration, humeChatId } = req.body;
+    const { transcripts, emotionAnalysis, duration, humeChatId, tavusConversationId, tavusInterviewId } = req.body;
 
-    console.log(`[Interview] Public complete called for session ${session.id}, humeChatId: ${humeChatId || 'none'}, transcripts: ${(transcripts || []).length}`);
+    console.log(`[Interview] Public complete called for session ${session.id}, humeChatId: ${humeChatId || 'none'}, tavusConversationId: ${tavusConversationId || 'none'}, transcripts: ${(transcripts || []).length}`);
 
     // Map transcripts to the format expected by the orchestrator
     const mappedTranscripts = (transcripts || []).map((t: any) => ({
@@ -399,10 +399,225 @@ app.post("/api/public/interview-session/:token/complete", async (req, res) => {
       })();
     }
 
+    // Fetch Tavus video recording and transcript in the background with retries
+    if (tavusConversationId && stage === 'video') {
+      const tenantId = session.tenantId || '';
+      const sessionId = session.id;
+      const candidateId = session.candidateId;
+      const sessionDuration = duration;
+
+      (async () => {
+        const TAVUS_API_KEY = process.env.TAVUS_API_KEY;
+        if (!TAVUS_API_KEY) return;
+
+        console.log(`[Interview] Starting background Tavus recording fetch for conversation ${tavusConversationId}`);
+
+        // Retry every 30s for up to 10 minutes (20 attempts) — Tavus needs time to process
+        const delays = Array.from({ length: 20 }, () => 30000);
+        for (const delay of delays) {
+          await new Promise(resolve => setTimeout(resolve, delay));
+          try {
+            // Fetch conversation details from Tavus
+            const tavusRes = await fetch(`https://tavusapi.com/v2/conversations/${tavusConversationId}`, {
+              headers: { "x-api-key": TAVUS_API_KEY },
+            });
+            if (!tavusRes.ok) {
+              console.log(`[Interview] Tavus conversation not ready (${tavusRes.status}), retrying...`);
+              continue;
+            }
+
+            const tavusData = await tavusRes.json() as {
+              recording_url?: string;
+              status?: string;
+              conversation_transcript?: Array<{ role: string; content: string; timestamp?: number }>;
+            };
+
+            // Check if recording is available
+            if (!tavusData.recording_url) {
+              console.log(`[Interview] Tavus recording not yet available for ${tavusConversationId}, status: ${tavusData.status}, retrying...`);
+              continue;
+            }
+
+            console.log(`[Interview] Tavus recording ready for session ${sessionId}, downloading...`);
+
+            // Download and save recording
+            const videoRes = await fetch(tavusData.recording_url);
+            if (videoRes.ok) {
+              const buffer = Buffer.from(await videoRes.arrayBuffer());
+              const filename = `${Date.now()}_video.mp4`;
+              const { key, size } = await recordingStorage.uploadRecording(tenantId, sessionId, filename, buffer, 'video/mp4');
+
+              const recording = await storage.createInterviewRecording(tenantId, {
+                sessionId,
+                candidateId: candidateId || undefined,
+                recordingType: 'video',
+                mediaUrl: `/api/recordings/${key}`,
+                duration: sessionDuration,
+                storageProvider: 'tavus',
+                externalId: tavusConversationId,
+                fileSize: size,
+                mimeType: 'video/mp4',
+                metadata: { objectStorageKey: key, tavusConversationId },
+                interviewStage: 'video',
+              } as any);
+
+              await storage.createRecordingSource(tenantId, {
+                sessionId,
+                recordingId: recording.id,
+                sourceType: 'tavus',
+                sourceId: tavusConversationId,
+                sourceUrl: tavusData.recording_url,
+                status: 'completed',
+                hasVideo: true,
+              });
+
+              console.log(`[Interview] Tavus recording saved for session ${sessionId}: ${key} (${size} bytes)`);
+            }
+
+            // If Tavus provides a transcript, save it and re-run analysis
+            if (tavusData.conversation_transcript && tavusData.conversation_transcript.length > 0) {
+              const tavusTranscripts = tavusData.conversation_transcript.map((t: any) => ({
+                role: t.role === 'user' || t.role === 'candidate' ? 'candidate' as const : 'ai' as const,
+                text: t.content || t.text || '',
+                timestamp: t.timestamp,
+              }));
+
+              console.log(`[Interview] Tavus transcript available (${tavusTranscripts.length} segments), running AI analysis...`);
+
+              // Re-run analysis with actual transcript data
+              await interviewOrchestrator.completeInterview(
+                tenantId,
+                sessionId,
+                tavusTranscripts,
+                undefined,
+                undefined,
+                sessionDuration,
+                'video'
+              );
+              console.log(`[Interview] AI analysis completed for Tavus session ${sessionId}`);
+            }
+
+            return; // success, stop retrying
+          } catch (err) {
+            console.warn(`[Interview] Tavus recording fetch attempt failed:`, err);
+          }
+        }
+        console.warn(`[Interview] Could not fetch Tavus recording for conversation ${tavusConversationId} after all retries`);
+      })();
+    }
+
     res.json(result);
   } catch (error) {
     console.error("Error completing interview session:", error);
     res.status(500).json({ message: "Failed to complete interview session" });
+  }
+});
+
+// PUBLIC route: Create Tavus video session for candidate (uses video token)
+app.post("/api/public/interview-session/:token/video-session", async (req, res) => {
+  try {
+    // Look up session by video token
+    let session = await storage.getInterviewSessionByVideoToken(req.params.token);
+    if (!session) {
+      return res.status(404).json({ message: "Interview session not found" });
+    }
+
+    // Check expiration
+    if (session.videoExpiresAt && new Date(session.videoExpiresAt) < new Date()) {
+      return res.status(410).json({ message: "Interview link has expired" });
+    }
+
+    // Check if already completed
+    if (session.videoStatus === 'completed') {
+      return res.status(410).json({ message: "Video interview has already been completed" });
+    }
+
+    const TAVUS_API_KEY = process.env.TAVUS_API_KEY;
+    if (!TAVUS_API_KEY) {
+      return res.status(500).json({ message: "Video interview service not configured" });
+    }
+
+    // Get candidate info
+    const candidate = session.candidateId
+      ? await storage.getCandidateById(session.tenantId || '', session.candidateId)
+      : null;
+    const candidateName = candidate?.fullName || session.candidateName || "Candidate";
+    const jobRole = session.jobTitle || "Open Position";
+
+    // Charles Molapisi persona - Group CTIO at MTN
+    const conversationalContext = `You are Charles Molapisi, Group Chief Technology and Information Officer (GCTIO) at MTN Group. Conduct a senior-level interview for the ${jobRole} position assessing candidates for MTN's AI transformation program. Ask these questions in order, one at a time: 1) AI Solution Architecture - approach to designing AI solution architecture aligning with business objectives, regulatory constraints (GDPR etc), and integration into existing workflows. Follow up on model accuracy vs explainability in BSS/OSS domain, and Responsible AI in practice. 2) AI Platform Architecture - designing scalable AI platform for diverse use cases (NLP chatbots, analytical models, GenAI) across operating companies, including AI landing zones, MLOps, LLMOps, real-time data processing. 3) AI Infrastructure Architecture - infrastructure components for AI workloads in telecom with strict latency, scalability, security, cost optimization. 4) AI Program Governance - framework for governing 20+ AI projects, prioritizing demands, mitigating risks (bias, hallucinations, data quality), enforcing ethical AI across dispersed teams. 5) AI Value Realization - example of quantifying ROI of AI initiative, tracking metrics (cost savings, revenue uplift, customer satisfaction), value realization framework pre and post implementation. Keep to 20-25 minutes. Speak naturally, never mention AI nature.`;
+
+    const customGreeting = `Hello! I'm Charles Molapisi, the Group Chief Technology and Information Officer here at MTN. Thank you for making the time to speak with me today. As you may know, we're on an exciting journey transforming MTN into an AI-enabled technology organisation, and I'm looking forward to understanding how your experience and expertise could contribute to that mission. Before we dive in, how are you doing today?`;
+
+    const requestBody = {
+      replica_id: process.env.TAVUS_REPLICA_ID || "default_replica",
+      persona_id: process.env.TAVUS_PERSONA_ID || "default_persona",
+      conversation_name: `${jobRole} Interview: ${candidateName}`,
+      conversational_context: session.videoPrompt || conversationalContext,
+      custom_greeting: customGreeting
+    };
+
+    const response = await fetch("https://tavusapi.com/v2/conversations", {
+      method: "POST",
+      headers: {
+        "x-api-key": TAVUS_API_KEY,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error("Tavus API error:", response.status, error);
+      return res.status(response.status).json({
+        message: "Failed to create video interview session",
+        details: error
+      });
+    }
+
+    const data = await response.json();
+
+    if (!data || !data.conversation_url) {
+      return res.status(500).json({ message: "Invalid response from video service" });
+    }
+
+    // Mark video stage as started
+    if (session.videoStatus === 'pending') {
+      await storage.updateInterviewSession(session.tenantId || '', session.id, {
+        videoStatus: 'started',
+        videoStartedAt: new Date(),
+      } as any);
+    }
+
+    // Save interview record to database
+    const interview = await storage.createInterview(session.tenantId || '', {
+      candidateId: session.candidateId || null,
+      jobId: null,
+      type: "video",
+      provider: "tavus",
+      status: "in_progress",
+      sessionId: data.conversation_id || null,
+      conversationUrl: data.conversation_url,
+      metadata: {
+        jobRole,
+        candidateName,
+        persona: "Charles Molapisi - GCTIO MTN",
+        interviewSessionId: session.id,
+        tavusData: data
+      },
+      startedAt: new Date()
+    });
+
+    res.json({
+      sessionUrl: data.conversation_url,
+      conversationId: data.conversation_id || "unknown",
+      interviewId: interview.id,
+      candidateName,
+      jobRole
+    });
+  } catch (error) {
+    console.error("Error creating public Tavus video session:", error);
+    res.status(500).json({ message: "Failed to create video interview session" });
   }
 });
 
