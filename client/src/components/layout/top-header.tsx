@@ -1,14 +1,17 @@
+import { useState } from "react";
 import { useTenant } from "@/hooks/useTenant";
 import { TenantSelector } from "@/components/admin/TenantSelector";
 import { useLocation } from "wouter";
-import { Search, Bell } from "lucide-react";
+import { Search, Bell, Briefcase } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { CareersDialog } from "@/components/careers-dialog";
 
 export function TopHeader() {
   const { tenant } = useTenant();
   const [location] = useLocation();
+  const [isCareersOpen, setIsCareersOpen] = useState(false);
 
   const isAdminPage = location.startsWith('/admin-') || 
     location === '/persona-management' || 
@@ -52,6 +55,17 @@ export function TopHeader() {
       </div>
 
       <div className="flex items-center gap-4">
+        {/* Careers */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="hidden md:flex border-[#FFCB00]/30 bg-[#FFCB00]/10 hover:bg-[#FFCB00]/20 text-[#FFCB00]"
+          onClick={() => setIsCareersOpen(true)}
+        >
+          <Briefcase className="w-4 h-4 mr-2" />
+          Careers
+        </Button>
+
         {/* Search */}
         <div className="relative hidden md:block">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -78,6 +92,8 @@ export function TopHeader() {
           </AvatarFallback>
         </Avatar>
       </div>
+
+      <CareersDialog open={isCareersOpen} onOpenChange={setIsCareersOpen} />
     </header>
   );
 }
