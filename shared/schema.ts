@@ -1179,7 +1179,14 @@ export const interviewSessions = pgTable("interview_sessions", {
   videoExpiresAt: timestamp("video_expires_at"),
   // Face-to-face stage fields
   f2fStatus: text("f2f_status"), // null = not scheduled, 'scheduled', 'completed'
+  f2fScheduledDate: text("f2f_scheduled_date"),
+  f2fScheduledTime: text("f2f_scheduled_time"),
+  f2fLocation: text("f2f_location"),
+  f2fInterviewer: text("f2f_interviewer"),
+  f2fNotes: text("f2f_notes"),
   f2fCompletedAt: timestamp("f2f_completed_at"),
+  // Offer stage fields
+  offerStatus: text("offer_status"), // null = not initiated, 'initiated'
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => ({

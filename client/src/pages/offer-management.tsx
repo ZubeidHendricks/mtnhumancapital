@@ -74,8 +74,16 @@ export default function OfferManagement() {
     }
   }, []);
 
-  const [selectedCandidate, setSelectedCandidate] = useState<string>(saved.current?.selectedCandidate || "");
-  const [selectedJob, setSelectedJob] = useState<string>(saved.current?.selectedJob || "");
+  const [selectedCandidate, setSelectedCandidate] = useState<string>(() => {
+    if (saved.current?.selectedCandidate) return saved.current.selectedCandidate;
+    const params = new URLSearchParams(window.location.search);
+    return params.get("candidateId") || "";
+  });
+  const [selectedJob, setSelectedJob] = useState<string>(() => {
+    if (saved.current?.selectedJob) return saved.current.selectedJob;
+    const params = new URLSearchParams(window.location.search);
+    return params.get("jobId") || "";
+  });
   const [salaryAmount, setSalaryAmount] = useState(saved.current?.salaryAmount || "");
   const [startDate, setStartDate] = useState(saved.current?.startDate || "");
   const [additionalBenefits, setAdditionalBenefits] = useState(saved.current?.additionalBenefits || "");
@@ -116,6 +124,17 @@ export default function OfferManagement() {
     queryKey: jobsKey,
     queryFn: jobsService.getAll,
   });
+
+  // Auto-select job by title from URL param when jobs data loads
+  useEffect(() => {
+    if (selectedJob || allJobs.length === 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const jobTitle = params.get("jobTitle");
+    if (jobTitle) {
+      const match = allJobs.find((j: any) => j.title?.toLowerCase() === jobTitle.toLowerCase());
+      if (match) setSelectedJob(match.id);
+    }
+  }, [allJobs, selectedJob]);
 
   const templatesKey = useTenantQueryKey(["document-templates"]);
   const { data: allTemplates = [] } = useQuery({

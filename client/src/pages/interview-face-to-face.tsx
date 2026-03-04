@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,11 +40,40 @@ interface InterviewFaceToFaceProps {
   embedded?: boolean;
   candidateId?: string;
   candidateName?: string;
+  sessionId?: string;
+  jobTitle?: string;
+  f2fStatus?: string | null;
+  f2fScheduledDate?: string | null;
+  f2fScheduledTime?: string | null;
+  f2fLocation?: string | null;
+  f2fInterviewer?: string | null;
   onMarkComplete?: () => void;
+  onScheduled?: () => void;
 }
 
+const interviewers = [
+  { id: "1", name: "Sarah Manager" },
+  { id: "2", name: "John Director" },
+  { id: "3", name: "Lisa HR" },
+  { id: "4", name: "Tom Lead" },
+];
+
 export default function InterviewFaceToFace(props: InterviewFaceToFaceProps & Record<string, any> = {}) {
-  const { embedded, candidateId, candidateName, onMarkComplete } = props;
+  const {
+    embedded,
+    candidateId,
+    candidateName,
+    sessionId,
+    jobTitle,
+    f2fStatus: initialF2fStatus,
+    f2fScheduledDate: initialDate,
+    f2fScheduledTime: initialTime,
+    f2fLocation: initialLocation,
+    f2fInterviewer: initialInterviewer,
+    onMarkComplete,
+    onScheduled,
+  } = props;
+
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState(candidateId || candidateName || "");
   const [interviewDate, setInterviewDate] = useState("");
@@ -52,9 +81,32 @@ export default function InterviewFaceToFace(props: InterviewFaceToFaceProps & Re
   const [location, setLocation] = useState("");
   const [interviewer, setInterviewer] = useState("");
   const [notes, setNotes] = useState("");
+  const [scheduling, setScheduling] = useState(false);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadTargetRef = useRef<string | null>(null);
+
+  // Local state for scheduled meeting (used after scheduling via API)
+  const [localMeeting, setLocalMeeting] = useState<{
+    date: string;
+    time: string;
+    location: string;
+    interviewer: string;
+    status: string;
+  } | null>(null);
+
+  // Sync local meeting state from server props when they change
+  useEffect(() => {
+    if (initialF2fStatus && initialF2fStatus !== "null") {
+      setLocalMeeting({
+        date: initialDate || "",
+        time: initialTime || "",
+        location: initialLocation || "",
+        interviewer: initialInterviewer || "",
+        status: initialF2fStatus,
+      });
+    }
+  }, [initialF2fStatus, initialDate, initialTime, initialLocation, initialInterviewer]);
 
   const handleUploadRecording = async (interviewId: string, file: File) => {
     setUploadingId(interviewId);
@@ -79,21 +131,22 @@ export default function InterviewFaceToFace(props: InterviewFaceToFaceProps & Re
     }
   };
 
+  // Mock data for standalone page only
   const interviews: Interview[] = [
-    { 
-      id: "1", 
-      candidateName: "John Smith", 
-      position: "Senior Developer", 
+    {
+      id: "1",
+      candidateName: "John Smith",
+      position: "Senior Developer",
       date: "2024-02-15",
       time: "10:00",
       location: "Conference Room A",
       interviewer: "Sarah Manager",
       status: "scheduled"
     },
-    { 
-      id: "2", 
-      candidateName: "Emily Brown", 
-      position: "Project Manager", 
+    {
+      id: "2",
+      candidateName: "Emily Brown",
+      position: "Project Manager",
       date: "2024-02-14",
       time: "14:00",
       location: "Main Office",
@@ -101,10 +154,10 @@ export default function InterviewFaceToFace(props: InterviewFaceToFaceProps & Re
       status: "completed",
       notes: "Strong candidate, good communication skills"
     },
-    { 
-      id: "3", 
-      candidateName: "Mike Wilson", 
-      position: "Data Analyst", 
+    {
+      id: "3",
+      candidateName: "Mike Wilson",
+      position: "Data Analyst",
       date: "2024-02-12",
       time: "11:00",
       location: "Meeting Room B",
@@ -120,15 +173,8 @@ export default function InterviewFaceToFace(props: InterviewFaceToFaceProps & Re
     { id: "4", name: "Emily Brown", position: "HR Coordinator" },
   ];
 
-  const interviewers = [
-    { id: "1", name: "Sarah Manager" },
-    { id: "2", name: "John Director" },
-    { id: "3", name: "Lisa HR" },
-    { id: "4", name: "Tom Lead" },
-  ];
-
-  const handleScheduleInterview = () => {
-    if (!selectedCandidate || !interviewDate || !interviewTime || !location || !interviewer) {
+  const handleScheduleInterview = async () => {
+    if (!interviewDate || !interviewTime || !location || !interviewer) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields.",
@@ -137,13 +183,51 @@ export default function InterviewFaceToFace(props: InterviewFaceToFaceProps & Re
       return;
     }
 
-    toast({
-      title: "Interview Scheduled",
-      description: "The face-to-face interview has been scheduled successfully.",
-    });
-    
+    // If embedded with a sessionId, persist to server
+    if (embedded && sessionId) {
+      setScheduling(true);
+      try {
+        const interviewerName = interviewers.find(i => i.id === interviewer)?.name || interviewer;
+        await fetch(`/api/interviews/${sessionId}/schedule-f2f`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            date: interviewDate,
+            time: interviewTime,
+            location,
+            interviewer: interviewerName,
+            notes: notes || undefined,
+          }),
+        });
+        setLocalMeeting({
+          date: interviewDate,
+          time: interviewTime,
+          location,
+          interviewer: interviewerName,
+          status: "scheduled",
+        });
+        toast({
+          title: "Interview Scheduled",
+          description: `Face-to-face interview scheduled for ${candidateName || "candidate"}.`,
+        });
+        onScheduled?.();
+      } catch {
+        toast({
+          title: "Scheduling Failed",
+          description: "Failed to schedule the interview. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setScheduling(false);
+      }
+    } else {
+      toast({
+        title: "Interview Scheduled",
+        description: "The face-to-face interview has been scheduled successfully.",
+      });
+    }
+
     setScheduleDialogOpen(false);
-    setSelectedCandidate("");
     setInterviewDate("");
     setInterviewTime("");
     setLocation("");
@@ -165,6 +249,11 @@ export default function InterviewFaceToFace(props: InterviewFaceToFaceProps & Re
   };
 
   if (embedded) {
+    const meetingStatus = localMeeting?.status || null;
+    const isScheduled = meetingStatus === "scheduled";
+    const isCompleted = meetingStatus === "completed";
+    const hasMeeting = isScheduled || isCompleted;
+
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -175,7 +264,7 @@ export default function InterviewFaceToFace(props: InterviewFaceToFaceProps & Re
               <Badge variant="outline" className="text-xs">{candidateName}</Badge>
             )}
           </div>
-          <div className="flex gap-2">
+          {!hasMeeting && (
             <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
               <DialogTrigger asChild>
                 <Button size="sm" variant="outline">
@@ -187,7 +276,7 @@ export default function InterviewFaceToFace(props: InterviewFaceToFaceProps & Re
                 <DialogHeader>
                   <DialogTitle>Schedule Face-to-Face Interview</DialogTitle>
                   <DialogDescription>
-                    Set up an in-person interview{candidateName ? ` with ${candidateName}` : ''}
+                    Set up an in-person interview with {candidateName || 'the candidate'}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
@@ -227,53 +316,73 @@ export default function InterviewFaceToFace(props: InterviewFaceToFaceProps & Re
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setScheduleDialogOpen(false)}>Cancel</Button>
-                  <Button onClick={handleScheduleInterview}>
+                  <Button onClick={handleScheduleInterview} disabled={scheduling}>
+                    {scheduling && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                     <Send className="w-4 h-4 mr-2" />
                     Schedule
                   </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-            {onMarkComplete && (
-              <Button size="sm" onClick={onMarkComplete} className="bg-yellow-500 hover:bg-yellow-600 text-black">
-                <CheckCircle2 className="w-3 h-3 mr-1" />
-                Mark Complete
-              </Button>
-            )}
-          </div>
+          )}
         </div>
 
-        {/* Compact interview list */}
+        {/* Show the candidate's F2F meeting or empty state */}
         <div className="space-y-2">
-          {interviews.map((interview) => (
-            <div key={interview.id} className="flex items-center justify-between p-3 rounded-lg border border-border text-sm">
+          {hasMeeting && localMeeting ? (
+            <div className="flex items-center justify-between p-3 rounded-lg border border-border text-sm">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                   <Users className="w-4 h-4 text-primary" />
                 </div>
                 <div>
-                  <span className="font-medium">{interview.candidateName}</span>
+                  <span className="font-medium">{candidateName || "Candidate"}</span>
+                  {jobTitle && (
+                    <span className="text-xs text-muted-foreground ml-2">({jobTitle})</span>
+                  )}
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Calendar className="w-3 h-3" />{interview.date}
-                    <Clock className="w-3 h-3 ml-1" />{interview.time}
-                    <MapPin className="w-3 h-3 ml-1" />{interview.location}
+                    {localMeeting.date && (
+                      <><Calendar className="w-3 h-3" />{localMeeting.date}</>
+                    )}
+                    {localMeeting.time && (
+                      <><Clock className="w-3 h-3 ml-1" />{localMeeting.time}</>
+                    )}
+                    {localMeeting.location && (
+                      <><MapPin className="w-3 h-3 ml-1" />{localMeeting.location}</>
+                    )}
+                    {localMeeting.interviewer && (
+                      <><UserPlus className="w-3 h-3 ml-1" />{localMeeting.interviewer}</>
+                    )}
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {getStatusBadge(interview.status)}
-                {interview.status === "completed" && (
+                {getStatusBadge(localMeeting.status)}
+                {isScheduled && onMarkComplete && (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      onMarkComplete();
+                      setLocalMeeting(prev => prev ? { ...prev, status: "completed" } : null);
+                    }}
+                    className="bg-yellow-500 hover:bg-yellow-600 text-black h-7 text-xs"
+                  >
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                    Mark Complete
+                  </Button>
+                )}
+                {isCompleted && sessionId && (
                   <Button
                     variant="outline"
                     size="sm"
                     className="h-7 text-xs"
-                    disabled={uploadingId === interview.id}
+                    disabled={uploadingId === sessionId}
                     onClick={() => {
-                      uploadTargetRef.current = interview.id;
+                      uploadTargetRef.current = sessionId;
                       fileInputRef.current?.click();
                     }}
                   >
-                    {uploadingId === interview.id ? (
+                    {uploadingId === sessionId ? (
                       <><Loader2 className="w-3 h-3 mr-1 animate-spin" />Uploading...</>
                     ) : (
                       <><Upload className="w-3 h-3 mr-1" />Upload</>
@@ -282,11 +391,10 @@ export default function InterviewFaceToFace(props: InterviewFaceToFaceProps & Re
                 )}
               </div>
             </div>
-          ))}
-          {interviews.length === 0 && (
+          ) : (
             <div className="text-center py-6 text-muted-foreground text-sm">
               <Users className="w-8 h-8 mx-auto mb-2 opacity-30" />
-              <p>No face-to-face interviews scheduled yet</p>
+              <p>No face-to-face interview scheduled for {candidateName || "this candidate"}</p>
               <p className="text-xs mt-1">Click "Schedule" to set one up</p>
             </div>
           )}
@@ -309,6 +417,7 @@ export default function InterviewFaceToFace(props: InterviewFaceToFaceProps & Re
     );
   }
 
+  // Standalone page (not embedded) - keep existing mock data view
   return (
     <div className="container mx-auto py-8 px-4 max-w-6xl">
       <div className="flex items-center justify-between mb-8">
@@ -354,8 +463,8 @@ export default function InterviewFaceToFace(props: InterviewFaceToFaceProps & Re
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Date</Label>
-                  <Input 
-                    type="date" 
+                  <Input
+                    type="date"
                     value={interviewDate}
                     onChange={(e) => setInterviewDate(e.target.value)}
                     data-testid="input-interview-date"
@@ -363,8 +472,8 @@ export default function InterviewFaceToFace(props: InterviewFaceToFaceProps & Re
                 </div>
                 <div className="space-y-2">
                   <Label>Time</Label>
-                  <Input 
-                    type="time" 
+                  <Input
+                    type="time"
                     value={interviewTime}
                     onChange={(e) => setInterviewTime(e.target.value)}
                     data-testid="input-interview-time"
@@ -373,7 +482,7 @@ export default function InterviewFaceToFace(props: InterviewFaceToFaceProps & Re
               </div>
               <div className="space-y-2">
                 <Label>Location</Label>
-                <Input 
+                <Input
                   placeholder="e.g., Conference Room A, Main Office"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
@@ -397,7 +506,7 @@ export default function InterviewFaceToFace(props: InterviewFaceToFaceProps & Re
               </div>
               <div className="space-y-2">
                 <Label>Notes (optional)</Label>
-                <Textarea 
+                <Textarea
                   placeholder="Any additional notes or requirements..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
@@ -459,8 +568,8 @@ export default function InterviewFaceToFace(props: InterviewFaceToFaceProps & Re
         <CardContent>
           <div className="space-y-4">
             {interviews.map((interview) => (
-              <div 
-                key={interview.id} 
+              <div
+                key={interview.id}
                 className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-accent/50 transition-colors"
                 data-testid={`interview-${interview.id}`}
               >

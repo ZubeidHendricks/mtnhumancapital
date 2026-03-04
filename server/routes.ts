@@ -7636,6 +7636,46 @@ Format your response as JSON:
     }
   });
 
+  // Schedule a face-to-face interview on an existing interview session
+  app.post("/api/interviews/:id/schedule-f2f", async (req, res) => {
+    try {
+      const session = await storage.getInterviewSession(req.tenant.id, req.params.id);
+      if (!session) {
+        return res.status(404).json({ message: "Interview not found" });
+      }
+      const { date, time, location, interviewer, notes } = req.body;
+      const updated = await storage.updateInterviewSession(req.tenant.id, req.params.id, {
+        f2fStatus: 'scheduled',
+        f2fScheduledDate: date,
+        f2fScheduledTime: time,
+        f2fLocation: location,
+        f2fInterviewer: interviewer,
+        f2fNotes: notes || null,
+      } as any);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error scheduling f2f:", error);
+      res.status(500).json({ message: "Failed to schedule f2f interview" });
+    }
+  });
+
+  // Mark offer as initiated on an existing interview session
+  app.post("/api/interviews/:id/initiate-offer", async (req, res) => {
+    try {
+      const session = await storage.getInterviewSession(req.tenant.id, req.params.id);
+      if (!session) {
+        return res.status(404).json({ message: "Interview not found" });
+      }
+      const updated = await storage.updateInterviewSession(req.tenant.id, req.params.id, {
+        offerStatus: 'initiated',
+      } as any);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error initiating offer:", error);
+      res.status(500).json({ message: "Failed to initiate offer" });
+    }
+  });
+
   // Get interviews by candidate
   app.get("/api/candidates/:candidateId/interviews", async (req, res) => {
     try {

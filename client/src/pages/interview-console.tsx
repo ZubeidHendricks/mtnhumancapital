@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -146,6 +147,7 @@ export default function InterviewConsole() {
   const [activeFlowView, setActiveFlowView] = useState<"voice" | "video" | "f2f" | "offer" | null>(null);
   const [showPractice, setShowPractice] = useState<"voice" | "video" | null>(null);
   const [f2fMarkedComplete, setF2fMarkedComplete] = useState(false);
+  const [offerDecided, setOfferDecided] = useState(false);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteType, setInviteType] = useState<"voice" | "video">("voice");
   const [playingRecordingId, setPlayingRecordingId] = useState<string | null>(null);
@@ -195,13 +197,27 @@ export default function InterviewConsole() {
         const videoDone = session.videoStatus === "completed";
         const f2fDone = (session as any).f2fStatus === "completed";
 
-        if (f2fDone) {
+        const f2fScheduled = (session as any).f2fStatus === "scheduled";
+        const offerInitiated = (session as any).offerStatus === "initiated";
+
+        if (offerInitiated) {
           setActiveFlowView("offer");
           setActiveFlowStep("offer");
           setCurrentStage("video");
-        } else if (videoDone) {
+          setOfferDecided(true);
+        } else if (f2fDone) {
+          setActiveFlowView("offer");
+          setActiveFlowStep("offer");
+          setCurrentStage("video");
+        } else if (f2fScheduled) {
+          // F2F has been scheduled but not completed - show f2f view
           setActiveFlowView("f2f");
           setActiveFlowStep("f2f");
+          setCurrentStage("video");
+        } else if (videoDone) {
+          // Video done but no f2f scheduled yet - stay on video to show assessment actions
+          setActiveFlowView("video");
+          setActiveFlowStep("video");
           setCurrentStage("video");
         } else if (hasVideo && voiceDone) {
           setActiveFlowView("video");
@@ -231,6 +247,12 @@ export default function InterviewConsole() {
   });
 
   const f2fIsComplete = f2fMarkedComplete || (details?.session as any)?.f2fStatus === "completed";
+  const offerFromServer = (details?.session as any)?.offerStatus === "initiated";
+
+  // Sync offerDecided from server when session details load
+  useEffect(() => {
+    if (offerFromServer) setOfferDecided(true);
+  }, [offerFromServer]);
 
   const updateDecisionMutation = useMutation({
     mutationFn: async ({ feedbackId, decision, notes }: { feedbackId: string; decision: string; notes?: string }) => {
@@ -346,12 +368,12 @@ export default function InterviewConsole() {
       {
         id: "offer",
         label: "Make Offer",
-        status: f2fCompleted ? "active" : videoCompleted ? "active" : "locked",
+        status: offerDecided ? "completed" : f2fCompleted ? "active" : videoCompleted ? "active" : "locked",
         sessionId: null,
         score: null,
       },
     ];
-  }, [details?.session, sessions, f2fIsComplete]);
+  }, [details?.session, sessions, f2fIsComplete, offerDecided]);
 
   // Pipeline transition mutation
   const pipelineTransitionMutation = useMutation({
@@ -631,6 +653,14 @@ export default function InterviewConsole() {
                     steps={flowSteps}
                     activeStepId={activeFlowView || activeFlowStep || undefined}
                     onStepClick={(step) => {
+                      // If offer step is completed (yellow), clicking it navigates to HR dashboard Offer tab
+                      if (step.id === "offer" && offerDecided) {
+                        const cId = details?.session?.candidateId;
+                        const jId = details?.session?.jobId;
+                        const jTitle = details?.session?.jobTitle;
+                        navigate(`/hr-dashboard?tab=offer${cId ? `&candidateId=${cId}` : ''}${jId ? `&jobId=${jId}` : jTitle ? `&jobTitle=${encodeURIComponent(jTitle)}` : ''}`);
+                        return;
+                      }
                       setActiveFlowStep(step.id);
                       setActiveFlowView(step.id as "voice" | "video" | "f2f" | "offer");
                       setShowPractice(null);
@@ -1007,7 +1037,20 @@ export default function InterviewConsole() {
                                 </Button>
                                 <Button
                                   size="lg"
-                                  onClick={() => handleDecision("accepted")}
+                                  onClick={async () => {
+                                    setOfferDecided(true);
+                                    setActiveFlowView("offer");
+                                    setActiveFlowStep("offer");
+                                    // Persist to server
+                                    try {
+                                      await fetch(`/api/interviews/${selectedSession}/initiate-offer`, { method: "POST" });
+                                      queryClient.invalidateQueries({ queryKey: ["/api/interviews"] });
+                                    } catch { /* state already set optimistically */ }
+                                    toast({
+                                      title: "Offer Decision Made",
+                                      description: "Click the Make Offer icon to go to Offer Management.",
+                                    });
+                                  }}
                                   disabled={latestFeedback.isFinalized === 1}
                                   data-testid="button-decision-accept"
                                   className="bg-yellow-500 hover:bg-yellow-600 text-black"
@@ -1097,6 +1140,17 @@ export default function InterviewConsole() {
                       embedded
                       candidateId={details.session.candidateId || undefined}
                       candidateName={details.session.candidateName || undefined}
+                      sessionId={selectedSession || undefined}
+                      jobTitle={details.session.jobTitle || undefined}
+                      f2fStatus={(details.session as any).f2fStatus || null}
+                      f2fScheduledDate={(details.session as any).f2fScheduledDate || null}
+                      f2fScheduledTime={(details.session as any).f2fScheduledTime || null}
+                      f2fLocation={(details.session as any).f2fLocation || null}
+                      f2fInterviewer={(details.session as any).f2fInterviewer || null}
+                      onScheduled={() => {
+                        queryClient.invalidateQueries({ queryKey: ["/api/interviews"] });
+                        queryClient.invalidateQueries({ queryKey: ["/api/interviews", selectedSession] });
+                      }}
                       onMarkComplete={async () => {
                         try {
                           await fetch(`/api/interviews/${selectedSession}/complete-f2f`, { method: "POST" });
@@ -1136,7 +1190,20 @@ export default function InterviewConsole() {
                           </Button>
                           <Button
                             size="lg"
-                            onClick={() => handleDecision("accepted")}
+                            onClick={async () => {
+                              setOfferDecided(true);
+                              setActiveFlowView("offer");
+                              setActiveFlowStep("offer");
+                              // Persist to server
+                              try {
+                                await fetch(`/api/interviews/${selectedSession}/initiate-offer`, { method: "POST" });
+                                queryClient.invalidateQueries({ queryKey: ["/api/interviews"] });
+                              } catch { /* state already set optimistically */ }
+                              toast({
+                                title: "Offer Decision Made",
+                                description: "Click the Make Offer icon to go to Offer Management.",
+                              });
+                            }}
                             data-testid="button-f2f-offer"
                             className="bg-yellow-500 hover:bg-yellow-600 text-black"
                           >
@@ -1177,7 +1244,16 @@ export default function InterviewConsole() {
                       <div className="mt-6">
                         <Button
                           size="lg"
-                          onClick={() => navigate("/offer-management")}
+                          onClick={() => {
+                            toast({
+                              title: "Proceeding to Offer",
+                              description: "Navigating to Offer Management...",
+                            });
+                            const cId = details?.session?.candidateId;
+                            const jId = details?.session?.jobId;
+                            const jTitle = details?.session?.jobTitle;
+                            navigate(`/hr-dashboard?tab=offer${cId ? `&candidateId=${cId}` : ''}${jId ? `&jobId=${jId}` : jTitle ? `&jobTitle=${encodeURIComponent(jTitle)}` : ''}`);
+                          }}
                           data-testid="button-offer-accept"
                           className="bg-yellow-500 hover:bg-yellow-600 text-black"
                         >
@@ -1185,7 +1261,7 @@ export default function InterviewConsole() {
                           Proceed to Offer Management
                         </Button>
                         <p className="text-xs text-muted-foreground mt-2">
-                          Navigate to Offer Management to create and send an offer for this candidate
+                          Candidate has completed the interviewing stage and available in the Offer Management dropdown
                         </p>
                       </div>
                     </div>
