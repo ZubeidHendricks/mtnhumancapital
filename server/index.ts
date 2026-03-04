@@ -426,11 +426,16 @@ app.post("/api/public/interview-session/:token/complete", async (req, res) => {
               continue;
             }
 
-            const tavusData = await tavusRes.json() as {
-              recording_url?: string;
-              status?: string;
-              conversation_transcript?: Array<{ role: string; content: string; timestamp?: number }>;
-            };
+            const tavusData: any = await tavusRes.json();
+
+            // Log the full response structure for debugging
+            console.log(`[Interview] Tavus API response for ${tavusConversationId}:`, JSON.stringify({
+              status: tavusData.status,
+              has_recording_url: !!tavusData.recording_url,
+              has_conversation_transcript: !!tavusData.conversation_transcript,
+              has_transcript: !!tavusData.transcript,
+              keys: Object.keys(tavusData),
+            }));
 
             // Check if recording is available
             if (!tavusData.recording_url) {
@@ -474,9 +479,10 @@ app.post("/api/public/interview-session/:token/complete", async (req, res) => {
               console.log(`[Interview] Tavus recording saved for session ${sessionId}: ${key} (${size} bytes)`);
             }
 
-            // If Tavus provides a transcript, save it and re-run analysis
-            if (tavusData.conversation_transcript && tavusData.conversation_transcript.length > 0) {
-              const tavusTranscripts = tavusData.conversation_transcript.map((t: any) => ({
+            // Check both possible transcript field names from Tavus API
+            const transcript = tavusData.conversation_transcript || tavusData.transcript || [];
+            if (Array.isArray(transcript) && transcript.length > 0) {
+              const tavusTranscripts = transcript.map((t: any) => ({
                 role: t.role === 'user' || t.role === 'candidate' ? 'candidate' as const : 'ai' as const,
                 text: t.content || t.text || '',
                 timestamp: t.timestamp,
@@ -544,10 +550,10 @@ app.post("/api/public/interview-session/:token/video-session", async (req, res) 
     const candidateName = candidate?.fullName || session.candidateName || "Candidate";
     const jobRole = session.jobTitle || "Open Position";
 
-    // Charles Molapisi persona - Group CTIO at MTN
-    const conversationalContext = `You are Charles Molapisi, Group Chief Technology and Information Officer (GCTIO) at MTN Group. Conduct a senior-level interview for the ${jobRole} position assessing candidates for MTN's AI transformation program. Ask these questions in order, one at a time: 1) AI Solution Architecture - approach to designing AI solution architecture aligning with business objectives, regulatory constraints (GDPR etc), and integration into existing workflows. Follow up on model accuracy vs explainability in BSS/OSS domain, and Responsible AI in practice. 2) AI Platform Architecture - designing scalable AI platform for diverse use cases (NLP chatbots, analytical models, GenAI) across operating companies, including AI landing zones, MLOps, LLMOps, real-time data processing. 3) AI Infrastructure Architecture - infrastructure components for AI workloads in telecom with strict latency, scalability, security, cost optimization. 4) AI Program Governance - framework for governing 20+ AI projects, prioritizing demands, mitigating risks (bias, hallucinations, data quality), enforcing ethical AI across dispersed teams. 5) AI Value Realization - example of quantifying ROI of AI initiative, tracking metrics (cost savings, revenue uplift, customer satisfaction), value realization framework pre and post implementation. Keep to 20-25 minutes. Speak naturally, never mention AI nature.`;
+    // Dynamic prompt based on job role (Charles Molapisi persona)
+    const conversationalContext = interviewOrchestrator.getTavusPrompt(jobRole);
 
-    const customGreeting = `Hello! I'm Charles Molapisi, the Group Chief Technology and Information Officer here at MTN. Thank you for making the time to speak with me today. As you may know, we're on an exciting journey transforming MTN into an AI-enabled technology organisation, and I'm looking forward to understanding how your experience and expertise could contribute to that mission. Before we dive in, how are you doing today?`;
+    const customGreeting = `Hello! I'm Charles Molapisi, the Group Chief Technology and Information Officer here at MTN. Thank you for making the time to speak with me today. I'm looking forward to learning more about you and discussing the ${jobRole} position. Before we dive in, how are you doing today?`;
 
     const requestBody = {
       replica_id: process.env.TAVUS_REPLICA_ID || "default_replica",

@@ -57,6 +57,9 @@ export const jobs = pgTable("jobs", {
   // RAG Embeddings
   requirementsEmbedding: vector("requirements_embedding", { dimensions: 1536 }),
   
+  // Structured job spec metadata (customer, introduction, duties, attributes, qualifications, etc.)
+  metadata: jsonb("metadata"),
+
   // Archival (soft delete for historical data preservation)
   archivedAt: timestamp("archived_at"),
   archivedReason: text("archived_reason"),

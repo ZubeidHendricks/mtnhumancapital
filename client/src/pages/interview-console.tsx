@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -133,6 +134,7 @@ interface CandidateResult {
 }
 
 export default function InterviewConsole() {
+  const [, navigate] = useLocation();
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [decisionNotes, setDecisionNotes] = useState("");
   const [showDecisionDialog, setShowDecisionDialog] = useState(false);
@@ -1175,7 +1177,7 @@ export default function InterviewConsole() {
                       <div className="mt-6">
                         <Button
                           size="lg"
-                          onClick={() => handleDecision("accepted")}
+                          onClick={() => navigate("/offer-management")}
                           data-testid="button-offer-accept"
                           className="bg-yellow-500 hover:bg-yellow-600 text-black"
                         >
@@ -1183,7 +1185,7 @@ export default function InterviewConsole() {
                           Proceed to Offer Management
                         </Button>
                         <p className="text-xs text-muted-foreground mt-2">
-                          Candidate will move to "Offer Pending" stage and appear in the Offer Management dropdown
+                          Navigate to Offer Management to create and send an offer for this candidate
                         </p>
                       </div>
                     </div>

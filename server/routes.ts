@@ -1646,12 +1646,20 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     }
   });
 
+  // Helper to merge metadata fields onto job object for frontend consumption
+  function enrichJobWithMetadata(job: any) {
+    if (job && job.metadata && typeof job.metadata === 'object') {
+      return { ...job, ...job.metadata };
+    }
+    return job;
+  }
+
   app.get("/api/jobs", async (req, res) => {
     try {
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
       const { data, total } = await storage.getJobsPaginated(req.tenant.id, page, limit);
-      res.json({ data, total, page, limit });
+      res.json({ data: data.map(enrichJobWithMetadata), total, page, limit });
     } catch (error) {
       console.error("Error fetching jobs:", error);
       res.status(500).json({ message: "Failed to fetch jobs" });
@@ -1664,7 +1672,7 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
       if (!job) {
         return res.status(404).json({ message: "Job not found" });
       }
-      res.json(job);
+      res.json(enrichJobWithMetadata(job));
     } catch (error) {
       console.error("Error fetching job:", error);
       res.status(500).json({ message: "Failed to fetch job" });
@@ -1961,6 +1969,17 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
         tenantId: req.tenant.id
       });
       
+      // Build structured metadata from extra job spec fields
+      const jobMetadata: Record<string, any> = {};
+      const metadataFields = ['customer', 'introduction', 'duties', 'attributes', 'qualifications',
+        'remuneration', 'gender', 'ethics', 'city', 'province', 'requirements', 'responsibilities',
+        'benefits', 'skills'] as const;
+      for (const field of metadataFields) {
+        if (jobSpec[field] !== undefined && jobSpec[field] !== null && jobSpec[field] !== '') {
+          jobMetadata[field] = jobSpec[field];
+        }
+      }
+
       const job = await storage.createJob(req.tenant.id, {
         title: jobSpec.title || "Untitled Job (Draft)",
         department: inferredDepartment || "General",
@@ -1977,10 +1996,11 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
         certificationsRequired: jobSpec.certificationsRequired,
         physicalRequirements: jobSpec.physicalRequirements,
         equipmentExperience: jobSpec.equipmentExperience as any,
+        metadata: Object.keys(jobMetadata).length > 0 ? jobMetadata : undefined,
         status: isDraft ? "Draft" : "Active",
         assignedAgentId: assignedAgentId || undefined,
         assignedAgentName: assignedAgentName || undefined,
-      });
+      } as any);
       
       console.log("[Job Creation] Job created successfully:", { id: job.id, title: job.title });
 
@@ -2189,10 +2209,10 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
 
       const role = jobRole || "Entry-Level Consultant";
 
-      // Charles Molapisi persona - Group CTIO at MTN
-      const conversationalContext = `You are Charles Molapisi, Group Chief Technology and Information Officer (GCTIO) at MTN Group. Conduct a senior-level interview for the ${role} position assessing candidates for MTN's AI transformation program. Ask these questions in order, one at a time: 1) AI Solution Architecture - approach to designing AI solution architecture aligning with business objectives, regulatory constraints (GDPR etc), and integration into existing workflows. Follow up on model accuracy vs explainability in BSS/OSS domain, and Responsible AI in practice. 2) AI Platform Architecture - designing scalable AI platform for diverse use cases (NLP chatbots, analytical models, GenAI) across operating companies, including AI landing zones, MLOps, LLMOps, real-time data processing. 3) AI Infrastructure Architecture - infrastructure components for AI workloads in telecom with strict latency, scalability, security, cost optimization. 4) AI Program Governance - framework for governing 20+ AI projects, prioritizing demands, mitigating risks (bias, hallucinations, data quality), enforcing ethical AI across dispersed teams. 5) AI Value Realization - example of quantifying ROI of AI initiative, tracking metrics (cost savings, revenue uplift, customer satisfaction), value realization framework pre and post implementation. Keep to 20-25 minutes. Speak naturally, never mention AI nature.`;
+      // Dynamic prompt based on job role (Charles Molapisi persona)
+      const conversationalContext = interviewOrchestrator.getTavusPrompt(role);
 
-      const customGreeting = `Hello! I'm Charles Molapisi, the Group Chief Technology and Information Officer here at MTN. Thank you for making the time to speak with me today. As you may know, we're on an exciting journey transforming MTN into an AI-enabled technology organisation, and I'm looking forward to understanding how your experience and expertise could contribute to that mission. Before we dive in, how are you doing today?`;
+      const customGreeting = `Hello! I'm Charles Molapisi, the Group Chief Technology and Information Officer here at MTN. Thank you for making the time to speak with me today. I'm looking forward to learning more about you and discussing the ${role} position. Before we dive in, how are you doing today?`;
 
       const requestBody = {
         replica_id: process.env.TAVUS_REPLICA_ID || "default_replica",
@@ -8166,6 +8186,16 @@ Format your response as JSON:
       });
 
       const tavusData = tavusRes.data;
+
+      // Log the full response structure for debugging
+      console.log(`[Interview] Tavus manual fetch response for ${conversationId}:`, JSON.stringify({
+        status: tavusData?.status,
+        has_recording_url: !!tavusData?.recording_url,
+        has_conversation_transcript: !!tavusData?.conversation_transcript,
+        has_transcript: !!tavusData?.transcript,
+        keys: tavusData ? Object.keys(tavusData) : [],
+      }));
+
       const recordingUrl = tavusData?.recording_url;
       if (!recordingUrl) {
         return res.status(404).json({ message: "Recording not yet available. Tavus may still be processing." });
