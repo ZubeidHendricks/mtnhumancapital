@@ -145,7 +145,7 @@ export class PNetJobPostingAgent {
 
     return {
       jobBoardId: 'pnet_co_za',
-      externalJobId: `AHC-${tenantId}-${job.id}`,
+      externalJobId: `MTN-${tenantId}-${job.id}`,
       jobTitle: job.title,
       jobDescription: await this.enrichJobDescription(job),
       location: {

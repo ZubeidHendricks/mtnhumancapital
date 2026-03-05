@@ -562,6 +562,18 @@ export class OnboardingAgent {
           } catch (e) {
             console.error("Failed to send HR completion notification:", e);
           }
+
+          // Auto-transition candidate to "hired" stage in the pipeline
+          try {
+            const { pipelineOrchestrator } = await import("./pipeline-orchestrator");
+            await pipelineOrchestrator.transitionCandidate(candidateId, "hired", tenantId, {
+              triggeredBy: "auto",
+              reason: "Onboarding completed - all required documents verified",
+            });
+            console.log(`[Onboarding] Candidate ${candidateId} auto-transitioned to hired stage`);
+          } catch (e) {
+            console.error("Failed to auto-transition candidate to hired:", e);
+          }
         }
       }
     }

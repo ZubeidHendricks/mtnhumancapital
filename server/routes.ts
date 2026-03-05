@@ -7882,7 +7882,8 @@ Format your response as JSON:
   // Get interview recordings
   app.get("/api/interviews/:id/recordings", async (req, res) => {
     try {
-      const recordings = await storage.getInterviewRecordings(req.tenant.id, req.params.id);
+      const stage = req.query.stage as string | undefined;
+      const recordings = await storage.getInterviewRecordings(req.tenant.id, req.params.id, stage);
       res.json(recordings);
     } catch (error) {
       console.error("Error fetching recordings:", error);
@@ -11755,7 +11756,7 @@ Format your response as JSON:
         salary: salary || undefined,
         currency: "ZAR",
         benefits: benefits || undefined,
-        companyName: "AHC Recruiting",
+        companyName: "MTN Recruiting",
       };
 
       const { buffer, filename, mimeType } = await docGenerator.generateDocumentForOffer(
@@ -11822,7 +11823,7 @@ Format your response as JSON:
             salary: offer.salary || undefined,
             currency: offer.currency || "ZAR",
             benefits: Array.isArray(offer.benefits) ? offer.benefits as string[] : undefined,
-            companyName: "AHC Recruiting",
+            companyName: "MTN Recruiting",
           };
 
           const { buffer, filename, mimeType } = await docGenerator.generateDocumentForOffer(
@@ -12033,7 +12034,7 @@ Format your response as JSON:
       }
 
       const tenant = await storage.getTenantById(req.tenant.id);
-      const companyName = tenant?.companyName || "AHC Recruiting";
+      const companyName = tenant?.companyName || "MTN Recruiting";
 
       // Generate token
       const interestToken = crypto.randomBytes(24).toString("hex");

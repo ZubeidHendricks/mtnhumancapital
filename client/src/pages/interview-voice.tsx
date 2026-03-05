@@ -50,6 +50,8 @@ export default function InterviewVoice() {
         const wsUrl = `wss://api.hume.ai/v0/evi/chat?access_token=${voiceConfig.accessToken}`;
         
         console.log("Connecting to Hume AI...");
+        // Set start time before WebSocket opens so timestamps are captured from the first message
+        recordingStartTimeRef.current = Date.now();
         const ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {

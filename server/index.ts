@@ -482,11 +482,19 @@ app.post("/api/public/interview-session/:token/complete", async (req, res) => {
             // Check both possible transcript field names from Tavus API
             const transcript = tavusData.conversation_transcript || tavusData.transcript || [];
             if (Array.isArray(transcript) && transcript.length > 0) {
-              const tavusTranscripts = transcript.map((t: any) => ({
-                role: t.role === 'user' || t.role === 'candidate' ? 'candidate' as const : 'ai' as const,
-                text: t.content || t.text || '',
-                timestamp: t.timestamp,
-              }));
+              // Estimate timestamps from position if Tavus doesn't provide them
+            let cumulativeSeconds = 0;
+            const tavusTranscripts = transcript.map((t: any) => {
+                const text = t.content || t.text || '';
+                const ts = t.timestamp ?? cumulativeSeconds;
+                // Estimate ~3 seconds per 15 words if no timestamp provided
+                cumulativeSeconds += t.timestamp != null ? 0 : Math.max(3, Math.ceil(text.split(/\s+/).length / 15) * 3);
+                return {
+                  role: t.role === 'user' || t.role === 'candidate' ? 'candidate' as const : 'ai' as const,
+                  text,
+                  timestamp: ts,
+                };
+              });
 
               console.log(`[Interview] Tavus transcript available (${tavusTranscripts.length} segments), running AI analysis...`);
 
@@ -920,7 +928,7 @@ app.get("/api/public/offer-response/:token", async (req, res) => {
       jobTitle,
       salary: `${offer.currency || "ZAR"} ${String(offer.salary).replace(/^R\s*/i, "")}`,
       startDate: offer.startDate ? new Date(offer.startDate).toLocaleDateString() : "TBD",
-      companyName: tenant?.companyName || "AHC Recruiting",
+      companyName: tenant?.companyName || "MTN Recruiting",
       status: offer.status,
       documentUrl: offer.documentPath || null,
       expiresAt: offer.expiresAt,
@@ -1073,7 +1081,7 @@ app.get("/api/public/interest-check/:token", async (req, res) => {
       jobDescription,
       jobDepartment,
       jobLocation,
-      companyName: tenant?.companyName || "AHC Recruiting",
+      companyName: tenant?.companyName || "MTN Recruiting",
       status: check.status,
       expiresAt: check.expiresAt,
     });

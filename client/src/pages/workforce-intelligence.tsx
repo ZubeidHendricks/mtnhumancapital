@@ -410,11 +410,11 @@ export default function WorkforceIntelligence() {
 
           {/* AI Assistant & Alerts Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {/* Ask AHC - AI Assistant */}
+            {/* Ask MTN - AI Assistant */}
             <Card className="bg-gradient-to-br from-muted/10 via-blue-500/10 to-background/10 dark:from-muted/30 dark:via-blue-900/30 dark:to-background/30 border-border overflow-hidden">
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-2">
-                  <Badge className="bg-muted/20 text-foreground border-0">Ask AHC</Badge>
+                  <Badge className="bg-muted/20 text-foreground border-0">Ask MTN</Badge>
                 </div>
                 <CardTitle className="text-xl text-foreground">Get instant answers</CardTitle>
                 <CardDescription className="text-muted-foreground">
@@ -450,7 +450,7 @@ export default function WorkforceIntelligence() {
                   <div className="bg-muted rounded-xl p-4">
                     <div className="flex items-center gap-2 text-foreground">
                       <Sparkles className="h-4 w-4 animate-pulse" />
-                      <span className="text-sm">AHC thinking for ~{Math.floor(Math.random() * 5) + 3}s...</span>
+                      <span className="text-sm">MTN thinking for ~{Math.floor(Math.random() * 5) + 3}s...</span>
                     </div>
                   </div>
                 )}

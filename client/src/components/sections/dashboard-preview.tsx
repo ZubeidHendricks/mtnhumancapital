@@ -20,7 +20,7 @@ export function DashboardPreview() {
                 <span className="text-muted-foreground">Modern Leadership</span>
               </h2>
               <p className="text-lg text-muted-foreground mb-8">
-                The AHC Executive Dashboard unifies data from HR, Finance, and Operations into a single source of truth. Receive real-time alerts via WhatsApp integration and monitor contract timelines effortlessly.
+                The MTN Executive Dashboard unifies data from HR, Finance, and Operations into a single source of truth. Receive real-time alerts via WhatsApp integration and monitor contract timelines effortlessly.
               </p>
 
               <ul className="space-y-4">

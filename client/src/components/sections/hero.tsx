@@ -85,7 +85,7 @@ export function Hero() {
 
       <Dialog open={showDemo} onOpenChange={setShowDemo}>
         <DialogContent className="max-w-4xl p-0 bg-black border-0 overflow-hidden">
-          <DialogTitle className="sr-only">AHC Platform Demo Video</DialogTitle>
+          <DialogTitle className="sr-only">MTN Platform Demo Video</DialogTitle>
           <button
             onClick={() => setShowDemo(false)}
             className="absolute top-4 right-4 z-50 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"

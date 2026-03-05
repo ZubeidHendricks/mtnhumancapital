@@ -1317,6 +1317,11 @@ export default function EmployeeOnboarding() {
                 onClick={() => {
                   queryClient.invalidateQueries({ queryKey: workflowsKey });
                   queryClient.invalidateQueries({ queryKey: candidatesKey });
+                  // Also refresh document requests and agent logs for all expanded workflows
+                  queryClient.invalidateQueries({ predicate: (query) => {
+                    const key = query.queryKey as string[];
+                    return key.some(k => typeof k === 'string' && (k.includes('onboarding-doc-requests') || k.includes('onboarding-agent-logs')));
+                  }});
                 }}
                 title="Refresh employees"
               >
