@@ -381,7 +381,7 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
       if (isPlaying) {
         audioRef.current.pause();
       } else {
-        audioRef.current.play();
+        audioRef.current.play().catch(() => {});
       }
       setIsPlaying(!isPlaying);
     }
