@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Zap, Sparkles, Users, MessageSquare, Mail } from "lucide-react";
 
-export function AHCFeatures() {
+export function MTNFeatures() {
   return (
     <div className="w-full bg-black text-white py-20">
       <div className="container mx-auto px-6">
@@ -18,7 +18,7 @@ export function AHCFeatures() {
               Auto-evaluate
             </h2>
             <p className="text-xl text-white/60 mb-8 leading-relaxed">
-              AHC evaluates candidates <span className="text-white font-semibold">10x faster</span> than your regular Recruiter, 
+              MTN evaluates candidates <span className="text-white font-semibold">10x faster</span> than your regular Recruiter, 
               and it reads the context like no one before to avoid biases and detect hidden gems.
             </p>
           </motion.div>
@@ -60,10 +60,10 @@ export function AHCFeatures() {
             <Badge className="mb-4 bg-white/10 text-white hover:bg-white/20 border-white/20">SPEED</Badge>
             <h3 className="text-4xl font-bold mb-4 text-white">10x your screening speed.</h3>
             <p className="text-white/60 text-lg mb-6">
-              No more CV scanning. AHC helps you identify talent at unprecedented speed. Intelligently.
+              No more CV scanning. MTN helps you identify talent at unprecedented speed. Intelligently.
             </p>
             <Button variant="outline" className="border-white/20 text-white hover:bg-white hover:text-black transition-colors rounded-full px-8">
-              Try AHC free
+              Try MTN free
             </Button>
           </motion.div>
         </div>
@@ -80,7 +80,7 @@ export function AHCFeatures() {
               Spot hidden, growing, unusual talent, before your competitor does.
             </p>
             <Button variant="outline" className="border-white/20 text-white hover:bg-white hover:text-black transition-colors rounded-full px-8">
-              Try AHC
+              Try MTN
             </Button>
           </motion.div>
 
@@ -132,7 +132,7 @@ export function AHCFeatures() {
             <Badge className="mb-4 bg-white/10 text-white hover:bg-white/20 border-white/20">FAIRNESS</Badge>
             <h3 className="text-4xl font-bold mb-4 text-white">Built to reduce, not amplify biases.</h3>
             <p className="text-white/60 text-lg mb-6">
-              AHC's matching algorithm aims for the best competence match, regardless of look or personality.
+              MTN's matching algorithm aims for the best competence match, regardless of look or personality.
             </p>
             <Button variant="outline" className="border-white/20 text-white hover:bg-white hover:text-black transition-colors rounded-full px-8">
               De-bias your hiring
@@ -150,7 +150,7 @@ export function AHCFeatures() {
              <Badge className="mb-6 bg-white/10 text-white hover:bg-white/20 border-white/20">OUTREACH</Badge>
              <h2 className="text-4xl font-bold mb-6 text-white">Augment your outreach</h2>
              <p className="text-white/50 max-w-2xl mx-auto text-lg mb-8">
-               Get in contact with the best-fitting talent without leaving AHC. And with Agent Mode, you outreach to all suitable candidates in batch.
+               Get in contact with the best-fitting talent without leaving MTN. And with Agent Mode, you outreach to all suitable candidates in batch.
              </p>
              
              <div className="flex flex-col md:flex-row gap-8 justify-center items-center mb-10">
@@ -181,7 +181,7 @@ export function AHCFeatures() {
               <div>
                  <h2 className="text-4xl font-bold mb-6 text-white">Agentic Mode: hiring on auto-pilot.</h2>
                  <p className="text-white/60 text-lg mb-8">
-                   AHC advanced Agentic Mode helps you enrich contacts, outreach shortlisted candidates, and even (video) interview.
+                   MTN advanced Agentic Mode helps you enrich contacts, outreach shortlisted candidates, and even (video) interview.
                  </p>
                  
                  <div className="space-y-6">

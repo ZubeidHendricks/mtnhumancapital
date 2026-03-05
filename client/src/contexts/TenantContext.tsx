@@ -44,7 +44,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         
         // Update document title
         if (tenantData.companyName) {
-          document.title = `${tenantData.companyName} - AHC`;
+          document.title = `${tenantData.companyName} - MTN`;
         }
       } catch (err) {
         console.error('Failed to load tenant:', err);

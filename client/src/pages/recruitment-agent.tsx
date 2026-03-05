@@ -18,7 +18,7 @@ import {
   Loader2, Users, Target, TrendingUp, CheckCircle, AlertCircle, Search, Sparkles,
   Bot, Brain, FileSearch, UserCheck, Zap, Clock, ArrowRight, Play, MessageSquare,
   ChevronRight, ChevronDown, ChevronUp, Star, Briefcase, MapPin, Award, Activity, X, Building2, GraduationCap,
-  Mail, Phone, Linkedin, FileText, ThumbsUp, Eye, Send
+  Mail, Phone, Linkedin, FileText, ThumbsUp, Eye, Send, RefreshCw
 } from "lucide-react";
 import { api, candidateService } from "@/lib/api";
 import { toast } from "sonner";
@@ -224,6 +224,7 @@ export default function RecruitmentAgent() {
   const [interestCheckCandidate, setInterestCheckCandidate] = useState<Candidate | null>(null);
   const [shortlistingId, setShortlistingId] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [isRefreshingShortlist, setIsRefreshingShortlist] = useState(false);
 
   // Update selectedJobId when URL param changes
   useEffect(() => {
@@ -994,16 +995,33 @@ export default function RecruitmentAgent() {
       <Dialog open={showShortlistDialog} onOpenChange={setShowShortlistDialog}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden bg-card border-border text-foreground">
           <DialogHeader className="border-b border-border pb-4">
-            <DialogTitle className="text-xl flex items-center gap-2">
-              <Star className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-              Shortlisted Candidates
-              {displayJobTitle && (
-                <Badge className="ml-2 bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30">
-                  <Briefcase className="h-3 w-3 mr-1" />
-                  {displayJobTitle}
-                </Badge>
-              )}
-            </DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-xl flex items-center gap-2">
+                <Star className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                Shortlisted Candidates
+                {displayJobTitle && (
+                  <Badge className="ml-2 bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30">
+                    <Briefcase className="h-3 w-3 mr-1" />
+                    {displayJobTitle}
+                  </Badge>
+                )}
+              </DialogTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1 mr-6"
+                disabled={isRefreshingShortlist}
+                onClick={async () => {
+                  setIsRefreshingShortlist(true);
+                  await queryClient.invalidateQueries({ queryKey: candidatesKey });
+                  setTimeout(() => setIsRefreshingShortlist(false), 800);
+                }}
+                data-testid="button-refresh-shortlisted"
+              >
+                <RefreshCw className={`h-4 w-4 ${isRefreshingShortlist ? 'animate-spin' : ''}`} />
+                {isRefreshingShortlist ? 'Refreshing...' : 'Refresh'}
+              </Button>
+            </div>
             <DialogDescription className="text-gray-500 dark:text-gray-400">
               Top talent ready for interviews and offers
             </DialogDescription>

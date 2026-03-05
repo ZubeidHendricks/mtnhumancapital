@@ -152,6 +152,7 @@ export default function InterviewConsole() {
   const [playingRecordingId, setPlayingRecordingId] = useState<string | null>(null);
   const [currentStage, setCurrentStage] = useState<"voice" | "video">("voice");
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const recordingToastShownRef = useRef<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -186,7 +187,9 @@ export default function InterviewConsole() {
   useEffect(() => {
     setShowPractice(null);
     setF2fMarkedComplete(false);
+    setOfferDecided(false);
     setWaitingForRecording(false);
+    recordingToastShownRef.current = null;
     if (selectedSession) {
       // Auto-detect the most relevant stage to show based on session state
       const session = sessions.find(s => s.id === selectedSession);
@@ -246,8 +249,7 @@ export default function InterviewConsole() {
       return res.json();
     },
     enabled: !!selectedSession,
-    // Poll every 10s when waiting for a recording to become available
-    refetchInterval: waitingForRecording ? 10000 : false,
+    // No auto-polling — user can click "Check Now" in the recording tab to refresh
   });
 
   const f2fIsComplete = f2fMarkedComplete || (details?.session as any)?.f2fStatus === "completed";
@@ -266,12 +268,16 @@ export default function InterviewConsole() {
     if (interviewDone && !hasRecordings) {
       setWaitingForRecording(true);
     } else if (waitingForRecording && hasRecordings) {
-      // Recording just arrived — notify user
+      // Recording just arrived — notify user (only once per session)
       setWaitingForRecording(false);
-      toast({
-        title: "Recording Available",
-        description: "The interview recording has been processed and is now available for playback.",
-      });
+      const toastKey = `${selectedSession}-${currentStage}`;
+      if (recordingToastShownRef.current !== toastKey) {
+        recordingToastShownRef.current = toastKey;
+        toast({
+          title: "Recording Available",
+          description: "The interview recording has been processed and is now available for playback.",
+        });
+      }
     } else if (hasRecordings) {
       setWaitingForRecording(false);
     }
@@ -657,7 +663,12 @@ export default function InterviewConsole() {
                       {details.session.candidateName || "Unknown Candidate"}
                     </CardTitle>
                     <CardDescription className="mt-1">
-                      {details.session.jobTitle} • {details.session.interviewType} interview
+                      {details.session.jobTitle} • {
+                        activeFlowView === "video" ? "Video Interview" :
+                        activeFlowView === "f2f" ? "Face-to-Face Interview" :
+                        activeFlowView === "offer" ? "Make Offer" :
+                        "Voice Interview"
+                      }
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
@@ -758,7 +769,7 @@ export default function InterviewConsole() {
                     </TabsList>
 
                     <TabsContent value="analysis" className="mt-4">
-                      {latestFeedback && (
+                      {latestFeedback ? (
                         <div className="space-y-6 mb-6">
                           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                             <ScoreCard label="Overall" value={latestFeedback.overallScore} />
@@ -830,6 +841,12 @@ export default function InterviewConsole() {
                             </div>
                           )}
                         </div>
+                      ) : (
+                        <div className="text-center py-12 text-muted-foreground">
+                          <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                          <p>No analysis available yet</p>
+                          <p className="text-sm mt-1">AI analysis will appear after the interview is completed</p>
+                        </div>
                       )}
 
                     </TabsContent>
@@ -838,34 +855,48 @@ export default function InterviewConsole() {
                       <ScrollArea className="h-[400px]">
                         {details.transcripts.length > 0 ? (
                           <div className="space-y-4">
-                            {details.transcripts.map((segment) => (
-                              <div
-                                key={segment.id}
-                                data-testid={`transcript-segment-${segment.segmentIndex}`}
-                                className={`p-3 rounded-lg ${
-                                  segment.speakerRole === "candidate"
-                                    ? "bg-muted/20 ml-0 mr-8"
-                                    : "bg-secondary/20 ml-8 mr-0"
-                                }`}
-                              >
-                                <div className="flex items-center justify-between mb-1">
-                                  <span className="text-xs font-semibold uppercase">
-                                    {segment.speakerRole}
-                                  </span>
-                                  {segment.sentiment && (
-                                    <span className={`text-xs ${getSentimentColor(segment.sentiment)}`}>
-                                      {segment.sentiment}
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-sm">{segment.text}</p>
-                                {segment.startTime != null && (
-                                  <span className="text-xs text-muted-foreground mt-1">
-                                    {Math.floor(segment.startTime / 60)}:{String(segment.startTime % 60).padStart(2, "0")}
-                                  </span>
-                                )}
-                              </div>
-                            ))}
+                            {(() => {
+                              // Compute timestamps: use real ones if available, otherwise estimate from word count
+                              const hasRealTimestamps = details.transcripts.some(s => s.startTime != null);
+                              let cumSec = 0;
+                              const timestamps = details.transcripts.map((seg) => {
+                                if (hasRealTimestamps) return seg.startTime;
+                                const ts = cumSec;
+                                cumSec += Math.max(3, Math.ceil((seg.text?.split(/\s+/).length || 5) / 2.5));
+                                return ts;
+                              });
+                              return details.transcripts.map((segment, idx) => {
+                                const ts = timestamps[idx] ?? 0;
+                                return (
+                                  <div
+                                    key={segment.id}
+                                    data-testid={`transcript-segment-${segment.segmentIndex}`}
+                                    className={`p-3 rounded-lg ${
+                                      segment.speakerRole === "candidate"
+                                        ? "bg-muted/20 ml-0 mr-8"
+                                        : "bg-secondary/20 ml-8 mr-0"
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between mb-1">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xs font-mono text-muted-foreground min-w-[40px]">
+                                          {Math.floor(ts / 60)}:{String(Math.round(ts) % 60).padStart(2, "0")}
+                                        </span>
+                                        <span className="text-xs font-semibold uppercase">
+                                          {segment.speakerRole}
+                                        </span>
+                                      </div>
+                                      {segment.sentiment && (
+                                        <span className={`text-xs ${getSentimentColor(segment.sentiment)}`}>
+                                          {segment.sentiment}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-sm">{segment.text}</p>
+                                  </div>
+                                );
+                              });
+                            })()}
                           </div>
                         ) : (
                           <div className="text-center py-12 text-muted-foreground">

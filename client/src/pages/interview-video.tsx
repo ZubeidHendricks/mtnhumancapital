@@ -134,11 +134,12 @@ export default function InterviewVideo() {
           }
         });
 
+        // Set start time before joining so timestamps are captured from the first message
+        startTimeRef.current = Date.now();
         // Join the Tavus conversation room
         await call.join({ url: data.sessionUrl });
 
         setIsSessionActive(true);
-        startTimeRef.current = Date.now();
         toast.success("Video session created successfully");
       } catch (err) {
         console.error("Failed to join Daily call:", err);

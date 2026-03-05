@@ -782,7 +782,7 @@ export class GitHubDeveloperSourcer {
             headers: {
               'Accept': 'application/vnd.github+json',
               'X-GitHub-Api-Version': '2022-11-28',
-              'User-Agent': 'AHC-Recruiter-Bot'
+              'User-Agent': 'MTN-Recruiter-Bot'
             }
           });
           
@@ -800,7 +800,7 @@ export class GitHubDeveloperSourcer {
               headers: {
                 'Accept': 'application/vnd.github+json',
                 'X-GitHub-Api-Version': '2022-11-28',
-                'User-Agent': 'AHC-Recruiter-Bot'
+                'User-Agent': 'MTN-Recruiter-Bot'
               }
             });
             
@@ -812,7 +812,7 @@ export class GitHubDeveloperSourcer {
                 headers: {
                   'Accept': 'application/vnd.github+json',
                   'X-GitHub-Api-Version': '2022-11-28',
-                  'User-Agent': 'AHC-Recruiter-Bot'
+                  'User-Agent': 'MTN-Recruiter-Bot'
                 }
               });
               
@@ -969,7 +969,7 @@ export class DevToSourcer {
         const response = await fetch(url, {
           headers: {
             'Accept': 'application/json',
-            'User-Agent': 'AHC-Recruiter-Bot'
+            'User-Agent': 'MTN-Recruiter-Bot'
           }
         });
         
@@ -985,7 +985,7 @@ export class DevToSourcer {
           const userResponse = await fetch(userUrl, {
             headers: {
               'Accept': 'application/json',
-              'User-Agent': 'AHC-Recruiter-Bot'
+              'User-Agent': 'MTN-Recruiter-Bot'
             }
           });
           

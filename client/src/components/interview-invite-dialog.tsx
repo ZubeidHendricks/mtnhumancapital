@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTenantQueryKey } from "@/hooks/useTenant";
 import { useLocation } from "wouter";
@@ -21,7 +21,7 @@ function generateInterviewPrompt(candidate: any, job: Job | null | undefined): s
   const description = job?.description || '';
   const candidateSkills = Array.isArray(candidate.skills) ? candidate.skills.join(', ') : '';
 
-  let prompt = `You are an HR interviewer for AHC (Avatar Human Capital) conducting a screening interview for the ${jobTitle} position${department ? ` in the ${department} department` : ''}.
+  let prompt = `You are an HR interviewer for MTN Human Capital conducting a screening interview for the ${jobTitle} position${department ? ` in the ${department} department` : ''}.
 
 INTERVIEW GUIDELINES:
 - The interview should last approximately 12 minutes, with a maximum of 15 minutes.
@@ -118,12 +118,14 @@ export function InterviewInviteDialog({ open, onOpenChange, candidate, job, onIn
   const [inviteSent, setInviteSent] = useState(false);
   const [sentRecipient, setSentRecipient] = useState("");
 
-  // Track candidate ID to avoid resetting state on object reference changes
+  // Track previous open state to only reset when dialog transitions from closed → open
+  const prevOpenRef = useRef(false);
   const candidateId = candidate?.id;
 
-  // Initialize state whenever the dialog opens with a NEW candidate (not on re-renders from query invalidation)
   useEffect(() => {
-    if (open && candidate) {
+    // Only reset state when the dialog first opens (closed → open transition)
+    // This prevents resetting the success screen when parent re-renders from query invalidation
+    if (open && !prevOpenRef.current && candidate) {
       setInterviewPrompt(generateInterviewPrompt(candidate, job));
       setShowPromptEditor(false);
       setInviteSent(false);
@@ -134,6 +136,7 @@ export function InterviewInviteDialog({ open, onOpenChange, candidate, job, onIn
         setInviteChannel("email");
       }
     }
+    prevOpenRef.current = open;
   }, [open, candidateId]);
 
   const handleSendInvite = async () => {
@@ -215,7 +218,7 @@ ${interviewUrl}
 This link expires in 7 days. Please ensure you have a quiet environment and allow ${interviewType === "video" ? "camera and microphone" : "microphone"} access.
 
 Best regards,
-AHC Recruiting Team`;
+MTN Recruiting Team`;
 
         await api.post(`/whatsapp/conversations/${conversation.id}/messages`, {
           body: message,
@@ -368,7 +371,7 @@ ${inviteChannel === "email" ? "This allows us to get to know you better at your 
 [Interview link will be generated on send]
 
 Best regards,
-AHC Recruiting Team`}
+MTN Recruiting Team`}
                 />
               </div>
 

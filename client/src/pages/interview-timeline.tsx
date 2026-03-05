@@ -182,11 +182,14 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
     enabled: !!sessionId,
   });
 
-  // Fetch recordings for this session
+  // Fetch recordings for this session (filtered by stage if provided)
   const { data: recordings = [] } = useQuery<any[]>({
-    queryKey: ["/api/interviews", sessionId, "recordings"],
+    queryKey: ["/api/interviews", sessionId, "recordings", stage],
     queryFn: async () => {
-      const res = await api.get(`/interviews/${sessionId}/recordings`);
+      const url = stage
+        ? `/interviews/${sessionId}/recordings?stage=${stage}`
+        : `/interviews/${sessionId}/recordings`;
+      const res = await api.get(url);
       return res.data;
     },
     enabled: !!sessionId,
@@ -707,38 +710,52 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
                       <p className="text-sm">No transcript available</p>
                     </div>
                   ) : (
-                    transcripts.map((seg) => (
-                      <div
-                        key={seg.id}
-                        className={`flex gap-3 p-2 rounded-lg cursor-pointer transition-colors hover:bg-muted/50 ${
-                          activeSegment?.id === seg.id ? "bg-primary/10 ring-1 ring-primary/30" : ""
-                        }`}
-                        onClick={() => seg.startTime != null && seekTo(seg.startTime)}
-                      >
-                        <div className="text-xs font-mono text-muted-foreground min-w-[40px] pt-1">
-                          {seg.startTime != null ? `${Math.floor(seg.startTime / 60)}:${String(seg.startTime % 60).padStart(2, "0")}` : ""}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-1 mb-0.5">
-                            <span className={`text-xs font-medium capitalize ${
-                              seg.speakerRole === "candidate" ? "text-blue-400" :
-                              seg.speakerRole === "interviewer" ? "text-green-400" :
-                              "text-purple-400"
-                            }`}>
-                              {seg.speakerRole}
-                            </span>
-                            {seg.sentiment && seg.sentiment !== "neutral" && (
-                              <Badge variant="outline" className={`text-xs h-4 ${
-                                seg.sentiment === "positive" ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"
-                              }`}>
-                                {seg.sentiment}
-                              </Badge>
-                            )}
+                    (() => {
+                      // Compute timestamps: use real ones if available, otherwise estimate
+                      const hasRealTimestamps = transcripts.some(s => s.startTime != null);
+                      let cumSec = 0;
+                      const timestamps = transcripts.map((seg) => {
+                        if (hasRealTimestamps) return seg.startTime ?? 0;
+                        const ts = cumSec;
+                        cumSec += Math.max(3, Math.ceil((seg.text?.split(/\s+/).length || 5) / 2.5));
+                        return ts;
+                      });
+                      return transcripts.map((seg, idx) => {
+                        const ts = timestamps[idx] ?? 0;
+                        return (
+                          <div
+                            key={seg.id}
+                            className={`flex gap-3 p-2 rounded-lg cursor-pointer transition-colors hover:bg-muted/50 ${
+                              activeSegment?.id === seg.id ? "bg-primary/10 ring-1 ring-primary/30" : ""
+                            }`}
+                            onClick={() => seekTo(ts)}
+                          >
+                            <div className="text-xs font-mono text-muted-foreground min-w-[40px] pt-1">
+                              {Math.floor(ts / 60)}:{String(Math.round(ts) % 60).padStart(2, "0")}
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-1 mb-0.5">
+                                <span className={`text-xs font-medium capitalize ${
+                                  seg.speakerRole === "candidate" ? "text-blue-400" :
+                                  seg.speakerRole === "interviewer" ? "text-green-400" :
+                                  "text-purple-400"
+                                }`}>
+                                  {seg.speakerRole}
+                                </span>
+                                {seg.sentiment && seg.sentiment !== "neutral" && (
+                                  <Badge variant="outline" className={`text-xs h-4 ${
+                                    seg.sentiment === "positive" ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"
+                                  }`}>
+                                    {seg.sentiment}
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-sm">{seg.text}</p>
+                            </div>
                           </div>
-                          <p className="text-sm">{seg.text}</p>
-                        </div>
-                      </div>
-                    ))
+                        );
+                      });
+                    })()
                   )}
                 </div>
             </TabsContent>

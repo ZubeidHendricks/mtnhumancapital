@@ -125,7 +125,7 @@ export class EmailService {
       ? "allow camera and microphone access in your browser"
       : "allow microphone access in your browser";
 
-    const subject = `Interview Invitation: ${jobTitle} - AHC Recruiting`;
+    const subject = `Interview Invitation: ${jobTitle} - MTN Recruiting`;
 
     const body = `Dear ${candidateName},
 
@@ -138,7 +138,7 @@ ${interviewUrl}
 This link expires in 7 days. Please ensure you have a quiet environment and ${accessNote}.
 
 Best regards,
-AHC Recruiting Team`;
+MTN Recruiting Team`;
 
     const html = `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -169,7 +169,7 @@ AHC Recruiting Team`;
         <li>${isVideo ? "Allow camera and microphone access in your browser" : "Allow microphone access in your browser"}</li>
       </ul>
     </div>
-    <p style="font-size: 14px; color: #6b7280;">Best regards,<br><strong>AHC Recruiting Team</strong></p>
+    <p style="font-size: 14px; color: #6b7280;">Best regards,<br><strong>MTN Recruiting Team</strong></p>
   </div>
 </div>`;
 
@@ -203,7 +203,7 @@ ${equipmentSection}
 
 Please process these requests and confirm when ready.
 
-This is an automated notification from the AHC Onboarding System.`;
+This is an automated notification from the MTN Onboarding System.`;
 
     await this.sendEmail({
       to: itEmail,
@@ -235,7 +235,7 @@ Please arrange the following:
 
 Please process this request and confirm when ready.
 
-This is an automated notification from the AHC Onboarding System.`;
+This is an automated notification from the MTN Onboarding System.`;
 
     await this.sendEmail({ to: toEmail, subject, body });
   }
@@ -265,9 +265,9 @@ Tasks Initiated:
 - IT provisioning in progress
 - Orientation scheduling
 
-You can monitor the onboarding progress in the AHC dashboard.
+You can monitor the onboarding progress in the MTN dashboard.
 
-This is an automated notification from the AHC Onboarding System.`;
+This is an automated notification from the MTN Onboarding System.`;
 
     await this.sendEmail({
       to: hrEmail,
@@ -300,7 +300,7 @@ Completed Tasks:
 
 The employee is ready for their first day. Please ensure all final preparations are in place.
 
-This is an automated notification from the AHC Onboarding System.`;
+This is an automated notification from the MTN Onboarding System.`;
 
     await this.sendEmail({
       to: hrEmail,
@@ -323,7 +323,7 @@ Document Type: ${documentType}
 
 Please prepare and send the requested document.
 
-This is an automated notification from the AHC Onboarding System.`;
+This is an automated notification from the MTN Onboarding System.`;
 
     await this.sendEmail({
       to: itEmail,
@@ -343,7 +343,7 @@ This is an automated notification from the AHC Onboarding System.`;
     attachments?: EmailAttachment[];
   }): Promise<boolean> {
     const { to, candidateName, jobTitle, salary, startDate, companyName, responseUrl, attachments } = options;
-    const company = companyName || "AHC Recruiting";
+    const company = companyName || "MTN Recruiting";
 
     const subject = `Job Offer: ${jobTitle} - ${company}`;
 
@@ -405,7 +405,7 @@ ${company} HR Team`;
     attachments?: EmailAttachment[];
   }): Promise<boolean> {
     const { to, candidateName, jobTitle, companyName, interestUrl, attachments } = options;
-    const company = companyName || "AHC Recruiting";
+    const company = companyName || "MTN Recruiting";
 
     const subject = `Career Opportunity: ${jobTitle} - ${company}`;
 
@@ -466,7 +466,7 @@ ${response === "accepted"
       : `The candidate has been marked as withdrawn from the pipeline.${declineReason ? `\n\nReason for declining: ${declineReason}` : ""}`
     }
 
-This is an automated notification from the AHC HR System.`;
+This is an automated notification from the MTN HR System.`;
 
     await this.sendEmail({ to: hrEmail, subject, body });
   }
