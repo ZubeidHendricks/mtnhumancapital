@@ -1,15 +1,23 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { interviewService, recordingService } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Video, PhoneOff, Settings, Loader2 } from "lucide-react";
+import { Video, PhoneOff, Loader2, CheckCircle2, AlertCircle, MessageSquare } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link, useSearch } from "wouter";
 import { toast } from "sonner";
+import DailyIframe, { DailyCall } from "@daily-co/daily-js";
+
+type Transcript = {
+  role: "user" | "ai";
+  text: string;
+  timestamp?: number;
+};
 
 const COMMON_ROLES = [
   "Software Developer",
@@ -38,7 +46,30 @@ export default function InterviewVideo() {
   const [customRole, setCustomRole] = useState<string>("");
   const [tavusConversationId, setTavusConversationId] = useState<string | null>(null);
   const [tavusSessionId, setTavusSessionId] = useState<string | null>(null);
-  const [isFetchingRecording, setIsFetchingRecording] = useState(false);
+  const [transcripts, setTranscripts] = useState<Transcript[]>([]);
+  const [postStatus, setPostStatus] = useState<"idle" | "scoring" | "scored" | "saving_recording" | "done" | "error">("idle");
+  const [duration, setDuration] = useState(0);
+
+  const dailyCallRef = useRef<DailyCall | null>(null);
+  const videoContainerRef = useRef<HTMLDivElement | null>(null);
+  const startTimeRef = useRef<number>(0);
+
+  // Duration timer
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isSessionActive && startTimeRef.current) {
+      interval = setInterval(() => {
+        setDuration(Math.floor((Date.now() - startTimeRef.current) / 1000));
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isSessionActive]);
+
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const createSessionMutation = useMutation({
     mutationFn: () => {
@@ -48,12 +79,76 @@ export default function InterviewVideo() {
       }
       return interviewService.createVideoSession(candidateId || undefined, candidateName, roleToUse);
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setSessionUrl(data.sessionUrl);
-      setIsSessionActive(true);
       setTavusConversationId(data.sessionId);
       setTavusSessionId(data.interviewId || null);
-      toast.success("Video session created successfully");
+      setTranscripts([]);
+      setPostStatus("idle");
+
+      // Create Daily.co call and join
+      try {
+        const call = DailyIframe.createCallObject();
+        dailyCallRef.current = call;
+
+        // Listen for real-time transcript via app-message events
+        call.on("app-message", (event: any) => {
+          try {
+            const msgData = event?.data;
+            if (!msgData) return;
+            const eventType = msgData.event_type || msgData.type;
+
+            if (eventType === "conversation.utterance" || eventType === "conversation.echo") {
+              const role = msgData.properties?.role || msgData.role;
+              const text = msgData.properties?.text || msgData.properties?.speech || msgData.text || msgData.speech || "";
+              if (text && text.trim()) {
+                const elapsed = startTimeRef.current ? Math.round((Date.now() - startTimeRef.current) / 1000) : undefined;
+                const mappedRole: "user" | "ai" = (role === "user" || role === "candidate") ? "user" : "ai";
+                setTranscripts(prev => [...prev, { role: mappedRole, text: text.trim(), timestamp: elapsed }]);
+              }
+            } else if (eventType === "conversation.user.stopped_speaking" || eventType === "user_message") {
+              const text = msgData.properties?.transcript || msgData.properties?.text || msgData.transcript || msgData.text || "";
+              if (text && text.trim()) {
+                const elapsed = startTimeRef.current ? Math.round((Date.now() - startTimeRef.current) / 1000) : undefined;
+                setTranscripts(prev => [...prev, { role: "user", text: text.trim(), timestamp: elapsed }]);
+              }
+            } else if (eventType === "conversation.replica.started_speaking" || eventType === "assistant_message") {
+              const text = msgData.properties?.text || msgData.properties?.speech || msgData.text || msgData.speech || "";
+              if (text && text.trim()) {
+                const elapsed = startTimeRef.current ? Math.round((Date.now() - startTimeRef.current) / 1000) : undefined;
+                setTranscripts(prev => [...prev, { role: "ai", text: text.trim(), timestamp: elapsed }]);
+              }
+            }
+          } catch (err) {
+            console.error("[Tavus] Error processing app-message:", err);
+          }
+        });
+
+        await call.join({ url: data.sessionUrl });
+
+        // Embed in container
+        if (videoContainerRef.current) {
+          const iframe = call.iframe();
+          if (iframe) {
+            iframe.style.width = "100%";
+            iframe.style.height = "100%";
+            iframe.style.borderRadius = "1rem";
+            iframe.style.border = "none";
+            videoContainerRef.current.appendChild(iframe);
+          }
+        }
+
+        setIsSessionActive(true);
+        startTimeRef.current = Date.now();
+        toast.success("Video session created successfully");
+      } catch (err) {
+        console.error("Failed to join Daily call:", err);
+        toast.error("Failed to connect to video session");
+        if (dailyCallRef.current) {
+          try { await dailyCallRef.current.destroy(); } catch {}
+          dailyCallRef.current = null;
+        }
+      }
     },
     onError: (error: any) => {
       console.error("Failed to create session:", error);
@@ -70,32 +165,169 @@ export default function InterviewVideo() {
   };
 
   const handleEndSession = async () => {
+    // Leave Daily call
+    if (dailyCallRef.current) {
+      try { await dailyCallRef.current.leave(); } catch {}
+      try { await dailyCallRef.current.destroy(); } catch {}
+      dailyCallRef.current = null;
+    }
+
     setIsSessionActive(false);
     setSessionUrl(null);
-    toast.success("Interview ended");
+    setPostStatus("scoring");
 
-    // Attempt to fetch and store the Tavus recording
+    const durationSec = startTimeRef.current ? Math.floor((Date.now() - startTimeRef.current) / 1000) : 0;
+
+    // Send transcript for immediate scoring (like Hume voice flow)
+    if (transcripts.length > 0 && tavusSessionId) {
+      try {
+        const mappedTranscripts = transcripts.map((t) => ({
+          role: t.role === "user" ? "candidate" : "ai",
+          text: t.text,
+          timestamp: t.timestamp,
+        }));
+        await interviewService.completeInterview(tavusSessionId, {
+          transcripts: mappedTranscripts,
+          duration: durationSec,
+          stage: 'video',
+        });
+        setPostStatus("scored");
+        toast.success("Interview scored successfully!");
+      } catch (err) {
+        console.error("Failed to score interview:", err);
+        setPostStatus("error");
+        toast.error("Failed to submit interview analysis.");
+      }
+    }
+
+    // Fetch Tavus recording in background
     if (tavusConversationId && tavusSessionId) {
-      setIsFetchingRecording(true);
+      setPostStatus(prev => prev === "scored" ? "saving_recording" : prev);
       try {
         await recordingService.fetchTavusRecording(
           tavusSessionId,
           tavusConversationId,
           candidateId || undefined
         );
+        setPostStatus("done");
         toast.success("Video recording saved successfully");
       } catch (err: any) {
         if (err.response?.status === 404) {
-          toast.info("Recording not yet ready. Tavus is still processing — you can retry later from the Interview Console.");
+          toast.info("Recording not yet ready — Tavus is still processing. It will be available later in the Interview Console.");
         } else {
           console.error("Failed to fetch Tavus recording:", err);
-          toast.error("Failed to save video recording. You can retry from the Interview Console.");
+          toast.info("Video recording will be processed in the background.");
         }
-      } finally {
-        setIsFetchingRecording(false);
+        // Don't override scored status to error for recording failure
+        setPostStatus(prev => prev === "saving_recording" ? "done" : prev);
       }
     }
   };
+
+  // Post-interview progress overlay
+  if (postStatus !== "idle" && !isSessionActive) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex flex-col">
+        <header className="h-16 border-b border-border dark:border-white/10 flex items-center justify-between px-6 bg-card/50 backdrop-blur-md sticky top-0 z-50">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-muted/20 flex items-center justify-center">
+              <Video className="w-4 h-4 text-foreground" />
+            </div>
+            <span className="font-semibold text-sm">Interview Complete - {candidateName}</span>
+          </div>
+          <Link href="/hr-dashboard">
+            <Button variant="ghost" size="sm">Return to Dashboard</Button>
+          </Link>
+        </header>
+
+        <main className="flex-1 flex items-center justify-center p-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full max-w-lg bg-card/50 border border-border dark:border-white/10 rounded-2xl p-8"
+          >
+            {postStatus === "scoring" && (
+              <div className="flex flex-col items-center text-center">
+                <Loader2 className="h-16 w-16 text-blue-400 mb-4 animate-spin" />
+                <h2 className="text-2xl font-bold mb-2">Analyzing Interview...</h2>
+                <p className="text-muted-foreground mb-6">
+                  Scoring technical skills, communication, and culture fit.
+                </p>
+              </div>
+            )}
+
+            {(postStatus === "scored" || postStatus === "saving_recording" || postStatus === "done") && (
+              <div className="flex flex-col items-center text-center">
+                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200 }}>
+                  <CheckCircle2 className="h-16 w-16 text-green-400 mb-4" />
+                </motion.div>
+                <h2 className="text-2xl font-bold mb-2">Interview Scored!</h2>
+                <p className="text-muted-foreground mb-6">
+                  AI analysis complete. Results are available in the Interview Console.
+                </p>
+              </div>
+            )}
+
+            {postStatus === "error" && (
+              <div className="flex flex-col items-center text-center">
+                <AlertCircle className="h-16 w-16 text-yellow-400 mb-4" />
+                <h2 className="text-2xl font-bold mb-2">Interview Ended</h2>
+                <p className="text-muted-foreground mb-6">
+                  There was an issue scoring. The video recording will still be processed in the background.
+                </p>
+              </div>
+            )}
+
+            {/* Progress steps */}
+            <div className="space-y-3 mt-2">
+              <div className="flex items-center gap-3">
+                <CheckCircle2 className="h-5 w-5 text-green-400 shrink-0" />
+                <span className="text-sm">Transcript captured ({transcripts.length} exchanges)</span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {postStatus === "scoring" ? (
+                  <Loader2 className="h-5 w-5 text-blue-400 animate-spin shrink-0" />
+                ) : postStatus === "error" ? (
+                  <AlertCircle className="h-5 w-5 text-yellow-400 shrink-0" />
+                ) : (
+                  <CheckCircle2 className="h-5 w-5 text-green-400 shrink-0" />
+                )}
+                <span className="text-sm">
+                  {postStatus === "scoring" ? "Scoring interview responses..." : postStatus === "error" ? "Scoring failed" : "Interview scored"}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {postStatus === "saving_recording" ? (
+                  <Loader2 className="h-5 w-5 text-blue-400 animate-spin shrink-0" />
+                ) : postStatus === "done" ? (
+                  <CheckCircle2 className="h-5 w-5 text-green-400 shrink-0" />
+                ) : (
+                  <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 shrink-0" />
+                )}
+                <span className={`text-sm ${postStatus !== "saving_recording" && postStatus !== "done" ? "text-muted-foreground" : ""}`}>
+                  {postStatus === "saving_recording" ? "Saving video recording..." : postStatus === "done" ? "Video recording saved" : "Video recording (processes in background)"}
+                </span>
+              </div>
+            </div>
+
+            {duration > 0 && (
+              <p className="text-sm text-muted-foreground mt-6 text-center">
+                Duration: {formatDuration(duration)}
+              </p>
+            )}
+
+            <div className="mt-6 flex justify-center">
+              <Link href="/hr-dashboard">
+                <Button variant="outline">Return to Dashboard</Button>
+              </Link>
+            </div>
+          </motion.div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -108,10 +340,15 @@ export default function InterviewVideo() {
         </div>
         <div className="flex items-center gap-4">
           {isSessionActive && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full border border-border dark:border-white/10">
-              <div className="w-2 h-2 rounded-full bg-muted" />
-              <span className="text-xs text-muted-foreground">Connected to Tavus</span>
-            </div>
+            <>
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 rounded-full border border-green-500/30">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-xs text-green-400">Live</span>
+              </div>
+              <Badge variant="outline" className="border-border/50">
+                {formatDuration(duration)}
+              </Badge>
+            </>
           )}
           <Link href="/hr-dashboard">
             <Button variant="ghost" size="sm">Return to Dashboard</Button>
@@ -133,15 +370,15 @@ export default function InterviewVideo() {
                     Select a job role and practice with an AI HR Manager powered by Tavus video technology.
                   </p>
                 </div>
-                
+
                 <div className="w-full max-w-md space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="role-select" className="text-sm font-medium">
                       Job Position
                     </Label>
                     <Select value={selectedRole} onValueChange={setSelectedRole}>
-                      <SelectTrigger 
-                        id="role-select" 
+                      <SelectTrigger
+                        id="role-select"
                         className="bg-black/50 border-border dark:border-white/10"
                         data-testid="select-job-role"
                       >
@@ -174,8 +411,8 @@ export default function InterviewVideo() {
                   )}
                 </div>
 
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   onClick={handleStartSession}
                   disabled={createSessionMutation.isPending}
                   className="bg-muted hover:bg-muted text-white"
@@ -196,17 +433,12 @@ export default function InterviewVideo() {
                   </p>
                 )}
               </div>
-            ) : sessionUrl ? (
-              <iframe
-                src={sessionUrl}
-                className="w-full h-full rounded-2xl border border-border dark:border-white/10 shadow-2xl"
-                allow="camera; microphone; fullscreen"
-                data-testid="tavus-video-frame"
-              />
             ) : (
-              <div className="w-full h-full rounded-2xl border border-border dark:border-white/10 bg-card/30 flex items-center justify-center">
-                <Loader2 className="w-12 h-12 animate-spin text-foreground dark:text-foreground" />
-              </div>
+              <div
+                ref={videoContainerRef}
+                className="w-full h-full rounded-2xl border border-border dark:border-white/10 shadow-2xl overflow-hidden bg-black"
+                data-testid="tavus-video-container"
+              />
             )}
           </div>
 
@@ -224,12 +456,6 @@ export default function InterviewVideo() {
               </Button>
             </div>
           )}
-          {isFetchingRecording && (
-            <div className="h-12 rounded-xl bg-muted/10 border border-border/20 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Saving video recording...
-            </div>
-          )}
         </div>
 
         <div className="w-80 space-y-4">
@@ -245,7 +471,7 @@ export default function InterviewVideo() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Position:</span>
-                <span className="font-medium">Senior Backend Developer</span>
+                <span className="font-medium">{selectedRole === "Custom Role" ? customRole : selectedRole}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Round:</span>
@@ -257,6 +483,25 @@ export default function InterviewVideo() {
               </div>
             </div>
           </div>
+
+          {/* Live transcript panel */}
+          {isSessionActive && transcripts.length > 0 && (
+            <div className="bg-card/30 border border-border dark:border-white/10 rounded-xl p-4 max-h-80 flex flex-col">
+              <h3 className="font-semibold mb-3 flex items-center gap-2 text-sm">
+                <MessageSquare className="w-4 h-4" />
+                Live Transcript
+              </h3>
+              <ScrollArea className="flex-1">
+                <div className="space-y-2 pr-2">
+                  {transcripts.map((t, i) => (
+                    <div key={i} className={`text-xs ${t.role === "ai" ? "text-blue-300" : "text-foreground/80"}`}>
+                      <span className="font-bold">{t.role === "ai" ? "AI:" : "Candidate:"}</span> {t.text}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+          )}
 
           <div className="bg-card/30 border border-border dark:border-white/10 rounded-xl p-4">
             <h3 className="font-semibold mb-3">Interview Topics</h3>
