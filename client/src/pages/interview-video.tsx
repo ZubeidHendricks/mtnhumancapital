@@ -358,8 +358,14 @@ export default function InterviewVideo() {
 
       <main className="flex-1 container mx-auto p-6 flex gap-6 h-[calc(100vh-64px)]">
         <div className="flex-1 flex flex-col gap-4">
-          <div className="flex-1 relative">
-            {!isSessionActive ? (
+          <div className="flex-1 relative overflow-hidden">
+            {/* Always render the video container so DailyIframe.createFrame can attach before isSessionActive is set */}
+            <div
+              ref={videoContainerRef}
+              className={`w-full h-full rounded-2xl border border-border dark:border-white/10 shadow-2xl overflow-hidden bg-black ${!isSessionActive ? 'absolute inset-0 opacity-0 pointer-events-none' : 'relative'}`}
+              data-testid="tavus-video-container"
+            />
+            {!isSessionActive && (
               <div className="w-full h-full rounded-2xl border border-border dark:border-white/10 bg-card/30 flex flex-col items-center justify-center gap-6 p-8">
                 <div className="w-20 h-20 rounded-full bg-muted/20 flex items-center justify-center animate-pulse">
                   <Video className="w-8 h-8 text-foreground dark:text-foreground" />
@@ -433,12 +439,6 @@ export default function InterviewVideo() {
                   </p>
                 )}
               </div>
-            ) : (
-              <div
-                ref={videoContainerRef}
-                className="w-full h-full rounded-2xl border border-border dark:border-white/10 shadow-2xl overflow-hidden bg-black"
-                data-testid="tavus-video-container"
-              />
             )}
           </div>
 
