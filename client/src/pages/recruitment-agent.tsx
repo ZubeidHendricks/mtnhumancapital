@@ -264,9 +264,11 @@ export default function RecruitmentAgent() {
   });
 
   const { data: candidates } = useQuery<Candidate[]>({
-    queryKey: candidatesKey,
+    queryKey: [...candidatesKey, { jobId: selectedJobId, sortBy: "match" }],
     queryFn: async () => {
-      const response = await api.get("/candidates");
+      const params: Record<string, string> = { sortBy: "match", limit: "50" };
+      if (selectedJobId) params.jobId = selectedJobId;
+      const response = await api.get("/candidates", { params });
       const body = response.data;
       return Array.isArray(body) ? body : body.data ?? [];
     },

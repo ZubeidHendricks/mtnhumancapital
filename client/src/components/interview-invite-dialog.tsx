@@ -118,7 +118,10 @@ export function InterviewInviteDialog({ open, onOpenChange, candidate, job, onIn
   const [inviteSent, setInviteSent] = useState(false);
   const [sentRecipient, setSentRecipient] = useState("");
 
-  // Initialize state whenever the dialog opens with a candidate
+  // Track candidate ID to avoid resetting state on object reference changes
+  const candidateId = candidate?.id;
+
+  // Initialize state whenever the dialog opens with a NEW candidate (not on re-renders from query invalidation)
   useEffect(() => {
     if (open && candidate) {
       setInterviewPrompt(generateInterviewPrompt(candidate, job));
@@ -131,7 +134,7 @@ export function InterviewInviteDialog({ open, onOpenChange, candidate, job, onIn
         setInviteChannel("email");
       }
     }
-  }, [open, candidate, job]);
+  }, [open, candidateId]);
 
   const handleSendInvite = async () => {
     if (!candidate) return;
