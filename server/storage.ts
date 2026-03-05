@@ -237,7 +237,7 @@ export interface IStorage {
   restoreJob(tenantId: string, id: string): Promise<Job | undefined>;
   
   getAllCandidates(tenantId: string): Promise<Candidate[]>;
-  getCandidatesPaginated(tenantId: string, page: number, limit: number, options?: { jobId?: string; sortBy?: string }): Promise<{ data: Candidate[]; total: number }>;
+  getCandidatesPaginated(tenantId: string, page: number, limit: number): Promise<{ data: Candidate[]; total: number }>;
   getCandidate(tenantId: string, id: string): Promise<Candidate | undefined>;
   createCandidate(tenantId: string, candidate: InsertCandidate): Promise<Candidate>;
   updateCandidate(tenantId: string, id: string, candidate: Partial<InsertCandidate>): Promise<Candidate | undefined>;
@@ -794,15 +794,11 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(candidates).where(eq(candidates.tenantId, tenantId)).orderBy(desc(candidates.createdAt));
   }
 
-  async getCandidatesPaginated(tenantId: string, page: number, limit: number, options?: { jobId?: string; sortBy?: string }): Promise<{ data: Candidate[]; total: number }> {
+  async getCandidatesPaginated(tenantId: string, page: number, limit: number): Promise<{ data: Candidate[]; total: number }> {
     const offset = (page - 1) * limit;
-    const whereCondition = options?.jobId
-      ? and(eq(candidates.tenantId, tenantId), eq(candidates.jobId, options.jobId))
-      : eq(candidates.tenantId, tenantId);
-    const orderBy = options?.sortBy === "match" ? desc(candidates.match) : desc(candidates.createdAt);
     const [data, countResult] = await Promise.all([
-      db.select().from(candidates).where(whereCondition).orderBy(orderBy).limit(limit).offset(offset),
-      db.select({ count: sql<number>`count(*)` }).from(candidates).where(whereCondition),
+      db.select().from(candidates).where(eq(candidates.tenantId, tenantId)).orderBy(desc(candidates.createdAt)).limit(limit).offset(offset),
+      db.select({ count: sql<number>`count(*)` }).from(candidates).where(eq(candidates.tenantId, tenantId)),
     ]);
     return { data, total: Number(countResult[0].count) };
   }

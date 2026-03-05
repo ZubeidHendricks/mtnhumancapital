@@ -264,11 +264,9 @@ export default function RecruitmentAgent() {
   });
 
   const { data: candidates } = useQuery<Candidate[]>({
-    queryKey: [...candidatesKey, { jobId: selectedJobId, sortBy: "match" }],
+    queryKey: candidatesKey,
     queryFn: async () => {
-      const params: Record<string, string> = { sortBy: "match", limit: "50" };
-      if (selectedJobId) params.jobId = selectedJobId;
-      const response = await api.get("/candidates", { params });
+      const response = await api.get("/candidates");
       const body = response.data;
       return Array.isArray(body) ? body : body.data ?? [];
     },
@@ -452,7 +450,7 @@ export default function RecruitmentAgent() {
 
   // Filter candidates by selected job OR by the latest session's job
   const activeJobId = selectedJobId || latestSession?.jobId;
-  
+
   const topCandidates = candidates
     ?.filter(c => activeJobId ? c.jobId === activeJobId : true)
     .sort((a, b) => (b.match || 0) - (a.match || 0))

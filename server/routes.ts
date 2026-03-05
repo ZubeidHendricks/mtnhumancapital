@@ -465,9 +465,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
-      const jobId = req.query.jobId as string | undefined;
-      const sortBy = req.query.sortBy as string | undefined;
-      const { data, total } = await storage.getCandidatesPaginated(req.tenant.id, page, limit, { jobId, sortBy });
+      const { data, total } = await storage.getCandidatesPaginated(req.tenant.id, page, limit);
       res.json({ data, total, page, limit });
     } catch (error) {
       console.error("Error fetching candidates:", error);
