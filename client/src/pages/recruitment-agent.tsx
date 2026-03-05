@@ -450,7 +450,7 @@ export default function RecruitmentAgent() {
 
   // Filter candidates by selected job OR by the latest session's job
   const activeJobId = selectedJobId || latestSession?.jobId;
-  
+
   const topCandidates = candidates
     ?.filter(c => activeJobId ? c.jobId === activeJobId : true)
     .sort((a, b) => (b.match || 0) - (a.match || 0))

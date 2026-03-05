@@ -186,6 +186,7 @@ export default function InterviewConsole() {
   useEffect(() => {
     setShowPractice(null);
     setF2fMarkedComplete(false);
+    setWaitingForRecording(false);
     if (selectedSession) {
       // Auto-detect the most relevant stage to show based on session state
       const session = sessions.find(s => s.id === selectedSession);
@@ -235,6 +236,8 @@ export default function InterviewConsole() {
     }
   }, [selectedSession]);
 
+  const [waitingForRecording, setWaitingForRecording] = useState(false);
+
   const { data: details, isLoading: loadingDetails, isFetching: fetchingDetails } = useQuery<InterviewDetails>({
     queryKey: ["/api/interviews", selectedSession, "stage", currentStage],
     queryFn: async () => {
@@ -243,10 +246,36 @@ export default function InterviewConsole() {
       return res.json();
     },
     enabled: !!selectedSession,
+    // Poll every 10s when waiting for a recording to become available
+    refetchInterval: waitingForRecording ? 10000 : false,
   });
 
   const f2fIsComplete = f2fMarkedComplete || (details?.session as any)?.f2fStatus === "completed";
   const offerFromServer = (details?.session as any)?.offerStatus === "initiated";
+
+  // Detect when interview is complete but recording isn't available yet, and notify when it arrives
+  useEffect(() => {
+    if (!details?.session) return;
+    const session = details.session;
+    const isVoiceComplete = session.voiceStatus === "completed"
+      || (session.voiceStatus === "pending" && (session.status === "completed" || session.status === "voice_completed"));
+    const isVideoComplete = session.videoStatus === "completed";
+    const interviewDone = currentStage === "voice" ? isVoiceComplete : isVideoComplete;
+    const hasRecordings = details.recordings.length > 0;
+
+    if (interviewDone && !hasRecordings) {
+      setWaitingForRecording(true);
+    } else if (waitingForRecording && hasRecordings) {
+      // Recording just arrived — notify user
+      setWaitingForRecording(false);
+      toast({
+        title: "Recording Available",
+        description: "The interview recording has been processed and is now available for playback.",
+      });
+    } else if (hasRecordings) {
+      setWaitingForRecording(false);
+    }
+  }, [details?.session, details?.recordings?.length, currentStage]);
 
   // Sync offerDecided from server when session details load
   useEffect(() => {
@@ -904,6 +933,23 @@ export default function InterviewConsole() {
                               </Button>
                             </div>
                           ))}
+                        </div>
+                      ) : waitingForRecording ? (
+                        <div className="text-center py-12 text-muted-foreground">
+                          <Loader2 className="h-12 w-12 mx-auto mb-4 animate-spin opacity-50" />
+                          <p className="font-medium">Recording is being processed</p>
+                          <p className="text-sm mt-1">You will be notified once available.</p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-4"
+                            onClick={() => {
+                              queryClient.invalidateQueries({ queryKey: ["/api/interviews", selectedSession, "stage", currentStage] });
+                            }}
+                          >
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Check Now
+                          </Button>
                         </div>
                       ) : (
                         <div className="text-center py-12 text-muted-foreground">
