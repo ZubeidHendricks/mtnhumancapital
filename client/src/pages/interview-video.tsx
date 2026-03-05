@@ -88,7 +88,17 @@ export default function InterviewVideo() {
 
       // Create Daily.co call and join
       try {
-        const call = DailyIframe.createCallObject();
+        // Use createFrame to render the Tavus avatar video in the container
+        const call = DailyIframe.createFrame(videoContainerRef.current!, {
+          iframeStyle: {
+            width: "100%",
+            height: "100%",
+            border: "none",
+            borderRadius: "1rem",
+          },
+          showLeaveButton: false,
+          showFullscreenButton: true,
+        });
         dailyCallRef.current = call;
 
         // Listen for real-time transcript via app-message events
@@ -124,19 +134,8 @@ export default function InterviewVideo() {
           }
         });
 
+        // Join the Tavus conversation room
         await call.join({ url: data.sessionUrl });
-
-        // Embed in container
-        if (videoContainerRef.current) {
-          const iframe = call.iframe();
-          if (iframe) {
-            iframe.style.width = "100%";
-            iframe.style.height = "100%";
-            iframe.style.borderRadius = "1rem";
-            iframe.style.border = "none";
-            videoContainerRef.current.appendChild(iframe);
-          }
-        }
 
         setIsSessionActive(true);
         startTimeRef.current = Date.now();
