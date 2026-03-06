@@ -51,7 +51,6 @@ export default function InterviewVideo() {
   const [duration, setDuration] = useState(0);
 
   const dailyCallRef = useRef<DailyCall | null>(null);
-  const videoContainerRef = useRef<HTMLDivElement | null>(null);
   const startTimeRef = useRef<number>(0);
 
   // Duration timer
@@ -85,20 +84,13 @@ export default function InterviewVideo() {
       setTavusSessionId(data.interviewId || null);
       setTranscripts([]);
       setPostStatus("idle");
+      startTimeRef.current = Date.now();
+      setIsSessionActive(true);
+      toast.success("Video session created successfully");
 
-      // Create Daily.co call and join
+      // Join a hidden call object for transcript capture and recording control
       try {
-        // Use createFrame to render the Tavus avatar video in the container
-        const call = DailyIframe.createFrame(videoContainerRef.current!, {
-          iframeStyle: {
-            width: "100%",
-            height: "100%",
-            border: "none",
-            borderRadius: "1rem",
-          },
-          showLeaveButton: false,
-          showFullscreenButton: true,
-        });
+        const call = DailyIframe.createCallObject({ videoSource: false, audioSource: false });
         dailyCallRef.current = call;
 
         // Listen for real-time transcript via app-message events
@@ -134,20 +126,17 @@ export default function InterviewVideo() {
           }
         });
 
-        // Set start time before joining so timestamps are captured from the first message
-        startTimeRef.current = Date.now();
-        // Join the Tavus conversation room
         await call.join({ url: data.sessionUrl });
 
-        setIsSessionActive(true);
-        toast.success("Video session created successfully");
-      } catch (err) {
-        console.error("Failed to join Daily call:", err);
-        toast.error("Failed to connect to video session");
-        if (dailyCallRef.current) {
-          try { await dailyCallRef.current.destroy(); } catch {}
-          dailyCallRef.current = null;
+        // Start cloud recording
+        try {
+          call.startRecording({ type: "cloud" });
+          console.log("[Tavus] Cloud recording started");
+        } catch (recErr) {
+          console.warn("[Tavus] Could not start recording:", recErr);
         }
+      } catch (err) {
+        console.warn("[Tavus] Hidden call object failed (transcript/recording unavailable):", err);
       }
     },
     onError: (error: any) => {
@@ -165,8 +154,9 @@ export default function InterviewVideo() {
   };
 
   const handleEndSession = async () => {
-    // Leave Daily call
+    // Stop recording and leave hidden Daily call object
     if (dailyCallRef.current) {
+      try { dailyCallRef.current.stopRecording(); } catch {}
       try { await dailyCallRef.current.leave(); } catch {}
       try { await dailyCallRef.current.destroy(); } catch {}
       dailyCallRef.current = null;
@@ -204,21 +194,20 @@ export default function InterviewVideo() {
     if (tavusConversationId && tavusSessionId) {
       setPostStatus(prev => prev === "scored" ? "saving_recording" : prev);
       try {
-        await recordingService.fetchTavusRecording(
+        const result = await recordingService.fetchTavusRecording(
           tavusSessionId,
           tavusConversationId,
           candidateId || undefined
         );
-        setPostStatus("done");
-        toast.success("Video recording saved successfully");
-      } catch (err: any) {
-        if (err.response?.status === 404) {
-          toast.info("Recording not yet ready — Tavus is still processing. It will be available later in the Interview Console.");
+        if (result?.message?.includes("Background polling")) {
+          toast.info("Recording is being processed by Tavus. It will appear automatically in the Interview Console.");
         } else {
-          console.error("Failed to fetch Tavus recording:", err);
-          toast.info("Video recording will be processed in the background.");
+          toast.success("Video recording saved successfully");
         }
-        // Don't override scored status to error for recording failure
+        setPostStatus("done");
+      } catch (err: any) {
+        console.error("Failed to fetch Tavus recording:", err);
+        toast.info("Video recording will be processed in the background.");
         setPostStatus(prev => prev === "saving_recording" ? "done" : prev);
       }
     }
@@ -359,13 +348,18 @@ export default function InterviewVideo() {
       <main className="flex-1 container mx-auto p-6 flex gap-6 h-[calc(100vh-64px)]">
         <div className="flex-1 flex flex-col gap-4">
           <div className="flex-1 relative overflow-hidden">
-            {/* Always render the video container so DailyIframe.createFrame can attach before isSessionActive is set */}
-            <div
-              ref={videoContainerRef}
-              className={`w-full h-full rounded-2xl border border-border dark:border-white/10 shadow-2xl overflow-hidden bg-black ${!isSessionActive ? 'absolute inset-0 opacity-0 pointer-events-none' : 'relative'}`}
-              data-testid="tavus-video-container"
-            />
-            {!isSessionActive && (
+            {isSessionActive && sessionUrl ? (
+              <iframe
+                src={sessionUrl}
+                className="w-full h-full rounded-2xl border border-border dark:border-white/10 shadow-2xl"
+                allow="camera; microphone; fullscreen; display-capture"
+                data-testid="tavus-video-frame"
+              />
+            ) : createSessionMutation.isPending ? (
+              <div className="w-full h-full rounded-2xl border border-border dark:border-white/10 bg-card/30 flex items-center justify-center">
+                <Loader2 className="w-12 h-12 animate-spin text-foreground" />
+              </div>
+            ) : (
               <div className="w-full h-full rounded-2xl border border-border dark:border-white/10 bg-card/30 flex flex-col items-center justify-center gap-6 p-8">
                 <div className="w-20 h-20 rounded-full bg-muted/20 flex items-center justify-center animate-pulse">
                   <Video className="w-8 h-8 text-foreground dark:text-foreground" />

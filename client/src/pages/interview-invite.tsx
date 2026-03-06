@@ -49,7 +49,6 @@ export default function InterviewInvite() {
   const [videoTranscripts, setVideoTranscripts] = useState<Transcript[]>([]);
   const [postInterviewStatus, setPostInterviewStatus] = useState<"idle" | "scoring" | "scored" | "error">("idle");
   const dailyCallRef = useRef<DailyCall | null>(null);
-  const videoContainerRef = useRef<HTMLDivElement | null>(null);
 
   const socketRef = useRef<WebSocket | null>(null);
   const captureContextRef = useRef<AudioContext | null>(null);
@@ -126,57 +125,58 @@ export default function InterviewInvite() {
       setVideoInterviewId(interviewId);
       setVideoTranscripts([]);
 
-      // Create Daily.co frame embedded in the container — renders the Tavus avatar video
-      const call = DailyIframe.createFrame(videoContainerRef.current!, {
-        iframeStyle: {
-          width: "100%",
-          height: "100%",
-          border: "none",
-          borderRadius: "1rem",
-        },
-        showLeaveButton: false,
-        showFullscreenButton: true,
-      });
-      dailyCallRef.current = call;
-
-      // Listen for real-time transcript via app-message events
-      call.on("app-message", (event: any) => {
-        try {
-          const data = event?.data;
-          if (!data) return;
-          const eventType = data.event_type || data.type;
-
-          if (eventType === "conversation.utterance" || eventType === "conversation.echo") {
-            const role = data.properties?.role || data.role;
-            const text = data.properties?.text || data.properties?.speech || data.text || data.speech || "";
-            if (text && text.trim()) {
-              const elapsed = startTimeRef.current ? Math.round((Date.now() - startTimeRef.current) / 1000) : undefined;
-              const mappedRole: "user" | "ai" = (role === "user" || role === "candidate") ? "user" : "ai";
-              setVideoTranscripts(prev => [...prev, { role: mappedRole, text: text.trim(), timestamp: elapsed }]);
-            }
-          } else if (eventType === "conversation.user.stopped_speaking" || eventType === "user_message") {
-            const text = data.properties?.transcript || data.properties?.text || data.transcript || data.text || "";
-            if (text && text.trim()) {
-              const elapsed = startTimeRef.current ? Math.round((Date.now() - startTimeRef.current) / 1000) : undefined;
-              setVideoTranscripts(prev => [...prev, { role: "user", text: text.trim(), timestamp: elapsed }]);
-            }
-          } else if (eventType === "conversation.replica.started_speaking" || eventType === "assistant_message") {
-            const text = data.properties?.text || data.properties?.speech || data.text || data.speech || "";
-            if (text && text.trim()) {
-              const elapsed = startTimeRef.current ? Math.round((Date.now() - startTimeRef.current) / 1000) : undefined;
-              setVideoTranscripts(prev => [...prev, { role: "ai", text: text.trim(), timestamp: elapsed }]);
-            }
-          }
-        } catch (err) {
-          console.error("[Tavus] Error processing app-message:", err);
-        }
-      });
-
-      // Join the Tavus conversation room
-      await call.join({ url: sessionUrl });
-
       setIsVideoActive(true);
       startTimeRef.current = Date.now();
+
+      // Join a hidden call object for transcript capture (video renders via iframe)
+      try {
+        const call = DailyIframe.createCallObject({ videoSource: false, audioSource: false });
+        dailyCallRef.current = call;
+
+        call.on("app-message", (event: any) => {
+          try {
+            const data = event?.data;
+            if (!data) return;
+            const eventType = data.event_type || data.type;
+
+            if (eventType === "conversation.utterance" || eventType === "conversation.echo") {
+              const role = data.properties?.role || data.role;
+              const text = data.properties?.text || data.properties?.speech || data.text || data.speech || "";
+              if (text && text.trim()) {
+                const elapsed = startTimeRef.current ? Math.round((Date.now() - startTimeRef.current) / 1000) : undefined;
+                const mappedRole: "user" | "ai" = (role === "user" || role === "candidate") ? "user" : "ai";
+                setVideoTranscripts(prev => [...prev, { role: mappedRole, text: text.trim(), timestamp: elapsed }]);
+              }
+            } else if (eventType === "conversation.user.stopped_speaking" || eventType === "user_message") {
+              const text = data.properties?.transcript || data.properties?.text || data.transcript || data.text || "";
+              if (text && text.trim()) {
+                const elapsed = startTimeRef.current ? Math.round((Date.now() - startTimeRef.current) / 1000) : undefined;
+                setVideoTranscripts(prev => [...prev, { role: "user", text: text.trim(), timestamp: elapsed }]);
+              }
+            } else if (eventType === "conversation.replica.started_speaking" || eventType === "assistant_message") {
+              const text = data.properties?.text || data.properties?.speech || data.text || data.speech || "";
+              if (text && text.trim()) {
+                const elapsed = startTimeRef.current ? Math.round((Date.now() - startTimeRef.current) / 1000) : undefined;
+                setVideoTranscripts(prev => [...prev, { role: "ai", text: text.trim(), timestamp: elapsed }]);
+              }
+            }
+          } catch (err) {
+            console.error("[Tavus] Error processing app-message:", err);
+          }
+        });
+
+        await call.join({ url: sessionUrl });
+
+        // Start cloud recording
+        try {
+          call.startRecording({ type: "cloud" });
+          console.log("[Tavus] Cloud recording started");
+        } catch (recErr) {
+          console.warn("[Tavus] Could not start recording:", recErr);
+        }
+      } catch (err) {
+        console.warn("[Tavus] Hidden call object failed (transcript unavailable):", err);
+      }
       setState("listening");
       toast.success("Video interview started! You'll be speaking with Charles Molapisi, Group CTIO at MTN.");
     } catch (error: any) {
@@ -194,8 +194,9 @@ export default function InterviewInvite() {
   };
 
   const endVideoInterview = async () => {
-    // Leave Daily call
+    // Stop recording and leave hidden Daily call object
     if (dailyCallRef.current) {
+      try { dailyCallRef.current.stopRecording(); } catch {}
       try { await dailyCallRef.current.leave(); } catch {}
       try { await dailyCallRef.current.destroy(); } catch {}
       dailyCallRef.current = null;
@@ -784,12 +785,13 @@ CLOSING (CRITICAL):
           ) : (
             <>
               <div className="flex-1 flex gap-4 min-h-[500px]">
-                {/* Daily.co video container */}
-                <div
-                  ref={videoContainerRef}
-                  className="flex-1 relative rounded-2xl border border-border dark:border-white/10 shadow-2xl overflow-hidden bg-black"
+                {/* Tavus video iframe */}
+                <iframe
+                  src={videoSessionUrl || ""}
+                  className="flex-1 rounded-2xl border border-border dark:border-white/10 shadow-2xl bg-black"
                   style={{ minHeight: "500px" }}
-                  data-testid="tavus-video-container"
+                  allow="camera; microphone; fullscreen; display-capture"
+                  data-testid="tavus-video-frame"
                 />
 
                 {/* Live transcript sidebar */}

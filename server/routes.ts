@@ -2221,7 +2221,7 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
         conversational_context: conversationalContext,
         custom_greeting: customGreeting,
         properties: {
-          recording_enabled: true
+          enable_recording: true
         }
       };
 
@@ -8240,9 +8240,70 @@ Format your response as JSON:
         keys: tavusData ? Object.keys(tavusData) : [],
       }));
 
-      const recordingUrl = tavusData?.recording_url;
+      let recordingUrl = tavusData?.recording_url;
       if (!recordingUrl) {
-        return res.status(404).json({ message: "Recording not yet available. Tavus may still be processing." });
+        console.log(`[Interview] Recording not yet available for ${conversationId}, starting background polling...`);
+        res.status(202).json({ message: "Recording not yet available. Background polling started." });
+
+        (async () => {
+          const delays = Array.from({ length: 20 }, () => 30000); // every 30s for 10 min
+          for (const delay of delays) {
+            await new Promise(resolve => setTimeout(resolve, delay));
+            try {
+              const retryRes = await axios.get(`https://tavusapi.com/v2/conversations/${conversationId}`, {
+                headers: { "x-api-key": tavusApiKey },
+              });
+              const retryUrl = retryRes.data?.recording_url;
+              if (retryUrl) {
+                console.log(`[Interview] Tavus recording now available for ${conversationId}, downloading...`);
+                const videoRes = await axios.get(retryUrl, { responseType: "arraybuffer" });
+                const videoBuffer = Buffer.from(videoRes.data);
+                const filename = `${Date.now()}_video.mp4`;
+                const { key, size } = await recordingStorage.uploadRecording(tenantId, sessionId, filename, videoBuffer, "video/mp4");
+
+                const recording = await storage.createInterviewRecording(tenantId, {
+                  sessionId,
+                  candidateId: candidateId || null,
+                  recordingType: "video",
+                  mediaUrl: `/api/recordings/${key}`,
+                  storageProvider: "tavus",
+                  externalId: conversationId,
+                  fileSize: size,
+                  mimeType: "video/mp4",
+                  metadata: { objectStorageKey: key, tavusConversationId: conversationId },
+                });
+
+                await storage.createRecordingSource(tenantId, {
+                  sessionId,
+                  recordingId: recording.id,
+                  sourceType: "tavus",
+                  sourceId: conversationId,
+                  sourceUrl: retryUrl,
+                  status: "completed",
+                  hasVideo: true,
+                });
+
+                // Also grab transcript if available on retry
+                const retryTranscript = retryRes.data?.conversation_transcript || retryRes.data?.transcript || [];
+                if (retryTranscript.length > 0) {
+                  const mapped = retryTranscript.map((t: any) => ({
+                    role: t.role === 'user' || t.role === 'candidate' ? 'candidate' as const : 'ai' as const,
+                    text: t.content || t.text || '',
+                    timestamp: t.timestamp,
+                  }));
+                  await interviewOrchestrator.completeInterview(tenantId, sessionId, mapped, undefined, undefined, undefined, 'video');
+                }
+
+                console.log(`[Interview] Background recording download completed for ${conversationId}`);
+                return;
+              }
+            } catch (err) {
+              console.warn(`[Interview] Background recording retry failed for ${conversationId}:`, err);
+            }
+          }
+          console.warn(`[Interview] Could not get Tavus recording for ${conversationId} after 10 minutes of retries`);
+        })();
+        return;
       }
 
       // Download the video
