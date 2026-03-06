@@ -142,7 +142,7 @@ export default function InterviewVideo() {
           }
         });
 
-        await call.join({ url: data.sessionUrl, videoSource: false, audioSource: false });
+        await call.join({ url: data.sessionUrl, videoSource: false, audioSource: true });
         console.log("[Tavus] Joined with Daily.co frame — transcript capture active, local video hidden");
       } catch (err) {
         console.warn("[Tavus] createFrame failed, falling back to iframe:", err);

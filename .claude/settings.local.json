@@ -12,7 +12,9 @@
       "mcp__ide__getDiagnostics",
       "WebFetch(domain:dev.hume.ai)",
       "WebSearch",
-      "WebFetch(domain:www.hume.ai)"
+      "WebFetch(domain:www.hume.ai)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" -X GET \"https://tavusapi.com/v2/personas\" -H \"x-api-key: c5a0af52777c43b0995e78586de2c828\")",
+      "Bash(curl -s \"https://tavusapi.com/v2/personas/p88b4c22cad0\" -H \"x-api-key: c5a0af52777c43b0995e78586de2c828\" | head -c 2000)"
     ]
   }
 }
