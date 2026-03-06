@@ -268,7 +268,7 @@ export default function InterviewConsole() {
     if (interviewDone && !hasRecordings) {
       setWaitingForRecording(true);
     } else if (waitingForRecording && hasRecordings) {
-      // Recording just arrived — notify user (only once per session)
+      // Recording just arrived — notify user and refresh data (only once per session)
       setWaitingForRecording(false);
       const toastKey = `${selectedSession}-${currentStage}`;
       if (recordingToastShownRef.current !== toastKey) {
@@ -277,6 +277,7 @@ export default function InterviewConsole() {
           title: "Recording Available",
           description: "The interview recording has been processed and is now available for playback.",
         });
+        queryClient.invalidateQueries({ queryKey: ["/api/interviews", selectedSession, "stage", currentStage] });
       }
     } else if (hasRecordings) {
       setWaitingForRecording(false);

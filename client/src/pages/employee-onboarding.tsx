@@ -945,7 +945,7 @@ export default function EmployeeOnboarding() {
       .filter((w: OnboardingWorkflow) => w.status !== "Completed")
       .map((w: OnboardingWorkflow) => w.candidateId)
   );
-  const onboardingEligibleStages = ["onboarding", "integrity_passed", "integrity passed", "hired"];
+  const onboardingEligibleStages = ["onboarding", "integrity_passed", "integrity passed"];
   const onboardingCandidates = candidates.filter((c: Candidate) => {
     const stage = (c.stage || "").toLowerCase();
     return onboardingEligibleStages.some(s => stage === s || stage.includes("onboard")) || workflowCandidateIds.has(c.id.toString());

@@ -284,8 +284,18 @@ export default function RecruitmentAgent() {
   const updateCandidateMutation = useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: any }) =>
       candidateService.update(id, updates),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: candidatesKey });
+    onMutate: async ({ id, updates }) => {
+      await queryClient.cancelQueries({ queryKey: candidatesKey });
+      const previous = queryClient.getQueryData<Candidate[]>(candidatesKey);
+      queryClient.setQueryData<Candidate[]>(candidatesKey, (old) =>
+        old?.map((c) => (String(c.id) === id ? { ...c, ...updates } : c))
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(candidatesKey, context.previous);
+      }
     },
   });
 
@@ -1013,7 +1023,10 @@ export default function RecruitmentAgent() {
                 disabled={isRefreshingShortlist}
                 onClick={async () => {
                   setIsRefreshingShortlist(true);
-                  await queryClient.invalidateQueries({ queryKey: candidatesKey });
+                  await Promise.all([
+                    queryClient.invalidateQueries({ queryKey: candidatesKey }),
+                    queryClient.invalidateQueries({ queryKey: interestChecksKey }),
+                  ]);
                   setTimeout(() => setIsRefreshingShortlist(false), 800);
                 }}
                 data-testid="button-refresh-shortlisted"
