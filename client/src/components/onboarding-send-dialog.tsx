@@ -146,7 +146,7 @@ export function OnboardingSendDialog({
                   View in WhatsApp Monitor
                 </Button>
               )}
-              <Button onClick={() => onOpenChange(false)}>Close</Button>
+              <Button className="bg-[#FFCB00] hover:bg-[#FFCB00]/80 text-black" onClick={() => onOpenChange(false)}>Close</Button>
             </div>
           </>
         ) : (

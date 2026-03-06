@@ -49,7 +49,8 @@ export default function InterviewInvite() {
   const [videoTranscripts, setVideoTranscripts] = useState<Transcript[]>([]);
   const [postInterviewStatus, setPostInterviewStatus] = useState<"idle" | "scoring" | "scored" | "error">("idle");
   const dailyCallRef = useRef<DailyCall | null>(null);
-
+  const videoContainerRef = useRef<HTMLDivElement>(null);
+  const videoTranscriptEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const captureContextRef = useRef<AudioContext | null>(null);
   const playbackContextRef = useRef<AudioContext | null>(null);
@@ -64,6 +65,11 @@ export default function InterviewInvite() {
   const isMutedRef = useRef(false);
   const transcriptsRef = useRef<Transcript[]>([]);
   const humeChatIdRef = useRef<string | null>(null);
+
+  // Auto-scroll video transcript
+  useEffect(() => {
+    videoTranscriptEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [videoTranscripts]);
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -125,12 +131,21 @@ export default function InterviewInvite() {
       setVideoInterviewId(interviewId);
       setVideoTranscripts([]);
 
-      setIsVideoActive(true);
-      startTimeRef.current = Date.now();
-
-      // Join a hidden call object for transcript capture (video renders via iframe)
+      // Use Daily.co createFrame to render only the AI persona and capture transcripts
       try {
-        const call = DailyIframe.createCallObject({ videoSource: false, audioSource: false });
+        if (!videoContainerRef.current) throw new Error("Video container not ready");
+
+        const call = DailyIframe.createFrame(videoContainerRef.current, {
+          iframeStyle: {
+            width: "100%",
+            height: "100%",
+            border: "none",
+            borderRadius: "1rem",
+          },
+          showLeaveButton: false,
+          showFullscreenButton: true,
+          showLocalVideo: false,
+        });
         dailyCallRef.current = call;
 
         call.on("app-message", (event: any) => {
@@ -143,20 +158,20 @@ export default function InterviewInvite() {
               const role = data.properties?.role || data.role;
               const text = data.properties?.text || data.properties?.speech || data.text || data.speech || "";
               if (text && text.trim()) {
-                const elapsed = startTimeRef.current ? Math.round((Date.now() - startTimeRef.current) / 1000) : undefined;
+                const elapsed = startTimeRef.current ? Math.round((Date.now() - startTimeRef.current!) / 1000) : undefined;
                 const mappedRole: "user" | "ai" = (role === "user" || role === "candidate") ? "user" : "ai";
                 setVideoTranscripts(prev => [...prev, { role: mappedRole, text: text.trim(), timestamp: elapsed }]);
               }
             } else if (eventType === "conversation.user.stopped_speaking" || eventType === "user_message") {
               const text = data.properties?.transcript || data.properties?.text || data.transcript || data.text || "";
               if (text && text.trim()) {
-                const elapsed = startTimeRef.current ? Math.round((Date.now() - startTimeRef.current) / 1000) : undefined;
+                const elapsed = startTimeRef.current ? Math.round((Date.now() - startTimeRef.current!) / 1000) : undefined;
                 setVideoTranscripts(prev => [...prev, { role: "user", text: text.trim(), timestamp: elapsed }]);
               }
             } else if (eventType === "conversation.replica.started_speaking" || eventType === "assistant_message") {
               const text = data.properties?.text || data.properties?.speech || data.text || data.speech || "";
               if (text && text.trim()) {
-                const elapsed = startTimeRef.current ? Math.round((Date.now() - startTimeRef.current) / 1000) : undefined;
+                const elapsed = startTimeRef.current ? Math.round((Date.now() - startTimeRef.current!) / 1000) : undefined;
                 setVideoTranscripts(prev => [...prev, { role: "ai", text: text.trim(), timestamp: elapsed }]);
               }
             }
@@ -165,25 +180,21 @@ export default function InterviewInvite() {
           }
         });
 
-        await call.join({ url: sessionUrl });
-
-        // Start cloud recording
-        try {
-          call.startRecording({ type: "cloud" });
-          console.log("[Tavus] Cloud recording started");
-        } catch (recErr) {
-          console.warn("[Tavus] Could not start recording:", recErr);
-        }
+        await call.join({ url: sessionUrl, videoSource: false, audioSource: false });
+        console.log("[Tavus] Joined with Daily.co frame — transcript capture active, local video hidden");
       } catch (err) {
-        console.warn("[Tavus] Hidden call object failed (transcript unavailable):", err);
+        console.warn("[Tavus] createFrame failed:", err);
       }
+
+      setIsVideoActive(true);
+      startTimeRef.current = Date.now();
+
       setState("listening");
       toast.success("Video interview started! You'll be speaking with Charles Molapisi, Group CTIO at MTN.");
     } catch (error: any) {
       console.error("Error starting video interview:", error);
       setErrorMessage(error.response?.data?.message || "Failed to start video interview");
       setState("error");
-      // Clean up Daily call on error
       if (dailyCallRef.current) {
         try { await dailyCallRef.current.destroy(); } catch {}
         dailyCallRef.current = null;
@@ -194,12 +205,14 @@ export default function InterviewInvite() {
   };
 
   const endVideoInterview = async () => {
-    // Stop recording and leave hidden Daily call object
+    // Destroy Daily call
     if (dailyCallRef.current) {
-      try { dailyCallRef.current.stopRecording(); } catch {}
       try { await dailyCallRef.current.leave(); } catch {}
       try { await dailyCallRef.current.destroy(); } catch {}
       dailyCallRef.current = null;
+    }
+    if (videoContainerRef.current) {
+      videoContainerRef.current.innerHTML = "";
     }
 
     setIsVideoActive(false);
@@ -208,7 +221,6 @@ export default function InterviewInvite() {
 
     const interviewDuration = startTimeRef.current ? Math.floor((Date.now() - startTimeRef.current) / 1000) : 0;
 
-    // Map transcripts for server (same pattern as Hume voice)
     const mappedTranscripts = videoTranscripts.map((t) => ({
       role: t.role === "user" ? "candidate" : "ai",
       text: t.text,
@@ -786,22 +798,21 @@ CLOSING (CRITICAL):
             <>
               <div className="flex-1 flex gap-4 min-h-[500px]">
                 {/* Tavus video iframe */}
-                <iframe
-                  src={videoSessionUrl || ""}
-                  className="flex-1 rounded-2xl border border-border dark:border-white/10 shadow-2xl bg-black"
+                <div
+                  ref={videoContainerRef}
+                  className="flex-1 rounded-2xl border border-border dark:border-white/10 shadow-2xl bg-black overflow-hidden"
                   style={{ minHeight: "500px" }}
-                  allow="camera; microphone; fullscreen; display-capture"
                   data-testid="tavus-video-frame"
                 />
 
                 {/* Live transcript sidebar */}
                 {videoTranscripts.length > 0 && (
-                  <div className="w-72 bg-card/50 backdrop-blur border border-border dark:border-white/10 rounded-xl p-4 flex flex-col">
-                    <h3 className="text-xs font-bold text-muted-foreground mb-3 flex items-center gap-2">
+                  <div className="w-72 bg-card/50 backdrop-blur border border-border dark:border-white/10 rounded-xl p-4 h-72 flex flex-col">
+                    <h3 className="text-xs font-bold text-muted-foreground mb-3 flex items-center gap-2 shrink-0">
                       <MessageSquare className="w-3 h-3" />
                       LIVE TRANSCRIPT
                     </h3>
-                    <ScrollArea className="flex-1">
+                    <ScrollArea className="flex-1 min-h-0">
                       <div className="space-y-2 pr-2">
                         {videoTranscripts.map((t, i) => (
                           <div key={i} className={`text-xs ${t.role === "ai" ? "text-blue-300" : "text-foreground/80"}`}>
@@ -809,6 +820,7 @@ CLOSING (CRITICAL):
                             {t.text}
                           </div>
                         ))}
+                        <div ref={videoTranscriptEndRef} />
                       </div>
                     </ScrollArea>
                   </div>

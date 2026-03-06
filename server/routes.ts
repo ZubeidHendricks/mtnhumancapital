@@ -2221,7 +2221,8 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
         conversational_context: conversationalContext,
         custom_greeting: customGreeting,
         properties: {
-          enable_recording: true
+          enable_recording: true,
+          apply_greenscreen: true,
         }
       };
 

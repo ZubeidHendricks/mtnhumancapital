@@ -51,7 +51,14 @@ export default function InterviewVideo() {
   const [duration, setDuration] = useState(0);
 
   const dailyCallRef = useRef<DailyCall | null>(null);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
   const startTimeRef = useRef<number>(0);
+  const transcriptEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll transcript
+  useEffect(() => {
+    transcriptEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [transcripts]);
 
   // Duration timer
   useEffect(() => {
@@ -84,13 +91,22 @@ export default function InterviewVideo() {
       setTavusSessionId(data.interviewId || null);
       setTranscripts([]);
       setPostStatus("idle");
-      startTimeRef.current = Date.now();
-      setIsSessionActive(true);
-      toast.success("Video session created successfully");
 
-      // Join a hidden call object for transcript capture and recording control
+      // Use Daily.co createFrame to render only the AI persona and capture transcripts
       try {
-        const call = DailyIframe.createCallObject({ videoSource: false, audioSource: false });
+        if (!videoContainerRef.current) throw new Error("Video container not ready");
+
+        const call = DailyIframe.createFrame(videoContainerRef.current, {
+          iframeStyle: {
+            width: "100%",
+            height: "100%",
+            border: "none",
+            borderRadius: "1rem",
+          },
+          showLeaveButton: false,
+          showFullscreenButton: true,
+          showLocalVideo: false,
+        });
         dailyCallRef.current = call;
 
         // Listen for real-time transcript via app-message events
@@ -126,18 +142,15 @@ export default function InterviewVideo() {
           }
         });
 
-        await call.join({ url: data.sessionUrl });
-
-        // Start cloud recording
-        try {
-          call.startRecording({ type: "cloud" });
-          console.log("[Tavus] Cloud recording started");
-        } catch (recErr) {
-          console.warn("[Tavus] Could not start recording:", recErr);
-        }
+        await call.join({ url: data.sessionUrl, videoSource: false, audioSource: false });
+        console.log("[Tavus] Joined with Daily.co frame — transcript capture active, local video hidden");
       } catch (err) {
-        console.warn("[Tavus] Hidden call object failed (transcript/recording unavailable):", err);
+        console.warn("[Tavus] createFrame failed, falling back to iframe:", err);
       }
+
+      startTimeRef.current = Date.now();
+      setIsSessionActive(true);
+      toast.success("Video session created successfully");
     },
     onError: (error: any) => {
       console.error("Failed to create session:", error);
@@ -154,12 +167,15 @@ export default function InterviewVideo() {
   };
 
   const handleEndSession = async () => {
-    // Stop recording and leave hidden Daily call object
+    // Destroy Daily call
     if (dailyCallRef.current) {
-      try { dailyCallRef.current.stopRecording(); } catch {}
       try { await dailyCallRef.current.leave(); } catch {}
       try { await dailyCallRef.current.destroy(); } catch {}
       dailyCallRef.current = null;
+    }
+    // Clear the video container
+    if (videoContainerRef.current) {
+      videoContainerRef.current.innerHTML = "";
     }
 
     setIsSessionActive(false);
@@ -168,7 +184,7 @@ export default function InterviewVideo() {
 
     const durationSec = startTimeRef.current ? Math.floor((Date.now() - startTimeRef.current) / 1000) : 0;
 
-    // Send transcript for immediate scoring (like Hume voice flow)
+    // Score using captured transcripts
     if (transcripts.length > 0 && tavusSessionId) {
       try {
         const mappedTranscripts = transcripts.map((t) => ({
@@ -200,7 +216,7 @@ export default function InterviewVideo() {
           candidateId || undefined
         );
         if (result?.message?.includes("Background polling")) {
-          toast.info("Recording is being processed by Tavus. It will appear automatically in the Interview Console.");
+          toast.info("Recording is being processed. It will appear in the Interview Console.");
         } else {
           toast.success("Video recording saved successfully");
         }
@@ -349,10 +365,9 @@ export default function InterviewVideo() {
         <div className="flex-1 flex flex-col gap-4">
           <div className="flex-1 relative overflow-hidden">
             {isSessionActive && sessionUrl ? (
-              <iframe
-                src={sessionUrl}
-                className="w-full h-full rounded-2xl border border-border dark:border-white/10 shadow-2xl"
-                allow="camera; microphone; fullscreen; display-capture"
+              <div
+                ref={videoContainerRef}
+                className="w-full h-full rounded-2xl border border-border dark:border-white/10 shadow-2xl overflow-hidden"
                 data-testid="tavus-video-frame"
               />
             ) : createSessionMutation.isPending ? (
@@ -480,18 +495,19 @@ export default function InterviewVideo() {
 
           {/* Live transcript panel */}
           {isSessionActive && transcripts.length > 0 && (
-            <div className="bg-card/30 border border-border dark:border-white/10 rounded-xl p-4 max-h-80 flex flex-col">
-              <h3 className="font-semibold mb-3 flex items-center gap-2 text-sm">
+            <div className="bg-card/30 border border-border dark:border-white/10 rounded-xl p-4 h-72 flex flex-col">
+              <h3 className="font-semibold mb-3 flex items-center gap-2 text-sm shrink-0">
                 <MessageSquare className="w-4 h-4" />
                 Live Transcript
               </h3>
-              <ScrollArea className="flex-1">
+              <ScrollArea className="flex-1 min-h-0">
                 <div className="space-y-2 pr-2">
                   {transcripts.map((t, i) => (
                     <div key={i} className={`text-xs ${t.role === "ai" ? "text-blue-300" : "text-foreground/80"}`}>
                       <span className="font-bold">{t.role === "ai" ? "AI:" : "Candidate:"}</span> {t.text}
                     </div>
                   ))}
+                  <div ref={transcriptEndRef} />
                 </div>
               </ScrollArea>
             </div>

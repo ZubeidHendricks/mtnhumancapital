@@ -284,7 +284,7 @@ MTN Recruiting Team`;
                 <ClipboardList className="h-4 w-4" />
                 View in Interview Console
               </Button>
-              <Button onClick={() => onOpenChange(false)}>Close</Button>
+              <Button className="bg-[#FFCB00] hover:bg-[#FFCB00]/80 text-black" onClick={() => onOpenChange(false)}>Close</Button>
             </div>
           </>
         ) : (

@@ -144,7 +144,7 @@ function UploadCvDialog({ open, onOpenChange, jobId, jobTitle }: {
             <CheckCircle2 className="w-12 h-12 text-green-500" />
             <p className="font-medium">CV Uploaded Successfully!</p>
             <p className="text-sm text-muted-foreground">Your application has been submitted.</p>
-            <Button variant="outline" onClick={() => handleClose(false)} className="mt-2">Close</Button>
+            <Button onClick={() => handleClose(false)} className="mt-2 bg-[#FFCB00] hover:bg-[#FFCB00]/80 text-black">Close</Button>
           </div>
         ) : (
           <div

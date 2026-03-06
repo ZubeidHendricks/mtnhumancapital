@@ -568,7 +568,11 @@ app.post("/api/public/interview-session/:token/video-session", async (req, res) 
       persona_id: process.env.TAVUS_PERSONA_ID || "default_persona",
       conversation_name: `${jobRole} Interview: ${candidateName}`,
       conversational_context: session.videoPrompt || conversationalContext,
-      custom_greeting: customGreeting
+      custom_greeting: customGreeting,
+      properties: {
+        enable_recording: true,
+        apply_greenscreen: true,
+      }
     };
 
     const response = await fetch("https://tavusapi.com/v2/conversations", {

@@ -249,7 +249,8 @@ export default function InterviewConsole() {
       return res.json();
     },
     enabled: !!selectedSession,
-    // No auto-polling — user can click "Check Now" in the recording tab to refresh
+    // Auto-poll every 15s when waiting for recording to arrive
+    refetchInterval: waitingForRecording ? 15000 : false,
   });
 
   const f2fIsComplete = f2fMarkedComplete || (details?.session as any)?.f2fStatus === "completed";
@@ -970,7 +971,7 @@ export default function InterviewConsole() {
                         <div className="text-center py-12 text-muted-foreground">
                           <Loader2 className="h-12 w-12 mx-auto mb-4 animate-spin opacity-50" />
                           <p className="font-medium">Recording is being processed</p>
-                          <p className="text-sm mt-1">You will be notified once available.</p>
+                          <p className="text-sm mt-1">Auto-checking every 15 seconds. If it doesn't load automatically, click Check Now.</p>
                           <Button
                             variant="outline"
                             size="sm"
@@ -1412,13 +1413,13 @@ export default function InterviewConsole() {
             ? {
                 id: parseInt(details.session.candidateId),
                 fullName: details.session.candidateName || "Unknown",
-                email: candidatesResponse.find(c => c.id === details.session.candidateId)?.email || null,
-                phone: candidatesResponse.find(c => c.id === details.session.candidateId)?.phone || null,
+                email: candidatesResponse.find(c => String(c.id) === String(details.session.candidateId))?.email || null,
+                phone: candidatesResponse.find(c => String(c.id) === String(details.session.candidateId))?.phone || null,
                 role: details.session.jobTitle,
                 stage: "interviewing",
                 match: 0,
                 skills: [],
-                metadata: {},
+                metadata: candidatesResponse.find(c => String(c.id) === String(details.session.candidateId))?.metadata || {},
               } as any
             : null
         }
@@ -1510,7 +1511,7 @@ function PipelineStageIndicator({ candidateId, decision, isTransitioning }: {
               <div
                 className={`px-2 py-1 rounded text-xs whitespace-nowrap ${
                   isActive
-                    ? "bg-primary text-primary-foreground font-medium"
+                    ? "bg-[#FFCB00] text-black font-medium"
                     : isPast
                     ? "bg-primary/20 text-primary"
                     : isNext
@@ -1526,12 +1527,6 @@ function PipelineStageIndicator({ candidateId, decision, isTransitioning }: {
       </div>
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>Current: <span className="font-medium capitalize text-foreground">{currentStage.replace(/_/g, " ")}</span></span>
-        {nextStage && nextStage !== currentStage && (
-          <span className="flex items-center gap-1">
-            <ArrowRight className="h-3 w-3" />
-            Moving to: <span className="font-medium capitalize text-amber-600">{nextStage.replace(/_/g, " ")}</span>
-          </span>
-        )}
       </div>
     </div>
   );
