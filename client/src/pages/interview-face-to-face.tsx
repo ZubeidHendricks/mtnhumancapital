@@ -316,7 +316,7 @@ export default function InterviewFaceToFace(props: InterviewFaceToFaceProps & Re
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setScheduleDialogOpen(false)}>Cancel</Button>
-                  <Button onClick={handleScheduleInterview} disabled={scheduling}>
+                  <Button onClick={handleScheduleInterview} disabled={scheduling} className="bg-[#FFCB00] hover:bg-[#E6B800] text-black">
                     {scheduling && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                     <Send className="w-4 h-4 mr-2" />
                     Schedule
