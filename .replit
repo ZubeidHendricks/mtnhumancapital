@@ -60,6 +60,9 @@ SMTP_USER = "resend"
 SMTP_FROM = "noreply@contact.mtn-gpt.com"
 DEV_TEST_EMAIL = "chett@rimonholdings.co.za"
 DEV_TEST_PHONE = "27632205343"
+TAVUS_API_KEY = "c5a0af52777c43b0995e78586de2c828"
+TAVUS_REPLICA_ID = "r4ba1277e4fb"
+TAVUS_PERSONA_ID = "p88b4c22cad0 "
 
 [userenv.production]
 NODE_ENV = "production"
