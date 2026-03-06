@@ -58,7 +58,7 @@ SMTP_HOST = "smtp.resend.com"
 SMTP_PORT = "465"
 SMTP_USER = "resend"
 SMTP_FROM = "noreply@contact.mtn-gpt.com"
-DEV_TEST_EMAIL = "zeedeeapps@gmail.com"
+DEV_TEST_EMAIL = "chett@rimonholdings.co.za"
 DEV_TEST_PHONE = "27632205343"
 
 [userenv.production]
