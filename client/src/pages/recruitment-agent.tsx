@@ -212,6 +212,7 @@ export default function RecruitmentAgent() {
   const [currentStep, setCurrentStep] = useState(0);
   const [agentMessages, setAgentMessages] = useState<typeof AGENT_MESSAGES>([]);
   const [isSimulating, setIsSimulating] = useState(false);
+  const agentActivityEndRef = useRef<HTMLDivElement>(null);
   const [expandedSession, setExpandedSession] = useState<string | null>(null);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [showCandidateDialog, setShowCandidateDialog] = useState(false);
@@ -225,6 +226,11 @@ export default function RecruitmentAgent() {
   const [shortlistingId, setShortlistingId] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [isRefreshingShortlist, setIsRefreshingShortlist] = useState(false);
+
+  // Auto-scroll agent activity feed to bottom when new messages arrive
+  useEffect(() => {
+    agentActivityEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [agentMessages.length]);
 
   // Update selectedJobId when URL param changes
   useEffect(() => {
@@ -994,6 +1000,7 @@ export default function RecruitmentAgent() {
                       </div>
                     </div>
                   )}
+                  <div ref={agentActivityEndRef} />
                 </div>
               </ScrollArea>
             </div>
