@@ -2219,7 +2219,10 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
         persona_id: process.env.TAVUS_PERSONA_ID || "default_persona",
         conversation_name: `${role} Interview: ${candidateName}`,
         conversational_context: conversationalContext,
-        custom_greeting: customGreeting
+        custom_greeting: customGreeting,
+        properties: {
+          recording_enabled: true
+        }
       };
 
       const response = await fetch("https://tavusapi.com/v2/conversations", {
