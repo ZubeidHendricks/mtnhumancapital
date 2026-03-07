@@ -143,6 +143,10 @@ export const interviewService = {
     });
     return response.data;
   },
+  getTavusTranscript: async (conversationId: string): Promise<any> => {
+    const response = await api.get(`/interview/video/transcript/${conversationId}`);
+    return response.data;
+  },
   createPracticeVideoSession: async (candidateName?: string, jobRole?: string): Promise<{ sessionUrl: string; sessionId: string; status: string; interviewId?: string }> => {
     const response = await api.post("/interview/video/session", {
       candidateName: `[Practice] ${candidateName || "Practice"}`,

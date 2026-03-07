@@ -1,14 +1,22 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { interviewService } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Video, PhoneOff, Loader2, X } from "lucide-react";
+import { Video, PhoneOff, Loader2, X, MessageSquare, FileText, BarChart3, Clock } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+
+type Transcript = {
+  role: "user" | "ai";
+  text: string;
+  timestamp?: number;
+};
 
 const COMMON_ROLES = [
   "Software Developer",
@@ -34,6 +42,35 @@ export function PracticeVideoPanel({ candidateName = "Practice", onClose }: Prac
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string>(COMMON_ROLES[0]);
   const [customRole, setCustomRole] = useState("");
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [transcripts, setTranscripts] = useState<Transcript[]>([]);
+  const [fetchingTranscript, setFetchingTranscript] = useState(false);
+  const [duration, setDuration] = useState(0);
+
+  const startTimeRef = useRef<number>(0);
+  const transcriptEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll transcript
+  useEffect(() => {
+    transcriptEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [transcripts]);
+
+  // Duration timer
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isSessionActive && startTimeRef.current) {
+      interval = setInterval(() => {
+        setDuration(Math.floor((Date.now() - startTimeRef.current) / 1000));
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isSessionActive]);
+
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const createSessionMutation = useMutation({
     mutationFn: () => {
@@ -49,6 +86,10 @@ export function PracticeVideoPanel({ candidateName = "Practice", onClose }: Prac
     },
     onSuccess: (data) => {
       setSessionUrl(data.sessionUrl);
+      setConversationId(data.sessionId);
+      setTranscripts([]);
+      setDuration(0);
+      startTimeRef.current = Date.now();
       setIsSessionActive(true);
       toast.success("Practice video session started");
     },
@@ -65,11 +106,45 @@ export function PracticeVideoPanel({ candidateName = "Practice", onClose }: Prac
     createSessionMutation.mutate();
   };
 
-  const handleEnd = () => {
+  const handleEnd = async () => {
     setIsSessionActive(false);
     setSessionUrl(null);
-    toast.success("Practice session ended");
+
+    // Fetch transcript from Tavus
+    if (conversationId) {
+      setFetchingTranscript(true);
+      try {
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        const tavusData = await interviewService.getTavusTranscript(conversationId);
+
+        if (tavusData?.transcript && Array.isArray(tavusData.transcript)) {
+          const fetched: Transcript[] = [];
+          tavusData.transcript.forEach((entry: any, index: number) => {
+            if (entry.role === "system") return;
+            const text = entry.content || entry.text || entry.message || "";
+            if (!text.trim()) return;
+            const role = entry.role === "user" || entry.role === "candidate" ? "user" as const : "ai" as const;
+            fetched.push({ role, text: text.trim(), timestamp: index });
+          });
+          if (fetched.length > 0) {
+            setTranscripts(fetched);
+            toast.success(`Transcript retrieved (${fetched.length} exchanges)`);
+          } else {
+            toast.info("No transcript available yet. It may still be processing.");
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch practice transcript:", err);
+        toast.info("Transcript may still be processing.");
+      } finally {
+        setFetchingTranscript(false);
+      }
+    } else {
+      toast.success("Practice session ended");
+    }
   };
+
+  const roleDisplay = selectedRole === "Custom Role" ? customRole : selectedRole;
 
   return (
     <motion.div
@@ -91,7 +166,7 @@ export function PracticeVideoPanel({ candidateName = "Practice", onClose }: Prac
           {isSessionActive && (
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-xs text-muted-foreground">Connected</span>
+              <span className="text-xs text-muted-foreground">{formatDuration(duration)}</span>
             </div>
           )}
           <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={onClose}>
@@ -102,10 +177,11 @@ export function PracticeVideoPanel({ candidateName = "Practice", onClose }: Prac
 
       {/* Content */}
       <div className="p-4">
-        {!isSessionActive ? (
+        {!isSessionActive && transcripts.length === 0 && !fetchingTranscript ? (
+          /* Pre-session: Role selection */
           <div className="flex flex-col items-center gap-4 py-4">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <Video className="h-7 w-7 text-primary" />
+            <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center">
+              <Video className="h-7 w-7 text-foreground" />
             </div>
             <div className="text-center">
               <p className="font-medium">Video Interview Practice</p>
@@ -164,19 +240,112 @@ export function PracticeVideoPanel({ candidateName = "Practice", onClose }: Prac
               )}
             </Button>
           </div>
-        ) : sessionUrl ? (
+        ) : isSessionActive && sessionUrl ? (
+          /* Active session: Video iframe */
           <div className="space-y-3">
             <div className="relative w-full aspect-video rounded-lg overflow-hidden border">
               <iframe
                 src={sessionUrl}
                 className="w-full h-full"
-                allow="camera; microphone; fullscreen"
+                allow="camera; microphone; autoplay; fullscreen"
               />
             </div>
             <div className="flex justify-center">
               <Button variant="destructive" size="sm" onClick={handleEnd} className="rounded-full">
                 <PhoneOff className="h-4 w-4 mr-2" />
                 End Practice
+              </Button>
+            </div>
+          </div>
+        ) : fetchingTranscript ? (
+          /* Fetching transcript */
+          <div className="flex flex-col items-center gap-3 py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Fetching transcript from Tavus...</p>
+          </div>
+        ) : transcripts.length > 0 ? (
+          /* Post-session: Transcript with tabs (matching console style) */
+          <div className="space-y-3">
+            <Tabs defaultValue="transcript" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="transcript">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Transcript
+                </TabsTrigger>
+                <TabsTrigger value="details">
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Details
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="transcript" className="mt-3">
+                <ScrollArea className="h-[400px]">
+                  <div className="space-y-4 pr-3">
+                    {(() => {
+                      let cumSec = 0;
+                      return transcripts.map((t, idx) => {
+                        const ts = cumSec;
+                        cumSec += Math.max(3, Math.ceil((t.text?.split(/\s+/).length || 5) / 2.5));
+                        return (
+                          <div
+                            key={idx}
+                            className={`p-3 rounded-lg ${
+                              t.role === "user"
+                                ? "bg-muted/20 ml-0 mr-8"
+                                : "bg-secondary/20 ml-8 mr-0"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-xs font-mono text-muted-foreground min-w-[40px]">
+                                {Math.floor(ts / 60)}:{String(ts % 60).padStart(2, "0")}
+                              </span>
+                              <span className="text-xs font-semibold uppercase">
+                                {t.role === "user" ? "candidate" : "interviewer"}
+                              </span>
+                            </div>
+                            <p className="text-sm">{t.text}</p>
+                          </div>
+                        );
+                      });
+                    })()}
+                    <div ref={transcriptEndRef} />
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="details" className="mt-3">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="text-center p-3 rounded-lg bg-muted">
+                      <p className="text-xs text-muted-foreground mb-1">Exchanges</p>
+                      <p className="text-lg font-bold">{transcripts.length}</p>
+                    </div>
+                    <div className="text-center p-3 rounded-lg bg-muted">
+                      <p className="text-xs text-muted-foreground mb-1">Duration</p>
+                      <p className="text-lg font-bold">{duration > 0 ? formatDuration(duration) : "N/A"}</p>
+                    </div>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-muted">
+                    <p className="text-xs text-muted-foreground mb-1">Position</p>
+                    <p className="text-sm font-bold">{roleDisplay}</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Practice sessions are not scored or saved.
+                  </p>
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            <div className="flex justify-center gap-2 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => { setTranscripts([]); setConversationId(null); setDuration(0); }}
+              >
+                New Practice
+              </Button>
+              <Button variant="ghost" size="sm" onClick={onClose}>
+                Close
               </Button>
             </div>
           </div>

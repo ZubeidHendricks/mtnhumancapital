@@ -2287,6 +2287,58 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     }
   });
 
+  // Fetch transcript from Tavus after conversation ends
+  app.get("/api/interview/video/transcript/:conversationId", async (req, res) => {
+    try {
+      const TAVUS_API_KEY = process.env.TAVUS_API_KEY?.trim();
+      if (!TAVUS_API_KEY) {
+        return res.status(500).json({ message: "Tavus API key not configured" });
+      }
+
+      const { conversationId } = req.params;
+      const response = await fetch(`https://tavusapi.com/v2/conversations/${conversationId}?verbose=true`, {
+        method: "GET",
+        headers: {
+          "x-api-key": TAVUS_API_KEY,
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.error("Tavus transcript fetch error:", response.status, error);
+        return res.status(response.status).json({ message: "Failed to fetch transcript from Tavus", details: error });
+      }
+
+      const data = await response.json();
+
+      // Extract transcript from multiple possible sources
+      let transcript: any[] = [];
+
+      // 1. Check conversation_transcript field (most common)
+      if (data.conversation_transcript && Array.isArray(data.conversation_transcript) && data.conversation_transcript.length > 0) {
+        transcript = data.conversation_transcript;
+      }
+      // 2. Check top-level transcript field
+      else if (data.transcript && Array.isArray(data.transcript) && data.transcript.length > 0) {
+        transcript = data.transcript;
+      }
+      // 3. Check events array for transcription_ready event
+      else if (data.events && Array.isArray(data.events)) {
+        const transcriptionEvent = data.events.find((e: any) => e.event_type === "application.transcription_ready");
+        if (transcriptionEvent?.properties?.transcript) {
+          transcript = transcriptionEvent.properties.transcript;
+        }
+      }
+
+      console.log(`[Tavus] Transcript for ${conversationId}: ${transcript.length} entries, status: ${data.status}, sources checked: conversation_transcript=${!!data.conversation_transcript}, transcript=${!!data.transcript}, events=${!!data.events}`);
+      res.json({ ...data, transcript });
+    } catch (error) {
+      console.error("Error fetching Tavus transcript:", error);
+      res.status(500).json({ message: "Failed to fetch transcript" });
+    }
+  });
+
   // Interview routes for job-scoped queries (non-duplicate)
   app.get("/api/jobs/:jobId/interviews", async (req, res) => {
     try {
