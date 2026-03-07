@@ -2094,7 +2094,7 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
 
   app.get("/api/tavus/personas", async (req, res) => {
     try {
-      const TAVUS_API_KEY = process.env.TAVUS_API_KEY;
+      const TAVUS_API_KEY = process.env.TAVUS_API_KEY?.trim();
 
       if (!TAVUS_API_KEY) {
         return res.status(500).json({ 
@@ -2134,7 +2134,7 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
   app.post("/api/tavus/persona", async (req, res) => {
     try {
       const { personaName, systemPrompt, context, replicaId } = req.body;
-      const TAVUS_API_KEY = process.env.TAVUS_API_KEY;
+      const TAVUS_API_KEY = process.env.TAVUS_API_KEY?.trim();
 
       if (!TAVUS_API_KEY) {
         return res.status(500).json({ 
@@ -2193,7 +2193,7 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
   app.post("/api/interview/video/session", async (req, res) => {
     try {
       const { candidateId, candidateName, jobRole } = req.body;
-      const TAVUS_API_KEY = process.env.TAVUS_API_KEY;
+      const TAVUS_API_KEY = process.env.TAVUS_API_KEY?.trim();
 
       if (!TAVUS_API_KEY) {
         return res.status(500).json({ 
@@ -2215,8 +2215,8 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
       const customGreeting = `Hello! I'm Charles Molapisi, the Group Chief Technology and Information Officer here at MTN. Thank you for making the time to speak with me today. I'm looking forward to learning more about you and discussing the ${role} position. Before we dive in, how are you doing today?`;
 
       const requestBody = {
-        replica_id: process.env.TAVUS_REPLICA_ID || "default_replica",
-        persona_id: process.env.TAVUS_PERSONA_ID || "default_persona",
+        replica_id: (process.env.TAVUS_REPLICA_ID || "default_replica").trim(),
+        persona_id: (process.env.TAVUS_PERSONA_ID || "default_persona").trim(),
         conversation_name: `${role} Interview: ${candidateName}`,
         conversational_context: conversationalContext,
         custom_greeting: customGreeting,

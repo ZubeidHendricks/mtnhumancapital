@@ -364,17 +364,17 @@ export default function InterviewVideo() {
       <main className="flex-1 container mx-auto p-6 flex gap-6 h-[calc(100vh-64px)]">
         <div className="flex-1 flex flex-col gap-4">
           <div className="flex-1 relative overflow-hidden">
-            {isSessionActive && sessionUrl ? (
-              <div
-                ref={videoContainerRef}
-                className="w-full h-full rounded-2xl border border-border dark:border-white/10 shadow-2xl overflow-hidden"
-                data-testid="tavus-video-frame"
-              />
-            ) : createSessionMutation.isPending ? (
+            {/* Always render the video container so the ref is available when onSuccess fires */}
+            <div
+              ref={videoContainerRef}
+              className={`w-full h-full rounded-2xl border border-border dark:border-white/10 shadow-2xl overflow-hidden ${isSessionActive && sessionUrl ? '' : 'hidden'}`}
+              data-testid="tavus-video-frame"
+            />
+            {!isSessionActive && !sessionUrl && createSessionMutation.isPending ? (
               <div className="w-full h-full rounded-2xl border border-border dark:border-white/10 bg-card/30 flex items-center justify-center">
                 <Loader2 className="w-12 h-12 animate-spin text-foreground" />
               </div>
-            ) : (
+            ) : !isSessionActive && !sessionUrl && !createSessionMutation.isPending ? (
               <div className="w-full h-full rounded-2xl border border-border dark:border-white/10 bg-card/30 flex flex-col items-center justify-center gap-6 p-8">
                 <div className="w-20 h-20 rounded-full bg-muted/20 flex items-center justify-center animate-pulse">
                   <Video className="w-8 h-8 text-foreground dark:text-foreground" />
@@ -448,7 +448,7 @@ export default function InterviewVideo() {
                   </p>
                 )}
               </div>
-            )}
+            ) : null}
           </div>
 
           {isSessionActive && (
