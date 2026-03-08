@@ -303,36 +303,70 @@ export class LinkedInSpecialist extends BaseSourcingSpecialist {
         }
       }
 
-      // Step 3: If Apify not available or no profile URLs, try direct Google-to-Apify search
-      if (APIFY_TOKEN) {
-        console.log(`[${this.name}] Trying Apify direct profile search for: ${job.title}`);
-        // Build LinkedIn search URLs from Google to find profile URLs
-        const searchQuery = `${job.title} ${job.location || "South Africa"}`;
-        const googleSearchUrl = `https://www.google.com/search?q=site:linkedin.com/in+${encodeURIComponent(searchQuery)}&num=${limit}`;
+      // Step 3: If Apify not available or no profile URLs, try Google search to find LinkedIn profiles
+      if (APIFY_TOKEN && profileUrls.length === 0) {
+        console.log(`[${this.name}] Trying Google search to find LinkedIn profiles for: ${job.title}`);
+        const searchQuery = `site:linkedin.com/in ${job.title} ${job.location || "South Africa"}`;
 
         try {
-          const browser = (await import("./web-scraper-agents")).default;
-        } catch {}
+          const { getBrowser } = await import("./web-scraper-agents");
+          const browser = await getBrowser();
+          const page = await browser.newPage();
+          await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
 
-        // Use any scraped candidates as fallback
-        if (scrapedCandidates.length > 0) {
-          console.log(`[${this.name}] Using ${scrapedCandidates.length} candidates from Puppeteer scrape`);
-          return scrapedCandidates.map((c: ScrapedCandidate) => ({
-            name: c.name,
-            currentRole: c.title || "Not specified",
-            company: undefined,
-            location: c.location || undefined,
-            skills: c.skills || [],
-            experience: c.experience || undefined,
-            match: c.matchScore || 50,
-            source: "LinkedIn",
-            specialist: this.name,
-            email: c.contact?.includes("@") ? c.contact : undefined,
-            phone: c.contact && !c.contact.includes("@") ? c.contact : undefined,
-            profileUrl: c.sourceUrl || undefined,
-            rawData: { rawText: c.rawText },
-          }));
+          await page.goto(`https://www.google.com/search?q=${encodeURIComponent(searchQuery)}&num=${limit}`, {
+            waitUntil: "domcontentloaded",
+            timeout: 15000
+          });
+          await new Promise(r => setTimeout(r, 2000));
+
+          const googleProfileUrls = await page.evaluate(() => {
+            const links: string[] = [];
+            document.querySelectorAll('a[href*="linkedin.com/in/"]').forEach(a => {
+              const href = (a as HTMLAnchorElement).href;
+              const match = href.match(/https?:\/\/[a-z]+\.linkedin\.com\/in\/[^&?/]+/);
+              if (match && !links.includes(match[0])) links.push(match[0]);
+            });
+            return links;
+          });
+          await page.close();
+
+          if (googleProfileUrls.length > 0) {
+            console.log(`[${this.name}] Found ${googleProfileUrls.length} LinkedIn profiles via Google`);
+            const apifyProfiles = await scrapeLinkedInProfilesViaApify(googleProfileUrls.slice(0, limit));
+            const candidates: SpecialistCandidate[] = [];
+            for (const profile of apifyProfiles) {
+              const candidate = apifyProfileToCandidate(profile, this.name);
+              if (candidate) candidates.push(candidate);
+            }
+            if (candidates.length > 0) {
+              console.log(`[${this.name}] Enriched ${candidates.length} candidates from Google+Apify`);
+              return candidates;
+            }
+          }
+        } catch (err: any) {
+          console.error(`[${this.name}] Google search fallback error:`, err.message);
         }
+      }
+
+      // Use any scraped candidates as fallback
+      if (scrapedCandidates.length > 0) {
+        console.log(`[${this.name}] Using ${scrapedCandidates.length} candidates from Puppeteer scrape`);
+        return scrapedCandidates.map((c: ScrapedCandidate) => ({
+          name: c.name,
+          currentRole: c.title || "Not specified",
+          company: undefined,
+          location: c.location || undefined,
+          skills: c.skills || [],
+          experience: c.experience || undefined,
+          match: c.matchScore || 50,
+          source: "LinkedIn",
+          specialist: this.name,
+          email: c.contact?.includes("@") ? c.contact : undefined,
+          phone: c.contact && !c.contact.includes("@") ? c.contact : undefined,
+          profileUrl: c.sourceUrl || undefined,
+          rawData: { rawText: c.rawText },
+        }));
       }
 
       // Fallback: return basic scraped results

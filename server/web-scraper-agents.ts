@@ -46,7 +46,7 @@ export interface Scraper {
 
 let browserInstance: Browser | null = null;
 
-async function getBrowser(): Promise<Browser> {
+export async function getBrowser(): Promise<Browser> {
   if (!browserInstance || !browserInstance.isConnected()) {
     browserInstance = await puppeteer.launch({
       headless: true,
@@ -972,6 +972,22 @@ export class DevToSourcer extends BaseAPIScraper {
 
           if (userResponse.ok) {
             const user = await userResponse.json();
+            const userLocation = (user.location || '').toLowerCase();
+            const jobLocation = (job.location || '').toLowerCase();
+
+            // Location relevance scoring
+            const saKeywords = ['south africa', 'johannesburg', 'cape town', 'pretoria', 'durban', 'gauteng', 'western cape'];
+            const isJobInSA = saKeywords.some(kw => jobLocation.includes(kw));
+            const isCandidateInSA = saKeywords.some(kw => userLocation.includes(kw));
+            const locationBonus = (isJobInSA && isCandidateInSA) ? 20 : 0;
+
+            // Skill matching bonus
+            const jobText = `${job.title} ${job.description || ''}`.toLowerCase();
+            const skillMatches = (article.tag_list || []).filter((t: string) => jobText.includes(t.toLowerCase())).length;
+            const skillBonus = skillMatches * 5;
+
+            const baseScore = 40 + (article.positive_reactions_count || 0) / 10;
+            const matchScore = Math.min(90, baseScore + locationBonus + skillBonus);
 
             candidates.push({
               name: user.name || user.username,
@@ -982,7 +998,7 @@ export class DevToSourcer extends BaseAPIScraper {
               contact: user.twitter_username ? `@${user.twitter_username}` : undefined,
               source: this.platform,
               sourceUrl: `https://dev.to/${user.username}`,
-              matchScore: Math.min(90, 50 + (article.positive_reactions_count || 0) / 10)
+              matchScore
             });
           }
 
@@ -1036,16 +1052,26 @@ export class StackOverflowSourcer extends BaseAPIScraper {
           const user = item.user;
           if (!user || !user.display_name) continue;
 
+          const allTags = this.extractTags(job);
+          const candidateSkills = [tag, ...allTags.filter(t => t !== tag).slice(0, 3)];
+
+          // Score based on reputation (capped contribution) + location relevance
+          const repScore = Math.min(20, Math.floor((user.reputation || 0) / 10000));
+          const locationStr = (user.location || '').toLowerCase();
+          const locationBonus = (locationStr.includes('south africa') || locationStr.includes('johannesburg') ||
+            locationStr.includes('cape town') || locationStr.includes('pretoria') || locationStr.includes('durban')) ? 15 : 0;
+          const matchScore = Math.min(85, 45 + repScore + locationBonus + (item.post_count > 50 ? 5 : 0));
+
           candidates.push({
             name: user.display_name,
             title: `${tag} Developer`,
-            skills: [tag, ...this.extractTags(job).slice(0, 3)],
+            skills: candidateSkills,
             experience: `${user.reputation?.toLocaleString() || 0} reputation, ${item.post_count || 0} answers in ${tag}`,
             location: user.location || "Remote",
             contact: user.website_url || undefined,
             source: this.platform,
             sourceUrl: user.link || `https://stackoverflow.com/users/${user.user_id}`,
-            matchScore: Math.min(95, 50 + Math.floor((user.reputation || 0) / 1000))
+            matchScore
           });
         }
 
@@ -1149,20 +1175,53 @@ export class HackerNewsSourcer extends BaseAPIScraper {
     return skills.filter(s => text.includes(s));
   }
 
-  private extractFromComment(text: string, author: string): Partial<ScrapedCandidate> | null {
-    const lines = text.split('\n').filter(l => l.trim());
-    if (lines.length === 0) return null;
+  private stripHtml(html: string): string {
+    return html
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/&#x2F;/g, '/')
+      .replace(/&#x27;/g, "'")
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#\d+;/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
 
-    const locationMatch = text.match(/Location:\s*([^\n]+)/i) || text.match(/Based in\s*([^\n,]+)/i);
-    const techMatch = text.match(/Technologies?:\s*([^\n]+)/i) || text.match(/Skills?:\s*([^\n]+)/i);
-    const emailMatch = text.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+  private extractFromComment(text: string, author: string): Partial<ScrapedCandidate> | null {
+    const cleanText = this.stripHtml(text);
+    if (cleanText.length < 20) return null;
+
+    // Use field labels as delimiters to stop greedy matching
+    const fieldDelimiter = /(?=\s*(?:Remote|Willing|Technologies|Skills|Email|Résumé|Resume|Languages|Interested|Website):)/i;
+
+    const locationMatch = cleanText.match(/Location:\s*(.+)/i) || cleanText.match(/Based in\s*([^,]+)/i);
+    let location = "Remote";
+    if (locationMatch) {
+      // Take only the part before the next field label
+      location = locationMatch[1].split(fieldDelimiter)[0].trim().substring(0, 80);
+    }
+
+    const techMatch = cleanText.match(/Technologies?:\s*(.+)/i) || cleanText.match(/Skills?:\s*(.+)/i);
+    let skills: string[] = ["Software Development"];
+    if (techMatch) {
+      const techStr = techMatch[1].split(fieldDelimiter)[0];
+      skills = techStr.split(/[,|\/]/)
+        .map(s => s.trim())
+        .filter(s => s.length > 0 && s.length < 40 && !s.includes('http'))
+        .slice(0, 5);
+      if (skills.length === 0) skills = ["Software Development"];
+    }
+
+    const emailMatch = cleanText.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
 
     return {
       name: author,
       title: "Developer (HN)",
-      skills: techMatch ? techMatch[1].split(/[,|\/]/).map(s => s.trim()).slice(0, 5) : ["Software Development"],
-      experience: lines[0].substring(0, 200),
-      location: locationMatch ? locationMatch[1].trim() : "Remote",
+      skills,
+      experience: cleanText.substring(0, 200),
+      location,
       contact: emailMatch ? emailMatch[1] : undefined
     };
   }
