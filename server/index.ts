@@ -309,12 +309,64 @@ app.post("/api/public/interview-session/:token/complete", async (req, res) => {
     console.log(`[Interview] Public complete called for session ${session.id}, humeChatId: ${humeChatId || 'none'}, tavusConversationId: ${tavusConversationId || 'none'}, transcripts: ${(transcripts || []).length}`);
 
     // Map transcripts to the format expected by the orchestrator
-    const mappedTranscripts = (transcripts || []).map((t: any) => ({
+    let mappedTranscripts = (transcripts || []).map((t: any) => ({
       role: t.role === 'user' ? 'candidate' : (t.role || 'ai'),
       text: t.text || '',
       emotion: t.emotion,
       timestamp: t.timestamp,
     }));
+
+    // If no transcripts from client and we have a Tavus conversation, end it and fetch transcript
+    if (mappedTranscripts.length === 0 && tavusConversationId) {
+      const tavusApiKey = process.env.TAVUS_API_KEY?.trim();
+      if (tavusApiKey) {
+        // End the Tavus conversation so transcript becomes available
+        try {
+          await fetch(`https://tavusapi.com/v2/conversations/${tavusConversationId}/end`, {
+            method: "POST",
+            headers: { "x-api-key": tavusApiKey, "Content-Type": "application/json" }
+          });
+          console.log(`[Interview] Ended Tavus conversation ${tavusConversationId}`);
+        } catch (err) {
+          console.warn(`[Interview] Failed to end Tavus conversation:`, err);
+        }
+
+        // Wait then fetch transcript with retries
+        const delays = [8000, 10000, 15000, 20000];
+        for (const delay of delays) {
+          await new Promise(resolve => setTimeout(resolve, delay));
+          try {
+            const tavusRes = await fetch(`https://tavusapi.com/v2/conversations/${tavusConversationId}?verbose=true`, {
+              headers: { "x-api-key": tavusApiKey, "Content-Type": "application/json" }
+            });
+            if (tavusRes.ok) {
+              const tavusData = await tavusRes.json() as any;
+              let transcript = tavusData.conversation_transcript || tavusData.transcript || [];
+              if ((!transcript || transcript.length === 0) && tavusData.events && Array.isArray(tavusData.events)) {
+                const txEvent = tavusData.events.find((e: any) => e.event_type === "application.transcription_ready");
+                if (txEvent?.properties?.transcript) {
+                  transcript = txEvent.properties.transcript;
+                }
+              }
+              if (transcript.length > 0) {
+                mappedTranscripts = transcript
+                  .filter((t: any) => t.role !== 'system')
+                  .map((t: any) => ({
+                    role: t.role === 'user' || t.role === 'candidate' ? 'candidate' : 'ai',
+                    text: t.content || t.text || '',
+                    timestamp: t.timestamp,
+                  }))
+                  .filter((t: any) => t.text.trim());
+                console.log(`[Interview] Fetched ${mappedTranscripts.length} transcript entries from Tavus for ${tavusConversationId}`);
+                break;
+              }
+            }
+          } catch (err) {
+            console.warn(`[Interview] Tavus transcript fetch retry failed:`, err);
+          }
+        }
+      }
+    }
 
     // Use the full orchestrator flow: saves transcripts, runs AI analysis, creates feedback
     const result = await interviewOrchestrator.completeInterview(

@@ -196,15 +196,23 @@ export default function InterviewVideo() {
 
     const durationSec = startTimeRef.current ? Math.floor((Date.now() - startTimeRef.current) / 1000) : 0;
 
-    // Fetch transcript from Tavus API after conversation ends (with retries)
+    // End the Tavus conversation explicitly, then fetch transcript
     if (tavusConversationId) {
       try {
-        // First attempt after 5s delay
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        // End the conversation via Tavus API so transcript becomes available
+        try {
+          await interviewService.endTavusConversation(tavusConversationId);
+          console.log("[Video] Tavus conversation ended successfully");
+        } catch (err) {
+          console.warn("[Video] Failed to end Tavus conversation (may have already ended):", err);
+        }
+
+        // Wait for Tavus to process the transcript after ending
+        await new Promise(resolve => setTimeout(resolve, 8000));
         let fetchedTranscripts = await fetchTavusTranscript(tavusConversationId);
 
-        // Retry up to 3 more times with increasing delays if no transcript yet
-        const retryDelays = [10000, 15000, 20000];
+        // Retry up to 4 more times with delays if no transcript yet
+        const retryDelays = [10000, 15000, 20000, 25000];
         for (const delay of retryDelays) {
           if (fetchedTranscripts.length > 0) break;
           console.log(`[Video] No transcript yet, retrying in ${delay / 1000}s...`);

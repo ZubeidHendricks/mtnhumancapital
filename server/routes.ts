@@ -2287,6 +2287,42 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     }
   });
 
+  // End a Tavus conversation explicitly so transcript becomes available
+  app.post("/api/interview/video/end/:conversationId", async (req, res) => {
+    try {
+      const TAVUS_API_KEY = process.env.TAVUS_API_KEY?.trim();
+      if (!TAVUS_API_KEY) {
+        return res.status(500).json({ message: "Tavus API key not configured" });
+      }
+
+      const { conversationId } = req.params;
+      console.log(`[Tavus] Ending conversation ${conversationId}...`);
+
+      const response = await fetch(`https://tavusapi.com/v2/conversations/${conversationId}/end`, {
+        method: "POST",
+        headers: {
+          "x-api-key": TAVUS_API_KEY,
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.error("Tavus end conversation error:", response.status, error);
+        // Don't fail hard - conversation may have already ended
+        if (response.status !== 400) {
+          return res.status(response.status).json({ message: "Failed to end conversation", details: error });
+        }
+      }
+
+      console.log(`[Tavus] Conversation ${conversationId} ended successfully`);
+      res.json({ success: true, conversationId });
+    } catch (error) {
+      console.error("Error ending Tavus conversation:", error);
+      res.status(500).json({ message: "Failed to end conversation" });
+    }
+  });
+
   // Fetch transcript from Tavus after conversation ends
   app.get("/api/interview/video/transcript/:conversationId", async (req, res) => {
     try {
@@ -8277,8 +8313,8 @@ Format your response as JSON:
       const tavusApiKey = process.env.TAVUS_API_KEY;
       if (!tavusApiKey) return res.status(500).json({ message: "Tavus API key not configured" });
 
-      // Fetch conversation details from Tavus
-      const tavusRes = await axios.get(`https://tavusapi.com/v2/conversations/${conversationId}`, {
+      // Fetch conversation details from Tavus (verbose=true required for transcript)
+      const tavusRes = await axios.get(`https://tavusapi.com/v2/conversations/${conversationId}?verbose=true`, {
         headers: { "x-api-key": tavusApiKey },
       });
 
@@ -8303,7 +8339,7 @@ Format your response as JSON:
           for (const delay of delays) {
             await new Promise(resolve => setTimeout(resolve, delay));
             try {
-              const retryRes = await axios.get(`https://tavusapi.com/v2/conversations/${conversationId}`, {
+              const retryRes = await axios.get(`https://tavusapi.com/v2/conversations/${conversationId}?verbose=true`, {
                 headers: { "x-api-key": tavusApiKey },
               });
               const retryUrl = retryRes.data?.recording_url;
@@ -8337,13 +8373,22 @@ Format your response as JSON:
                 });
 
                 // Also grab transcript if available on retry
-                const retryTranscript = retryRes.data?.conversation_transcript || retryRes.data?.transcript || [];
+                let retryTranscript = retryRes.data?.conversation_transcript || retryRes.data?.transcript || [];
+                if ((!retryTranscript || retryTranscript.length === 0) && retryRes.data?.events && Array.isArray(retryRes.data.events)) {
+                  const txEvent = retryRes.data.events.find((e: any) => e.event_type === "application.transcription_ready");
+                  if (txEvent?.properties?.transcript) {
+                    retryTranscript = txEvent.properties.transcript;
+                  }
+                }
                 if (retryTranscript.length > 0) {
-                  const mapped = retryTranscript.map((t: any) => ({
-                    role: t.role === 'user' || t.role === 'candidate' ? 'candidate' as const : 'ai' as const,
-                    text: t.content || t.text || '',
-                    timestamp: t.timestamp,
-                  }));
+                  const mapped = retryTranscript
+                    .filter((t: any) => t.role !== 'system')
+                    .map((t: any) => ({
+                      role: t.role === 'user' || t.role === 'candidate' ? 'candidate' as const : 'ai' as const,
+                      text: t.content || t.text || '',
+                      timestamp: t.timestamp,
+                    }))
+                    .filter((t: any) => t.text.trim());
                   await interviewOrchestrator.completeInterview(tenantId, sessionId, mapped, undefined, undefined, undefined, 'video');
                 }
 
@@ -8391,13 +8436,24 @@ Format your response as JSON:
       });
 
       // Extract transcript from Tavus and trigger AI analysis/scoring
-      const transcript = tavusData.conversation_transcript || tavusData.transcript || [];
+      // Check multiple possible locations: top-level fields and events array
+      let transcript = tavusData.conversation_transcript || tavusData.transcript || [];
+      if ((!transcript || transcript.length === 0) && tavusData.events && Array.isArray(tavusData.events)) {
+        const transcriptionEvent = tavusData.events.find((e: any) => e.event_type === "application.transcription_ready");
+        if (transcriptionEvent?.properties?.transcript) {
+          transcript = transcriptionEvent.properties.transcript;
+        }
+      }
+      console.log(`[Interview] Tavus transcript extraction for ${conversationId}: ${transcript.length} entries, checked: conversation_transcript=${!!tavusData.conversation_transcript}, transcript=${!!tavusData.transcript}, events=${!!tavusData.events}`);
       if (transcript.length > 0) {
-        const mappedTranscripts = transcript.map((t: any) => ({
-          role: t.role === 'user' || t.role === 'candidate' ? 'candidate' as const : 'ai' as const,
-          text: t.content || t.text || '',
-          timestamp: t.timestamp,
-        }));
+        const mappedTranscripts = transcript
+          .filter((t: any) => t.role !== 'system')
+          .map((t: any) => ({
+            role: t.role === 'user' || t.role === 'candidate' ? 'candidate' as const : 'ai' as const,
+            text: t.content || t.text || '',
+            timestamp: t.timestamp,
+          }))
+          .filter((t: any) => t.text.trim());
 
         console.log(`[Interview] Tavus transcript available (${mappedTranscripts.length} segments), running AI analysis for session ${sessionId}...`);
 
@@ -8421,17 +8477,26 @@ Format your response as JSON:
           for (const delay of delays) {
             await new Promise(resolve => setTimeout(resolve, delay));
             try {
-              const retryRes = await axios.get(`https://tavusapi.com/v2/conversations/${conversationId}`, {
+              const retryRes = await axios.get(`https://tavusapi.com/v2/conversations/${conversationId}?verbose=true`, {
                 headers: { "x-api-key": tavusApiKey },
               });
               const retryData = retryRes.data;
-              const retryTranscript = retryData?.conversation_transcript || retryData?.transcript || [];
+              let retryTranscript = retryData?.conversation_transcript || retryData?.transcript || [];
+              if ((!retryTranscript || retryTranscript.length === 0) && retryData?.events && Array.isArray(retryData.events)) {
+                const txEvent = retryData.events.find((e: any) => e.event_type === "application.transcription_ready");
+                if (txEvent?.properties?.transcript) {
+                  retryTranscript = txEvent.properties.transcript;
+                }
+              }
               if (retryTranscript.length > 0) {
-                const mappedRetry = retryTranscript.map((t: any) => ({
-                  role: t.role === 'user' || t.role === 'candidate' ? 'candidate' as const : 'ai' as const,
-                  text: t.content || t.text || '',
-                  timestamp: t.timestamp,
-                }));
+                const mappedRetry = retryTranscript
+                  .filter((t: any) => t.role !== 'system')
+                  .map((t: any) => ({
+                    role: t.role === 'user' || t.role === 'candidate' ? 'candidate' as const : 'ai' as const,
+                    text: t.content || t.text || '',
+                    timestamp: t.timestamp,
+                  }))
+                  .filter((t: any) => t.text.trim());
                 console.log(`[Interview] Tavus transcript now available (${mappedRetry.length} segments), running analysis...`);
                 await interviewOrchestrator.completeInterview(tenantId, sessionId, mappedRetry, undefined, undefined, undefined, 'video');
                 console.log(`[Interview] Background AI analysis completed for session ${sessionId}`);

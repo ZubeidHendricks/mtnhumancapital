@@ -143,6 +143,10 @@ export const interviewService = {
     });
     return response.data;
   },
+  endTavusConversation: async (conversationId: string): Promise<any> => {
+    const response = await api.post(`/interview/video/end/${conversationId}`);
+    return response.data;
+  },
   getTavusTranscript: async (conversationId: string): Promise<any> => {
     const response = await api.get(`/interview/video/transcript/${conversationId}`);
     return response.data;
