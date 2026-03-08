@@ -107,3 +107,6 @@ Preferred communication style: Simple, everyday language.
 - `GROQ_API_KEY` — Groq AI API key (for AI features)
 - `ADMIN_API_KEY` — Secret key for admin API endpoints
 - `NODE_ENV` — `development` or `production`
+- `EP_USERNAME` — Executive Placements login email
+- `EP_PASSWORD` — Executive Placements login password
+- `EP_SEARCH_URL` — Executive Placements CV search URL (default: `https://www.executiveplacements.com/cv_search_get_dataNS11.asp`)

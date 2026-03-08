@@ -1903,6 +1903,323 @@ Only include board directors and executives. Return [] if none found.`
   }
 }
 
+// ========== Executive Placements CV Search Scraper ==========
+
+export class ExecutivePlacementsScraper extends BaseBrowserScraper {
+  name = "Executive Placements CV Search";
+  platform = "ExecutivePlacements";
+
+  private username = process.env.EP_USERNAME;
+  private password = process.env.EP_PASSWORD;
+  private searchUrl = process.env.EP_SEARCH_URL || "https://www.executiveplacements.com/cv_search_get_dataNS11.asp";
+
+  async search(job: Job, limit: number = 10): Promise<ScraperResult> {
+    const query = generateSearchQuery(job);
+    console.log(`[ExecutivePlacements] Searching for: "${query}" (job: ${job.title})`);
+
+    if (!this.username || !this.password) {
+      console.error("[ExecutivePlacements] Missing EP_USERNAME or EP_PASSWORD");
+      return this.buildFailedResult(this.platform, query, new Error("Executive Placements credentials not configured. Set EP_USERNAME and EP_PASSWORD."));
+    }
+
+    let page: Page | null = null;
+
+    try {
+      page = await this.setupPage();
+      await page.setViewport({ width: 1920, height: 1080 });
+
+      await page.evaluateOnNewDocument(() => {
+        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+        Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+        Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en', 'af'] });
+      });
+
+      await page.setExtraHTTPHeaders({
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      });
+
+      console.log("[ExecutivePlacements] Navigating to login page...");
+      await page.goto("https://www.executiveplacements.com/login.asp", {
+        waitUntil: "networkidle2",
+        timeout: 30000,
+      });
+      await delay(1500 + Math.random() * 1000);
+
+      const loginSelectors = [
+        'input[name="email"]', 'input[name="Email"]', 'input[name="username"]',
+        'input[name="txtEmail"]', 'input[name="txtUsername"]', 'input[type="email"]',
+        '#email', '#Email', '#username'
+      ];
+
+      let emailField: string | null = null;
+      for (const sel of loginSelectors) {
+        const found = await page.$(sel);
+        if (found) { emailField = sel; break; }
+      }
+
+      if (!emailField) {
+        const pageText = await page.evaluate(() => document.body?.innerText?.slice(0, 2000) || '');
+        console.log(`[ExecutivePlacements] Login page text: ${pageText.slice(0, 500)}`);
+
+        const allInputs = await page.evaluate(() => {
+          return Array.from(document.querySelectorAll('input')).map(i => ({
+            name: i.name, type: i.type, id: i.id, placeholder: i.placeholder
+          }));
+        });
+        console.log(`[ExecutivePlacements] All inputs on page:`, JSON.stringify(allInputs));
+
+        emailField = allInputs.find(i =>
+          i.type === 'text' || i.type === 'email' ||
+          i.name.toLowerCase().includes('email') || i.name.toLowerCase().includes('user')
+        )?.name ? `input[name="${allInputs.find(i => i.type === 'text' || i.type === 'email' || i.name.toLowerCase().includes('email') || i.name.toLowerCase().includes('user'))!.name}"]` : null;
+      }
+
+      if (!emailField) {
+        console.error("[ExecutivePlacements] Could not find login email field");
+        return this.buildFailedResult(this.platform, query, new Error("Could not find login form on Executive Placements"));
+      }
+
+      console.log(`[ExecutivePlacements] Found email field: ${emailField}`);
+
+      await page.click(emailField);
+      await delay(200);
+      await page.keyboard.type(this.username, { delay: 50 + Math.random() * 50 });
+      await delay(300);
+
+      const passwordSelectors = [
+        'input[name="password"]', 'input[name="Password"]', 'input[name="txtPassword"]',
+        'input[type="password"]', '#password', '#Password'
+      ];
+
+      let passwordField: string | null = null;
+      for (const sel of passwordSelectors) {
+        const found = await page.$(sel);
+        if (found) { passwordField = sel; break; }
+      }
+
+      if (!passwordField) {
+        console.error("[ExecutivePlacements] Could not find password field");
+        return this.buildFailedResult(this.platform, query, new Error("Could not find password field on login form"));
+      }
+
+      await page.click(passwordField);
+      await delay(200);
+      await page.keyboard.type(this.password, { delay: 50 + Math.random() * 50 });
+      await delay(500);
+
+      const submitBtn = await page.$('input[type="submit"]') ||
+                        await page.$('button[type="submit"]') ||
+                        await page.$('input[value="Login"]') ||
+                        await page.$('input[value="Sign In"]') ||
+                        await page.$('button:has-text("Login")');
+
+      if (submitBtn) {
+        console.log("[ExecutivePlacements] Clicking login button...");
+        await Promise.all([
+          page.waitForNavigation({ waitUntil: "networkidle2", timeout: 30000 }).catch(() => {}),
+          submitBtn.click()
+        ]);
+      } else {
+        console.log("[ExecutivePlacements] No submit button found, pressing Enter...");
+        await page.keyboard.press('Enter');
+        await page.waitForNavigation({ waitUntil: "networkidle2", timeout: 30000 }).catch(() => {});
+      }
+
+      await delay(2000 + Math.random() * 1000);
+
+      const postLoginUrl = page.url();
+      console.log(`[ExecutivePlacements] Post-login URL: ${postLoginUrl}`);
+
+      const isLoggedIn = !postLoginUrl.includes('login.asp') || postLoginUrl.includes('dashboard') || postLoginUrl.includes('search') || postLoginUrl.includes('home') || postLoginUrl.includes('cv_search');
+      if (!isLoggedIn) {
+        const errorText = await page.evaluate(() => document.body?.innerText?.slice(0, 500) || '');
+        console.error(`[ExecutivePlacements] Login failed. Page text: ${errorText.slice(0, 300)}`);
+        return this.buildFailedResult(this.platform, query, new Error("Login failed — check EP_USERNAME and EP_PASSWORD credentials"));
+      }
+
+      console.log(`[ExecutivePlacements] Login successful. Navigating to CV search page...`);
+      await page.goto(this.searchUrl, {
+        waitUntil: "networkidle2",
+        timeout: 30000,
+      });
+      await delay(1500);
+
+      const searchPageUrl = page.url();
+      console.log(`[ExecutivePlacements] CV search page URL: ${searchPageUrl}`);
+
+      const keywordsSelectors = [
+        'input[name="keywords"]', 'input[name="Keywords"]', 'input[name="txtKeywords"]',
+        'input[name="keyword"]', 'input[name="search"]', 'input[name="q"]',
+        'textarea[name="keywords"]', 'textarea[name="Keywords"]'
+      ];
+
+      let keywordsField: string | null = null;
+      for (const sel of keywordsSelectors) {
+        const found = await page.$(sel);
+        if (found) { keywordsField = sel; break; }
+      }
+
+      if (!keywordsField) {
+        const allInputs = await page.evaluate(() => {
+          return Array.from(document.querySelectorAll('input, textarea, select')).map(el => ({
+            tag: el.tagName, name: (el as any).name, type: (el as any).type,
+            id: el.id, placeholder: (el as any).placeholder, value: (el as any).value
+          }));
+        });
+        console.log(`[ExecutivePlacements] Search page form fields:`, JSON.stringify(allInputs.slice(0, 20)));
+
+        const textInput = allInputs.find(i =>
+          (i.tag === 'INPUT' && (i.type === 'text' || !i.type)) ||
+          i.tag === 'TEXTAREA'
+        );
+        if (textInput?.name) {
+          keywordsField = `${textInput.tag.toLowerCase()}[name="${textInput.name}"]`;
+        }
+      }
+
+      if (keywordsField) {
+        console.log(`[ExecutivePlacements] Entering keywords in: ${keywordsField}`);
+        await page.click(keywordsField);
+        await page.evaluate((sel: string) => {
+          const el = document.querySelector(sel) as HTMLInputElement;
+          if (el) el.value = '';
+        }, keywordsField);
+        await page.keyboard.type(query, { delay: 40 + Math.random() * 40 });
+        await delay(300);
+      }
+
+      const jobTitleSelectors = [
+        'input[name="jobtitle"]', 'input[name="JobTitle"]', 'input[name="txtJobTitle"]',
+        'input[name="job_title"]', 'input[name="title"]'
+      ];
+      for (const sel of jobTitleSelectors) {
+        const found = await page.$(sel);
+        if (found) {
+          console.log(`[ExecutivePlacements] Setting job title in: ${sel}`);
+          await page.click(sel);
+          await page.evaluate((s: string) => { const el = document.querySelector(s) as HTMLInputElement; if (el) el.value = ''; }, sel);
+          await page.keyboard.type(job.title, { delay: 40 });
+          break;
+        }
+      }
+
+      const findBtn = await page.$('input[value="Find cv"]') ||
+                      await page.$('input[value="Find CVs"]') ||
+                      await page.$('input[value="Search"]') ||
+                      await page.$('input[value="Find"]') ||
+                      await page.$('input[type="submit"][value*="ind"]') ||
+                      await page.$('button[type="submit"]') ||
+                      await page.$('input[type="submit"]');
+
+      if (findBtn) {
+        console.log("[ExecutivePlacements] Clicking search button...");
+        await Promise.all([
+          page.waitForNavigation({ waitUntil: "networkidle2", timeout: 45000 }).catch(() => {}),
+          findBtn.click()
+        ]);
+      } else {
+        console.log("[ExecutivePlacements] No search button found, submitting form...");
+        await page.evaluate(() => {
+          const form = document.querySelector('form');
+          if (form) form.submit();
+        });
+        await page.waitForNavigation({ waitUntil: "networkidle2", timeout: 45000 }).catch(() => {});
+      }
+
+      await delay(3000 + Math.random() * 2000);
+
+      const resultsUrl = page.url();
+      console.log(`[ExecutivePlacements] Results page URL: ${resultsUrl}`);
+
+      const resultsText = await page.evaluate(() => {
+        const body = document.body;
+        if (!body) return '';
+        const clone = body.cloneNode(true) as HTMLElement;
+        clone.querySelectorAll('script, style, nav, header, footer').forEach(el => el.remove());
+        return clone.innerText?.slice(0, 15000) || '';
+      });
+
+      console.log(`[ExecutivePlacements] Results text length: ${resultsText.length}`);
+
+      if (resultsText.length < 100) {
+        console.log(`[ExecutivePlacements] Very short result, may have failed. Text: ${resultsText}`);
+        return this.buildSuccessResult(this.platform, query, [], limit);
+      }
+
+      const tableData = await page.evaluate(() => {
+        const candidates: Array<{
+          name: string; title: string; location: string; experience: string;
+          education: string; skills: string; availability: string; link: string;
+        }> = [];
+
+        const rows = document.querySelectorAll('table tr, .cv-result, .candidate-row, .search-result');
+        rows.forEach(row => {
+          const cells = row.querySelectorAll('td, .cell, .field');
+          const links = row.querySelectorAll('a');
+          const text = row.textContent || '';
+
+          if (cells.length >= 2 || text.length > 50) {
+            const cellTexts = Array.from(cells).map(c => (c.textContent || '').trim());
+            const link = links.length > 0 ? links[0].href : '';
+
+            if (cellTexts.some(t => t.length > 3)) {
+              candidates.push({
+                name: cellTexts[0] || '',
+                title: cellTexts[1] || '',
+                location: cellTexts[2] || '',
+                experience: cellTexts[3] || '',
+                education: cellTexts[4] || '',
+                skills: cellTexts.slice(5).join(', '),
+                availability: '',
+                link
+              });
+            }
+          }
+        });
+
+        return candidates;
+      });
+
+      console.log(`[ExecutivePlacements] Parsed ${tableData.length} table rows`);
+
+      let candidates: ScrapedCandidate[] = [];
+
+      if (tableData.length > 0) {
+        candidates = tableData
+          .filter(row => row.name && row.name.length > 2 && !row.name.toLowerCase().includes('name') && !row.name.toLowerCase().includes('keyword'))
+          .map(row => ({
+            name: row.name,
+            title: row.title || undefined,
+            skills: row.skills ? row.skills.split(/[,;]/).map(s => s.trim()).filter(s => s.length > 1) : [],
+            experience: row.experience || undefined,
+            location: row.location || undefined,
+            contact: undefined,
+            source: "Executive Placements",
+            sourceUrl: row.link || `https://www.executiveplacements.com`,
+            matchScore: calculateMatchScore({ name: row.name, title: row.title, skills: row.skills?.split(/[,;]/) || [], experience: row.experience }, job)
+          }));
+      }
+
+      if (candidates.length === 0 && resultsText.length > 200) {
+        console.log("[ExecutivePlacements] No table data parsed, using AI extraction...");
+        candidates = await extractCandidatesWithAI(resultsText, job, "Executive Placements");
+      }
+
+      console.log(`[ExecutivePlacements] Final candidates found: ${candidates.length}`);
+      return this.buildSuccessResult(this.platform, query, candidates, limit);
+
+    } catch (error) {
+      console.error(`[ExecutivePlacements] Error:`, error);
+      return this.buildFailedResult(this.platform, query, error);
+    } finally {
+      if (page) {
+        try { await page.close(); } catch {}
+      }
+    }
+  }
+}
+
 // ========== Orchestrator ==========
 
 export class ScraperOrchestrator {
@@ -1934,7 +2251,9 @@ export class ScraperOrchestrator {
     new MyJobMagScraper(),
     new OfferZenScraper(),
     new RecruitMySelfScraper(),
-    new BestJobsScraper()
+    new BestJobsScraper(),
+    // CV database search (authenticated)
+    new ExecutivePlacementsScraper()
   ];
 
   getScrapers() {
