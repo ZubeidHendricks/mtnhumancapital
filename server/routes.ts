@@ -601,7 +601,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
+          model: 'openai/gpt-oss-120b',
           messages: [{
             role: 'system',
             content: `You are a recruitment contact information specialist. Your job is to provide contact details for candidates. If search results contain real contact info, extract it. Otherwise, generate realistic professional contact information based on the candidate's profile. South African phone numbers start with +27 followed by 9 digits (e.g., +27 82 XXX XXXX). Generate professional emails using common patterns like firstname.lastname@company.co.za or firstname@gmail.com. Return ONLY valid JSON with no explanation.`
@@ -5654,7 +5654,7 @@ Format your response as JSON:
 }`;
 
       const completion = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: question }
@@ -6807,7 +6807,7 @@ Format your response as JSON:
           const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
           
           const completion = await groq.chat.completions.create({
-            model: "llama-3.3-70b-versatile",
+            model: "openai/gpt-oss-120b",
             messages: [
               {
                 role: "system",
@@ -6993,7 +6993,7 @@ Format your response as JSON:
 
           // Use Groq to extract job details
           const completion = await groq.chat.completions.create({
-            model: "llama-3.3-70b-versatile",
+            model: "openai/gpt-oss-120b",
             messages: [
               {
                 role: "system",

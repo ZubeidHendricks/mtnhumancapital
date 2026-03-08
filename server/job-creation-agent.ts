@@ -97,7 +97,7 @@ Start by greeting and asking what position they need to fill.`;
     try {
       // Get AI response
       const completion = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         messages: this.conversationHistory,
         temperature: 0.7,
         max_tokens: 1000,
@@ -160,7 +160,7 @@ Return ONLY the JSON, no other text.`;
 
     try {
       const extraction = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         messages: [
           {
             role: "user",
@@ -266,7 +266,7 @@ Format as a concise bullet-point summary highlighting key requirements. Keep it 
 
     try {
       const summary = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         messages: [
           {
             role: "user",
@@ -341,7 +341,7 @@ IMPORTANT:
 
     try {
       const extraction = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         messages: [
           {
             role: "user",
@@ -458,7 +458,7 @@ Return ONLY valid JSON, no other text.`;
 
     try {
       const research = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         messages: [
           {
             role: "system",

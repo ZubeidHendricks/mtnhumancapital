@@ -68,7 +68,7 @@ async function fetchPublicContent(url: string): Promise<string | null> {
 export class SocialScreeningAgent {
   private groq: Groq;
   private storage: IStorage;
-  private model = "llama-3.3-70b-versatile";
+  private model = "openai/gpt-oss-120b";
 
   constructor(storage: IStorage) {
     this.storage = storage;

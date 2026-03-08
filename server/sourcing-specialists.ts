@@ -124,7 +124,7 @@ Make the outreach script professional and personalized for South African candida
 
     try {
       const completion = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         messages: [
           {
             role: "system",
@@ -236,7 +236,7 @@ Focus on passive candidates who are currently employed at target employers. Ever
 
     try {
       const completion = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         messages: [
           {
             role: "system",
@@ -343,7 +343,7 @@ PNet candidates are typically actively looking for work. Include a mix of availa
 
     try {
       const completion = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         messages: [
           {
             role: "system",
@@ -453,7 +453,7 @@ Indeed has more entry-level and blue-collar candidates. Include diverse backgrou
 
     try {
       const completion = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         messages: [
           {
             role: "system",

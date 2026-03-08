@@ -201,7 +201,7 @@ export class OnboardingOrchestrator {
     if (this.groq) {
       try {
         const completion = await this.groq.chat.completions.create({
-          model: "llama-3.3-70b-versatile",
+          model: "openai/gpt-oss-120b",
           messages: [
             {
               role: "system",
@@ -334,7 +334,7 @@ export class OnboardingOrchestrator {
     if (this.groq) {
       try {
         const completion = await this.groq.chat.completions.create({
-          model: "llama-3.3-70b-versatile",
+          model: "openai/gpt-oss-120b",
           messages: [
             {
               role: "system",

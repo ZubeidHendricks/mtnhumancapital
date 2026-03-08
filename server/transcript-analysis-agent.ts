@@ -66,7 +66,7 @@ export class TranscriptAnalysisAgent {
       .join("\n");
 
     const response = await this.groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
       messages: [
         {
           role: "system",
@@ -111,7 +111,7 @@ Return ONLY valid JSON.`,
       structuredResult: parsed,
       confidence: parsed.confidence,
       provider: "groq",
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
       requestedBy: config.userId,
     });
 
@@ -137,7 +137,7 @@ Return ONLY valid JSON.`,
       .join("\n");
 
     const response = await this.groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
       messages: [
         {
           role: "system",
@@ -164,7 +164,7 @@ Be specific and reference timestamps [MM:SS].`,
       answer: summary,
       confidence: 0.8,
       provider: "groq",
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
       requestedBy: config.userId,
     });
 
@@ -184,7 +184,7 @@ Be specific and reference timestamps [MM:SS].`,
       .join("\n");
 
     const response = await this.groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
       messages: [
         {
           role: "system",
@@ -218,7 +218,7 @@ Return ONLY valid JSON.`,
       structuredResult: result,
       confidence: 0.75,
       provider: "groq",
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
       requestedBy: config.userId,
     });
 
@@ -239,7 +239,7 @@ Return ONLY valid JSON.`,
       .join("\n");
 
     const response = await this.groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
       messages: [
         {
           role: "system",
@@ -324,7 +324,7 @@ Focus on the most significant 10-15 moments. Return ONLY valid JSON.`,
       .join("\n");
 
     const response = await this.groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
       messages: [
         {
           role: "system",
@@ -362,7 +362,7 @@ Return ONLY valid JSON.`,
       structuredResult: result,
       confidence: 0.7,
       provider: "groq",
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
       requestedBy: config.userId,
     });
 

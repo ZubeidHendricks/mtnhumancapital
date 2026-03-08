@@ -79,7 +79,7 @@ async function fetchPublicProfile(url: string): Promise<string | null> {
 export class SocialScreeningOrchestrator {
   private groq: Groq;
   private storage: IStorage;
-  private model = "llama-3.3-70b-versatile";
+  private model = "openai/gpt-oss-120b";
 
   constructor(storage: IStorage) {
     this.storage = storage;
