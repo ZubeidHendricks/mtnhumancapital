@@ -2255,7 +2255,7 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
         });
       }
       
-      // Save interview record to database
+      // Save interview record to both tables
       const interview = await storage.createInterview(req.tenant.id, {
         candidateId: candidateId || null,
         jobId: null,
@@ -2272,14 +2272,25 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
         },
         startedAt: new Date()
       });
-      
+
+      // Also create an interview_session record (used by orchestrator for transcripts, feedback, analysis)
+      const session = await storage.createInterviewSession(req.tenant.id, {
+        candidateId: candidateId || undefined,
+        candidateName,
+        jobTitle: role,
+        token: data.conversation_id || `tavus_${Date.now()}`,
+        interviewType: 'video',
+        status: 'started',
+        startedAt: new Date(),
+      });
+
       res.json({
         sessionUrl: data.conversation_url,
         sessionId: data.conversation_id || "unknown",
         status: data.status || "created",
         candidateId,
         candidateName,
-        interviewId: interview.id
+        interviewId: session.id
       });
     } catch (error) {
       console.error("Error creating Tavus session:", error);
