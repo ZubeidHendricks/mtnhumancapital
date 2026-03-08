@@ -1766,6 +1766,291 @@ export class CandidateAPISourcer {
   }
 }
 
+// ========== ADDITIONAL SOUTH AFRICAN CAREER SITES ==========
+
+export class CareerJunctionScraper {
+  name = "CareerJunction Scraper";
+  platform = "CareerJunction";
+
+  async search(job: Job, limit: number = 10): Promise<ScraperResult> {
+    console.log(`[CareerJunctionScraper] Searching for: ${job.title}`);
+    const query = generateSearchQuery(job);
+    let page: Page | null = null;
+
+    try {
+      const browser = await getBrowser();
+      page = await browser.newPage();
+      await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+
+      const searchUrl = `https://www.careerjunction.co.za/jobs/results?keywords=${encodeURIComponent(query)}&location=South+Africa`;
+      console.log(`[CareerJunctionScraper] Navigating to: ${searchUrl}`);
+
+      await page.goto(searchUrl, { waitUntil: "domcontentloaded", timeout: 30000 });
+      await new Promise(r => setTimeout(r, 3000));
+
+      const pageContent = await page.evaluate(() => {
+        const cards = document.querySelectorAll('.job-result, .module-content, [class*="job-card"], [class*="result-item"], article');
+        let text = "";
+        cards.forEach(el => { text += el.textContent + "\n\n"; });
+        if (!text || text.length < 100) text = document.body.innerText;
+        return text;
+      });
+
+      console.log(`[CareerJunctionScraper] Scraped ${pageContent.length} characters`);
+      const candidates = await extractCandidatesWithAI(pageContent, job, this.platform);
+
+      return {
+        platform: this.platform,
+        query,
+        candidates: candidates.slice(0, limit),
+        scrapedAt: new Date(),
+        status: candidates.length > 0 ? "success" : "partial"
+      };
+    } catch (error) {
+      console.error(`[CareerJunctionScraper] Error:`, error);
+      return { platform: this.platform, query, candidates: [], scrapedAt: new Date(), status: "failed", error: error instanceof Error ? error.message : "Unknown error" };
+    } finally {
+      if (page) await page.close();
+    }
+  }
+}
+
+export class JobMailScraper {
+  name = "JobMail Scraper";
+  platform = "JobMail";
+
+  async search(job: Job, limit: number = 10): Promise<ScraperResult> {
+    console.log(`[JobMailScraper] Searching for: ${job.title}`);
+    const query = generateSearchQuery(job);
+    let page: Page | null = null;
+
+    try {
+      const browser = await getBrowser();
+      page = await browser.newPage();
+      await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+
+      const searchUrl = `https://www.jobmail.co.za/search?q=${encodeURIComponent(query)}&location=South+Africa`;
+      console.log(`[JobMailScraper] Navigating to: ${searchUrl}`);
+
+      await page.goto(searchUrl, { waitUntil: "domcontentloaded", timeout: 30000 });
+      await new Promise(r => setTimeout(r, 3000));
+
+      const pageContent = await page.evaluate(() => {
+        const cards = document.querySelectorAll('.job-listing, .job-card, [class*="job-item"], [class*="listing"], article');
+        let text = "";
+        cards.forEach(el => { text += el.textContent + "\n\n"; });
+        if (!text || text.length < 100) text = document.body.innerText;
+        return text;
+      });
+
+      console.log(`[JobMailScraper] Scraped ${pageContent.length} characters`);
+      const candidates = await extractCandidatesWithAI(pageContent, job, this.platform);
+
+      return {
+        platform: this.platform,
+        query,
+        candidates: candidates.slice(0, limit),
+        scrapedAt: new Date(),
+        status: candidates.length > 0 ? "success" : "partial"
+      };
+    } catch (error) {
+      console.error(`[JobMailScraper] Error:`, error);
+      return { platform: this.platform, query, candidates: [], scrapedAt: new Date(), status: "failed", error: error instanceof Error ? error.message : "Unknown error" };
+    } finally {
+      if (page) await page.close();
+    }
+  }
+}
+
+export class MyJobMagScraper {
+  name = "MyJobMag Scraper";
+  platform = "MyJobMag";
+
+  async search(job: Job, limit: number = 10): Promise<ScraperResult> {
+    console.log(`[MyJobMagScraper] Searching for: ${job.title}`);
+    const query = generateSearchQuery(job);
+    let page: Page | null = null;
+
+    try {
+      const browser = await getBrowser();
+      page = await browser.newPage();
+      await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+
+      const searchUrl = `https://www.myjobmag.co.za/search/jobs?q=${encodeURIComponent(query)}`;
+      console.log(`[MyJobMagScraper] Navigating to: ${searchUrl}`);
+
+      await page.goto(searchUrl, { waitUntil: "domcontentloaded", timeout: 30000 });
+      await new Promise(r => setTimeout(r, 3000));
+
+      const pageContent = await page.evaluate(() => {
+        const cards = document.querySelectorAll('.job-info, .mag-b, [class*="job-list"], [class*="search-result"], article, .job-desc');
+        let text = "";
+        cards.forEach(el => { text += el.textContent + "\n\n"; });
+        if (!text || text.length < 100) text = document.body.innerText;
+        return text;
+      });
+
+      console.log(`[MyJobMagScraper] Scraped ${pageContent.length} characters`);
+      const candidates = await extractCandidatesWithAI(pageContent, job, this.platform);
+
+      return {
+        platform: this.platform,
+        query,
+        candidates: candidates.slice(0, limit),
+        scrapedAt: new Date(),
+        status: candidates.length > 0 ? "success" : "partial"
+      };
+    } catch (error) {
+      console.error(`[MyJobMagScraper] Error:`, error);
+      return { platform: this.platform, query, candidates: [], scrapedAt: new Date(), status: "failed", error: error instanceof Error ? error.message : "Unknown error" };
+    } finally {
+      if (page) await page.close();
+    }
+  }
+}
+
+export class OfferZenScraper {
+  name = "OfferZen Scraper";
+  platform = "OfferZen";
+
+  async search(job: Job, limit: number = 10): Promise<ScraperResult> {
+    console.log(`[OfferZenScraper] Searching for: ${job.title}`);
+    const query = generateSearchQuery(job);
+    let page: Page | null = null;
+
+    try {
+      const browser = await getBrowser();
+      page = await browser.newPage();
+      await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+
+      // OfferZen is a tech-focused SA marketplace
+      const searchUrl = `https://www.offerzen.com/companies/public_profiles`;
+      console.log(`[OfferZenScraper] Navigating to: ${searchUrl}`);
+
+      await page.goto(searchUrl, { waitUntil: "domcontentloaded", timeout: 30000 });
+      await new Promise(r => setTimeout(r, 3000));
+
+      const pageContent = await page.evaluate(() => {
+        const cards = document.querySelectorAll('[class*="profile"], [class*="candidate"], [class*="card"], article');
+        let text = "";
+        cards.forEach(el => { text += el.textContent + "\n\n"; });
+        if (!text || text.length < 100) text = document.body.innerText;
+        return text;
+      });
+
+      console.log(`[OfferZenScraper] Scraped ${pageContent.length} characters`);
+      const candidates = await extractCandidatesWithAI(pageContent, job, this.platform);
+
+      return {
+        platform: this.platform,
+        query,
+        candidates: candidates.slice(0, limit),
+        scrapedAt: new Date(),
+        status: candidates.length > 0 ? "success" : "partial"
+      };
+    } catch (error) {
+      console.error(`[OfferZenScraper] Error:`, error);
+      return { platform: this.platform, query, candidates: [], scrapedAt: new Date(), status: "failed", error: error instanceof Error ? error.message : "Unknown error" };
+    } finally {
+      if (page) await page.close();
+    }
+  }
+}
+
+export class RecruitMySelfScraper {
+  name = "RecruitMySelf Scraper";
+  platform = "RecruitMySelf";
+
+  async search(job: Job, limit: number = 10): Promise<ScraperResult> {
+    console.log(`[RecruitMySelfScraper] Searching for: ${job.title}`);
+    const query = generateSearchQuery(job);
+    let page: Page | null = null;
+
+    try {
+      const browser = await getBrowser();
+      page = await browser.newPage();
+      await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+
+      const searchUrl = `https://www.recruitmyself.co.za/jobs?search=${encodeURIComponent(query)}`;
+      console.log(`[RecruitMySelfScraper] Navigating to: ${searchUrl}`);
+
+      await page.goto(searchUrl, { waitUntil: "domcontentloaded", timeout: 30000 });
+      await new Promise(r => setTimeout(r, 3000));
+
+      const pageContent = await page.evaluate(() => {
+        const cards = document.querySelectorAll('.job-listing, .job-card, [class*="job"], [class*="listing"], article');
+        let text = "";
+        cards.forEach(el => { text += el.textContent + "\n\n"; });
+        if (!text || text.length < 100) text = document.body.innerText;
+        return text;
+      });
+
+      console.log(`[RecruitMySelfScraper] Scraped ${pageContent.length} characters`);
+      const candidates = await extractCandidatesWithAI(pageContent, job, this.platform);
+
+      return {
+        platform: this.platform,
+        query,
+        candidates: candidates.slice(0, limit),
+        scrapedAt: new Date(),
+        status: candidates.length > 0 ? "success" : "partial"
+      };
+    } catch (error) {
+      console.error(`[RecruitMySelfScraper] Error:`, error);
+      return { platform: this.platform, query, candidates: [], scrapedAt: new Date(), status: "failed", error: error instanceof Error ? error.message : "Unknown error" };
+    } finally {
+      if (page) await page.close();
+    }
+  }
+}
+
+export class BestJobsScraper {
+  name = "BestJobs Scraper";
+  platform = "BestJobs SA";
+
+  async search(job: Job, limit: number = 10): Promise<ScraperResult> {
+    console.log(`[BestJobsScraper] Searching for: ${job.title}`);
+    const query = generateSearchQuery(job);
+    let page: Page | null = null;
+
+    try {
+      const browser = await getBrowser();
+      page = await browser.newPage();
+      await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+
+      const searchUrl = `https://www.bestjobs.co.za/jobs?q=${encodeURIComponent(query)}`;
+      console.log(`[BestJobsScraper] Navigating to: ${searchUrl}`);
+
+      await page.goto(searchUrl, { waitUntil: "domcontentloaded", timeout: 30000 });
+      await new Promise(r => setTimeout(r, 3000));
+
+      const pageContent = await page.evaluate(() => {
+        const cards = document.querySelectorAll('.job-item, .job-card, [class*="job"], [class*="listing"], [class*="result"], article');
+        let text = "";
+        cards.forEach(el => { text += el.textContent + "\n\n"; });
+        if (!text || text.length < 100) text = document.body.innerText;
+        return text;
+      });
+
+      console.log(`[BestJobsScraper] Scraped ${pageContent.length} characters`);
+      const candidates = await extractCandidatesWithAI(pageContent, job, this.platform);
+
+      return {
+        platform: this.platform,
+        query,
+        candidates: candidates.slice(0, limit),
+        scrapedAt: new Date(),
+        status: candidates.length > 0 ? "success" : "partial"
+      };
+    } catch (error) {
+      console.error(`[BestJobsScraper] Error:`, error);
+      return { platform: this.platform, query, candidates: [], scrapedAt: new Date(), status: "failed", error: error instanceof Error ? error.message : "Unknown error" };
+    } finally {
+      if (page) await page.close();
+    }
+  }
+}
+
 export class LinkedInJobsScraper {
   name = "LinkedIn Jobs Scraper";
   platform = "LinkedIn";
@@ -2307,7 +2592,14 @@ export class ScraperOrchestrator {
     new IndeedScraper(),
     new Careers24Scraper(),
     new PNetScraper(),
-    new LinkedInJobsScraper()
+    new LinkedInJobsScraper(),
+    // Additional South African career sites
+    new CareerJunctionScraper(),
+    new JobMailScraper(),
+    new MyJobMagScraper(),
+    new OfferZenScraper(),
+    new RecruitMySelfScraper(),
+    new BestJobsScraper()
   ];
 
   getScrapers() {
