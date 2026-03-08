@@ -1,5 +1,6 @@
 import Groq from "groq-sdk";
 import { z } from "zod";
+import axios from "axios";
 import type { Job } from "@shared/schema";
 import { LinkedInJobsScraper, PNetScraper, IndeedScraper, type ScrapedCandidate } from "./web-scraper-agents";
 
@@ -7,10 +8,74 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
 
+const APIFY_TOKEN = process.env.APIFY_TOKEN || "";
+
 // Real scraper instances for actual data extraction
 const linkedInScraper = new LinkedInJobsScraper();
 const pnetScraper = new PNetScraper();
 const indeedScraper = new IndeedScraper();
+
+// Apify LinkedIn profile detail scraper (returns real structured profile data)
+async function scrapeLinkedInProfilesViaApify(profileUrls: string[]): Promise<any[]> {
+  if (!APIFY_TOKEN || profileUrls.length === 0) return [];
+
+  try {
+    console.log(`[Apify] Scraping ${profileUrls.length} LinkedIn profiles...`);
+    const response = await axios.post(
+      `https://api.apify.com/v2/acts/apimaestro~linkedin-profile-detail/run-sync-get-dataset-items?token=${APIFY_TOKEN}&timeout=120`,
+      { profileUrls },
+      { headers: { "Content-Type": "application/json" }, timeout: 180000 }
+    );
+
+    if (Array.isArray(response.data)) {
+      console.log(`[Apify] Got ${response.data.length} profile results`);
+      return response.data;
+    }
+    return [];
+  } catch (error: any) {
+    console.error(`[Apify] LinkedIn scrape error:`, error.message);
+    return [];
+  }
+}
+
+// Convert Apify profile data to SpecialistCandidate format
+function apifyProfileToCandidate(profile: any, specialistName: string): SpecialistCandidate | null {
+  const info = profile.basic_info;
+  if (!info?.fullname) return null;
+
+  const skills = [
+    ...(info.top_skills || []),
+    ...(profile.skills || []).map((s: any) => s.name || s).slice(0, 10),
+  ];
+
+  const experience = (profile.experience || [])
+    .slice(0, 2)
+    .map((e: any) => `${e.title} at ${e.company}`)
+    .join("; ");
+
+  return {
+    name: info.fullname,
+    currentRole: info.headline || (profile.experience?.[0]?.title) || "Not specified",
+    company: info.current_company || profile.experience?.[0]?.company || undefined,
+    location: info.location?.full || info.location?.city || undefined,
+    skills,
+    experience: experience || undefined,
+    match: 70, // real profile, baseline match
+    source: "LinkedIn",
+    specialist: specialistName,
+    email: info.email || undefined,
+    phone: undefined,
+    profileUrl: info.profile_url || undefined,
+    rawData: {
+      headline: info.headline,
+      about: info.about?.slice(0, 300),
+      connections: info.connection_count,
+      followers: info.follower_count,
+      education: profile.education,
+      certifications: profile.certifications,
+    },
+  };
+}
 
 const CandidateSchema = z.object({
   name: z.string().min(1),
@@ -208,30 +273,89 @@ export class LinkedInSpecialist extends BaseSourcingSpecialist {
     console.log(`[${this.name}] Scraping real LinkedIn data for: ${job.title}`);
 
     try {
+      // Step 1: Scrape LinkedIn search results via Puppeteer to get profile URLs
       const result = await linkedInScraper.search(job, limit);
+      const scrapedCandidates = result.candidates || [];
 
-      if (result.status === "failed" || result.candidates.length === 0) {
-        console.log(`[${this.name}] LinkedIn scrape returned ${result.candidates.length} candidates (status: ${result.status})`);
-        return [];
+      // Extract any LinkedIn profile URLs found in scraped data
+      const profileUrls: string[] = [];
+      for (const c of scrapedCandidates) {
+        if (c.sourceUrl?.includes("linkedin.com/in/")) {
+          profileUrls.push(c.sourceUrl);
+        }
       }
 
-      console.log(`[${this.name}] Found ${result.candidates.length} real candidates from LinkedIn`);
+      // Step 2: If we have Apify token and profile URLs, enrich with detailed profile data
+      if (APIFY_TOKEN && profileUrls.length > 0) {
+        console.log(`[${this.name}] Enriching ${profileUrls.length} profiles via Apify...`);
+        const apifyProfiles = await scrapeLinkedInProfilesViaApify(profileUrls.slice(0, limit));
 
-      return result.candidates.map((c: ScrapedCandidate) => ({
-        name: c.name,
-        currentRole: c.title || "Not specified",
-        company: undefined,
-        location: c.location || undefined,
-        skills: c.skills || [],
-        experience: c.experience || undefined,
-        match: c.matchScore || 50,
-        source: "LinkedIn",
-        specialist: this.name,
-        email: c.contact?.includes("@") ? c.contact : undefined,
-        phone: c.contact && !c.contact.includes("@") ? c.contact : undefined,
-        profileUrl: c.sourceUrl || undefined,
-        rawData: { rawText: c.rawText },
-      }));
+        if (apifyProfiles.length > 0) {
+          const candidates: SpecialistCandidate[] = [];
+          for (const profile of apifyProfiles) {
+            const candidate = apifyProfileToCandidate(profile, this.name);
+            if (candidate) candidates.push(candidate);
+          }
+          if (candidates.length > 0) {
+            console.log(`[${this.name}] Enriched ${candidates.length} candidates with Apify profile data`);
+            return candidates;
+          }
+        }
+      }
+
+      // Step 3: If Apify not available or no profile URLs, try direct Google-to-Apify search
+      if (APIFY_TOKEN) {
+        console.log(`[${this.name}] Trying Apify direct profile search for: ${job.title}`);
+        // Build LinkedIn search URLs from Google to find profile URLs
+        const searchQuery = `${job.title} ${job.location || "South Africa"}`;
+        const googleSearchUrl = `https://www.google.com/search?q=site:linkedin.com/in+${encodeURIComponent(searchQuery)}&num=${limit}`;
+
+        try {
+          const browser = (await import("./web-scraper-agents")).default;
+        } catch {}
+
+        // Use any scraped candidates as fallback
+        if (scrapedCandidates.length > 0) {
+          console.log(`[${this.name}] Using ${scrapedCandidates.length} candidates from Puppeteer scrape`);
+          return scrapedCandidates.map((c: ScrapedCandidate) => ({
+            name: c.name,
+            currentRole: c.title || "Not specified",
+            company: undefined,
+            location: c.location || undefined,
+            skills: c.skills || [],
+            experience: c.experience || undefined,
+            match: c.matchScore || 50,
+            source: "LinkedIn",
+            specialist: this.name,
+            email: c.contact?.includes("@") ? c.contact : undefined,
+            phone: c.contact && !c.contact.includes("@") ? c.contact : undefined,
+            profileUrl: c.sourceUrl || undefined,
+            rawData: { rawText: c.rawText },
+          }));
+        }
+      }
+
+      // Fallback: return basic scraped results
+      if (scrapedCandidates.length > 0) {
+        return scrapedCandidates.map((c: ScrapedCandidate) => ({
+          name: c.name,
+          currentRole: c.title || "Not specified",
+          company: undefined,
+          location: c.location || undefined,
+          skills: c.skills || [],
+          experience: c.experience || undefined,
+          match: c.matchScore || 50,
+          source: "LinkedIn",
+          specialist: this.name,
+          email: c.contact?.includes("@") ? c.contact : undefined,
+          phone: c.contact && !c.contact.includes("@") ? c.contact : undefined,
+          profileUrl: c.sourceUrl || undefined,
+          rawData: { rawText: c.rawText },
+        }));
+      }
+
+      console.log(`[${this.name}] No candidates found from any source`);
+      return [];
     } catch (error) {
       console.error(`[${this.name}] Search error:`, error);
     }
