@@ -218,7 +218,7 @@ import {
   type InsertLemurAnalysisResult,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, lte, sql, isNull, isNotNull, or } from "drizzle-orm";
+import { eq, desc, and, lte, sql, isNull, isNotNull, or, ilike } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -239,7 +239,10 @@ export interface IStorage {
   getAllCandidates(tenantId: string): Promise<Candidate[]>;
   getCandidatesPaginated(tenantId: string, page: number, limit: number): Promise<{ data: Candidate[]; total: number }>;
   getCandidate(tenantId: string, id: string): Promise<Candidate | undefined>;
+  findCandidateByEmailOrName(tenantId: string, email: string | undefined, fullName: string): Promise<Candidate | undefined>;
+  getCandidatesForJob(tenantId: string, jobId: string): Promise<Candidate[]>;
   createCandidate(tenantId: string, candidate: InsertCandidate): Promise<Candidate>;
+  upsertScrapedCandidate(tenantId: string, candidate: InsertCandidate): Promise<{ candidate: Candidate; isNew: boolean; previouslyRejected: boolean }>;
   updateCandidate(tenantId: string, id: string, candidate: Partial<InsertCandidate>): Promise<Candidate | undefined>;
   deleteCandidate(tenantId: string, id: string): Promise<boolean>;
   
@@ -806,6 +809,52 @@ export class DatabaseStorage implements IStorage {
   async getCandidate(tenantId: string, id: string): Promise<Candidate | undefined> {
     const [candidate] = await db.select().from(candidates).where(and(eq(candidates.id, id), eq(candidates.tenantId, tenantId)));
     return candidate || undefined;
+  }
+
+  async findCandidateByEmailOrName(tenantId: string, email: string | undefined, fullName: string): Promise<Candidate | undefined> {
+    // Try email match first (most reliable dedup key)
+    if (email) {
+      const [byEmail] = await db.select().from(candidates)
+        .where(and(eq(candidates.tenantId, tenantId), ilike(candidates.email, email)))
+        .limit(1);
+      if (byEmail) return byEmail;
+    }
+    // Fall back to exact name match
+    const [byName] = await db.select().from(candidates)
+      .where(and(eq(candidates.tenantId, tenantId), ilike(candidates.fullName, fullName)))
+      .limit(1);
+    return byName || undefined;
+  }
+
+  async getCandidatesForJob(tenantId: string, jobId: string): Promise<Candidate[]> {
+    return await db.select().from(candidates)
+      .where(and(eq(candidates.tenantId, tenantId), eq(candidates.jobId, jobId)))
+      .orderBy(desc(candidates.match));
+  }
+
+  async upsertScrapedCandidate(tenantId: string, insertCandidate: InsertCandidate): Promise<{ candidate: Candidate; isNew: boolean; previouslyRejected: boolean }> {
+    const email = insertCandidate.email || undefined;
+    const existing = await this.findCandidateByEmailOrName(tenantId, email, insertCandidate.fullName);
+
+    if (existing) {
+      const isRejected = existing.status === "Rejected" || existing.stage === "Lost" || existing.stage === "Rejected";
+
+      // Update metadata to track that this candidate was found again by a scraper
+      const existingMeta = (existing.metadata as Record<string, any>) || {};
+      await this.updateCandidate(tenantId, existing.id, {
+        metadata: {
+          ...existingMeta,
+          lastSeenByScraper: new Date().toISOString(),
+          lastScraperSource: insertCandidate.source,
+        },
+      });
+
+      return { candidate: existing, isNew: false, previouslyRejected: isRejected };
+    }
+
+    // New candidate — save to DB
+    const candidate = await this.createCandidate(tenantId, insertCandidate);
+    return { candidate, isNew: true, previouslyRejected: false };
   }
 
   async createCandidate(tenantId: string, insertCandidate: InsertCandidate): Promise<Candidate> {

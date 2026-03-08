@@ -28,7 +28,7 @@ import { InterestCheckDialog } from "@/components/interest-check-dialog";
 
 const AGENT_STEPS = [
   { id: "analyzing", name: "Analyzing Job", icon: FileSearch, description: "Understanding requirements and skills needed" },
-  { id: "sourcing_specialists", name: "Specialist Sourcing", icon: Users, description: "LinkedIn, PNet & Indeed specialists searching" },
+  { id: "sourcing_specialists", name: "Specialist Sourcing", icon: Users, description: "11 SA career sites: LinkedIn, PNet, Indeed, CareerJunction, JobMail & more" },
   { id: "sourcing_ai", name: "AI Search", icon: Search, description: "Augmenting with general AI search" },
   { id: "screening", name: "AI Screening", icon: Brain, description: "Evaluating candidate profiles with LLM" },
   { id: "ranking", name: "Smart Ranking", icon: TrendingUp, description: "Scoring and prioritizing matches" },
@@ -58,6 +58,15 @@ const AGENT_MESSAGES = [
   { agent: "LinkedIn Specialist", message: "Generating boolean search strings...", type: "sourcing_specialists" },
   { agent: "PNet Specialist", message: "Querying SA's largest CV database...", type: "sourcing_specialists" },
   { agent: "Indeed Specialist", message: "Searching resume database...", type: "sourcing_specialists" },
+  // Additional SA Career Sites
+  { agent: "CareerJunction Scraper", message: "Scraping CareerJunction for SA candidates...", type: "sourcing_specialists" },
+  { agent: "JobMail Scraper", message: "Searching JobMail job listings...", type: "sourcing_specialists" },
+  { agent: "MyJobMag Scraper", message: "Scanning MyJobMag SA profiles...", type: "sourcing_specialists" },
+  { agent: "OfferZen Scraper", message: "Searching OfferZen tech marketplace...", type: "sourcing_specialists" },
+  { agent: "RecruitMySelf Scraper", message: "Checking RecruitMySelf listings...", type: "sourcing_specialists" },
+  { agent: "BestJobs Scraper", message: "Searching BestJobs SA database...", type: "sourcing_specialists" },
+  { agent: "Gumtree Scraper", message: "Scanning Gumtree CVs and services...", type: "sourcing_specialists" },
+  { agent: "Careers24 Scraper", message: "Searching Careers24 listings...", type: "sourcing_specialists" },
   // AI Processing
   { agent: "AI Search", message: "Augmenting with general talent search...", type: "sourcing_ai" },
   { agent: "AI Search", message: "Deduplicating and merging candidate profiles...", type: "sourcing_ai" },
@@ -441,13 +450,19 @@ export default function RecruitmentAgent() {
   const sessionResults = activeSession?.results as any;
   const sessionStep = sessionResults?.step || null;
   const specialistResultsFromSession = sessionResults?.specialistResults || [];
+  const scraperResultsFromSession = sessionResults?.scraperResults || [];
+  const skippedRejected = sessionResults?.skippedRejected || 0;
+  const skippedDuplicate = sessionResults?.skippedDuplicate || 0;
+  const internalMatches = sessionResults?.internalMatches || 0;
 
-  // Map session step to workflow step index  
+  // Map session step to workflow step index
   const getStepIndexFromSession = (step: string | null): number => {
     if (!step) return -1;
     switch (step) {
       case "analyzing_job": return 0;
+      case "checking_internal": return 0;
       case "sourcing_specialists": return 1;
+      case "sourcing_scrapers": return 1;
       case "sourcing_ai_search": return 2;
       case "ranking_candidates": return 3;
       case "completed": return 5;
@@ -854,6 +869,12 @@ export default function RecruitmentAgent() {
                         <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-500">
                           <span>{session.candidatesFound} found</span>
                           <span>{session.candidatesAdded} added</span>
+                          {(session.results as any)?.skippedDuplicate > 0 && (
+                            <span className="text-amber-500">{(session.results as any).skippedDuplicate} existing</span>
+                          )}
+                          {(session.results as any)?.skippedRejected > 0 && (
+                            <span className="text-red-400">{(session.results as any).skippedRejected} rejected</span>
+                          )}
                         </div>
                       </div>
                     );
@@ -867,7 +888,7 @@ export default function RecruitmentAgent() {
 
       {/* Agent Activity Modal */}
       <Dialog open={showAgentModal} onOpenChange={setShowAgentModal}>
-        <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden bg-card border-border text-foreground">
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden bg-card border-border text-foreground">
           <DialogHeader className="border-b border-border pb-4">
             <DialogTitle className="text-xl flex items-center gap-2">
               <Bot className="h-6 w-6 text-[#FFCB00]" />
@@ -890,6 +911,30 @@ export default function RecruitmentAgent() {
             </DialogDescription>
           </DialogHeader>
 
+          {/* Stats bar showing internal DB check, duplicates, and rejected */}
+          {(internalMatches > 0 || skippedDuplicate > 0 || skippedRejected > 0) && (
+            <div className="flex items-center gap-4 px-4 py-2 bg-muted/50 rounded-lg border border-border text-xs">
+              {internalMatches > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-blue-400" />
+                  <span className="text-gray-600 dark:text-gray-400"><strong>{internalMatches}</strong> already in DB</span>
+                </div>
+              )}
+              {skippedDuplicate > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-amber-400" />
+                  <span className="text-amber-600 dark:text-amber-400"><strong>{skippedDuplicate}</strong> duplicates skipped</span>
+                </div>
+              )}
+              {skippedRejected > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-red-400" />
+                  <span className="text-red-600 dark:text-red-400"><strong>{skippedRejected}</strong> previously rejected</span>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
             {/* Left: AI Agent Workflow */}
             <div className="border border-border rounded-lg overflow-hidden">
@@ -899,7 +944,7 @@ export default function RecruitmentAgent() {
                   AI Agent Workflow
                 </h3>
               </div>
-              <ScrollArea className="h-[400px]">
+              <ScrollArea className="h-[65vh]">
                 <div className="p-3 space-y-1.5">
                   {Object.entries(agentsByCategory).length === 0 ? (
                     <div className="text-center py-8">
@@ -960,7 +1005,7 @@ export default function RecruitmentAgent() {
                   Live Agent Activity
                 </h3>
               </div>
-              <ScrollArea className="h-[400px]">
+              <ScrollArea className="h-[65vh]">
                 <div className="p-3 space-y-2">
                   {agentMessages.length === 0 && !isSimulating ? (
                     <div className="text-center py-12 text-gray-500 dark:text-gray-500">

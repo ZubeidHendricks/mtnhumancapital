@@ -1,29 +1,29 @@
 import { recruitmentAgents, type JobRequirements, type CandidateProfile } from "./recruitment-agents";
 import { sourcingOrchestrator, type SpecialistCandidate, type SpecialistResult, type SourcingConfiguration } from "./sourcing-specialists";
+import { scraperOrchestrator, type ScrapedCandidate } from "./web-scraper-agents";
 import type { IStorage } from "./storage";
-import type { Job, RecruitmentSession, InsertCandidate } from "@shared/schema";
+import type { Job, RecruitmentSession, InsertCandidate, Candidate } from "@shared/schema";
 
 export interface RecruitmentProgress {
   sessionId: string;
-  status: "analyzing" | "sourcing_linkedin" | "sourcing_pnet" | "sourcing_indeed" | "searching" | "ranking" | "completed" | "failed";
+  status: "analyzing" | "checking_internal" | "sourcing_specialists" | "sourcing_scrapers" | "sourcing_ai" | "ranking" | "completed" | "failed";
   currentStep: string;
   candidatesFound: number;
   candidatesAdded: number;
-  specialistResults?: {
-    linkedin?: { found: number; status: string };
-    pnet?: { found: number; status: string };
-    indeed?: { found: number; status: string };
-  };
+  internalMatches?: number;
+  specialistResults?: Record<string, { found: number; status: string }>;
+  scraperResults?: Record<string, { found: number; status: string }>;
 }
 
 function deduplicateCandidates(candidates: CandidateProfile[]): CandidateProfile[] {
   const seen = new Map<string, CandidateProfile>();
-  
+
   for (const candidate of candidates) {
-    const normalizedName = candidate.name.toLowerCase().trim();
-    const normalizedCompany = (candidate.company || "").toLowerCase().trim();
-    const key = `${normalizedName}|${normalizedCompany}|${candidate.currentRole?.toLowerCase().trim() || ""}`;
-    
+    // Deduplicate by email first (strongest key), then by name+company+role
+    const emailKey = candidate.email?.toLowerCase().trim();
+    const nameKey = `${candidate.name.toLowerCase().trim()}|${(candidate.company || "").toLowerCase().trim()}|${candidate.currentRole?.toLowerCase().trim() || ""}`;
+    const key = emailKey || nameKey;
+
     if (!seen.has(key)) {
       seen.set(key, candidate);
     } else {
@@ -33,7 +33,7 @@ function deduplicateCandidates(candidates: CandidateProfile[]): CandidateProfile
       }
     }
   }
-  
+
   return Array.from(seen.values());
 }
 
@@ -76,37 +76,76 @@ export class RecruitmentOrchestrator {
       await this.updateSession(tenantId, sessionId, {
         searchQuery: requirements.searchQuery,
         searchCriteria: requirements as any,
-        results: { step: "sourcing_specialists", requirements },
+        results: { step: "checking_internal", requirements },
       });
 
-      // Step 3: Run sourcing specialists (LinkedIn, PNet, Indeed)
-      console.log(`Running sourcing specialists for job: ${job.title}`);
-      
+      // Step 3: Check internal database first for existing candidates
+      console.log(`[RecruitmentOrchestrator] Checking internal database for existing candidates...`);
+      const existingCandidates = await this.storage.getCandidatesForJob(tenantId, jobId);
+      const allInternalCandidates = await this.storage.getAllCandidates(tenantId);
+
+      // Build a lookup of existing candidates for deduplication
+      const existingLookup = new Map<string, Candidate>();
+      for (const c of allInternalCandidates) {
+        if (c.email) existingLookup.set(c.email.toLowerCase(), c);
+        existingLookup.set(c.fullName.toLowerCase(), c);
+      }
+
+      const internalMatches = existingCandidates.filter(c =>
+        c.match >= minMatchScore && c.status !== "Rejected" && c.stage !== "Lost" && c.stage !== "Rejected"
+      );
+
+      console.log(`[RecruitmentOrchestrator] Found ${existingCandidates.length} existing candidates for this job, ${internalMatches.length} above threshold`);
+
       await this.updateSession(tenantId, sessionId, {
-        results: { 
-          step: "sourcing_specialists", 
+        results: {
+          step: "sourcing_specialists",
           requirements,
-          specialists: { linkedin: "running", pnet: "pending", indeed: "pending" }
+          internalMatches: internalMatches.length,
         },
       });
 
-      const { results: specialistResults, allCandidates: specialistCandidates, configuration } = 
-        await sourcingOrchestrator.runAllSpecialists(job, Math.ceil(maxCandidates / 3));
+      // Step 4: Run sourcing specialists (LinkedIn, PNet, Indeed)
+      console.log(`Running sourcing specialists for job: ${job.title}`);
 
-      const specialistSummary = {
-        linkedin: specialistResults.find(r => r.specialist === "LinkedIn Specialist"),
-        pnet: specialistResults.find(r => r.specialist === "PNet Specialist"),
-        indeed: specialistResults.find(r => r.specialist === "Indeed Specialist"),
-      };
+      const { results: specialistResults, allCandidates: specialistCandidates, configuration } =
+        await sourcingOrchestrator.runAllSpecialists(job, Math.ceil(maxCandidates / 3));
 
       console.log(`Specialists found ${specialistCandidates.length} candidates total`);
 
+      // Step 5: Run all scrapers (all 22 platforms)
+      console.log(`[RecruitmentOrchestrator] Running all scrapers for: ${job.title}`);
+
       await this.updateSession(tenantId, sessionId, {
-        results: { 
-          step: "sourcing_ai_search", 
+        results: {
+          step: "sourcing_scrapers",
           requirements,
+          internalMatches: internalMatches.length,
           specialistResults: specialistResults.map(r => ({
             specialist: r.specialist,
+            found: r.candidates.length,
+            status: r.status,
+          })),
+        },
+      });
+
+      const { results: scraperResults, allCandidates: scraperCandidates } =
+        await scraperOrchestrator.runAllScrapers(job, Math.ceil(maxCandidates / 4));
+
+      console.log(`Scrapers found ${scraperCandidates.length} candidates total`);
+
+      await this.updateSession(tenantId, sessionId, {
+        results: {
+          step: "sourcing_ai_search",
+          requirements,
+          internalMatches: internalMatches.length,
+          specialistResults: specialistResults.map(r => ({
+            specialist: r.specialist,
+            found: r.candidates.length,
+            status: r.status,
+          })),
+          scraperResults: scraperResults.map(r => ({
+            platform: r.platform,
             found: r.candidates.length,
             status: r.status,
           })),
@@ -114,7 +153,7 @@ export class RecruitmentOrchestrator {
         },
       });
 
-      // Step 4: Augment with general AI search
+      // Step 6: Augment with general AI search
       console.log(`Augmenting with AI search...`);
       const aiCandidates = await recruitmentAgents.searchCandidates(requirements, Math.ceil(maxCandidates / 2));
 
@@ -137,9 +176,29 @@ export class RecruitmentOrchestrator {
         },
       }));
 
+      // Convert scraper candidates to CandidateProfile format
+      const convertedScraperCandidates: CandidateProfile[] = scraperCandidates.map(sc => ({
+        name: sc.name,
+        currentRole: sc.title || job.title,
+        company: undefined,
+        location: sc.location,
+        skills: sc.skills,
+        experience: sc.experience,
+        source: sc.source,
+        match: sc.matchScore || 50,
+        email: sc.contact?.includes("@") ? sc.contact : undefined,
+        phone: sc.contact && !sc.contact.includes("@") ? sc.contact : undefined,
+        rawData: {
+          sourceUrl: sc.sourceUrl,
+          rawText: sc.rawText?.slice(0, 500),
+          scrapedFrom: sc.source,
+        },
+      }));
+
       // Merge and deduplicate all candidates
       const allCandidates = deduplicateCandidates([
         ...convertedSpecialistCandidates,
+        ...convertedScraperCandidates,
         ...aiCandidates,
       ]);
 
@@ -147,11 +206,17 @@ export class RecruitmentOrchestrator {
 
       await this.updateSession(tenantId, sessionId, {
         candidatesFound: allCandidates.length,
-        results: { 
-          step: "ranking_candidates", 
+        results: {
+          step: "ranking_candidates",
           candidatesFound: allCandidates.length,
+          internalMatches: internalMatches.length,
           specialistResults: specialistResults.map(r => ({
             specialist: r.specialist,
+            found: r.candidates.length,
+            status: r.status,
+          })),
+          scraperResults: scraperResults.map(r => ({
+            platform: r.platform,
             found: r.candidates.length,
             status: r.status,
           })),
@@ -160,25 +225,24 @@ export class RecruitmentOrchestrator {
         },
       });
 
-      const candidateProfiles = allCandidates;
-
-      // Step 4: Rank and add candidates
-      console.log(`Ranking ${candidateProfiles.length} candidates...`);
+      // Step 7: Rank and save candidates (with dedup against internal DB)
+      console.log(`Ranking ${allCandidates.length} candidates...`);
       let addedCount = 0;
+      let skippedRejected = 0;
+      let skippedDuplicate = 0;
       const rankedCandidates: any[] = [];
 
-      for (const profile of candidateProfiles) {
+      for (const profile of allCandidates) {
         try {
-          // Score the candidate
           const { match, reasoning } = await recruitmentAgents.rankCandidate(profile, job, requirements);
 
-          rankedCandidates.push({
+          const candidateEntry: any = {
             ...profile,
             match,
             reasoning,
-          });
+          };
 
-          // Only add candidates above minimum match score
+          // Only save candidates above minimum match score
           if (match >= minMatchScore) {
             const candidateData: InsertCandidate = {
               fullName: profile.name,
@@ -191,9 +255,9 @@ export class RecruitmentOrchestrator {
               email: profile.email,
               phone: profile.phone,
               skills: profile.skills,
+              location: profile.location,
               metadata: {
                 company: profile.company,
-                location: profile.location,
                 experience: profile.experience,
                 aiReasoning: reasoning,
                 sourcedBy: "AI Recruitment Agent",
@@ -201,39 +265,73 @@ export class RecruitmentOrchestrator {
               },
             };
 
-            await this.storage.createCandidate(tenantId, candidateData);
-            addedCount++;
+            // Use upsert to avoid duplicates and detect rejected candidates
+            const { candidate, isNew, previouslyRejected } = await this.storage.upsertScrapedCandidate(tenantId, candidateData);
+
+            if (previouslyRejected) {
+              skippedRejected++;
+              candidateEntry.status = "previously_rejected";
+              candidateEntry.existingCandidateId = candidate.id;
+              console.log(`[RecruitmentOrchestrator] Skipping ${profile.name} — previously rejected (${candidate.status}/${candidate.stage})`);
+            } else if (!isNew) {
+              skippedDuplicate++;
+              candidateEntry.status = "existing";
+              candidateEntry.existingCandidateId = candidate.id;
+              console.log(`[RecruitmentOrchestrator] Candidate ${profile.name} already exists in DB (id: ${candidate.id})`);
+            } else {
+              addedCount++;
+              candidateEntry.status = "new";
+              candidateEntry.candidateId = candidate.id;
+            }
           }
+
+          rankedCandidates.push(candidateEntry);
         } catch (error) {
           console.error(`Error processing candidate ${profile.name}:`, error);
         }
       }
 
-      // Step 5: Finalize session
+      // Step 8: Finalize session
       const finalSession = await this.updateSession(tenantId, sessionId, {
         status: "Completed",
+        candidatesFound: allCandidates.length + internalMatches.length,
         candidatesAdded: addedCount,
         results: {
           step: "completed",
           requirements,
-          candidatesFound: candidateProfiles.length,
+          internalMatches: internalMatches.length,
+          candidatesFound: allCandidates.length,
           candidatesAdded: addedCount,
+          skippedRejected,
+          skippedDuplicate,
+          specialistResults: specialistResults.map(r => ({
+            specialist: r.specialist,
+            found: r.candidates.length,
+            status: r.status,
+          })),
+          scraperResults: scraperResults.map(r => ({
+            platform: r.platform,
+            found: r.candidates.length,
+            status: r.status,
+          })),
           rankedCandidates: rankedCandidates.map(c => ({
             name: c.name,
             role: c.currentRole,
             match: c.match,
             reasoning: c.reasoning,
+            status: c.status,
+            existingCandidateId: c.existingCandidateId,
           })),
         },
         completedAt: new Date(),
       });
 
-      console.log(`Recruitment session completed: ${addedCount} candidates added`);
+      console.log(`Recruitment session completed: ${addedCount} new, ${skippedDuplicate} existing, ${skippedRejected} previously rejected`);
 
       return finalSession!;
     } catch (error) {
       console.error(`Recruitment session ${sessionId} failed:`, error);
-      
+
       await this.updateSession(tenantId, sessionId, {
         status: "Failed",
         results: {

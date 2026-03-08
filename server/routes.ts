@@ -3765,6 +3765,8 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
       );
 
       let savedCount = 0;
+      let skippedDuplicate = 0;
+      let skippedRejected = 0;
       if (autoSave) {
         for (const candidate of allCandidates) {
           if (candidate.match >= minMatchScore) {
@@ -3779,6 +3781,8 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
                 jobId: job.id,
                 skills: candidate.skills,
                 location: candidate.location,
+                email: candidate.email,
+                phone: candidate.phone,
                 metadata: {
                   company: candidate.company,
                   experience: candidate.experience,
@@ -3788,8 +3792,10 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
                   ...candidate.rawData,
                 },
               };
-              await storage.createCandidate(req.tenant.id, candidateData);
-              savedCount++;
+              const { isNew, previouslyRejected } = await storage.upsertScrapedCandidate(req.tenant.id, candidateData);
+              if (previouslyRejected) skippedRejected++;
+              else if (!isNew) skippedDuplicate++;
+              else savedCount++;
             } catch (err) {
               console.error(`Failed to save candidate ${candidate.name}:`, err);
             }
@@ -3818,6 +3824,8 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
         summary: {
           totalCandidatesFound: allCandidates.length,
           candidatesSaved: savedCount,
+          skippedDuplicate,
+          skippedRejected,
           bySpecialist: results.map(r => ({
             name: r.specialist,
             found: r.candidates.length,
@@ -3847,6 +3855,8 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
       const result = await sourcingOrchestrator.runSpecialist(specialistName, job, limit);
 
       let savedCount = 0;
+      let skippedDuplicate = 0;
+      let skippedRejected = 0;
       if (autoSave && result.status === "success") {
         for (const candidate of result.candidates) {
           if (candidate.match >= minMatchScore) {
@@ -3861,6 +3871,8 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
                 jobId: job.id,
                 skills: candidate.skills,
                 location: candidate.location,
+                email: candidate.email,
+                phone: candidate.phone,
                 metadata: {
                   company: candidate.company,
                   experience: candidate.experience,
@@ -3870,8 +3882,10 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
                   ...candidate.rawData,
                 },
               };
-              await storage.createCandidate(req.tenant.id, candidateData);
-              savedCount++;
+              const { isNew, previouslyRejected } = await storage.upsertScrapedCandidate(req.tenant.id, candidateData);
+              if (previouslyRejected) skippedRejected++;
+              else if (!isNew) skippedDuplicate++;
+              else savedCount++;
             } catch (err) {
               console.error(`Failed to save candidate ${candidate.name}:`, err);
             }
@@ -3887,6 +3901,8 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
           searchQuery: result.searchQuery,
           candidatesFound: result.candidates.length,
           candidatesSaved: savedCount,
+          skippedDuplicate,
+          skippedRejected,
           timestamp: result.timestamp,
           errorMessage: result.errorMessage,
         },
@@ -3939,17 +3955,23 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
   app.post("/api/scrapers/run-all/:jobId", async (req, res) => {
     try {
       const { minMatchScore = 50, autoSave = true } = req.body;
-      
+
       const job = await storage.getJobById(req.tenant.id, req.params.jobId);
       if (!job) {
         return res.status(404).json({ message: "Job not found" });
       }
 
       console.log(`[Scrapers] Running all scrapers for job: ${job.title}`);
-      
+
+      // Check internal database first
+      const existingCandidates = await storage.getCandidatesForJob(req.tenant.id, job.id);
+      console.log(`[Scrapers] Found ${existingCandidates.length} existing candidates in DB for this job`);
+
       const { results, allCandidates, totalFound } = await scraperOrchestrator.runAllScrapers(job);
 
       let savedCount = 0;
+      let skippedDuplicate = 0;
+      let skippedRejected = 0;
       if (autoSave && allCandidates.length > 0) {
         for (const candidate of allCandidates) {
           try {
@@ -3972,8 +3994,10 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
                 rawText: candidate.rawText?.slice(0, 500),
               },
             };
-            await storage.createCandidate(req.tenant.id, candidateData);
-            savedCount++;
+            const { isNew, previouslyRejected } = await storage.upsertScrapedCandidate(req.tenant.id, candidateData);
+            if (previouslyRejected) skippedRejected++;
+            else if (!isNew) skippedDuplicate++;
+            else savedCount++;
           } catch (err) {
             console.error(`Failed to save scraped candidate ${candidate.name}:`, err);
           }
@@ -3985,6 +4009,9 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
         summary: {
           totalFound,
           savedToDB: savedCount,
+          skippedDuplicate,
+          skippedRejected,
+          existingInDB: existingCandidates.length,
           platforms: results.map(r => ({
             platform: r.platform,
             status: r.status,
@@ -4005,17 +4032,19 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     try {
       const { autoSave = true } = req.body;
       const platform = decodeURIComponent(req.params.platform);
-      
+
       const job = await storage.getJobById(req.tenant.id, req.params.jobId);
       if (!job) {
         return res.status(404).json({ message: "Job not found" });
       }
 
       console.log(`[Scrapers] Running ${platform} scraper for job: ${job.title}`);
-      
+
       const result = await scraperOrchestrator.runScraper(platform, job);
 
       let savedCount = 0;
+      let skippedDuplicate = 0;
+      let skippedRejected = 0;
       if (autoSave && result.candidates.length > 0) {
         for (const candidate of result.candidates) {
           try {
@@ -4029,14 +4058,18 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
               jobId: job.id,
               skills: candidate.skills,
               location: candidate.location,
+              email: candidate.contact?.includes("@") ? candidate.contact : undefined,
+              phone: candidate.contact && !candidate.contact.includes("@") ? candidate.contact : undefined,
               metadata: {
                 experience: candidate.experience,
                 sourceUrl: candidate.sourceUrl,
                 scrapedFrom: candidate.source,
               },
             };
-            await storage.createCandidate(req.tenant.id, candidateData);
-            savedCount++;
+            const { isNew, previouslyRejected } = await storage.upsertScrapedCandidate(req.tenant.id, candidateData);
+            if (previouslyRejected) skippedRejected++;
+            else if (!isNew) skippedDuplicate++;
+            else savedCount++;
           } catch (err) {
             console.error(`Failed to save candidate:`, err);
           }
@@ -4051,6 +4084,8 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
           query: result.query,
           found: result.candidates.length,
           savedToDB: savedCount,
+          skippedDuplicate,
+          skippedRejected,
           error: result.error
         },
         candidates: result.candidates,
