@@ -2390,6 +2390,23 @@ BENEFITS:
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2">
+                                  {(candidate.stage === "onboarding" || candidate.stage === "integrity_passed") && (
+                                    <Button
+                                      size="sm"
+                                      className="h-7 text-xs bg-[#FFCB00] text-black font-semibold hover:bg-[#E6B800] gap-1"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setActiveTab("onboarding");
+                                        setTimeout(() => {
+                                          window.dispatchEvent(new CustomEvent('onboarding-select-candidate', { detail: { candidateId: candidate.id } }));
+                                        }, 300);
+                                      }}
+                                      data-testid={`button-go-to-onboarding-${candidate.id}`}
+                                    >
+                                      <Building2 className="w-3 h-3" />
+                                      Go to Onboarding
+                                    </Button>
+                                  )}
                                   {riskData.hasData ? (
                                     <Badge
                                       data-testid={`badge-risk-level-${candidate.id}`}

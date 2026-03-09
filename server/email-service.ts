@@ -155,9 +155,17 @@ MTN Recruiting Team`;
       This AI-powered interview allows us to get to know you better at your convenience.
     </p>
     <div style="text-align: center; margin: 30px 0;">
-      <a href="${interviewUrl}" style="display: inline-block; background: linear-gradient(135deg, #0d9488, #2563eb); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: bold;">
+      <!--[if mso]>
+      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${interviewUrl}" style="height:48px;v-text-anchor:middle;width:220px;" arcsize="17%" strokecolor="#0d9488" fillcolor="#0d9488">
+        <w:anchorlock/>
+        <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;">Start Interview</center>
+      </v:roundrect>
+      <![endif]-->
+      <!--[if !mso]><!-->
+      <a href="${interviewUrl}" style="display: inline-block; background: linear-gradient(135deg, #0d9488, #2563eb); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: bold; mso-hide: all;">
         Start Interview
       </a>
+      <!--<![endif]-->
     </div>
     <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 20px 0;">
       <p style="font-size: 13px; color: #6b7280; margin: 0 0 8px 0;">
@@ -363,9 +371,17 @@ ${company} HR Team`;
 
     const responseButtonHtml = responseUrl ? `
     <div style="text-align: center; margin: 24px 0;">
-      <a href="${responseUrl}" style="display: inline-block; background: linear-gradient(135deg, #059669, #2563eb); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">
+      <!--[if mso]>
+      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${responseUrl}" style="height:48px;v-text-anchor:middle;width:220px;" arcsize="17%" strokecolor="#059669" fillcolor="#059669">
+        <w:anchorlock/>
+        <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:600;">Respond to Offer</center>
+      </v:roundrect>
+      <![endif]-->
+      <!--[if !mso]><!-->
+      <a href="${responseUrl}" style="display: inline-block; background: linear-gradient(135deg, #059669, #2563eb); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600; mso-hide: all;">
         Respond to Offer
       </a>
+      <!--<![endif]-->
       <p style="font-size: 12px; color: #9ca3af; margin-top: 8px;">Click the button above to accept or decline this offer</p>
     </div>` : "";
 
@@ -439,9 +455,17 @@ ${company} HR Team`;
       Please click the button below to view the full job description and let us know if you're interested. The attached document contains the full job specification.
     </p>
     <div style="text-align: center; margin: 24px 0;">
-      <a href="${interestUrl}" style="display: inline-block; background: linear-gradient(135deg, #059669, #2563eb); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">
+      <!--[if mso]>
+      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${interestUrl}" style="height:48px;v-text-anchor:middle;width:240px;" arcsize="17%" strokecolor="#059669" fillcolor="#059669">
+        <w:anchorlock/>
+        <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:600;">View Opportunity</center>
+      </v:roundrect>
+      <![endif]-->
+      <!--[if !mso]><!-->
+      <a href="${interestUrl}" style="display: inline-block; background: linear-gradient(135deg, #059669, #2563eb); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600; mso-hide: all;">
         View Opportunity
       </a>
+      <!--<![endif]-->
       <p style="font-size: 12px; color: #9ca3af; margin-top: 8px;">Click the button above to view the job details and respond</p>
     </div>
     <p style="font-size: 14px; color: #6b7280;">Best regards,<br><strong>${company} HR Team</strong></p>

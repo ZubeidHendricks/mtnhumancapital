@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { jobsService, candidateService, api } from "@/lib/api";
 import { useTenantQueryKey } from "@/hooks/useTenant";
@@ -82,6 +82,12 @@ export default function PipelineBoard() {
 
   const jobsKey = useTenantQueryKey(['jobs']);
   const candidatesKey = useTenantQueryKey(['candidates']);
+
+  // Auto-reload pipeline data when navigating to this page
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: jobsKey });
+    queryClient.invalidateQueries({ queryKey: candidatesKey });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data: jobs, isLoading: loadingJobs } = useQuery({
     queryKey: jobsKey,

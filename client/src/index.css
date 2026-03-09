@@ -264,6 +264,19 @@
   .dark input::placeholder, .dark textarea::placeholder {
     color: hsl(0 0% 50%) !important;
   }
+  .dark [role="checkbox"] {
+    border-color: #FFCB00 !important;
+  }
+  .dark [role="checkbox"][data-state="checked"] {
+    background-color: #FFCB00 !important;
+    color: #000000 !important;
+    border-color: #FFCB00 !important;
+  }
+  .dark input[type="date"]::-webkit-calendar-picker-indicator,
+  .dark input[type="time"]::-webkit-calendar-picker-indicator,
+  .dark input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(83%) sepia(55%) saturate(1000%) hue-rotate(360deg) brightness(105%) contrast(104%);
+  }
   .dark .bg-white\/5 {
     background-color: hsl(0 0% 6%) !important;
   }

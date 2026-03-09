@@ -750,7 +750,7 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
                                   </Badge>
                                 )}
                               </div>
-                              <p className="text-sm">{seg.text}</p>
+                              <p className="text-sm text-foreground">{seg.text}</p>
                             </div>
                           </div>
                         );
