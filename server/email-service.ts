@@ -142,43 +142,51 @@ MTN Recruiting Team`;
 
     const html = `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #0d9488, #2563eb); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-    <h1 style="color: white; margin: 0; font-size: 24px;">${invitationTitle}</h1>
-    <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">${jobTitle}</p>
-  </div>
-  <div style="background: #ffffff; border: 1px solid #e5e7eb; border-top: none; padding: 30px; border-radius: 0 0 12px 12px;">
-    <p style="font-size: 16px; color: #374151;">Dear ${candidateName},</p>
-    <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
-      We are impressed with your profile and would like to invite you to ${interviewDescription.replace(jobTitle, `<strong>${jobTitle}</strong>`)}.
-    </p>
-    <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
-      This AI-powered interview allows us to get to know you better at your convenience.
-    </p>
-    <div style="text-align: center; margin: 30px 0;">
-      <!--[if mso]>
-      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${interviewUrl}" style="height:48px;v-text-anchor:middle;width:220px;" arcsize="17%" strokecolor="#0d9488" fillcolor="#0d9488">
-        <w:anchorlock/>
-        <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;">Start Interview</center>
-      </v:roundrect>
-      <![endif]-->
-      <!--[if !mso]><!-->
-      <a href="${interviewUrl}" style="display: inline-block; background: linear-gradient(135deg, #0d9488, #2563eb); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: bold; mso-hide: all;">
-        Start Interview
-      </a>
-      <!--<![endif]-->
-    </div>
-    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 20px 0;">
-      <p style="font-size: 13px; color: #6b7280; margin: 0 0 8px 0;">
-        <strong>Before you start:</strong>
-      </p>
-      <ul style="font-size: 13px; color: #6b7280; margin: 0; padding-left: 20px; line-height: 1.8;">
-        <li>This link expires in 7 days</li>
-        <li>Ensure you have a quiet environment</li>
-        <li>${isVideo ? "Allow camera and microphone access in your browser" : "Allow microphone access in your browser"}</li>
-      </ul>
-    </div>
-    <p style="font-size: 14px; color: #6b7280;">Best regards,<br><strong>MTN Recruiting Team</strong></p>
-  </div>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+    <tr>
+      <td bgcolor="#FFCB00" style="background: linear-gradient(135deg, #FFCB00, #FFD633); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+        <h1 style="color: #000000; margin: 0; font-size: 24px;">${invitationTitle}</h1>
+        <p style="color: #333333; margin: 10px 0 0 0; font-weight: bold;">${jobTitle}</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="background: #ffffff; border: 1px solid #e5e7eb; border-top: none; padding: 30px; border-radius: 0 0 12px 12px;">
+        <p style="font-size: 16px; color: #374151;">Dear ${candidateName},</p>
+        <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
+          We are impressed with your profile and would like to invite you to ${interviewDescription.replace(jobTitle, `<strong>${jobTitle}</strong>`)}.
+        </p>
+        <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
+          This AI-powered interview allows us to get to know you better at your convenience.
+        </p>
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 30px 0;">
+          <tr>
+            <td align="center">
+              <table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td bgcolor="#FFCB00" style="background: linear-gradient(135deg, #FFCB00, #E6B800); border-radius: 8px; padding: 14px 32px;">
+                    <a href="${interviewUrl}" style="color: #000000; text-decoration: none; font-size: 16px; font-weight: bold; display: inline-block;">
+                      Start Interview
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 20px 0;">
+          <p style="font-size: 13px; color: #6b7280; margin: 0 0 8px 0;">
+            <strong style="color: #374151;">Before you start:</strong>
+          </p>
+          <ul style="font-size: 13px; color: #6b7280; margin: 0; padding-left: 20px; line-height: 1.8;">
+            <li>This link expires in 7 days</li>
+            <li>Ensure you have a quiet environment</li>
+            <li>${isVideo ? "Allow camera and microphone access in your browser" : "Allow microphone access in your browser"}</li>
+          </ul>
+        </div>
+        <p style="font-size: 14px; color: #6b7280;">Best regards,<br><strong>MTN Recruiting Team</strong></p>
+      </td>
+    </tr>
+  </table>
 </div>`;
 
     return this.sendEmail({ to, subject, body, html });
@@ -370,43 +378,55 @@ Best regards,
 ${company} HR Team`;
 
     const responseButtonHtml = responseUrl ? `
-    <div style="text-align: center; margin: 24px 0;">
-      <!--[if mso]>
-      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${responseUrl}" style="height:48px;v-text-anchor:middle;width:220px;" arcsize="17%" strokecolor="#059669" fillcolor="#059669">
-        <w:anchorlock/>
-        <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:600;">Respond to Offer</center>
-      </v:roundrect>
-      <![endif]-->
-      <!--[if !mso]><!-->
-      <a href="${responseUrl}" style="display: inline-block; background: linear-gradient(135deg, #059669, #2563eb); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600; mso-hide: all;">
-        Respond to Offer
-      </a>
-      <!--<![endif]-->
-      <p style="font-size: 12px; color: #9ca3af; margin-top: 8px;">Click the button above to accept or decline this offer</p>
-    </div>` : "";
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 24px 0;">
+      <tr>
+        <td align="center">
+          <table cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td bgcolor="#FFCB00" style="background: linear-gradient(135deg, #FFCB00, #E6B800); border-radius: 8px; padding: 14px 32px;">
+                <a href="${responseUrl}" style="color: #000000; text-decoration: none; font-size: 16px; font-weight: 600; display: inline-block;">
+                  Respond to Offer
+                </a>
+              </td>
+            </tr>
+          </table>
+          <p style="font-size: 12px; color: #9ca3af; margin-top: 8px;">Click the button above to accept or decline this offer</p>
+        </td>
+      </tr>
+    </table>` : "";
 
     const html = `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #059669, #2563eb); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-    <h1 style="color: white; margin: 0; font-size: 24px;">Job Offer</h1>
-    <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">${jobTitle}</p>
-  </div>
-  <div style="background: #ffffff; border: 1px solid #e5e7eb; border-top: none; padding: 30px; border-radius: 0 0 12px 12px;">
-    <p style="font-size: 16px; color: #374151;">Dear ${candidateName},</p>
-    <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
-      We are pleased to extend a formal offer for the position of <strong>${jobTitle}</strong>.
-    </p>
-    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin: 20px 0;">
-      <h3 style="margin: 0 0 12px 0; color: #166534;">Offer Details</h3>
-      <p style="margin: 4px 0; color: #374151;"><strong>Position:</strong> ${jobTitle}</p>
-      <p style="margin: 4px 0; color: #374151;"><strong>Salary:</strong> ${salary}</p>
-      <p style="margin: 4px 0; color: #374151;"><strong>Start Date:</strong> ${startDate}</p>
-    </div>${responseButtonHtml}
-    <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
-      Please review the offer details and respond at your earliest convenience.
-    </p>
-    <p style="font-size: 14px; color: #6b7280;">Best regards,<br><strong>${company} HR Team</strong></p>
-  </div>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+    <tr>
+      <td bgcolor="#FFCB00" style="background: linear-gradient(135deg, #FFCB00, #FFD633); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+        <h1 style="color: #000000; margin: 0; font-size: 24px;">Job Offer</h1>
+        <p style="color: #333333; margin: 10px 0 0 0; font-weight: bold;">${jobTitle}</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="background: #ffffff; border: 1px solid #e5e7eb; border-top: none; padding: 30px; border-radius: 0 0 12px 12px;">
+        <p style="font-size: 16px; color: #374151;">Dear ${candidateName},</p>
+        <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
+          We are pleased to extend a formal offer for the position of <strong>${jobTitle}</strong>.
+        </p>
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 20px 0;">
+          <tr>
+            <td bgcolor="#f0fdf4" style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px;">
+              <h3 style="margin: 0 0 12px 0; color: #166534;">Offer Details</h3>
+              <p style="margin: 4px 0; color: #374151;"><strong>Position:</strong> ${jobTitle}</p>
+              <p style="margin: 4px 0; color: #374151;"><strong>Salary:</strong> ${salary}</p>
+              <p style="margin: 4px 0; color: #374151;"><strong>Start Date:</strong> ${startDate}</p>
+            </td>
+          </tr>
+        </table>${responseButtonHtml}
+        <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
+          Please review the offer details and respond at your earliest convenience.
+        </p>
+        <p style="font-size: 14px; color: #6b7280;">Best regards,<br><strong>${company} HR Team</strong></p>
+      </td>
+    </tr>
+  </table>
 </div>`;
 
     return this.sendEmail({ to, subject, body, html, attachments });
@@ -442,34 +462,42 @@ ${company} HR Team`;
 
     const html = `
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #059669, #2563eb); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-    <h1 style="color: white; margin: 0; font-size: 24px;">Career Opportunity</h1>
-    <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">${jobTitle}</p>
-  </div>
-  <div style="background: #ffffff; border: 1px solid #e5e7eb; border-top: none; padding: 30px; border-radius: 0 0 12px 12px;">
-    <p style="font-size: 16px; color: #374151;">Dear ${candidateName},</p>
-    <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
-      We have an exciting career opportunity that may interest you for the position of <strong>${jobTitle}</strong> at <strong>${company}</strong>.
-    </p>
-    <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
-      Please click the button below to view the full job description and let us know if you're interested. The attached document contains the full job specification.
-    </p>
-    <div style="text-align: center; margin: 24px 0;">
-      <!--[if mso]>
-      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${interestUrl}" style="height:48px;v-text-anchor:middle;width:240px;" arcsize="17%" strokecolor="#059669" fillcolor="#059669">
-        <w:anchorlock/>
-        <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:600;">View Opportunity</center>
-      </v:roundrect>
-      <![endif]-->
-      <!--[if !mso]><!-->
-      <a href="${interestUrl}" style="display: inline-block; background: linear-gradient(135deg, #059669, #2563eb); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600; mso-hide: all;">
-        View Opportunity
-      </a>
-      <!--<![endif]-->
-      <p style="font-size: 12px; color: #9ca3af; margin-top: 8px;">Click the button above to view the job details and respond</p>
-    </div>
-    <p style="font-size: 14px; color: #6b7280;">Best regards,<br><strong>${company} HR Team</strong></p>
-  </div>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+    <tr>
+      <td bgcolor="#FFCB00" style="background: linear-gradient(135deg, #FFCB00, #FFD633); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+        <h1 style="color: #000000; margin: 0; font-size: 24px;">Career Opportunity</h1>
+        <p style="color: #333333; margin: 10px 0 0 0; font-weight: bold;">${jobTitle}</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="background: #ffffff; border: 1px solid #e5e7eb; border-top: none; padding: 30px; border-radius: 0 0 12px 12px;">
+        <p style="font-size: 16px; color: #374151;">Dear ${candidateName},</p>
+        <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
+          We have an exciting career opportunity that may interest you for the position of <strong>${jobTitle}</strong> at <strong>${company}</strong>.
+        </p>
+        <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
+          Please click the button below to view the full job description and let us know if you're interested. The attached document contains the full job specification.
+        </p>
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 24px 0;">
+          <tr>
+            <td align="center">
+              <table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td bgcolor="#FFCB00" style="background: linear-gradient(135deg, #FFCB00, #E6B800); border-radius: 8px; padding: 14px 32px;">
+                    <a href="${interestUrl}" style="color: #000000; text-decoration: none; font-size: 16px; font-weight: 600; display: inline-block;">
+                      View Opportunity
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="font-size: 12px; color: #9ca3af; margin-top: 8px;">Click the button above to view the job details and respond</p>
+            </td>
+          </tr>
+        </table>
+        <p style="font-size: 14px; color: #6b7280;">Best regards,<br><strong>${company} HR Team</strong></p>
+      </td>
+    </tr>
+  </table>
 </div>`;
 
     return this.sendEmail({ to, subject, body, html, attachments });
