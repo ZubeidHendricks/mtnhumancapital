@@ -270,106 +270,50 @@ export class LinkedInSpecialist extends BaseSourcingSpecialist {
   }
 
   async searchCandidates(job: Job, config: SourcingConfiguration, limit: number = 10): Promise<SpecialistCandidate[]> {
-    console.log(`[${this.name}] Scraping real LinkedIn data for: ${job.title}`);
+    console.log(`[${this.name}] Searching LinkedIn for: ${job.title}`);
 
     try {
-      // Step 1: Scrape LinkedIn search results via Puppeteer to get profile URLs
+      // PRIMARY: Use Apify LinkedIn Search if token is available
+      if (APIFY_TOKEN) {
+        console.log(`[${this.name}] Using Apify as primary LinkedIn search method`);
+
+        // Try Apify LinkedIn Search actor to find profiles directly
+        const apifyCandidates = await this.searchViaApify(job, limit);
+        if (apifyCandidates.length > 0) {
+          console.log(`[${this.name}] Found ${apifyCandidates.length} candidates via Apify primary search`);
+          return apifyCandidates;
+        }
+
+        // If Apify search returned nothing, try Google to find LinkedIn profile URLs, then enrich via Apify
+        console.log(`[${this.name}] Apify search empty, trying Google+Apify fallback`);
+        const googleCandidates = await this.searchViaGoogleApify(job, limit);
+        if (googleCandidates.length > 0) {
+          return googleCandidates;
+        }
+      }
+
+      // FALLBACK: Puppeteer scrape (when no Apify token)
+      console.log(`[${this.name}] Falling back to Puppeteer scrape`);
       const result = await linkedInScraper.search(job, limit);
       const scrapedCandidates = result.candidates || [];
 
-      // Extract any LinkedIn profile URLs found in scraped data
-      const profileUrls: string[] = [];
-      for (const c of scrapedCandidates) {
-        if (c.sourceUrl?.includes("linkedin.com/in/")) {
-          profileUrls.push(c.sourceUrl);
-        }
-      }
+      // If Apify is available, try to enrich Puppeteer results with profile URLs
+      if (APIFY_TOKEN && scrapedCandidates.length > 0) {
+        const profileUrls = scrapedCandidates
+          .filter(c => c.sourceUrl?.includes("linkedin.com/in/"))
+          .map(c => c.sourceUrl!);
 
-      // Step 2: If we have Apify token and profile URLs, enrich with detailed profile data
-      if (APIFY_TOKEN && profileUrls.length > 0) {
-        console.log(`[${this.name}] Enriching ${profileUrls.length} profiles via Apify...`);
-        const apifyProfiles = await scrapeLinkedInProfilesViaApify(profileUrls.slice(0, limit));
-
-        if (apifyProfiles.length > 0) {
-          const candidates: SpecialistCandidate[] = [];
+        if (profileUrls.length > 0) {
+          const apifyProfiles = await scrapeLinkedInProfilesViaApify(profileUrls.slice(0, limit));
+          const enriched: SpecialistCandidate[] = [];
           for (const profile of apifyProfiles) {
             const candidate = apifyProfileToCandidate(profile, this.name);
-            if (candidate) candidates.push(candidate);
+            if (candidate) enriched.push(candidate);
           }
-          if (candidates.length > 0) {
-            console.log(`[${this.name}] Enriched ${candidates.length} candidates with Apify profile data`);
-            return candidates;
-          }
+          if (enriched.length > 0) return enriched;
         }
       }
 
-      // Step 3: If Apify not available or no profile URLs, try Google search to find LinkedIn profiles
-      if (APIFY_TOKEN && profileUrls.length === 0) {
-        console.log(`[${this.name}] Trying Google search to find LinkedIn profiles for: ${job.title}`);
-        const searchQuery = `site:linkedin.com/in ${job.title} ${job.location || "South Africa"}`;
-
-        try {
-          const { getBrowser } = await import("./web-scraper-agents");
-          const browser = await getBrowser();
-          const page = await browser.newPage();
-          await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-
-          await page.goto(`https://www.google.com/search?q=${encodeURIComponent(searchQuery)}&num=${limit}`, {
-            waitUntil: "domcontentloaded",
-            timeout: 15000
-          });
-          await new Promise(r => setTimeout(r, 2000));
-
-          const googleProfileUrls = await page.evaluate(() => {
-            const links: string[] = [];
-            document.querySelectorAll('a[href*="linkedin.com/in/"]').forEach(a => {
-              const href = (a as HTMLAnchorElement).href;
-              const match = href.match(/https?:\/\/[a-z]+\.linkedin\.com\/in\/[^&?/]+/);
-              if (match && !links.includes(match[0])) links.push(match[0]);
-            });
-            return links;
-          });
-          await page.close();
-
-          if (googleProfileUrls.length > 0) {
-            console.log(`[${this.name}] Found ${googleProfileUrls.length} LinkedIn profiles via Google`);
-            const apifyProfiles = await scrapeLinkedInProfilesViaApify(googleProfileUrls.slice(0, limit));
-            const candidates: SpecialistCandidate[] = [];
-            for (const profile of apifyProfiles) {
-              const candidate = apifyProfileToCandidate(profile, this.name);
-              if (candidate) candidates.push(candidate);
-            }
-            if (candidates.length > 0) {
-              console.log(`[${this.name}] Enriched ${candidates.length} candidates from Google+Apify`);
-              return candidates;
-            }
-          }
-        } catch (err: any) {
-          console.error(`[${this.name}] Google search fallback error:`, err.message);
-        }
-      }
-
-      // Use any scraped candidates as fallback
-      if (scrapedCandidates.length > 0) {
-        console.log(`[${this.name}] Using ${scrapedCandidates.length} candidates from Puppeteer scrape`);
-        return scrapedCandidates.map((c: ScrapedCandidate) => ({
-          name: c.name,
-          currentRole: c.title || "Not specified",
-          company: undefined,
-          location: c.location || undefined,
-          skills: c.skills || [],
-          experience: c.experience || undefined,
-          match: c.matchScore || 50,
-          source: "LinkedIn",
-          specialist: this.name,
-          email: c.contact?.includes("@") ? c.contact : undefined,
-          phone: c.contact && !c.contact.includes("@") ? c.contact : undefined,
-          profileUrl: c.sourceUrl || undefined,
-          rawData: { rawText: c.rawText },
-        }));
-      }
-
-      // Fallback: return basic scraped results
       if (scrapedCandidates.length > 0) {
         return scrapedCandidates.map((c: ScrapedCandidate) => ({
           name: c.name,
@@ -395,6 +339,89 @@ export class LinkedInSpecialist extends BaseSourcingSpecialist {
     }
 
     return [];
+  }
+
+  private async searchViaApify(job: Job, limit: number): Promise<SpecialistCandidate[]> {
+    try {
+      const searchQuery = `${job.title} ${job.location || "South Africa"}`;
+      console.log(`[${this.name}] Apify LinkedIn search: ${searchQuery}`);
+
+      const response = await axios.post(
+        `https://api.apify.com/v2/acts/apimaestro~linkedin-search/run-sync-get-dataset-items?token=${APIFY_TOKEN}&timeout=120`,
+        {
+          query: searchQuery,
+          type: "people",
+          limit: limit,
+        },
+        { headers: { "Content-Type": "application/json" }, timeout: 180000 }
+      );
+
+      if (!Array.isArray(response.data) || response.data.length === 0) return [];
+
+      // Extract profile URLs from search results
+      const profileUrls = response.data
+        .map((r: any) => r.profileUrl || r.url || r.profile_url)
+        .filter((url: string) => url?.includes("linkedin.com/in/"))
+        .slice(0, limit);
+
+      if (profileUrls.length === 0) return [];
+
+      // Enrich with full profile data
+      const profiles = await scrapeLinkedInProfilesViaApify(profileUrls);
+      const candidates: SpecialistCandidate[] = [];
+      for (const profile of profiles) {
+        const candidate = apifyProfileToCandidate(profile, this.name);
+        if (candidate) candidates.push(candidate);
+      }
+      return candidates;
+    } catch (err: any) {
+      console.error(`[${this.name}] Apify search error:`, err.message);
+      return [];
+    }
+  }
+
+  private async searchViaGoogleApify(job: Job, limit: number): Promise<SpecialistCandidate[]> {
+    try {
+      const searchQuery = `site:linkedin.com/in ${job.title} ${job.location || "South Africa"}`;
+      const { getBrowser } = await import("./web-scraper-agents");
+      const browser = await getBrowser();
+      const page = await browser.newPage();
+      await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+
+      await page.goto(`https://www.google.com/search?q=${encodeURIComponent(searchQuery)}&num=${limit}`, {
+        waitUntil: "domcontentloaded",
+        timeout: 15000
+      });
+      await new Promise(r => setTimeout(r, 2000));
+
+      const googleProfileUrls = await page.evaluate(() => {
+        const links: string[] = [];
+        document.querySelectorAll('a[href*="linkedin.com/in/"]').forEach(a => {
+          const href = (a as HTMLAnchorElement).href;
+          const match = href.match(/https?:\/\/[a-z]+\.linkedin\.com\/in\/[^&?/]+/);
+          if (match && !links.includes(match[0])) links.push(match[0]);
+        });
+        return links;
+      });
+      await page.close();
+
+      if (googleProfileUrls.length === 0) return [];
+
+      console.log(`[${this.name}] Found ${googleProfileUrls.length} LinkedIn profiles via Google`);
+      const apifyProfiles = await scrapeLinkedInProfilesViaApify(googleProfileUrls.slice(0, limit));
+      const candidates: SpecialistCandidate[] = [];
+      for (const profile of apifyProfiles) {
+        const candidate = apifyProfileToCandidate(profile, this.name);
+        if (candidate) candidates.push(candidate);
+      }
+      if (candidates.length > 0) {
+        console.log(`[${this.name}] Enriched ${candidates.length} candidates from Google+Apify`);
+      }
+      return candidates;
+    } catch (err: any) {
+      console.error(`[${this.name}] Google+Apify fallback error:`, err.message);
+      return [];
+    }
   }
 }
 
@@ -478,9 +505,21 @@ export class IndeedSpecialist extends BaseSourcingSpecialist {
   }
 
   async searchCandidates(job: Job, config: SourcingConfiguration, limit: number = 10): Promise<SpecialistCandidate[]> {
-    console.log(`[${this.name}] Scraping real Indeed data for: ${job.title}`);
+    console.log(`[${this.name}] Searching Indeed for: ${job.title}`);
 
     try {
+      // PRIMARY: Use Apify Indeed scraper if token is available
+      if (APIFY_TOKEN) {
+        console.log(`[${this.name}] Using Apify as primary Indeed search method`);
+        const apifyCandidates = await this.searchIndeedViaApify(job, limit);
+        if (apifyCandidates.length > 0) {
+          console.log(`[${this.name}] Found ${apifyCandidates.length} candidates via Apify Indeed`);
+          return apifyCandidates;
+        }
+        console.log(`[${this.name}] Apify Indeed returned no results, falling back to Puppeteer`);
+      }
+
+      // FALLBACK: Puppeteer scrape
       const result = await indeedScraper.search(job, limit);
 
       if (result.status === "failed" || result.candidates.length === 0) {
@@ -509,6 +548,45 @@ export class IndeedSpecialist extends BaseSourcingSpecialist {
     }
 
     return [];
+  }
+
+  private async searchIndeedViaApify(job: Job, limit: number): Promise<SpecialistCandidate[]> {
+    try {
+      const searchQuery = `${job.title} ${job.location || "South Africa"}`;
+      const response = await axios.post(
+        `https://api.apify.com/v2/acts/apimaestro~indeed-scraper/run-sync-get-dataset-items?token=${APIFY_TOKEN}&timeout=120`,
+        {
+          query: searchQuery,
+          location: job.location || "South Africa",
+          maxResults: limit,
+        },
+        { headers: { "Content-Type": "application/json" }, timeout: 180000 }
+      );
+
+      if (!Array.isArray(response.data) || response.data.length === 0) return [];
+
+      return response.data.slice(0, limit).map((item: any) => ({
+        name: item.company || item.title || "Unknown",
+        currentRole: item.title || "Not specified",
+        company: item.company || undefined,
+        location: item.location || undefined,
+        skills: item.skills || [],
+        experience: item.snippet || undefined,
+        match: 60,
+        source: "Indeed",
+        specialist: this.name,
+        email: undefined,
+        phone: undefined,
+        rawData: {
+          salary: item.salary,
+          description: item.description?.slice(0, 500),
+          url: item.url,
+        },
+      }));
+    } catch (err: any) {
+      console.error(`[${this.name}] Apify Indeed error:`, err.message);
+      return [];
+    }
   }
 }
 

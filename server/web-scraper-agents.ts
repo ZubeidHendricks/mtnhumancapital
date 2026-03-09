@@ -1,6 +1,8 @@
 import Groq from "groq-sdk";
 import puppeteer, { Browser, Page } from "puppeteer";
 import type { Job } from "@shared/schema";
+import { skillsMatch, extractSkillsFromText } from "./skill-taxonomy";
+import { scraperHealth } from "./scraper-health";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -116,7 +118,7 @@ Return ONLY a valid JSON array. If no candidates found, return [].`
 Look for: names, job titles, skills, experience, locations, contact info.
 
 Job we're hiring for: ${job.title}
-Requirements: ${(job.skillsRequired || []).slice(0, 5).join(", ")}
+Requirements: ${((job as any).skillsRequired || []).slice(0, 5).join(", ")}
 
 Scraped content:
 ${rawText.slice(0, 6000)}
@@ -157,16 +159,55 @@ Return [] if no real candidates found.`
 }
 
 function calculateMatchScore(candidate: any, job: Job): number {
-  let score = 50;
-  const jobReqs = (job.skillsRequired || []).map((r: string) => r.toLowerCase());
+  // Gather required skills from job.skillsRequired + extracted from description
+  const jobReqs = ((job as any).skillsRequired || []).map((r: string) => r.toLowerCase());
+  const descriptionSkills = extractSkillsFromText(
+    `${job.description || ''} ${(job as any).requirements || ''}`
+  ).map(s => s.toLowerCase());
+  const allRequired = Array.from(new Set([...jobReqs, ...descriptionSkills]));
+
   const candidateSkills = (candidate.skills || []).map((s: string) => s.toLowerCase());
 
-  for (const skill of candidateSkills) {
-    if (jobReqs.some(req => req.includes(skill) || skill.includes(req))) {
-      score += 10;
+  if (allRequired.length === 0) {
+    // No skills to compare — use a basic baseline
+    let score = 40;
+    if (candidate.experience) {
+      const years = parseInt(candidate.experience);
+      if (years >= 5) score += 25;
+      else if (years >= 3) score += 15;
+      else if (years >= 1) score += 10;
+    }
+    if (candidate.title && job.title) {
+      const titleWords = job.title.toLowerCase().split(/\s+/);
+      const candTitle = (candidate.title || '').toLowerCase();
+      const titleMatches = titleWords.filter(w => w.length > 2 && candTitle.includes(w)).length;
+      if (titleMatches > 0) score += Math.min(titleMatches * 10, 25);
+    }
+    return Math.min(score, 95);
+  }
+
+  // Proportional skill matching using taxonomy
+  let matchedSkills = 0;
+  for (const required of allRequired) {
+    const matched = candidateSkills.some((cs: string) => skillsMatch(cs, required));
+    if (matched) matchedSkills++;
+  }
+
+  const skillRatio = matchedSkills / allRequired.length;
+  // Skill score: 0-55 points proportional to match ratio
+  let score = Math.round(skillRatio * 55);
+
+  // Title relevance bonus: 0-20 points
+  if (candidate.title && job.title) {
+    const titleWords = job.title.toLowerCase().split(/\s+/).filter((w: string) => w.length > 2);
+    const candTitle = (candidate.title || '').toLowerCase();
+    const titleMatches = titleWords.filter((w: string) => candTitle.includes(w)).length;
+    if (titleWords.length > 0) {
+      score += Math.round((titleMatches / titleWords.length) * 20);
     }
   }
 
+  // Experience bonus: 0-15 points
   if (candidate.experience) {
     const years = parseInt(candidate.experience);
     if (years >= 5) score += 15;
@@ -174,7 +215,15 @@ function calculateMatchScore(candidate: any, job: Job): number {
     else if (years >= 1) score += 5;
   }
 
-  return Math.min(score, 95);
+  // Location bonus: 5 points
+  if (candidate.location && job.location) {
+    if (candidate.location.toLowerCase().includes(job.location.toLowerCase()) ||
+        job.location.toLowerCase().includes(candidate.location.toLowerCase())) {
+      score += 5;
+    }
+  }
+
+  return Math.min(Math.max(score, 5), 95);
 }
 
 function deduplicateCandidates(candidates: ScrapedCandidate[], key: "name" | "sourceUrl" = "name"): ScrapedCandidate[] {
@@ -833,7 +882,10 @@ export class GitHubDeveloperSourcer extends BaseAPIScraper {
           const data = await response.json();
           console.log(`[GitHubSourcer] Found ${data.items?.length || 0} users for ${lang} in ${location}`);
 
-          for (const user of (data.items || []).slice(0, 5)) {
+          // Filter out organizations — only keep individual users
+          const users = (data.items || []).filter((u: any) => u.type !== "Organization").slice(0, 5);
+
+          for (const user of users) {
             const userResponse = await fetch(`https://api.github.com/users/${user.login}`, {
               headers: {
                 'Accept': 'application/vnd.github+json',
@@ -911,23 +963,42 @@ export class GitHubDeveloperSourcer extends BaseAPIScraper {
   }
 
   private calculateMatchScore(user: any, languages: string[], job: Job): number {
-    let score = 50;
+    // Extract required skills/languages from job
+    const jobSkills = extractSkillsFromText(
+      `${job.title} ${job.description || ''} ${(job as any).requirements || ''}`
+    ).map(s => s.toLowerCase());
 
-    if (user.public_repos > 20) score += 10;
-    if (user.public_repos > 50) score += 10;
-    if (user.followers > 10) score += 5;
-    if (user.followers > 100) score += 10;
-    if (user.bio) score += 5;
-    if (user.email) score += 10;
-
-    const jobText = `${job.title} ${job.description || ''}`.toLowerCase();
+    // Language-match-weighted scoring: how many of the user's repo languages match job requirements?
+    let langMatchCount = 0;
     for (const lang of languages) {
-      if (jobText.includes(lang.toLowerCase())) {
-        score += 5;
+      if (jobSkills.some(js => skillsMatch(lang.toLowerCase(), js))) {
+        langMatchCount++;
       }
     }
 
-    return Math.min(100, score);
+    const langRatio = languages.length > 0 ? langMatchCount / Math.max(jobSkills.length, 1) : 0;
+    // Language relevance: 0-40 points
+    let score = Math.round(Math.min(langRatio, 1) * 40);
+
+    // Activity signals: 0-15 points
+    if (user.public_repos > 20) score += 5;
+    if (user.public_repos > 50) score += 5;
+    if (user.followers > 50) score += 5;
+
+    // Profile completeness: 0-15 points
+    if (user.bio) score += 5;
+    if (user.email) score += 5;
+    if (user.name) score += 5;
+
+    // Bio relevance: 0-15 points
+    if (user.bio) {
+      const bioLower = user.bio.toLowerCase();
+      const titleWords = job.title.toLowerCase().split(/\s+/).filter((w: string) => w.length > 2);
+      const bioMatches = titleWords.filter((w: string) => bioLower.includes(w)).length;
+      score += Math.min(bioMatches * 5, 15);
+    }
+
+    return Math.min(Math.max(score, 5), 95);
   }
 }
 
@@ -2545,7 +2616,14 @@ export class ScraperOrchestrator {
       };
     }
 
-    return scraper.search(job, limit);
+    const result = await scraper.search(job, limit);
+    scraperHealth.recordRun(
+      result.platform,
+      result.status as "success" | "partial" | "failed",
+      result.candidates.length,
+      result.error
+    );
+    return result;
   }
 
   async runAllScrapers(job: Job, limit: number = 5): Promise<{
@@ -2558,6 +2636,16 @@ export class ScraperOrchestrator {
     const results = await Promise.all(
       this.scrapers.map(scraper => scraper.search(job, limit))
     );
+
+    // Record health for each scraper run
+    for (const result of results) {
+      scraperHealth.recordRun(
+        result.platform,
+        result.status as "success" | "partial" | "failed",
+        result.candidates.length,
+        result.error
+      );
+    }
 
     const allCandidates = results.flatMap(r => r.candidates);
 

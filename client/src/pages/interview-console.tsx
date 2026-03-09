@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -49,6 +49,8 @@ import {
   Gift,
   Send,
   Square,
+  PhoneOff,
+  MessageSquare,
 } from "lucide-react";
 
 interface InterviewSession {
@@ -151,6 +153,16 @@ export default function InterviewConsole() {
   const [inviteType, setInviteType] = useState<"voice" | "video">("voice");
   const [playingRecordingId, setPlayingRecordingId] = useState<string | null>(null);
   const [currentStage, setCurrentStage] = useState<"voice" | "video">("voice");
+  // Live video interview state
+  const [liveVideoUrl, setLiveVideoUrl] = useState<string | null>(null);
+  const [liveVideoConversationId, setLiveVideoConversationId] = useState<string | null>(null);
+  const [isVideoLive, setIsVideoLive] = useState(false);
+  const [isCreatingVideo, setIsCreatingVideo] = useState(false);
+  const [videoDuration, setVideoDuration] = useState(0);
+  const [liveVideoTranscripts, setLiveVideoTranscripts] = useState<{ role: "user" | "ai"; text: string }[]>([]);
+  const videoStartTimeRef = useRef<number>(0);
+  const videoIframeRef = useRef<HTMLIFrameElement | null>(null);
+  const videoTranscriptEndRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recordingToastShownRef = useRef<string | null>(null);
   const { toast } = useToast();
@@ -289,6 +301,83 @@ export default function InterviewConsole() {
   useEffect(() => {
     if (offerFromServer) setOfferDecided(true);
   }, [offerFromServer]);
+
+  // Live video duration timer
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isVideoLive && videoStartTimeRef.current) {
+      interval = setInterval(() => {
+        setVideoDuration(Math.floor((Date.now() - videoStartTimeRef.current) / 1000));
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isVideoLive]);
+
+  // Auto-scroll live video transcript
+  useEffect(() => {
+    videoTranscriptEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [liveVideoTranscripts]);
+
+  // Reset live video when session changes
+  useEffect(() => {
+    setIsVideoLive(false);
+    setLiveVideoUrl(null);
+    setLiveVideoConversationId(null);
+    setLiveVideoTranscripts([]);
+    setVideoDuration(0);
+  }, [selectedSession]);
+
+  const formatVideoDuration = useCallback((seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  }, []);
+
+  const startLiveVideoInterview = useCallback(async () => {
+    if (!details?.session) return;
+    setIsCreatingVideo(true);
+    try {
+      const session = details.session;
+      const response = await interviewService.createVideoSession(
+        session.candidateId || undefined,
+        session.candidateName || undefined,
+        session.jobTitle || undefined
+      );
+      setLiveVideoUrl(response.sessionUrl);
+      setLiveVideoConversationId(response.sessionId);
+      setLiveVideoTranscripts([]);
+      setVideoDuration(0);
+      videoStartTimeRef.current = Date.now();
+      setIsVideoLive(true);
+      toast({ title: "Video Interview Started", description: "The AI interviewer is ready. You can observe the session live." });
+    } catch (error: any) {
+      console.error("Error starting live video:", error);
+      toast({ title: "Error", description: error.message || "Failed to start video interview", variant: "destructive" });
+    } finally {
+      setIsCreatingVideo(false);
+    }
+  }, [details?.session, toast]);
+
+  const endLiveVideoInterview = useCallback(async () => {
+    // End Tavus conversation if we have an ID
+    if (liveVideoConversationId) {
+      try {
+        await interviewService.endTavusConversation(liveVideoConversationId);
+      } catch (err) {
+        console.error("Error ending Tavus conversation:", err);
+      }
+    }
+
+    setIsVideoLive(false);
+    setLiveVideoUrl(null);
+
+    toast({ title: "Video Interview Ended", description: "The session has been ended. Recordings will be processed shortly." });
+
+    // Refresh session data to pick up updated status and recordings
+    setWaitingForRecording(true);
+    queryClient.invalidateQueries({ queryKey: ["/api/interviews"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/interviews", selectedSession, "stage", currentStage] });
+  }, [liveVideoConversationId, selectedSession, currentStage, queryClient, toast]);
 
   const updateDecisionMutation = useMutation({
     mutationFn: async ({ feedbackId, decision, notes }: { feedbackId: string; decision: string; notes?: string }) => {
@@ -747,6 +836,100 @@ export default function InterviewConsole() {
                 )}
               </AnimatePresence>
 
+              {/* Live Video Interview Panel */}
+              {activeFlowView === "video" && (
+                <div className="px-6 pb-4">
+                  {isVideoLive && liveVideoUrl ? (
+                    <div className="border rounded-lg bg-black overflow-hidden">
+                      {/* Live indicator + duration header */}
+                      <div className="flex items-center justify-between px-4 py-2 bg-card/80 border-b">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                          <span className="text-xs font-semibold text-red-400">LIVE</span>
+                          <Video className="h-4 w-4 text-foreground" />
+                          <span className="text-sm font-medium">Video Interview</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Badge variant="outline" className="text-xs">
+                            {formatVideoDuration(videoDuration)}
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={endLiveVideoInterview}
+                            className="rounded-full h-7"
+                          >
+                            <PhoneOff className="h-3 w-3 mr-1" />
+                            End
+                          </Button>
+                        </div>
+                      </div>
+                      {/* Video iframe + optional transcript sidebar */}
+                      <div className="flex">
+                        <div className="flex-1 relative" style={{ minHeight: "400px" }}>
+                          <iframe
+                            ref={videoIframeRef}
+                            src={liveVideoUrl}
+                            className="w-full h-full absolute inset-0"
+                            allow="camera; microphone; autoplay; fullscreen"
+                            style={{ minHeight: "400px" }}
+                          />
+                        </div>
+                        {liveVideoTranscripts.length > 0 && (
+                          <div className="w-64 border-l bg-card/50 p-3 flex flex-col" style={{ maxHeight: "400px" }}>
+                            <h4 className="text-xs font-bold text-muted-foreground mb-2 flex items-center gap-1">
+                              <MessageSquare className="w-3 h-3" />
+                              LIVE TRANSCRIPT
+                            </h4>
+                            <ScrollArea className="flex-1">
+                              <div className="space-y-2 pr-2">
+                                {liveVideoTranscripts.map((t, i) => (
+                                  <div key={i} className={`text-xs ${t.role === "ai" ? "text-blue-400" : "text-foreground/80"}`}>
+                                    <span className="font-bold">{t.role === "ai" ? "AI:" : "Candidate:"}</span>{" "}
+                                    {t.text}
+                                  </div>
+                                ))}
+                                <div ref={videoTranscriptEndRef} />
+                              </div>
+                            </ScrollArea>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : !details?.session?.videoStatus || details.session.videoStatus === "pending" || details.session.videoStatus === "sent" ? (
+                    <div className="border rounded-lg bg-card/50 p-6 flex flex-col items-center gap-4">
+                      <div className="w-16 h-16 rounded-full bg-muted/30 flex items-center justify-center">
+                        <Video className="h-7 w-7 text-foreground" />
+                      </div>
+                      <div className="text-center">
+                        <p className="font-medium">Start Video Interview</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Launch a live AI video interview with {details?.session?.candidateName || "the candidate"}.
+                          You'll be able to observe the session in real-time.
+                        </p>
+                      </div>
+                      <Button
+                        onClick={startLiveVideoInterview}
+                        disabled={isCreatingVideo}
+                        className="rounded-full px-6"
+                      >
+                        {isCreatingVideo ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Creating Session...
+                          </>
+                        ) : (
+                          <>
+                            <Video className="h-4 w-4 mr-2" />
+                            Start Video Interview
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+
               <CardContent>
                 {/* View content based on activeFlowView */}
                 {(activeFlowView === "voice" || activeFlowView === "video" || !activeFlowView) ? (
@@ -916,54 +1099,77 @@ export default function InterviewConsole() {
                           {details.recordings.map((recording) => (
                             <div
                               key={recording.id}
-                              className="p-4 rounded-lg border flex items-center justify-between"
+                              className="rounded-lg border overflow-hidden"
                             >
-                              <div className="flex items-center gap-3">
-                                {recording.recordingType === "video" ? (
-                                  <Video className="h-8 w-8 text-foreground" />
-                                ) : (
-                                  <Mic className="h-8 w-8 text-foreground" />
-                                )}
+                              {/* Video recording — show inline video player */}
+                              {recording.recordingType === "video" && recording.mediaUrl ? (
                                 <div>
-                                  <p className="font-medium capitalize">{recording.recordingType} Recording</p>
-                                  <p className="text-sm text-muted-foreground">
-                                    {recording.duration ? `${Math.floor(recording.duration / 60)}m ${recording.duration % 60}s` : "Duration unknown"}
-                                  </p>
+                                  <div className="relative w-full bg-black" style={{ aspectRatio: "16/9" }}>
+                                    <video
+                                      className="w-full h-full"
+                                      controls
+                                      preload="metadata"
+                                      src={recording.mediaUrl}
+                                      data-testid={`video-player-${recording.id}`}
+                                    >
+                                      Your browser does not support video playback.
+                                    </video>
+                                  </div>
+                                  <div className="flex items-center justify-between p-3">
+                                    <div className="flex items-center gap-2">
+                                      <Video className="h-4 w-4 text-foreground" />
+                                      <span className="text-sm font-medium">Video Recording</span>
+                                    </div>
+                                    <span className="text-xs text-muted-foreground">
+                                      {recording.duration ? `${Math.floor(recording.duration / 60)}m ${recording.duration % 60}s` : ""}
+                                    </span>
+                                  </div>
                                 </div>
-                              </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                data-testid={`button-play-recording-${recording.id}`}
-                                onClick={() => {
-                                  if (playingRecordingId === recording.id) {
-                                    // Stop playback
-                                    if (audioRef.current) {
-                                      audioRef.current.pause();
-                                      audioRef.current.currentTime = 0;
-                                    }
-                                    setPlayingRecordingId(null);
-                                  } else {
-                                    // Start playback
-                                    if (audioRef.current) {
-                                      audioRef.current.pause();
-                                    }
-                                    const audio = new Audio(recording.mediaUrl);
-                                    audio.onended = () => setPlayingRecordingId(null);
-                                    audio.play().catch(() => {
-                                      toast({ title: "Playback Error", description: "Unable to play this recording", variant: "destructive" });
-                                    });
-                                    audioRef.current = audio;
-                                    setPlayingRecordingId(recording.id);
-                                  }
-                                }}
-                              >
-                                {playingRecordingId === recording.id ? (
-                                  <><Square className="h-4 w-4 mr-2" />Stop</>
-                                ) : (
-                                  <><Play className="h-4 w-4 mr-2" />Play</>
-                                )}
-                              </Button>
+                              ) : (
+                                /* Audio recording — keep existing audio player */
+                                <div className="p-4 flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <Mic className="h-8 w-8 text-foreground" />
+                                    <div>
+                                      <p className="font-medium capitalize">{recording.recordingType} Recording</p>
+                                      <p className="text-sm text-muted-foreground">
+                                        {recording.duration ? `${Math.floor(recording.duration / 60)}m ${recording.duration % 60}s` : "Duration unknown"}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    data-testid={`button-play-recording-${recording.id}`}
+                                    onClick={() => {
+                                      if (playingRecordingId === recording.id) {
+                                        if (audioRef.current) {
+                                          audioRef.current.pause();
+                                          audioRef.current.currentTime = 0;
+                                        }
+                                        setPlayingRecordingId(null);
+                                      } else {
+                                        if (audioRef.current) {
+                                          audioRef.current.pause();
+                                        }
+                                        const audio = new Audio(recording.mediaUrl);
+                                        audio.onended = () => setPlayingRecordingId(null);
+                                        audio.play().catch(() => {
+                                          toast({ title: "Playback Error", description: "Unable to play this recording", variant: "destructive" });
+                                        });
+                                        audioRef.current = audio;
+                                        setPlayingRecordingId(recording.id);
+                                      }
+                                    }}
+                                  >
+                                    {playingRecordingId === recording.id ? (
+                                      <><Square className="h-4 w-4 mr-2" />Stop</>
+                                    ) : (
+                                      <><Play className="h-4 w-4 mr-2" />Play</>
+                                    )}
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>

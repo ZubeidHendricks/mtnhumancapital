@@ -15,6 +15,7 @@ import { transcriptProviderManager } from "./transcript-providers";
 import { transcriptAnalysisAgent } from "./transcript-analysis-agent";
 import { sourcingOrchestrator, type SpecialistCandidate } from "./sourcing-specialists";
 import { scraperOrchestrator, type ScrapedCandidate, type ScraperResult } from "./web-scraper-agents";
+import { scraperHealth, checkApiKeyStatus } from "./scraper-health";
 import { cvParser } from "./cv-parser";
 import { cvTemplateGenerator } from "./cv-template-generator";
 import { Packer } from "docx";
@@ -3949,6 +3950,37 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
     } catch (error) {
       console.error("Error fetching scrapers:", error);
       res.status(500).json({ message: "Failed to fetch scrapers" });
+    }
+  });
+
+  app.get("/api/scrapers/status", async (req, res) => {
+    try {
+      const scrapers = scraperOrchestrator.getScrapers();
+      const allHealth = scraperHealth.getAllHealth();
+      const apiKeys = checkApiKeyStatus();
+
+      const scraperStatuses = scrapers.map(s => {
+        const health = allHealth[s.platform] || scraperHealth.getHealth(s.platform);
+        return {
+          name: s.name,
+          platform: s.platform,
+          ...health,
+        };
+      });
+
+      res.json({
+        scrapers: scraperStatuses,
+        apiKeys,
+        summary: {
+          total: scraperStatuses.length,
+          green: scraperStatuses.filter(s => s.status === "green").length,
+          yellow: scraperStatuses.filter(s => s.status === "yellow").length,
+          red: scraperStatuses.filter(s => s.status === "red").length,
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching scraper status:", error);
+      res.status(500).json({ message: "Failed to fetch scraper status" });
     }
   });
 
