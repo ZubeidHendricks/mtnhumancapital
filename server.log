@@ -1,184 +1,139 @@
-
-> rest-express@1.0.0 dev
-> NODE_ENV=development npx tsx server/index.ts
-
+[TranscriptProviders] Whisper (Groq) configured
 [PNetAPIService] Configured with Org ID: 120911, Sender ID: 21965
-Default tenant already exists: Avatar Human Capital
-2:28:32 AM [express] serving on port 5000
-2:28:32 AM [express] Background reminder checker started (runs every hour)
+Default tenant already exists: MTN - Human Capital
+[EmailService] SMTP configured: smtp.resend.com:465
+9:29:05 PM [express] serving on port 5000
+9:29:05 PM [express] Background reminder checker started (runs every hour)
 [DataCollectionService] Starting background data collection service
-2:28:32 AM [express] Background data collection service started (checks every minute)
-2:28:55 AM [express] GET /api/tenant-config 200 in 240ms :: {"id":"1580efd0-8445-4afb-b961-d20ca1802…
-2:29:45 AM [express] GET /api/tenant-config 200 in 252ms :: {"id":"1580efd0-8445-4afb-b961-d20ca1802…
-2:29:58 AM [express] GET /api/fleetlogix/loads 401 in 1ms :: {"error":"Unauthorized"}
-2:29:58 AM [express] GET /api/fleetlogix/drivers 401 in 1ms :: {"error":"Unauthorized"}
-2:29:58 AM [express] GET /api/fleetlogix/vehicles 401 in 2ms :: {"error":"Unauthorized"}
-2:29:58 AM [express] GET /api/fleetlogix/routes 401 in 2ms :: {"error":"Unauthorized"}
-2:30:01 AM [express] GET /api/fleetlogix/loads 401 in 1ms :: {"error":"Unauthorized"}
-2:30:01 AM [express] GET /api/fleetlogix/drivers 401 in 2ms :: {"error":"Unauthorized"}
-2:30:01 AM [express] GET /api/fleetlogix/routes 401 in 2ms :: {"error":"Unauthorized"}
-2:30:01 AM [express] GET /api/fleetlogix/vehicles 401 in 1ms :: {"error":"Unauthorized"}
-2:30:24 AM [express] GET /api/tenant-config 200 in 292ms :: {"id":"1580efd0-8445-4afb-b961-d20ca1802…
-2:30:36 AM [express] GET /api/fleetlogix/routes 401 in 2ms :: {"error":"Unauthorized"}
-2:30:36 AM [express] GET /api/fleetlogix/vehicles 401 in 2ms :: {"error":"Unauthorized"}
-2:30:36 AM [express] GET /api/fleetlogix/drivers 401 in 2ms :: {"error":"Unauthorized"}
-2:30:36 AM [express] GET /api/fleetlogix/loads 401 in 1ms :: {"error":"Unauthorized"}
-2:30:39 AM [express] GET /api/fleetlogix/loads 401 in 1ms :: {"error":"Unauthorized"}
-2:30:39 AM [express] GET /api/fleetlogix/drivers 401 in 1ms :: {"error":"Unauthorized"}
-2:30:39 AM [express] GET /api/fleetlogix/routes 401 in 0ms :: {"error":"Unauthorized"}
-2:30:39 AM [express] GET /api/fleetlogix/vehicles 401 in 1ms :: {"error":"Unauthorized"}
-2:31:09 AM [express] GET /api/tenant-config 200 in 308ms :: {"id":"1580efd0-8445-4afb-b961-d20ca1802…
-2:31:41 AM [express] GET /api/tenant-config 200 in 235ms :: {"id":"1580efd0-8445-4afb-b961-d20ca1802…
-2:31:54 AM [express] GET /api/fleetlogix/loads 401 in 1ms :: {"error":"Unauthorized"}
-2:31:55 AM [express] GET /api/fleetlogix/drivers 401 in 1ms :: {"error":"Unauthorized"}
-2:31:55 AM [express] GET /api/fleetlogix/routes 401 in 1ms :: {"error":"Unauthorized"}
-2:31:55 AM [express] GET /api/fleetlogix/vehicles 401 in 2ms :: {"error":"Unauthorized"}
-2:32:01 AM [express] GET /api/fleetlogix/routes 401 in 1ms :: {"error":"Unauthorized"}
-2:32:01 AM [express] GET /api/fleetlogix/drivers 401 in 2ms :: {"error":"Unauthorized"}
-2:32:01 AM [express] GET /api/fleetlogix/vehicles 401 in 1ms :: {"error":"Unauthorized"}
-2:32:01 AM [express] GET /api/fleetlogix/loads 401 in 1ms :: {"error":"Unauthorized"}
-Error resolving tenant: ErrorEvent {
-  [Symbol(kTarget)]: WebSocket {
-    _events: [Object: null prototype] {
-      error: [Function],
-      message: [Function],
-      close: [Function],
-      open: [Function]
-    },
-    _eventsCount: 4,
-    _maxListeners: undefined,
-    _binaryType: 'arraybuffer',
-    _closeCode: 1006,
-    _closeFrameReceived: false,
-    _closeFrameSent: false,
-    _closeMessage: <Buffer >,
-    _closeTimer: null,
-    _errorEmitted: true,
-    _extensions: {},
-    _paused: false,
-    _protocol: '',
-    _readyState: 3,
-    _receiver: null,
-    _sender: null,
-    _socket: null,
-    _bufferedAmount: 0,
-    _isServer: false,
-    _redirects: 0,
-    _autoPong: true,
-    _closeTimeout: 30000,
-    _url: 'wss://ep-cool-hall-af1nklal.c-2.us-west-2.aws.neon.tech/v2',
-    _req: null,
-    [Symbol(shapeMode)]: false,
-    [Symbol(kCapture)]: false
-  },
-  [Symbol(kType)]: 'error',
-  [Symbol(kError)]: Error: getaddrinfo EAI_AGAIN ep-cool-hall-af1nklal.c-2.us-west-2.aws.neon.tech
-      at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:120:26) {
-    errno: -3001,
-    code: 'EAI_AGAIN',
-    syscall: 'getaddrinfo',
-    hostname: 'ep-cool-hall-af1nklal.c-2.us-west-2.aws.neon.tech'
-  },
-  [Symbol(kMessage)]: 'getaddrinfo EAI_AGAIN ep-cool-hall-af1nklal.c-2.us-west-2.aws.neon.tech'
-}
-[DataCollectionService] Error processing scheduled syncs: ErrorEvent {
-  [Symbol(kTarget)]: WebSocket {
-    _events: [Object: null prototype] {
-      error: [Function],
-      message: [Function],
-      close: [Function],
-      open: [Function]
-    },
-    _eventsCount: 4,
-    _maxListeners: undefined,
-    _binaryType: 'arraybuffer',
-    _closeCode: 1006,
-    _closeFrameReceived: false,
-    _closeFrameSent: false,
-    _closeMessage: <Buffer >,
-    _closeTimer: null,
-    _errorEmitted: true,
-    _extensions: {},
-    _paused: false,
-    _protocol: '',
-    _readyState: 3,
-    _receiver: null,
-    _sender: null,
-    _socket: null,
-    _bufferedAmount: 0,
-    _isServer: false,
-    _redirects: 0,
-    _autoPong: true,
-    _closeTimeout: 30000,
-    _url: 'wss://ep-cool-hall-af1nklal.c-2.us-west-2.aws.neon.tech/v2',
-    _req: null,
-    [Symbol(shapeMode)]: false,
-    [Symbol(kCapture)]: false
-  },
-  [Symbol(kType)]: 'error',
-  [Symbol(kError)]: Error: getaddrinfo EAI_AGAIN ep-cool-hall-af1nklal.c-2.us-west-2.aws.neon.tech
-      at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:120:26) {
-    errno: -3001,
-    code: 'EAI_AGAIN',
-    syscall: 'getaddrinfo',
-    hostname: 'ep-cool-hall-af1nklal.c-2.us-west-2.aws.neon.tech'
-  },
-  [Symbol(kMessage)]: 'getaddrinfo EAI_AGAIN ep-cool-hall-af1nklal.c-2.us-west-2.aws.neon.tech'
-}
-11:23:02 AM [express] GET /api/tenant-config 200 in 248ms :: {"id":"1580efd0-8445-4afb-b961-d20ca1802…
-11:23:17 AM [express] GET /api/fleetlogix/routes 401 in 2ms :: {"error":"Unauthorized"}
-11:23:17 AM [express] GET /api/fleetlogix/vehicles 401 in 2ms :: {"error":"Unauthorized"}
-11:23:20 AM [express] GET /api/fleetlogix/loads 401 in 1ms :: {"error":"Unauthorized"}
-11:23:20 AM [express] GET /api/fleetlogix/drivers 401 in 2ms :: {"error":"Unauthorized"}
-11:23:23 AM [express] GET /api/fleetlogix/loads 401 in 2ms :: {"error":"Unauthorized"}
-11:23:23 AM [express] GET /api/fleetlogix/vehicles 401 in 1ms :: {"error":"Unauthorized"}
-11:23:23 AM [express] GET /api/fleetlogix/drivers 401 in 1ms :: {"error":"Unauthorized"}
-11:23:23 AM [express] GET /api/fleetlogix/routes 401 in 1ms :: {"error":"Unauthorized"}
-11:23:52 AM [express] GET /api/tenant-config 200 in 242ms :: {"id":"1580efd0-8445-4afb-b961-d20ca1802…
-11:24:10 AM [express] GET /api/fleetlogix/loads 401 in 1ms :: {"error":"Unauthorized"}
-11:24:10 AM [express] GET /api/fleetlogix/drivers 401 in 1ms :: {"error":"Unauthorized"}
-11:24:10 AM [express] GET /api/fleetlogix/vehicles 401 in 1ms :: {"error":"Unauthorized"}
-11:24:10 AM [express] GET /api/fleetlogix/routes 401 in 1ms :: {"error":"Unauthorized"}
-11:24:13 AM [express] GET /api/fleetlogix/loads 401 in 3ms :: {"error":"Unauthorized"}
-11:24:13 AM [express] GET /api/fleetlogix/drivers 401 in 2ms :: {"error":"Unauthorized"}
-11:24:13 AM [express] GET /api/fleetlogix/vehicles 401 in 2ms :: {"error":"Unauthorized"}
-11:24:13 AM [express] GET /api/fleetlogix/routes 401 in 2ms :: {"error":"Unauthorized"}
-11:24:42 AM [express] GET /api/tenant-config 200 in 236ms :: {"id":"1580efd0-8445-4afb-b961-d20ca1802…
-11:24:58 AM [express] GET /api/fleetlogix/drivers 401 in 2ms :: {"error":"Unauthorized"}
-11:24:58 AM [express] GET /api/fleetlogix/loads 401 in 2ms :: {"error":"Unauthorized"}
-11:24:58 AM [express] GET /api/fleetlogix/vehicles 401 in 3ms :: {"error":"Unauthorized"}
-11:24:58 AM [express] GET /api/fleetlogix/routes 401 in 3ms :: {"error":"Unauthorized"}
-11:25:01 AM [express] GET /api/fleetlogix/drivers 401 in 2ms :: {"error":"Unauthorized"}
-11:25:01 AM [express] GET /api/fleetlogix/loads 401 in 2ms :: {"error":"Unauthorized"}
-11:25:01 AM [express] GET /api/fleetlogix/vehicles 401 in 3ms :: {"error":"Unauthorized"}
-11:25:01 AM [express] GET /api/fleetlogix/routes 401 in 3ms :: {"error":"Unauthorized"}
-11:25:22 AM [express] GET /api/tenant-config 200 in 243ms :: {"id":"1580efd0-8445-4afb-b961-d20ca1802…
-11:25:36 AM [express] GET /api/fleetlogix/loads 401 in 2ms :: {"error":"Unauthorized"}
-11:25:36 AM [express] GET /api/fleetlogix/drivers 401 in 1ms :: {"error":"Unauthorized"}
-11:25:36 AM [express] GET /api/fleetlogix/vehicles 401 in 2ms :: {"error":"Unauthorized"}
-11:25:36 AM [express] GET /api/fleetlogix/routes 401 in 1ms :: {"error":"Unauthorized"}
-11:25:42 AM [express] GET /api/fleetlogix/drivers 401 in 2ms :: {"error":"Unauthorized"}
-11:25:42 AM [express] GET /api/fleetlogix/vehicles 401 in 2ms :: {"error":"Unauthorized"}
-11:25:42 AM [express] GET /api/fleetlogix/loads 401 in 1ms :: {"error":"Unauthorized"}
-11:25:42 AM [express] GET /api/fleetlogix/routes 401 in 3ms :: {"error":"Unauthorized"}
-11:27:14 AM [express] GET /api/tenant-config 200 in 239ms :: {"id":"1580efd0-8445-4afb-b961-d20ca1802…
-11:27:30 AM [express] GET /api/fleetlogix/loads 401 in 3ms :: {"error":"Unauthorized"}
-11:27:31 AM [express] GET /api/fleetlogix/vehicles 401 in 2ms :: {"error":"Unauthorized"}
-11:27:31 AM [express] GET /api/fleetlogix/routes 401 in 2ms :: {"error":"Unauthorized"}
-11:27:31 AM [express] GET /api/fleetlogix/drivers 401 in 2ms :: {"error":"Unauthorized"}
-11:27:34 AM [express] GET /api/fleetlogix/loads 401 in 3ms :: {"error":"Unauthorized"}
-11:27:34 AM [express] GET /api/fleetlogix/drivers 401 in 2ms :: {"error":"Unauthorized"}
-11:27:34 AM [express] GET /api/fleetlogix/routes 401 in 2ms :: {"error":"Unauthorized"}
-11:27:34 AM [express] GET /api/fleetlogix/vehicles 401 in 2ms :: {"error":"Unauthorized"}
-11:47:00 AM [express] GET /api/tenant 500 in 856ms
-Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/home/zubeid/AvatarHumanCapital/node_modules/vite/dist/node/chunks/dep-D-7KCb9p.js' imported from /home/zubeid/AvatarHumanCapital/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js
-    at finalizeResolution (node:internal/modules/esm/resolve:283:11)
-    at moduleResolve (node:internal/modules/esm/resolve:952:10)
-    at defaultResolve (node:internal/modules/esm/resolve:1188:11)
-    at nextResolve (node:internal/modules/esm/hooks:864:28)
-    at resolveBase (file:///home/zubeid/AvatarHumanCapital/node_modules/tsx/dist/esm/index.mjs?1768523308222:2:3744)
-    at resolveDirectory (file:///home/zubeid/AvatarHumanCapital/node_modules/tsx/dist/esm/index.mjs?1768523308222:2:4243)
-    at resolveTsPaths (file:///home/zubeid/AvatarHumanCapital/node_modules/tsx/dist/esm/index.mjs?1768523308222:2:4984)
-    at resolve (file:///home/zubeid/AvatarHumanCapital/node_modules/tsx/dist/esm/index.mjs?1768523308222:2:5361)
-    at nextResolve (node:internal/modules/esm/hooks:864:28)
-    at o (file:///home/zubeid/AvatarHumanCapital/node_modules/@tailwindcss/node/dist/esm-cache.loader.mjs:1:69)
+9:29:05 PM [express] Background data collection service started (checks every minute)
+9:29:07 PM [express] GET /api/interviews/094371e1-1067-46f3-bf73-4dd8a094377d/feedback 304 in 193ms …
+[Scrapers] Running ExecutivePlacements scraper for job: Senior Software Engineer
+[ExecutivePlacements] Searching for: "software developer" (job: Senior Software Engineer)
+[ExecutivePlacements] Navigating to login page...
+[ExecutivePlacements] Login page text: Search jobs
+ 
+Job Alerts
+ 
+CV Writing
+ 
+Interview Coaching
+ 
+Contact
+Login
+ 
+Sign Up
+ 
+Recruiting?
+
+ 
+
+Executive Placements Login
+
+ 
+
+ 
+
+Please enter your username and password below to login:
+
+ 
+
+
+ 	
+
+Username
+
+	
+ 	
+
+Password
+
+	
+		    or Register
+
+    Forgot password?
+
+ 
+
+ 
+
+ 
+
+ 
+
+Jobseekers
+
+Register your CV
+
+
+Search jobs
+
+
+Job alerts
+
+
+CV writing
+
+
+Blog
+
+
+
+Recruiter
+
+Advertise jobs
+
+
+Search the CV database
+
+
+How to Write a Job Description
+
+
+
+General
+
+Company a-z
+
+
+Partners
+
+
+About us
+Disclaim
+[ExecutivePlacements] All inputs on page: [{"name":"step","type":"hidden","id":"","placeholder":""},{"name":"ref","type":"hidden","id":"","placeholder":""},{"name":"myref","type":"hidden","id":"","placeholder":""},{"name":"localtime","type":"hidden","id":"","placeholder":""},{"name":"jobID","type":"hidden","id":"","placeholder":""},{"name":"page","type":"hidden","id":"","placeholder":""},{"name":"uid","type":"text","id":"","placeholder":""},{"name":"password","type":"password","id":"","placeholder":""},{"name":"","type":"submit","id":"","placeholder":""}]
+[ExecutivePlacements] Found email field: input[name="uid"]
+[ExecutivePlacements] Clicking login button...
+[ExecutivePlacements] Post-login URL: https://www.executiveplacements.com/liHome.asp
+[ExecutivePlacements] Login successful. Navigating to CV search page...
+[ExecutivePlacements] CV search page URL: https://www.executiveplacements.com/cv_search_get_dataNS11.asp
+[ExecutivePlacements] Search page forms: [{"action":"https://www.executiveplacements.com/liMyCandidates.asp","method":"post","name":"searchCandidates","id":""},{"action":"https://www.executiveplacements.com/cv_search_get_dataNS11.asp","method":"post","name":"searchChoice","id":""},{"action":"https://www.executiveplacements.com/cv_search_get_dataNS11.asp","method":"post","name":"CandidateQuery","id":""}]
+[ExecutivePlacements] Search page inputs (first 20): [{"tag":"INPUT","name":"search","type":"text","id":"","placeholder":"Search my candidates"},{"tag":"SELECT","name":"searchSelect","type":"select-one","id":"searchSelect"},{"tag":"INPUT","name":"start","type":"hidden","id":"","placeholder":""},{"tag":"INPUT","name":"downloadsL","type":"hidden","id":"","placeholder":""},{"tag":"INPUT","name":"RecruitmentAgent","type":"hidden","id":"","placeholder":""},{"tag":"INPUT","name":"keywordsOrig","type":"text","id":"KeywordsTabOld","placeholder":"eg \"internal auditor\""},{"tag":"INPUT","name":"JobTitleOnly","type":"hidden","id":"JobTitleOnlyTab","placeholder":""},{"tag":"INPUT","name":"","type":"button","id":"","placeholder":""},{"tag":"INPUT","name":"keywordsAll","type":"text","id":"","placeholder":"eg javascript sql php"},{"tag":"INPUT","name":"keywordsExact","type":"text","id":"","placeholder":"eg software engineer"},{"tag":"INPUT","name":"keywordsOne","type":"text","id":"","placeholder":"eg software programmer developer"},{"tag":"INPUT","name":"keywordsNone","type":"text","id":"","placeholder":"eg sap"},{"tag":"INPUT","name":"keywordsJobCur","type":"text","id":"","placeholder":"eg software developer"},{"tag":"INPUT","name":"keywordsJobAny","type":"hidden","id":"","placeholder":""},{"tag":"INPUT","name":"keywordsCompanyCur","type":"text","id":"","placeholder":"eg kpmg"},{"tag":"INPUT","name":"keywordsCompanyAny","type":"hidden","id":"","placeholder":""},{"tag":"SELECT","name":"EducationType","type":"select-one","id":""},{"tag":"INPUT","name":"keywordsEdu","type":"text","id":"","placeholder":"eg bsc beng"},{"tag":"INPUT","name":"","type":"button","id":"","placeholder":""},{"tag":"INPUT","name":"kwdsSelect","type":"text","id":"kwdsSelect","placeholder":""}]
+[ExecutivePlacements] Set search fields via JS
+[ExecutivePlacements] Buttons on page: [{"value":"Find cvs","onclick":"JavaScript:document.forms['CandidateQuery'].elements['start'].value=1; xmlhttpPost('cv_search_show_cvs41N.asp',true); return false;","type":"button","name":""},{"value":"Find cvs","onclick":"JavaScript:document.forms['CandidateQuery'].elements['start'].value=1; xmlhttpPost('cv_search_show_cvs41N.asp',true); return false;","type":"button","name":""},{"value":"Find cvs","onclick":"JavaScript:document.forms['CandidateQuery'].elements['start'].value=1; xmlhttpPost('cv_search_show_cvs41N.asp',true); return false;","type":"button","name":"thirdButton"},{"value":"ON","onclick":"toggleAI();","type":"button","name":""},{"value":"Find cvs","onclick":"JavaScript:document.forms['CandidateQuery'].elements['start'].value=1; xmlhttpPost('cv_search_show_cvs41N.asp',true); return false;","type":"button","name":""},{"value":"","onclick":"","type":"submit","name":""},{"value":"Send","onclick":"","type":"submit","name":""},{"value":"Contact us!","onclick":"","type":"submit","name":""}]
+[ExecutivePlacements] Triggering search and capturing AJAX response...
+[ExecutivePlacements] CV search response: htmlLen=1211 textLen=114 error=none
+[ExecutivePlacements] Response text preview: Please enter keywords to begin search.......................... xxxxxxxxxxN,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,
+[ExecutivePlacements] Results page URL: https://www.executiveplacements.com/cv_search_get_dataNS11.asp
+[ExecutivePlacements] Results text length: 2803
+[ExecutivePlacements] Results text preview (start): Search Type Clear all Save Search Saved Searches Clear all (choose one field or a combination of fields if desired) All of these words The exact phrase Any of these words None of these words Job title (current) Company (current) Education Save Search Saved Searches Clear all Save Search Saved Searches Clear all Keywords Job title Companies Autosuggest ON View List Education Save Search Saved Searches Location Eligible to work in Citizenship Work permit Located in City/Province: Distance City Gau
+[ExecutivePlacements] Results text preview (middle): ucation & Experience Clear all / Select all Include not specified Work experience: 1 - 2 years 3 - 4 years 5 - 9 years 10-14 years 15-19 years 20+ years Education: Certificate Diploma Bachelors Honours Masters Doctorate N1 N2 N3 N4 N5 N6 Best career level: ▲ Category Clear all / Select all Academic Manufacturing Accounting/Finance Matriculants Advertising Medical/Pharma/Biotech Admin/Secretarial Mining Architect/Design Military/Police/Security Art/Media/Writer NGO/Non-profit Automotive Office Support Aviation Oil/Gas/Petrochemical Banking/Finance Optometry Breweries Part Time (No Experience) Call Centre PR/Journalism/Media Chemical Professional Services Civil/Building/Construction Property/Real Estate Skilled Trade eg plumber Publishing Computer/Software/IT/Net Purchasing Customer Service Quality Assurance Domestic Help/Care Research & Development Education Retail Electronics & Electrical Salon/Beauty/Fitness Engineering/Science Safety And Security Environmental/Agriculture Sales/Marke
+[ExecutivePlacements] Results text preview (end): ing Architect/Design Military/Police/Security Art/Media/Writer NGO/Non-profit Automotive Office Support Aviation Oil/Gas/Petrochemical Banking/Finance Optometry Breweries Part Time (No Experience) Call Centre PR/Journalism/Media Chemical Professional Services Civil/Building/Construction Property/Real Estate Skilled Trade eg plumber Publishing Computer/Software/IT/Net Purchasing Customer Service Quality Assurance Domestic Help/Care Research & Development Education Retail Electronics & Electrical Salon/Beauty/Fitness Engineering/Science Safety And Security Environmental/Agriculture Sales/Marketing/PR Events Social Services Everything Else Stockbroking Facilities/Maintenance Vet & Animal Care FMCG Technical Freight/Shipping/Transport Telecommunications General Labour Tender/Service Info Governmental/Municipal Textiles/Clothing Industry Hotel/Hospitality/Leisure Travel/Tourism HR & Recruiting TV/Film/Music/Radio Insurance Utilities (Water, Power) Legal Work From Home Logistics/Supply Chain
+[ExecutivePlacements] Parsed 1 table rows
+[ExecutivePlacements] No table data parsed, using AI extraction...
+[ExecutivePlacements] Final candidates found: 0
+9:29:40 PM [express] POST /api/scrapers/run/ExecutivePlacements/d5c682fb-b4a9-4100-9263-6898d5622a90…
+9:29:47 PM [express] GET /api/tenant-config 304 in 2ms :: {"id":"bfc98215-a172-49e9-ab56-009591660be…
+9:29:47 PM [express] GET /api/jobs 304 in 50ms :: {"data":[{"id":"d5c682fb-b4a9-4100-9263-6898d5622a…
+9:29:47 PM [express] GET /api/candidates 304 in 33ms :: {"data":[{"id":"9cd526fa-369f-43c8-ae90-71f3…
+9:29:54 PM [express] GET /api/jobs 304 in 4ms :: {"data":[{"id":"d5c682fb-b4a9-4100-9263-6898d5622a9…
+9:29:54 PM [express] GET /api/candidates 304 in 12ms :: {"data":[{"id":"9cd526fa-369f-43c8-ae90-71f3…
+9:29:58 PM [express] GET /api/tenant-config 304 in 1ms :: {"id":"bfc98215-a172-49e9-ab56-009591660be…
+9:29:58 PM [express] GET /api/jobs 304 in 6ms :: {"data":[{"id":"d5c682fb-b4a9-4100-9263-6898d5622a9…
+9:29:58 PM [express] GET /api/candidates 304 in 11ms :: {"data":[{"id":"9cd526fa-369f-43c8-ae90-71f3…
+9:29:59 PM [express] GET /api/jobs 304 in 8ms :: {"data":[{"id":"d5c682fb-b4a9-4100-9263-6898d5622a9…
+9:29:59 PM [express] GET /api/candidates 304 in 6ms :: {"data":[{"id":"9cd526fa-369f-43c8-ae90-71f30…
+9:29:59 PM [express] GET /api/tenant-config 304 in 2ms :: {"id":"bfc98215-a172-49e9-ab56-009591660be…
+9:29:59 PM [express] GET /api/jobs 304 in 6ms :: {"data":[{"id":"d5c682fb-b4a9-4100-9263-6898d5622a9…
+9:29:59 PM [express] GET /api/candidates 304 in 10ms :: {"data":[{"id":"9cd526fa-369f-43c8-ae90-71f3…
+9:30:00 PM [express] GET /api/jobs 304 in 7ms :: {"data":[{"id":"d5c682fb-b4a9-4100-9263-6898d5622a9…
+9:30:00 PM [express] GET /api/candidates 304 in 7ms :: {"data":[{"id":"9cd526fa-369f-43c8-ae90-71f30…
