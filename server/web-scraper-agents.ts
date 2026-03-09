@@ -1999,191 +1999,355 @@ export class ExecutivePlacementsScraper extends BaseBrowserScraper {
       });
 
       console.log("[ExecutivePlacements] Navigating to login page...");
-      await page.goto("https://www.executiveplacements.com/login.asp", {
+      await page.goto("https://www.executiveplacements.com/login2.asp", {
         waitUntil: "networkidle2",
         timeout: 30000,
       });
       await delay(1500 + Math.random() * 1000);
 
-      const loginSelectors = [
-        'input[name="email"]', 'input[name="Email"]', 'input[name="username"]',
-        'input[name="txtEmail"]', 'input[name="txtUsername"]', 'input[type="email"]',
-        '#email', '#Email', '#username'
-      ];
+      const currentUrl = page.url();
+      const alreadyLoggedIn = !currentUrl.includes('login');
 
-      let emailField: string | null = null;
-      for (const sel of loginSelectors) {
-        const found = await page.$(sel);
-        if (found) { emailField = sel; break; }
-      }
-
-      if (!emailField) {
-        const pageText = await page.evaluate(() => document.body?.innerText?.slice(0, 2000) || '');
-        console.log(`[ExecutivePlacements] Login page text: ${pageText.slice(0, 500)}`);
-
-        const allInputs = await page.evaluate(() => {
-          return Array.from(document.querySelectorAll('input')).map(i => ({
-            name: i.name, type: i.type, id: i.id, placeholder: i.placeholder
-          }));
-        });
-        console.log(`[ExecutivePlacements] All inputs on page:`, JSON.stringify(allInputs));
-
-        emailField = allInputs.find(i =>
-          i.type === 'text' || i.type === 'email' ||
-          i.name.toLowerCase().includes('email') || i.name.toLowerCase().includes('user')
-        )?.name ? `input[name="${allInputs.find(i => i.type === 'text' || i.type === 'email' || i.name.toLowerCase().includes('email') || i.name.toLowerCase().includes('user'))!.name}"]` : null;
-      }
-
-      if (!emailField) {
-        console.error("[ExecutivePlacements] Could not find login email field");
-        return this.buildFailedResult(this.platform, query, new Error("Could not find login form on Executive Placements"));
-      }
-
-      console.log(`[ExecutivePlacements] Found email field: ${emailField}`);
-
-      await page.click(emailField);
-      await delay(200);
-      await page.keyboard.type(this.username, { delay: 50 + Math.random() * 50 });
-      await delay(300);
-
-      const passwordSelectors = [
-        'input[name="password"]', 'input[name="Password"]', 'input[name="txtPassword"]',
-        'input[type="password"]', '#password', '#Password'
-      ];
-
-      let passwordField: string | null = null;
-      for (const sel of passwordSelectors) {
-        const found = await page.$(sel);
-        if (found) { passwordField = sel; break; }
-      }
-
-      if (!passwordField) {
-        console.error("[ExecutivePlacements] Could not find password field");
-        return this.buildFailedResult(this.platform, query, new Error("Could not find password field on login form"));
-      }
-
-      await page.click(passwordField);
-      await delay(200);
-      await page.keyboard.type(this.password, { delay: 50 + Math.random() * 50 });
-      await delay(500);
-
-      const submitBtn = await page.$('input[type="submit"]') ||
-                        await page.$('button[type="submit"]') ||
-                        await page.$('input[value="Login"]') ||
-                        await page.$('input[value="Sign In"]') ||
-                        await page.$('button:has-text("Login")');
-
-      if (submitBtn) {
-        console.log("[ExecutivePlacements] Clicking login button...");
-        await Promise.all([
-          page.waitForNavigation({ waitUntil: "networkidle2", timeout: 30000 }).catch(() => {}),
-          submitBtn.click()
-        ]);
+      if (alreadyLoggedIn) {
+        console.log(`[ExecutivePlacements] Already logged in (redirected to ${currentUrl})`);
       } else {
-        console.log("[ExecutivePlacements] No submit button found, pressing Enter...");
-        await page.keyboard.press('Enter');
-        await page.waitForNavigation({ waitUntil: "networkidle2", timeout: 30000 }).catch(() => {});
+        // Find the uid field (login2.asp uses input[name="uid"])
+        const uidField = await page.$('input[name="uid"]');
+        if (!uidField) {
+          const allInputs = await page.evaluate(() => {
+            return Array.from(document.querySelectorAll('input')).map(i => ({
+              name: i.name, type: i.type, id: i.id
+            }));
+          });
+          console.log(`[ExecutivePlacements] All inputs on login page:`, JSON.stringify(allInputs));
+          console.error("[ExecutivePlacements] Could not find uid field on login page");
+          return this.buildFailedResult(this.platform, query, new Error("Could not find login form on Executive Placements"));
+        }
+
+        await uidField.click();
+        await delay(200);
+        await page.keyboard.type(this.username, { delay: 50 + Math.random() * 50 });
+        await delay(300);
+
+        const passwordField = await page.$('input[type="password"]');
+        if (!passwordField) {
+          return this.buildFailedResult(this.platform, query, new Error("Could not find password field on login form"));
+        }
+
+        await passwordField.click();
+        await delay(200);
+        await page.keyboard.type(this.password, { delay: 50 + Math.random() * 50 });
+        await delay(500);
+
+        const submitBtn = await page.$('input[type="submit"]');
+        if (submitBtn) {
+          console.log("[ExecutivePlacements] Clicking login button...");
+          await Promise.all([
+            page.waitForNavigation({ waitUntil: "networkidle2", timeout: 30000 }).catch(() => {}),
+            submitBtn.click()
+          ]);
+        } else {
+          await page.keyboard.press('Enter');
+          await page.waitForNavigation({ waitUntil: "networkidle2", timeout: 30000 }).catch(() => {});
+        }
+
+        await delay(2000 + Math.random() * 1000);
+
+        const postLoginUrl = page.url();
+        console.log(`[ExecutivePlacements] Post-login URL: ${postLoginUrl}`);
+
+        if (postLoginUrl.includes('login')) {
+          return this.buildFailedResult(this.platform, query, new Error("Login failed — check EP_USERNAME and EP_PASSWORD credentials"));
+        }
+
+        console.log(`[ExecutivePlacements] Login successful.`);
       }
 
-      await delay(2000 + Math.random() * 1000);
+      console.log(`[ExecutivePlacements] Navigating to CV search page...`);
 
-      const postLoginUrl = page.url();
-      console.log(`[ExecutivePlacements] Post-login URL: ${postLoginUrl}`);
-
-      const isLoggedIn = !postLoginUrl.includes('login.asp') || postLoginUrl.includes('dashboard') || postLoginUrl.includes('search') || postLoginUrl.includes('home') || postLoginUrl.includes('cv_search');
-      if (!isLoggedIn) {
-        const errorText = await page.evaluate(() => document.body?.innerText?.slice(0, 500) || '');
-        console.error(`[ExecutivePlacements] Login failed. Page text: ${errorText.slice(0, 300)}`);
-        return this.buildFailedResult(this.platform, query, new Error("Login failed — check EP_USERNAME and EP_PASSWORD credentials"));
-      }
-
-      console.log(`[ExecutivePlacements] Login successful. Navigating to CV search page...`);
+      // Navigate to the CV Search page (advanced search form)
       await page.goto(this.searchUrl, {
         waitUntil: "networkidle2",
         timeout: 30000,
       });
-      await delay(1500);
+      await delay(2000);
 
       const searchPageUrl = page.url();
       console.log(`[ExecutivePlacements] CV search page URL: ${searchPageUrl}`);
 
-      const keywordsSelectors = [
-        'input[name="keywords"]', 'input[name="Keywords"]', 'input[name="txtKeywords"]',
-        'input[name="keyword"]', 'input[name="search"]', 'input[name="q"]',
-        'textarea[name="keywords"]', 'textarea[name="Keywords"]'
-      ];
+      // Log forms and inputs for debugging
+      const pageInfo = await page.evaluate(() => {
+        const forms = Array.from(document.querySelectorAll('form')).map(f => ({
+          action: f.action, method: f.method, name: (f as any).name, id: f.id
+        }));
+        const inputs = Array.from(document.querySelectorAll('input, textarea, select')).map(el => ({
+          tag: el.tagName, name: (el as any).name, type: (el as any).type,
+          id: el.id, placeholder: (el as any).placeholder
+        }));
+        return { forms, inputs };
+      });
+      console.log(`[ExecutivePlacements] Search page forms:`, JSON.stringify(pageInfo.forms));
+      console.log(`[ExecutivePlacements] Search page inputs (first 20):`, JSON.stringify(pageInfo.inputs.slice(0, 20)));
 
-      let keywordsField: string | null = null;
-      for (const sel of keywordsSelectors) {
-        const found = await page.$(sel);
-        if (found) { keywordsField = sel; break; }
-      }
+      // Instead of fighting with the form, make a direct XHR from the browser context
+      // Build the POST body with correct params and fetch directly
+      console.log(`[ExecutivePlacements] Making direct AJAX search request...`);
 
-      if (!keywordsField) {
-        const allInputs = await page.evaluate(() => {
-          return Array.from(document.querySelectorAll('input, textarea, select')).map(el => ({
-            tag: el.tagName, name: (el as any).name, type: (el as any).type,
-            id: el.id, placeholder: (el as any).placeholder, value: (el as any).value
-          }));
-        });
-        console.log(`[ExecutivePlacements] Search page form fields:`, JSON.stringify(allInputs.slice(0, 20)));
+      // Set up request interception - modify POST data to include keywords
+      await page.setRequestInterception(true);
+      page.on('request', (request) => {
+        if (request.url().includes('cv_search_show_cvs')) {
+          let postData = request.postData() || '';
+          console.log(`[ExecutivePlacements] Intercepted POST body: ${postData.slice(0, 1000)}`);
 
-        const textInput = allInputs.find(i =>
-          (i.tag === 'INPUT' && (i.type === 'text' || !i.type)) ||
-          i.tag === 'TEXTAREA'
-        );
-        if (textInput?.name) {
-          keywordsField = `${textInput.tag.toLowerCase()}[name="${textInput.name}"]`;
+          // For searchType=4 (New Search), the site uses selectKeywordsN parameter
+          // Format keywords as Boolean: "WORD1" AND "WORD2"
+          const words = query.split(/\s+/).filter((w: string) => w.length > 0);
+          const booleanKeywords = words.map((w: string) => `"${w.toUpperCase()}"`).join(' AND ');
+          const encodedKeywords = encodeURIComponent(booleanKeywords);
+
+          // Inject selectKeywordsN with our formatted keywords
+          if (postData.includes('selectKeywordsN=&')) {
+            postData = postData.replace('selectKeywordsN=&', 'selectKeywordsN=' + encodedKeywords + '&');
+            console.log(`[ExecutivePlacements] Injected selectKeywordsN: ${booleanKeywords}`);
+          } else if (postData.includes('selectKeywordsN=')) {
+            // Already has a value, replace it
+            postData = postData.replace(/selectKeywordsN=[^&]*/, 'selectKeywordsN=' + encodedKeywords);
+            console.log(`[ExecutivePlacements] Replaced selectKeywordsN: ${booleanKeywords}`);
+          } else {
+            // Not present at all, append it
+            postData += '&selectKeywordsN=' + encodedKeywords;
+            console.log(`[ExecutivePlacements] Appended selectKeywordsN: ${booleanKeywords}`);
+          }
+
+          // Also ensure keywords param has value for fallback
+          if (postData.includes('keywords=&') || postData.match(/keywords=$/)) {
+            postData = postData.replace(/keywords=(&|$)/, 'keywords=' + encodeURIComponent(query) + '$1');
+          }
+          request.continue({ postData });
+        } else {
+          request.continue();
         }
-      }
+      });
 
-      if (keywordsField) {
-        console.log(`[ExecutivePlacements] Entering keywords in: ${keywordsField}`);
-        await page.click(keywordsField);
-        await page.evaluate((sel: string) => {
-          const el = document.querySelector(sel) as HTMLInputElement;
-          if (el) el.value = '';
-        }, keywordsField);
-        await page.keyboard.type(query, { delay: 40 + Math.random() * 40 });
-        await delay(300);
-      }
-
-      const jobTitleSelectors = [
-        'input[name="jobtitle"]', 'input[name="JobTitle"]', 'input[name="txtJobTitle"]',
-        'input[name="job_title"]', 'input[name="title"]'
-      ];
-      for (const sel of jobTitleSelectors) {
-        const found = await page.$(sel);
-        if (found) {
-          console.log(`[ExecutivePlacements] Setting job title in: ${sel}`);
-          await page.click(sel);
-          await page.evaluate((s: string) => { const el = document.querySelector(s) as HTMLInputElement; if (el) el.value = ''; }, sel);
-          await page.keyboard.type(job.title, { delay: 40 });
-          break;
-        }
-      }
-
-      const findBtn = await page.$('input[value="Find cv"]') ||
-                      await page.$('input[value="Find CVs"]') ||
-                      await page.$('input[value="Search"]') ||
-                      await page.$('input[value="Find"]') ||
-                      await page.$('input[type="submit"][value*="ind"]') ||
-                      await page.$('button[type="submit"]') ||
-                      await page.$('input[type="submit"]');
-
-      if (findBtn) {
-        console.log("[ExecutivePlacements] Clicking search button...");
-        await Promise.all([
-          page.waitForNavigation({ waitUntil: "networkidle2", timeout: 45000 }).catch(() => {}),
-          findBtn.click()
-        ]);
-      } else {
-        console.log("[ExecutivePlacements] No search button found, submitting form...");
-        await page.evaluate(() => {
-          const form = document.querySelector('form');
-          if (form) form.submit();
+      // Set up response interception to capture the AJAX result
+      const ajaxResponsePromise = new Promise<string>((resolve) => {
+        const timeout = setTimeout(() => resolve(''), 30000);
+        page.on('response', async (response) => {
+          if (response.url().includes('cv_search_show_cvs')) {
+            try {
+              const body = await response.text();
+              clearTimeout(timeout);
+              resolve(body);
+            } catch {
+              resolve('');
+            }
+          }
         });
-        await page.waitForNavigation({ waitUntil: "networkidle2", timeout: 45000 }).catch(() => {});
+      });
+
+      // Trigger the search via the page's own xmlhttpPost by setting values and calling it
+      await page.evaluate((searchQuery) => {
+        const form = document.forms.namedItem('CandidateQuery');
+        if (!form) return;
+
+        // Set start=1
+        const startInput = form.elements.namedItem('start') as HTMLInputElement;
+        if (startInput) startInput.value = '1';
+
+        // Set the keywordsOrig value
+        const keywordsOrig = form.elements.namedItem('keywordsOrig') as HTMLInputElement;
+        if (keywordsOrig) keywordsOrig.value = searchQuery;
+
+        // Also set keywordsAll in case advanced tab is active
+        const keywordsAll = form.elements.namedItem('keywordsAll') as HTMLInputElement;
+        if (keywordsAll) keywordsAll.value = searchQuery;
+
+        // Populate the selectize.js keywordsN input - this is what searchType=4 actually reads
+        const keywordsNInput = document.getElementById('keywordsN') as HTMLInputElement;
+        if (keywordsNInput) {
+          // Try to use selectize API if available
+          const $sel = (window as any).$ || (window as any).jQuery;
+          if ($sel) {
+            try {
+              const selectize = $sel('#keywordsN')[0]?.selectize;
+              if (selectize) {
+                const words = searchQuery.split(/\s+/).filter((w: string) => w.length > 0);
+                words.forEach((word: string) => {
+                  selectize.addOption({ value: word, text: word });
+                  selectize.addItem(word, true);
+                });
+                console.log('[EP] Added keywords via selectize API:', words);
+              } else {
+                // Fallback: set value directly
+                keywordsNInput.value = searchQuery;
+              }
+            } catch (e) {
+              keywordsNInput.value = searchQuery;
+            }
+          } else {
+            keywordsNInput.value = searchQuery;
+          }
+        }
+
+        // Call the site's own xmlhttpPost function
+        if (typeof (window as any).xmlhttpPost === 'function') {
+          (window as any).xmlhttpPost('cv_search_show_cvs41N.asp', true);
+        }
+      }, query);
+
+      // Wait for the AJAX response
+      const ajaxHtml = await ajaxResponsePromise;
+      console.log(`[ExecutivePlacements] AJAX response length: ${ajaxHtml.length}`);
+      // Write raw AJAX to file for debugging
+      try {
+        const fs = await import('fs');
+        fs.writeFileSync('/tmp/ep_ajax_response.html', ajaxHtml);
+        console.log(`[ExecutivePlacements] Wrote AJAX response to /tmp/ep_ajax_response.html`);
+      } catch (e) {
+        console.log(`[ExecutivePlacements] Could not write AJAX response file`);
+      }
+
+      // Extract text from HTML
+      let cvSearchText = '';
+      if (ajaxHtml.length > 50) {
+        cvSearchText = await page.evaluate((html) => {
+          const div = document.createElement('div');
+          div.innerHTML = html;
+          div.querySelectorAll('script, style').forEach(function(el) { el.remove(); });
+          return (div.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 15000);
+        }, ajaxHtml);
+      }
+      console.log(`[ExecutivePlacements] AJAX text length: ${cvSearchText.length}`);
+      console.log(`[ExecutivePlacements] AJAX text preview: ${cvSearchText.slice(0, 1000)}`);
+
+      // Use the AJAX response text directly for candidate extraction
+      if (cvSearchText.length > 200 && !cvSearchText.includes('Internal Server Error')) {
+        // Extract candidate IDs and recruiter ID from the HTML for contact detail fetching
+        const candidateIdMatches = ajaxHtml.match(/candidateID=(\d+)/g) || [];
+        const uniqueIds = [...new Set(candidateIdMatches.map((m: string) => m.replace('candidateID=', '')))];
+        const recruiterMatch = ajaxHtml.match(/recruiterID=(\d+)/);
+        const recruiterId = recruiterMatch ? recruiterMatch[1] : '';
+        console.log(`[ExecutivePlacements] Found ${uniqueIds.length} candidate IDs, recruiterID: ${recruiterId}`);
+
+        // Fetch contact details (phone + email) for each candidate
+        const contactMap: Record<string, { phone?: string; email?: string; candidateId?: string }> = {};
+        const baseUrl = 'https://www.executiveplacements.com/';
+
+        // Extract candidate names mapped to IDs using <!-- ENTRY START --> boundaries
+        const nameIdPairs: { id: string; name: string }[] = [];
+        const entries = ajaxHtml.split('<!-- ENTRY START -->').slice(1); // skip first chunk (header)
+        for (const entry of entries) {
+          // Get candidateID from the download/preview link within this entry
+          const idMatch = entry.match(/candidate=(\d+)/);
+          const nameMatch = entry.match(/<STRONG>([^<]+)<\/STRONG>/);
+          if (idMatch && nameMatch) {
+            const id = idMatch[1];
+            const name = nameMatch[1].replace(/\s+/g, ' ').trim();
+            if (name.length > 2) {
+              nameIdPairs.push({ id, name });
+            }
+          }
+        }
+        console.log(`[ExecutivePlacements] Mapped ${nameIdPairs.length} candidate name-ID pairs`);
+
+        // Fetch phone and email for top candidates (limit to avoid too many requests)
+        const topCandidateIds = uniqueIds.slice(0, Math.min(limit || 10, 15));
+        for (const candidateId of topCandidateIds) {
+          try {
+            // Fetch phone number
+            const phoneResponse = await page.evaluate(async (url: string) => {
+              try {
+                const res = await fetch(url, { credentials: 'include' });
+                return await res.text();
+              } catch { return ''; }
+            }, `${baseUrl}Show_PhoneN.asp?candidateID=${candidateId}`);
+
+            // Fetch email page
+            const emailResponse = await page.evaluate(async (url: string) => {
+              try {
+                const res = await fetch(url, { credentials: 'include' });
+                return await res.text();
+              } catch { return ''; }
+            }, `${baseUrl}Candidate_Cv_Search_EmailN10.asp?candidateID=${candidateId}&recruiterID=${recruiterId}`);
+
+            const contact: { phone?: string; email?: string; candidateId?: string } = { candidateId };
+
+            // Extract phone from response
+            const phoneMatch = phoneResponse.match(/(?:0\d{9}|\+27\d{9}|\d{3}[\s-]\d{3}[\s-]\d{4})/);
+            if (phoneMatch) contact.phone = phoneMatch[0];
+            // Also try broader phone pattern
+            if (!contact.phone) {
+              const phoneMatch2 = phoneResponse.match(/(\d[\d\s\-()]{8,15}\d)/);
+              if (phoneMatch2) contact.phone = phoneMatch2[1].trim();
+            }
+
+            // Extract email from response
+            const emailMatch = emailResponse.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+            if (emailMatch) contact.email = emailMatch[0];
+
+            if (contact.phone || contact.email) {
+              contactMap[candidateId] = contact;
+              console.log(`[ExecutivePlacements] Contact for ${candidateId}: phone=${contact.phone || 'N/A'}, email=${contact.email || 'N/A'}`);
+            }
+
+            // Small delay between requests to be respectful
+            await delay(300);
+          } catch (err) {
+            console.log(`[ExecutivePlacements] Error fetching contact for ${candidateId}:`, err);
+          }
+        }
+
+        // Extract candidates with AI first, then attach contact details by name matching
+        console.log(`[ExecutivePlacements] Using AJAX response for candidate extraction (${cvSearchText.length} chars)`);
+        const candidates = await extractCandidatesWithAI(cvSearchText, job, "Executive Placements");
+        console.log(`[ExecutivePlacements] AI extracted ${candidates.length} candidates from AJAX response`);
+
+        // Build a name-to-contact lookup from nameIdPairs + contactMap
+        const nameContactLookup: Record<string, string> = {};
+        for (const pair of nameIdPairs) {
+          const contact = contactMap[pair.id];
+          if (contact) {
+            const parts: string[] = [];
+            if (contact.phone) parts.push(contact.phone);
+            if (contact.email) parts.push(contact.email);
+            if (parts.length > 0) {
+              // Store with lowercase name for fuzzy matching
+              nameContactLookup[pair.name.toLowerCase()] = parts.join(', ');
+            }
+          }
+        }
+
+        // Attach contact info to candidates by matching names
+        for (const candidate of candidates) {
+          if (!candidate.contact || candidate.contact === 'N/A') {
+            const candidateName = (candidate.name || '').toLowerCase();
+            // Try exact match first
+            let contactInfo = nameContactLookup[candidateName];
+            // Try partial match (candidate name contains or is contained by a nameIdPair name)
+            if (!contactInfo) {
+              for (const [name, info] of Object.entries(nameContactLookup)) {
+                if (candidateName.includes(name) || name.includes(candidateName)) {
+                  contactInfo = info;
+                  break;
+                }
+                // Try matching on last name
+                const candidateLastName = candidateName.split(' ').pop() || '';
+                const pairLastName = name.split(' ').pop() || '';
+                if (candidateLastName.length > 2 && candidateLastName === pairLastName) {
+                  contactInfo = info;
+                  break;
+                }
+              }
+            }
+            if (contactInfo) {
+              candidate.contact = contactInfo;
+              console.log(`[ExecutivePlacements] Attached contact to ${candidate.name}: ${contactInfo}`);
+            }
+          }
+        }
+
+        return this.buildSuccessResult(this.platform, query, candidates, limit);
       }
 
       await delay(3000 + Math.random() * 2000);
@@ -2192,14 +2356,26 @@ export class ExecutivePlacementsScraper extends BaseBrowserScraper {
       console.log(`[ExecutivePlacements] Results page URL: ${resultsUrl}`);
 
       const resultsText = await page.evaluate(() => {
+        // First try to get content from the job-results container (AJAX loaded)
+        const resultsDiv = document.querySelector('.job-results') || document.querySelector('.boxed-layout');
+        if (resultsDiv) {
+          const clone = resultsDiv.cloneNode(true) as HTMLElement;
+          clone.querySelectorAll('script, style, select, option').forEach(el => el.remove());
+          const text = clone.textContent?.replace(/\s+/g, ' ')?.trim() || '';
+          if (text.length > 200) return text.slice(0, 50000);
+        }
+        // Fallback to full body
         const body = document.body;
         if (!body) return '';
         const clone = body.cloneNode(true) as HTMLElement;
-        clone.querySelectorAll('script, style, nav, header, footer').forEach(el => el.remove());
-        return clone.innerText?.slice(0, 15000) || '';
+        clone.querySelectorAll('script, style, nav, header, footer, select, option').forEach(el => el.remove());
+        return clone.textContent?.replace(/\s+/g, ' ')?.trim()?.slice(0, 50000) || '';
       });
 
       console.log(`[ExecutivePlacements] Results text length: ${resultsText.length}`);
+      console.log(`[ExecutivePlacements] Results text preview (start): ${resultsText.replace(/\s+/g, ' ').slice(0, 500)}`);
+      console.log(`[ExecutivePlacements] Results text preview (middle): ${resultsText.replace(/\s+/g, ' ').slice(resultsText.length / 2, resultsText.length / 2 + 1000)}`);
+      console.log(`[ExecutivePlacements] Results text preview (end): ${resultsText.replace(/\s+/g, ' ').slice(-1000)}`);
 
       if (resultsText.length < 100) {
         console.log(`[ExecutivePlacements] Very short result, may have failed. Text: ${resultsText}`);
@@ -2212,7 +2388,8 @@ export class ExecutivePlacementsScraper extends BaseBrowserScraper {
           education: string; skills: string; availability: string; link: string;
         }> = [];
 
-        const rows = document.querySelectorAll('table tr, .cv-result, .candidate-row, .search-result');
+        // Try table rows first
+        const rows = document.querySelectorAll('table tr, .cv-result, .candidate-row, .search-result, .candidateRow, .candidate');
         rows.forEach(row => {
           const cells = row.querySelectorAll('td, .cell, .field');
           const links = row.querySelectorAll('a');
@@ -2236,6 +2413,35 @@ export class ExecutivePlacementsScraper extends BaseBrowserScraper {
             }
           }
         });
+
+        // If no table results, try to find candidate-like anchor tags with info
+        if (candidates.length === 0) {
+          const allLinks = document.querySelectorAll('a[href*="cv"], a[href*="candidate"], a[href*="CV"], a[href*="profile"]');
+          allLinks.forEach(link => {
+            const text = (link.textContent || '').trim();
+            const href = (link as HTMLAnchorElement).href;
+            if (text.length > 3 && !text.toLowerCase().includes('upload') && !text.toLowerCase().includes('add')) {
+              const parent = link.closest('tr, div, li');
+              const parentText = parent?.textContent?.trim() || text;
+              candidates.push({
+                name: text,
+                title: '',
+                location: '',
+                experience: parentText.slice(0, 200),
+                education: '',
+                skills: '',
+                availability: '',
+                link: href
+              });
+            }
+          });
+        }
+
+        // Also capture raw HTML structure for debugging
+        const mainContent = document.querySelector('.content, .main, #content, main, .candidates, .results');
+        if (candidates.length === 0 && mainContent) {
+          console.log('[EP-debug] Main content HTML:', mainContent.innerHTML.slice(0, 2000));
+        }
 
         return candidates;
       });
