@@ -775,6 +775,18 @@ export default function EmployeeOnboarding() {
 
   const [selectedEmployee, setSelectedEmployee] = useState<string>(savedOnboarding.current?.selectedEmployee || "");
   const [startDate, setStartDate] = useState(savedOnboarding.current?.startDate || "");
+
+  // Listen for cross-tab candidate selection from risk overview
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.candidateId) {
+        setSelectedEmployee(detail.candidateId.toString());
+      }
+    };
+    window.addEventListener('onboarding-select-candidate', handler);
+    return () => window.removeEventListener('onboarding-select-candidate', handler);
+  }, []);
   const [requiresIT, setRequiresIT] = useState(savedOnboarding.current?.requiresIT ?? true);
   const [requiresAccess, setRequiresAccess] = useState(savedOnboarding.current?.requiresAccess ?? true);
   const [requiresEquipment, setRequiresEquipment] = useState(savedOnboarding.current?.requiresEquipment ?? true);
