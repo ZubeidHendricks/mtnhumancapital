@@ -290,6 +290,67 @@ app.get("/api/public/interview-session/:token/config", async (req, res) => {
   }
 });
 
+// PUBLIC route: upload local recording from candidate interview
+const publicRecordingUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB for audio/video
+});
+
+app.post("/api/public/interview-session/:token/upload-recording", publicRecordingUpload.single("recording"), async (req, res) => {
+  try {
+    // Dual-token lookup
+    let session = await storage.getInterviewSessionByToken(req.params.token);
+    let stage: 'voice' | 'video' = 'voice';
+    if (!session) {
+      session = await storage.getInterviewSessionByVideoToken(req.params.token);
+      stage = 'video';
+    }
+    if (!session) {
+      return res.status(404).json({ message: "Interview session not found" });
+    }
+
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ message: "No recording file provided" });
+    }
+
+    const tenantId = session.tenantId || '';
+    const sessionId = session.id;
+
+    // Check for existing recording to prevent duplicates
+    const existing = await storage.getInterviewRecordings(tenantId, sessionId, stage);
+    if (existing.length > 0) {
+      console.log(`[Interview] Recording already exists for session ${sessionId}, skipping upload`);
+      return res.json({ recording: existing[0], deduplicated: true });
+    }
+
+    const ext = file.originalname.split(".").pop() || "webm";
+    const recordingType = file.mimetype.startsWith("video/") ? "video" : "audio";
+    const filename = `${Date.now()}_${stage}.${ext}`;
+
+    const { key, size } = await recordingStorage.uploadRecording(tenantId, sessionId, filename, file.buffer, file.mimetype);
+    const mediaUrl = `/api/recordings/${key}`;
+
+    const recording = await storage.createInterviewRecording(tenantId, {
+      sessionId,
+      candidateId: session.candidateId || undefined,
+      recordingType: recordingType as "video" | "audio",
+      mediaUrl,
+      storageProvider: "local",
+      fileSize: size,
+      mimeType: file.mimetype,
+      duration: req.body.duration ? parseInt(req.body.duration) : null,
+      interviewStage: stage,
+    } as any);
+
+    console.log(`[Interview] Public recording uploaded for session ${sessionId}: ${key} (${size} bytes)`);
+    res.status(201).json(recording);
+  } catch (error) {
+    console.error("Error uploading public recording:", error);
+    res.status(500).json({ message: "Failed to upload recording" });
+  }
+});
+
 // PUBLIC route for saving interview results
 app.post("/api/public/interview-session/:token/complete", async (req, res) => {
   try {
@@ -424,6 +485,14 @@ app.post("/api/public/interview-session/:token/complete", async (req, res) => {
             }
 
             console.log(`[Interview] Hume audio ready for session ${sessionId}, downloading...`);
+
+            // Check if a recording already exists for this session+stage to prevent duplicates
+            const existingRecordings = await storage.getInterviewRecordings(tenantId, sessionId, stage);
+            if (existingRecordings.length > 0) {
+              console.log(`[Interview] Recording already exists for session ${sessionId} stage ${stage}, skipping duplicate`);
+              return;
+            }
+
             // Download and save locally
             const downloadRes = await fetch(audioData.signed_audio_url);
             if (downloadRes.ok) {

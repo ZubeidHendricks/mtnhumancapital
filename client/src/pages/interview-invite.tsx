@@ -65,6 +65,12 @@ export default function InterviewInvite() {
   const isMutedRef = useRef(false);
   const transcriptsRef = useRef<Transcript[]>([]);
   const humeChatIdRef = useRef<string | null>(null);
+  // Local recording: mix mic + AI playback into one synchronized stream
+  const recordingContextRef = useRef<AudioContext | null>(null);
+  const recordingDestRef = useRef<MediaStreamAudioDestinationNode | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordingChunksRef = useRef<Blob[]>([]);
+  const micSourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
 
   // Auto-scroll video transcript
   useEffect(() => {
@@ -279,14 +285,24 @@ export default function InterviewInvite() {
     isPlayingRef.current = true;
     const buffer = audioQueueRef.current.shift()!;
 
-    if (!playbackContextRef.current || playbackContextRef.current.state === "closed") {
-      playbackContextRef.current = new AudioContext();
+    // Use the recording context if available so AI audio is captured in the local recording
+    const ctx = recordingContextRef.current || playbackContextRef.current;
+    if (!ctx || ctx.state === "closed") {
+      if (!playbackContextRef.current || playbackContextRef.current.state === "closed") {
+        playbackContextRef.current = new AudioContext();
+      }
     }
-    const ctx = playbackContextRef.current;
+    const activeCtx = (recordingContextRef.current && recordingContextRef.current.state !== "closed")
+      ? recordingContextRef.current
+      : playbackContextRef.current!;
 
-    const source = ctx.createBufferSource();
+    const source = activeCtx.createBufferSource();
     source.buffer = buffer;
-    source.connect(ctx.destination);
+    source.connect(activeCtx.destination);
+    // Also route to recording destination so AI audio is captured
+    if (recordingDestRef.current && recordingContextRef.current === activeCtx) {
+      source.connect(recordingDestRef.current);
+    }
     source.onended = () => playNextInQueue();
     source.start();
   }, []);
@@ -301,12 +317,21 @@ export default function InterviewInvite() {
         view[i] = binaryString.charCodeAt(i);
       }
 
-      if (!playbackContextRef.current || playbackContextRef.current.state === "closed") {
-        playbackContextRef.current = new AudioContext();
+      // Prefer recording context so decoded buffers match the context used for playback
+      const ctx = (recordingContextRef.current && recordingContextRef.current.state !== "closed")
+        ? recordingContextRef.current
+        : playbackContextRef.current;
+      if (!ctx || ctx.state === "closed") {
+        if (!playbackContextRef.current || playbackContextRef.current.state === "closed") {
+          playbackContextRef.current = new AudioContext();
+        }
       }
+      const activeCtx = (recordingContextRef.current && recordingContextRef.current.state !== "closed")
+        ? recordingContextRef.current
+        : playbackContextRef.current!;
 
       // Use decodeAudioData to properly handle WAV container format
-      playbackContextRef.current.decodeAudioData(arrayBuffer, (decodedBuffer) => {
+      activeCtx.decodeAudioData(arrayBuffer, (decodedBuffer) => {
         audioQueueRef.current.push(decodedBuffer);
         if (!isPlayingRef.current) {
           playNextInQueue();
@@ -383,7 +408,32 @@ CLOSING (CRITICAL):
           }
         }, 500);
 
-        // Start microphone to begin streaming audio
+        // Set up local recording context BEFORE starting microphone (synchronous).
+        // This ensures AI audio is captured from the very first chunk, even if
+        // getUserMedia takes longer than expected.
+        const recCtx = new AudioContext();
+        if (recCtx.state === "suspended") {
+          recCtx.resume().catch(() => {});
+        }
+        recordingContextRef.current = recCtx;
+        const dest = recCtx.createMediaStreamDestination();
+        recordingDestRef.current = dest;
+        recordingChunksRef.current = [];
+        const mediaRecorder = new MediaRecorder(dest.stream, {
+          mimeType: MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+            ? "audio/webm;codecs=opus"
+            : "audio/webm",
+        });
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            recordingChunksRef.current.push(event.data);
+          }
+        };
+        mediaRecorder.start(1000);
+        mediaRecorderRef.current = mediaRecorder;
+        console.log("[Recording] Local mixed recording started");
+
+        // Start microphone and connect it to the recording destination
         startMicrophone(ws);
 
         toast.success("Connected! The interviewer will begin shortly.");
@@ -442,7 +492,7 @@ CLOSING (CRITICAL):
         }
       };
 
-      ws.onclose = (event) => {
+      ws.onclose = async (event) => {
         console.log("WebSocket closed:", event.code, event.reason);
         setIsConnected(false);
         if (endedRef.current || stateRef.current === "completed" || stateRef.current === "error") {
@@ -450,21 +500,54 @@ CLOSING (CRITICAL):
         }
 
         // If interview was in progress (we have transcripts), complete it gracefully
-        // rather than bouncing back to the start screen
         if (transcriptsRef.current.length > 0) {
           endedRef.current = true;
           setState("completed");
-          // Save results
+
+          // Collect local recording before cleanup
+          let localBlob: Blob | null = null;
+          if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+            localBlob = await new Promise<Blob | null>((resolve) => {
+              const rec = mediaRecorderRef.current!;
+              rec.onstop = () => {
+                const chunks = recordingChunksRef.current;
+                resolve(chunks.length > 0 ? new Blob(chunks, { type: rec.mimeType || "audio/webm" }) : null);
+              };
+              rec.stop();
+            });
+            mediaRecorderRef.current = null;
+          }
+
+          const hasLocal = localBlob && localBlob.size > 0;
+
+          // Upload local recording if available
+          if (hasLocal) {
+            try {
+              const formData = new FormData();
+              formData.append("recording", localBlob!, "recording.webm");
+              formData.append("duration", String(startTimeRef.current ? Math.floor((Date.now() - startTimeRef.current) / 1000) : 0));
+              formData.append("sourceType", "local_mixed");
+              await axios.post(`/api/public/interview-session/${token}/upload-recording`, formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+                timeout: 300000,
+              });
+            } catch (err) {
+              console.error("[Recording] Failed to upload local recording on ws close:", err);
+            }
+          }
+
           axios.post(`/api/public/interview-session/${token}/complete`, {
             transcripts: transcriptsRef.current,
             duration: startTimeRef.current ? Math.floor((Date.now() - startTimeRef.current) / 1000) : 0,
             emotionAnalysis: { lastEmotion: currentEmotion },
-            humeChatId: humeChatIdRef.current,
+            humeChatId: hasLocal ? undefined : humeChatIdRef.current,
           }).then(() => {
             toast.success("Interview completed successfully!");
           }).catch((err) => {
             console.error("Error saving interview:", err);
           });
+
+          recordingChunksRef.current = [];
         } else {
           setState("ready");
           toast.info("Connection ended. Click Start Interview to reconnect.");
@@ -517,10 +600,20 @@ CLOSING (CRITICAL):
 
       processor.onaudioprocess = (event) => {
         if (ws.readyState !== WebSocket.OPEN) return;
-        // Mute microphone while AI is speaking to prevent echo and interruptions
-        if (isMutedRef.current) return;
 
         const float32Data = event.inputBuffer.getChannelData(0);
+
+        // While AI is speaking, send silence to Hume to prevent echo
+        if (isMutedRef.current) {
+          const silence = new Float32Array(float32Data.length);
+          const base64Silence = float32ToBase64PCM(silence);
+          ws.send(JSON.stringify({
+            type: "audio_input",
+            data: base64Silence,
+          }));
+          return;
+        }
+
         const base64Audio = float32ToBase64PCM(float32Data);
 
         ws.send(JSON.stringify({
@@ -528,6 +621,15 @@ CLOSING (CRITICAL):
           data: base64Audio,
         }));
       };
+
+      // Connect mic stream to the recording destination (created in ws.onopen)
+      if (recordingContextRef.current && recordingDestRef.current) {
+        const micSource = recordingContextRef.current.createMediaStreamSource(stream);
+        micSource.connect(recordingDestRef.current);
+        micSourceNodeRef.current = micSource;
+        console.log("[Recording] Mic connected to recording destination");
+      }
+
     } catch (error) {
       console.error("Error accessing microphone:", error);
       toast.error("Please allow microphone access to continue");
@@ -537,6 +639,20 @@ CLOSING (CRITICAL):
   };
 
   const cleanup = () => {
+    // Stop local recording
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+    }
+    if (micSourceNodeRef.current) {
+      micSourceNodeRef.current.disconnect();
+      micSourceNodeRef.current = null;
+    }
+    if (recordingContextRef.current && recordingContextRef.current.state !== "closed") {
+      recordingContextRef.current.close().catch(() => {});
+      recordingContextRef.current = null;
+    }
+    recordingDestRef.current = null;
+
     // Stop microphone
     if (processorRef.current) {
       processorRef.current.disconnect();
@@ -564,21 +680,62 @@ CLOSING (CRITICAL):
 
   const endInterview = async () => {
     endedRef.current = true;
+
+    // Collect local recording before cleanup destroys it
+    let localRecordingBlob: Blob | null = null;
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      localRecordingBlob = await new Promise<Blob | null>((resolve) => {
+        const recorder = mediaRecorderRef.current!;
+        recorder.onstop = () => {
+          const chunks = recordingChunksRef.current;
+          if (chunks.length > 0) {
+            resolve(new Blob(chunks, { type: recorder.mimeType || "audio/webm" }));
+          } else {
+            resolve(null);
+          }
+        };
+        recorder.stop();
+      });
+      // Prevent cleanup from stopping it again
+      mediaRecorderRef.current = null;
+    }
+
     cleanup();
     setIsConnected(false);
     setState("completed");
+
+    // Upload local recording if available (skip Hume's reconstruction)
+    const hasLocalRecording = localRecordingBlob && localRecordingBlob.size > 0;
+    if (hasLocalRecording) {
+      try {
+        const formData = new FormData();
+        formData.append("recording", localRecordingBlob!, "recording.webm");
+        formData.append("duration", String(duration));
+        formData.append("sourceType", "local_mixed");
+        await axios.post(`/api/public/interview-session/${token}/upload-recording`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+          timeout: 300000,
+        });
+        console.log("[Recording] Local recording uploaded successfully");
+      } catch (err) {
+        console.error("[Recording] Failed to upload local recording:", err);
+      }
+    }
 
     try {
       await axios.post(`/api/public/interview-session/${token}/complete`, {
         transcripts,
         duration,
         emotionAnalysis: { lastEmotion: currentEmotion },
-        humeChatId: humeChatIdRef.current,
+        // Only pass humeChatId if we don't have a local recording (fallback to Hume)
+        humeChatId: hasLocalRecording ? undefined : humeChatIdRef.current,
       });
       toast.success("Interview completed successfully!");
     } catch (error) {
       console.error("Error saving interview:", error);
     }
+
+    recordingChunksRef.current = [];
   };
 
   // Cleanup on unmount

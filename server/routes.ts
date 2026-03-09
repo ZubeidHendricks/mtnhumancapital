@@ -7955,10 +7955,15 @@ Format your response as JSON:
         return res.status(404).json({ message: "Audio not yet available", status: audioData.status });
       }
 
-      // Save as a recording entry pointing to the signed URL
+      // Save as a recording entry pointing to the signed URL (skip if one already exists)
       const session = await storage.getInterviewSession(req.tenant.id, req.params.id);
       if (!session) {
         return res.status(404).json({ message: "Interview session not found" });
+      }
+
+      const existingRecordings = await storage.getInterviewRecordings(req.tenant.id, req.params.id);
+      if (existingRecordings.length > 0) {
+        return res.json({ recording: existingRecordings[0], signedUrl: audioData.signed_audio_url, deduplicated: true });
       }
 
       const recording = await storage.createInterviewRecording(req.tenant.id, {

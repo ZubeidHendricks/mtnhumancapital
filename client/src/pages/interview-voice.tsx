@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { interviewService, recordingService } from "@/lib/api";
+import { interviewService } from "@/lib/api";
 import { HumeVisualizer } from "@/components/voice-agent/hume-visualizer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,9 +27,7 @@ export default function InterviewVoice() {
   const socketRef = useRef<WebSocket | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const recordingChunksRef = useRef<Blob[]>([]);
   const recordingStartTimeRef = useRef<number>(0);
-  const isMutedRef = useRef(false);
   const humeChatIdRef = useRef<string | null>(null);
 
   const { data: voiceConfig, isLoading, error } = useQuery({
@@ -39,28 +37,31 @@ export default function InterviewVoice() {
     retry: 1
   });
 
-  useEffect(() => {
-    if (!voiceConfig || !isStarted || isConnected) return;
+  // Use a ref to track connection state inside the effect without triggering re-runs.
+  // Previously, having isConnected in the dependency array caused the cleanup function
+  // to close the WebSocket immediately after onopen set isConnected=true.
+  const isConnectedRef = useRef(false);
 
-    let hasConnected = false;
+  useEffect(() => {
+    if (!voiceConfig || !isStarted || isConnectedRef.current) return;
+
+    let cancelled = false;
 
     const connectToHume = async () => {
       try {
-        // Don't use config_id - let session settings handle the prompt
         const wsUrl = `wss://api.hume.ai/v0/evi/chat?access_token=${voiceConfig.accessToken}`;
-        
+
         console.log("Connecting to Hume AI...");
-        // Set start time before WebSocket opens so timestamps are captured from the first message
         recordingStartTimeRef.current = Date.now();
         const ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
+          if (cancelled) { ws.close(); return; }
           console.log("Connected to Hume AI");
-          hasConnected = true;
+          isConnectedRef.current = true;
           setIsConnected(true);
           setState("listening");
-          
-          // Send session settings to initialize the conversation
+
           const sessionSettings = {
             type: "session_settings",
             prompt: {
@@ -92,7 +93,7 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
             },
             custom_session_id: `interview-${Date.now()}`
           };
-          
+
           ws.send(JSON.stringify(sessionSettings));
           console.log("Session settings sent");
           toast.success("Connected to AI interviewer");
@@ -102,7 +103,7 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
           try {
             const message = JSON.parse(event.data);
             console.log("Received message:", message);
-            
+
             if (message.type === "chat_metadata") {
               console.log("Chat initialized:", message);
               if (message.chat_id) {
@@ -134,7 +135,6 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
               setState("processing");
             } else if (message.type === "audio_output") {
               console.log("Audio output received, length:", message.data?.length);
-              isMutedRef.current = true; // Mute mic while AI speaks
               if (message.data) {
                 playAudio(message.data);
               }
@@ -155,15 +155,13 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
 
         ws.onclose = (event) => {
           console.log("Disconnected from Hume AI. Code:", event.code, "Reason:", event.reason);
+          isConnectedRef.current = false;
           setIsConnected(false);
-          setIsStarted(false); // Prevent reconnection loop
+          setIsStarted(false);
           setState("idle");
-          
-          // Only show error if connection dropped unexpectedly
-          if (event.code !== 1000 && hasConnected) {
+
+          if (event.code !== 1000 && isConnectedRef.current) {
             toast.error(`Connection closed: ${event.reason || 'Connection lost'}`);
-          } else if (!hasConnected) {
-            toast.error("Failed to establish connection. Please try again.");
           }
         };
 
@@ -171,28 +169,21 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
 
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const mediaRecorder = new MediaRecorder(stream);
-        recordingChunksRef.current = [];
         recordingStartTimeRef.current = Date.now();
 
+        // Send live audio to Hume continuously via WebSocket.
+        // Hume EVI handles echo cancellation and turn-taking on their end.
         mediaRecorder.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            // Accumulate chunks for later upload
-            recordingChunksRef.current.push(event.data);
-
-            // Mute mic while AI is speaking to prevent echo
-            if (isMutedRef.current) return;
-
-            if (ws.readyState === WebSocket.OPEN) {
-              const reader = new FileReader();
-              reader.onload = () => {
-                const base64Audio = (reader.result as string).split(',')[1];
-                ws.send(JSON.stringify({
-                  type: "audio_input",
-                  data: base64Audio
-                }));
-              };
-              reader.readAsDataURL(event.data);
-            }
+          if (event.data.size > 0 && ws.readyState === WebSocket.OPEN) {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const base64Audio = (reader.result as string).split(',')[1];
+              ws.send(JSON.stringify({
+                type: "audio_input",
+                data: base64Audio
+              }));
+            };
+            reader.readAsDataURL(event.data);
           }
         };
 
@@ -210,6 +201,7 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
     connectToHume();
 
     return () => {
+      cancelled = true;
       if (socketRef.current) {
         socketRef.current.close();
       }
@@ -217,7 +209,7 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
         mediaRecorderRef.current.stop();
       }
     };
-  }, [voiceConfig, isStarted, isConnected]);
+  }, [voiceConfig, isStarted]);
 
   const playAudio = (base64Audio: string) => {
     try {
@@ -239,7 +231,6 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
         source.start(0);
         source.onended = () => {
           setState("listening");
-          isMutedRef.current = false; // Unmute mic after AI finishes speaking
         };
       });
     } catch (err) {
@@ -258,31 +249,13 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
     setIsConnected(false);
     toast.success("Interview ended");
 
-    // Upload accumulated recording and complete interview
-    const chunks = recordingChunksRef.current;
     const urlParams = new URLSearchParams(window.location.search);
     const sessionId = urlParams.get("sessionId") || urlParams.get("id") || `voice-${Date.now()}`;
     const durationSec = Math.round((Date.now() - recordingStartTimeRef.current) / 1000);
 
-    if (chunks.length > 0) {
-      setIsUploading(true);
-      try {
-        const blob = new Blob(chunks, { type: "audio/webm" });
-        await recordingService.uploadRecording(sessionId, blob, {
-          sourceType: "browser_mediarecorder",
-          duration: durationSec,
-          candidateId: urlParams.get("candidateId") || undefined,
-        });
-        toast.success("Recording saved successfully");
-      } catch (err) {
-        console.error("Failed to upload recording:", err);
-        toast.error("Failed to save recording. You may upload it manually later.");
-      }
-    }
-
     // Send transcripts + analysis to complete the interview session
     if (transcripts.length > 0) {
-      if (!isUploading) setIsUploading(true);
+      setIsUploading(true);
       try {
         const mappedTranscripts = transcripts.map((t) => ({
           role: t.role === "user" ? "candidate" : "ai",
@@ -302,18 +275,19 @@ At the start, ask the user to describe who they want you to roleplay as (role, r
       }
     }
 
-    // Fetch Hume audio recording if we have the chat ID
+    // The full mixed recording (AI + candidate) is fetched from Hume's servers.
+    // We no longer upload the browser mic-only recording to avoid duplicate/overlapping audio.
     if (humeChatIdRef.current) {
       try {
         await interviewService.fetchHumeAudio(sessionId, humeChatIdRef.current);
         toast.success("Interview recording saved");
       } catch (err) {
         console.error("Failed to fetch Hume audio:", err);
+        toast.error("Recording will be fetched in the background. Check back shortly.");
       }
     }
 
     setIsUploading(false);
-    recordingChunksRef.current = [];
   };
 
   if (error) {

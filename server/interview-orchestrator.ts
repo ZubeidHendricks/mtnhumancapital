@@ -152,6 +152,11 @@ export class InterviewOrchestrator {
     if (!updated) return null;
 
     if (recordingUrl) {
+      // Check for existing recording to prevent duplicates
+      const existingRecordings = await storage.getInterviewRecordings(tenantId, sessionId, stage);
+      if (existingRecordings.length > 0) {
+        console.log(`[Interview] Recording already exists for session ${sessionId} stage ${stage}, skipping duplicate`);
+      } else {
       let finalMediaUrl = recordingUrl;
       let finalStorageProvider = 'hume';
       let fileSize: number | null = null;
@@ -188,6 +193,7 @@ export class InterviewOrchestrator {
         fileSize,
         interviewStage: stage,
       } as any);
+      }
     }
 
     await this.saveTranscriptSegments(tenantId, sessionId, transcripts, stage);
