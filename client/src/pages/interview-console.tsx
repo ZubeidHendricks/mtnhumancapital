@@ -932,36 +932,6 @@ export default function InterviewConsole() {
                         )}
                       </div>
                     </div>
-                  ) : !details?.session?.videoStatus || details.session.videoStatus === "pending" || details.session.videoStatus === "sent" ? (
-                    <div className="border rounded-lg bg-card/50 p-6 flex flex-col items-center gap-4">
-                      <div className="w-16 h-16 rounded-full bg-muted/30 flex items-center justify-center">
-                        <Video className="h-7 w-7 text-foreground" />
-                      </div>
-                      <div className="text-center">
-                        <p className="font-medium">Start Video Interview</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Launch a live AI video interview with {details?.session?.candidateName || "the candidate"}.
-                          You'll be able to observe the session in real-time.
-                        </p>
-                      </div>
-                      <Button
-                        onClick={startLiveVideoInterview}
-                        disabled={isCreatingVideo}
-                        className="rounded-full px-6"
-                      >
-                        {isCreatingVideo ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Creating Session...
-                          </>
-                        ) : (
-                          <>
-                            <Video className="h-4 w-4 mr-2" />
-                            Start Video Interview
-                          </>
-                        )}
-                      </Button>
-                    </div>
                   ) : null}
                 </div>
               )}

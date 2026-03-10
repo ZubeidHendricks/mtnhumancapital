@@ -236,6 +236,8 @@ export default function RecruitmentAgent() {
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [isRefreshingShortlist, setIsRefreshingShortlist] = useState(false);
 
+  const [hadRunningSessions, setHadRunningSessions] = useState(false);
+
   // Auto-scroll agent activity feed to bottom when new messages arrive
   useEffect(() => {
     agentActivityEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -276,7 +278,7 @@ export default function RecruitmentAgent() {
       const response = await api.get("/recruitment-sessions");
       return response.data;
     },
-    refetchInterval: isSimulating ? 2000 : 5000,
+    refetchInterval: (isSimulating || hadRunningSessions) ? 2000 : 10000,
   });
 
   const { data: candidates } = useQuery<Candidate[]>({
@@ -286,6 +288,7 @@ export default function RecruitmentAgent() {
       const body = response.data;
       return Array.isArray(body) ? body : body.data ?? [];
     },
+    refetchInterval: (isSimulating || hadRunningSessions) ? 3000 : false,
   });
 
   const { data: interestChecks } = useQuery<any[]>({
@@ -295,6 +298,15 @@ export default function RecruitmentAgent() {
       return response.data;
     },
   });
+
+  // When a running session completes, immediately refresh candidates
+  useEffect(() => {
+    const hasRunning = sessions?.some(s => s.status === "Running") || false;
+    if (hadRunningSessions && !hasRunning) {
+      queryClient.invalidateQueries({ queryKey: candidatesKey });
+    }
+    setHadRunningSessions(hasRunning);
+  }, [sessions]);
 
   const updateCandidateMutation = useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: any }) =>
@@ -733,6 +745,26 @@ export default function RecruitmentAgent() {
               </div>
             </CardHeader>
             <CardContent>
+              {(isSimulating || runningSessions.length > 0) && (
+                <div className="mb-4 p-4 rounded-lg border border-yellow-500/30 bg-yellow-500/5">
+                  <div className="flex items-center gap-3">
+                    <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-yellow-600 dark:text-yellow-400">
+                        AI agents are sourcing candidates...
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Matches will appear here automatically as they are found.
+                      </p>
+                    </div>
+                    <div className="flex gap-1">
+                      {[0,1,2].map(i => (
+                        <div key={i} className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" style={{ animationDelay: `${i * 0.3}s` }} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
               {topCandidates.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {topCandidates.map((candidate, index) => {
@@ -826,11 +858,31 @@ export default function RecruitmentAgent() {
                     );
                   })}
                 </div>
-              ) : (
+              ) : !isSimulating && runningSessions.length === 0 ? (
                 <div className="text-center py-16 text-gray-500 dark:text-gray-500">
                   <Bot className="h-16 w-16 mx-auto mb-4 opacity-20" />
                   <h3 className="text-lg font-medium text-foreground mb-1">No candidates yet</h3>
                   <p className="text-sm max-w-md mx-auto">Select a job position above and deploy AI agents to find and rank top candidates automatically.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {[1,2,3].map(i => (
+                    <div key={i} className="p-5 rounded-xl border border-border bg-card animate-pulse">
+                      <div className="flex items-start gap-4 mb-3">
+                        <div className="h-12 w-12 rounded-full bg-muted" />
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 bg-muted rounded w-3/4" />
+                          <div className="h-3 bg-muted rounded w-1/2" />
+                        </div>
+                      </div>
+                      <div className="h-8 bg-muted rounded w-24 mb-3" />
+                      <div className="flex gap-1">
+                        <div className="h-5 bg-muted rounded w-16" />
+                        <div className="h-5 bg-muted rounded w-14" />
+                        <div className="h-5 bg-muted rounded w-18" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </CardContent>
