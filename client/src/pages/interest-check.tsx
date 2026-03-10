@@ -127,9 +127,9 @@ export default function InterestCheck() {
   if (alreadyResponded && finalStatus) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="bg-gradient-to-r from-teal-600 to-blue-600 text-white">
+        <div className="bg-gradient-to-r from-[#FFCC00] to-[#FFD700] text-black">
           <div className="max-w-2xl mx-auto px-4 py-8 text-center">
-            <p className="text-white/80 text-sm mb-1">{data.companyName}</p>
+            <p className="text-black/70 text-sm mb-1">{data.companyName}</p>
             <h1 className="text-2xl font-bold">Career Opportunity</h1>
           </div>
         </div>
@@ -164,11 +164,11 @@ export default function InterestCheck() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-gradient-to-r from-teal-600 to-blue-600 text-white">
+      <div className="bg-gradient-to-r from-[#FFCC00] to-[#FFD700] text-black">
         <div className="max-w-2xl mx-auto px-4 py-8 text-center">
-          <p className="text-white/80 text-sm mb-1">{data.companyName}</p>
+          <p className="text-black/70 text-sm mb-1">{data.companyName}</p>
           <h1 className="text-2xl font-bold">Career Opportunity</h1>
-          <p className="text-white/90 mt-2">Hello, {data.candidateName}</p>
+          <p className="text-black/80 mt-2">Hello, {data.candidateName}</p>
         </div>
       </div>
 

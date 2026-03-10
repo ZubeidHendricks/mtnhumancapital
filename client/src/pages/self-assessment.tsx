@@ -176,7 +176,7 @@ export default function SelfAssessment() {
   };
 
   const allScoresProvided = data?.assignments.every((a) => scores[a.id]?.score > 0) ?? false;
-  const primaryColor = data?.tenantConfig?.primaryColor || "#3b82f6";
+  const primaryColor = data?.tenantConfig?.primaryColor || "#FFCC00";
 
   if (isLoading) {
     return (

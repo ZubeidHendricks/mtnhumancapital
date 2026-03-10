@@ -209,17 +209,17 @@ export default function OnboardingUpload() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-gradient-to-r from-teal-600 to-blue-600 text-white">
+      <div className="bg-gradient-to-r from-[#FFCC00] to-[#FFD700] text-black">
         <div className="max-w-2xl mx-auto px-4 py-8 text-center">
           {tenantConfig?.companyName && (
-            <p className="text-white/80 text-sm mb-1">{tenantConfig.companyName}</p>
+            <p className="text-black/70 text-sm mb-1">{tenantConfig.companyName}</p>
           )}
           <h1 className="text-2xl font-bold">Document Upload Portal</h1>
-          <p className="text-white/90 mt-2">
+          <p className="text-black/80 mt-2">
             Welcome, {candidate.fullName}{candidate.role ? ` - ${candidate.role}` : ""}
           </p>
           {expiresAt && (
-            <p className="text-white/70 text-xs mt-2">
+            <p className="text-black/60 text-xs mt-2">
               This link expires on {format(new Date(expiresAt), "dd MMM yyyy 'at' HH:mm")}
             </p>
           )}
@@ -236,7 +236,7 @@ export default function OnboardingUpload() {
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2.5">
               <div
-                className="bg-gradient-to-r from-teal-500 to-blue-500 h-2.5 rounded-full transition-all duration-500"
+                className="bg-gradient-to-r from-[#FFCC00] to-[#FFD700] h-2.5 rounded-full transition-all duration-500"
                 style={{ width: `${progressPct}%` }}
               />
             </div>
