@@ -116,6 +116,37 @@ export default function InterviewVideo() {
   const consoleTranscripts = interviewDetails?.transcripts || [];
   const consoleRecordings = interviewDetails?.recordings || [];
 
+  // Re-analyze scoring when original analysis failed
+  const [isReanalyzing, setIsReanalyzing] = useState(false);
+  const reanalyzeMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/interviews/${tavusSessionId}/reanalyze-score`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stage: "video" }),
+      });
+      if (!response.ok) throw new Error("Failed to re-analyze");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/interviews", tavusSessionId] });
+      setIsReanalyzing(false);
+    },
+    onError: () => { setIsReanalyzing(false); },
+  });
+
+  useEffect(() => {
+    if (
+      latestFeedback?.rationale === "Automated analysis was not available. Please review manually." &&
+      !isReanalyzing &&
+      !reanalyzeMutation.isPending &&
+      tavusSessionId
+    ) {
+      setIsReanalyzing(true);
+      reanalyzeMutation.mutate();
+    }
+  }, [latestFeedback?.rationale, tavusSessionId]);
+
   // Auto-scroll transcript
   useEffect(() => {
     transcriptEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -504,9 +535,29 @@ export default function InterviewVideo() {
                       {latestFeedback.rationale && (
                         <div className="space-y-2">
                           <h4 className="font-semibold">AI Rationale</h4>
-                          <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
-                            {latestFeedback.rationale}
-                          </p>
+                          {latestFeedback.rationale === "Automated analysis was not available. Please review manually." && isReanalyzing ? (
+                            <div className="flex items-center gap-3 text-sm text-muted-foreground bg-muted p-3 rounded-lg">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Re-running AI analysis...
+                            </div>
+                          ) : latestFeedback.rationale === "Automated analysis was not available. Please review manually." ? (
+                            <div className="text-sm text-muted-foreground bg-muted p-3 rounded-lg space-y-2">
+                              <p>{latestFeedback.rationale}</p>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => { setIsReanalyzing(true); reanalyzeMutation.mutate(); }}
+                                disabled={reanalyzeMutation.isPending}
+                              >
+                                <RefreshCw className="h-3 w-3 mr-2" />
+                                Retry Analysis
+                              </Button>
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
+                              {latestFeedback.rationale}
+                            </p>
+                          )}
                         </div>
                       )}
 

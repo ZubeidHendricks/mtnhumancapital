@@ -48,6 +48,7 @@ export default function InterviewInvite() {
   const [isCreatingVideoSession, setIsCreatingVideoSession] = useState(false);
   const [videoTranscripts, setVideoTranscripts] = useState<Transcript[]>([]);
   const [postInterviewStatus, setPostInterviewStatus] = useState<"idle" | "scoring" | "scored" | "error">("idle");
+  const [pendingVideoUrl, setPendingVideoUrl] = useState<string | null>(null);
   const dailyCallRef = useRef<DailyCall | null>(null);
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const videoTranscriptEndRef = useRef<HTMLDivElement>(null);
@@ -124,24 +125,15 @@ export default function InterviewInvite() {
 
   // ==================== VIDEO INTERVIEW (TAVUS) ====================
 
-  const startVideoInterview = async () => {
-    try {
-      setIsCreatingVideoSession(true);
-      setState("loading");
+  // Once isVideoActive is true and container is rendered, create the Daily frame
+  useEffect(() => {
+    if (!pendingVideoUrl || !videoContainerRef.current) return;
+    const sessionUrl = pendingVideoUrl;
+    setPendingVideoUrl(null);
 
-      const response = await axios.post(`/api/public/interview-session/${token}/video-session`);
-      const { sessionUrl, conversationId, interviewId } = response.data;
-
-      setVideoSessionUrl(sessionUrl);
-      setVideoConversationId(conversationId);
-      setVideoInterviewId(interviewId);
-      setVideoTranscripts([]);
-
-      // Use Daily.co createFrame to render only the AI persona and capture transcripts
+    (async () => {
       try {
-        if (!videoContainerRef.current) throw new Error("Video container not ready");
-
-        const call = DailyIframe.createFrame(videoContainerRef.current, {
+        const call = DailyIframe.createFrame(videoContainerRef.current!, {
           iframeStyle: {
             width: "100%",
             height: "100%",
@@ -186,27 +178,47 @@ export default function InterviewInvite() {
           }
         });
 
-        await call.join({ url: sessionUrl, videoSource: false, audioSource: false });
-        console.log("[Tavus] Joined with Daily.co frame — transcript capture active, local video hidden");
+        await call.join({ url: sessionUrl, videoSource: false, audioSource: true });
+        console.log("[Tavus] Joined with Daily.co frame — mic enabled, transcript capture active, local video hidden");
+
+        startTimeRef.current = Date.now();
+        setState("listening");
+        setIsCreatingVideoSession(false);
+        toast.success("Video interview started! You'll be speaking with Charles Molapisi, Group CTIO at MTN.");
       } catch (err) {
-        console.warn("[Tavus] createFrame failed:", err);
+        console.error("[Tavus] createFrame failed:", err);
+        setState("error");
+        setErrorMessage("Failed to initialize video frame. Please refresh and try again.");
+        setIsCreatingVideoSession(false);
       }
+    })();
+  }, [pendingVideoUrl, isVideoActive]);
 
+  const startVideoInterview = async () => {
+    try {
+      setIsCreatingVideoSession(true);
+      setState("loading");
+
+      const response = await axios.post(`/api/public/interview-session/${token}/video-session`);
+      const { sessionUrl, conversationId, interviewId } = response.data;
+
+      setVideoSessionUrl(sessionUrl);
+      setVideoConversationId(conversationId);
+      setVideoInterviewId(interviewId);
+      setVideoTranscripts([]);
+
+      // Set video active first so container renders, then the useEffect above will create the frame
       setIsVideoActive(true);
-      startTimeRef.current = Date.now();
-
-      setState("listening");
-      toast.success("Video interview started! You'll be speaking with Charles Molapisi, Group CTIO at MTN.");
+      setPendingVideoUrl(sessionUrl);
     } catch (error: any) {
       console.error("Error starting video interview:", error);
       setErrorMessage(error.response?.data?.message || "Failed to start video interview");
       setState("error");
+      setIsCreatingVideoSession(false);
       if (dailyCallRef.current) {
         try { await dailyCallRef.current.destroy(); } catch {}
         dailyCallRef.current = null;
       }
-    } finally {
-      setIsCreatingVideoSession(false);
     }
   };
 

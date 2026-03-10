@@ -8688,6 +8688,25 @@ Format your response as JSON:
     }
   });
 
+  // Re-run AI scoring analysis (used when original analysis failed e.g. due to API key issues)
+  app.post("/api/interviews/:sessionId/reanalyze-score", async (req, res) => {
+    try {
+      const { stage } = req.body || {};
+      const result = await interviewOrchestrator.reanalyzeInterview(
+        req.tenant.id,
+        req.params.sessionId,
+        stage
+      );
+      if (!result) {
+        return res.status(404).json({ message: "Session or transcripts not found" });
+      }
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error in score re-analysis:", error);
+      res.status(500).json({ message: error.message || "Failed to re-analyze scores" });
+    }
+  });
+
   // Get sentiment timeline
   app.post("/api/interviews/:sessionId/sentiment-timeline", async (req, res) => {
     try {
