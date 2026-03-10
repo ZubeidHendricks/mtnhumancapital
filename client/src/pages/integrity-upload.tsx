@@ -184,7 +184,7 @@ export default function IntegrityUpload() {
       <div className="bg-gradient-to-r from-[#FFCC00] to-[#FFD700] text-black">
         <div className="max-w-2xl mx-auto px-4 py-8 text-center">
           {tenantConfig?.companyName && (
-            <p className="text-black/70 text-sm mb-1">{tenantConfig.companyName}</p>
+            <p className="text-black/70 text-sm font-bold mb-1">{tenantConfig.companyName}</p>
           )}
           <h1 className="text-2xl font-bold">Integrity Document Upload</h1>
           <p className="text-black/80 mt-2">

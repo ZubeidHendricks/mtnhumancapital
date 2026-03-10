@@ -129,7 +129,7 @@ export default function InterestCheck() {
       <div className="min-h-screen bg-gray-50">
         <div className="bg-gradient-to-r from-[#FFCC00] to-[#FFD700] text-black">
           <div className="max-w-2xl mx-auto px-4 py-8 text-center">
-            <p className="text-black/70 text-sm mb-1">{data.companyName}</p>
+            <p className="text-black/70 text-sm font-bold mb-1">{data.companyName}</p>
             <h1 className="text-2xl font-bold">Career Opportunity</h1>
           </div>
         </div>
@@ -166,7 +166,7 @@ export default function InterestCheck() {
       {/* Header */}
       <div className="bg-gradient-to-r from-[#FFCC00] to-[#FFD700] text-black">
         <div className="max-w-2xl mx-auto px-4 py-8 text-center">
-          <p className="text-black/70 text-sm mb-1">{data.companyName}</p>
+          <p className="text-black/70 text-sm font-bold mb-1">{data.companyName}</p>
           <h1 className="text-2xl font-bold">Career Opportunity</h1>
           <p className="text-black/80 mt-2">Hello, {data.candidateName}</p>
         </div>
