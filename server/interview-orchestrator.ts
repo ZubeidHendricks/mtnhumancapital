@@ -284,6 +284,13 @@ export class InterviewOrchestrator {
       .map(t => `${t.role}: ${t.emotion}`)
       .join(', ');
 
+    if (!transcriptText.trim()) {
+      console.warn('[Interview] No transcript text to analyze — returning default analysis');
+      return this.getDefaultAnalysis();
+    }
+
+    console.log(`[Interview] Running AI analysis for ${session.jobTitle} (${transcripts.length} segments, ${transcriptText.length} chars)`);
+
     try {
       const response = await this.groq.chat.completions.create({
         model: "openai/gpt-oss-120b",
@@ -332,10 +339,13 @@ Return ONLY valid JSON, no additional text.`
       const content = response.choices[0]?.message?.content || '';
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]) as InterviewAnalysis;
+        const analysis = JSON.parse(jsonMatch[0]) as InterviewAnalysis;
+        console.log(`[Interview] AI analysis complete — score: ${analysis.overallScore}, decision: ${analysis.decision}`);
+        return analysis;
       }
-    } catch (error) {
-      console.error('[Interview] Analysis error:', error);
+      console.warn('[Interview] AI response did not contain valid JSON:', content.substring(0, 200));
+    } catch (error: any) {
+      console.error('[Interview] Analysis error:', error?.message || error, error?.status ? `(HTTP ${error.status})` : '');
     }
 
     return this.getDefaultAnalysis();
@@ -386,6 +396,66 @@ Return ONLY valid JSON, no additional text.`
       },
       predictionConfidence: analysis.decisionConfidence,
     });
+  }
+
+  async reanalyzeInterview(
+    tenantId: string,
+    sessionId: string,
+    stage?: 'voice' | 'video'
+  ): Promise<InterviewAnalysis | null> {
+    const session = await storage.getInterviewSession(tenantId, sessionId);
+    if (!session) return null;
+
+    const transcripts = await storage.getInterviewTranscripts(tenantId, sessionId, stage);
+    if (!transcripts || transcripts.length === 0) return null;
+
+    const segments: TranscriptSegment[] = transcripts.map(t => ({
+      role: t.speakerRole as 'candidate' | 'ai' | 'interviewer',
+      text: t.text,
+      timestamp: t.startTime ?? undefined,
+      emotion: t.sentiment ?? undefined,
+      emotionScores: t.emotionScores as Record<string, number> | undefined,
+    }));
+
+    const analysis = await this.analyzeInterview(session, segments);
+
+    // Update existing feedback or create new
+    const feedbackData = {
+      evaluatorType: 'ai',
+      decision: analysis.decision,
+      decisionConfidence: analysis.decisionConfidence,
+      overallScore: analysis.overallScore,
+      technicalScore: analysis.technicalScore,
+      communicationScore: analysis.communicationScore,
+      cultureFitScore: analysis.cultureFitScore,
+      problemSolvingScore: analysis.problemSolvingScore,
+      strengths: analysis.strengths,
+      weaknesses: analysis.weaknesses,
+      keyInsights: analysis.keyInsights,
+      rationale: analysis.rationale,
+      recommendations: analysis.recommendations,
+      flaggedConcerns: analysis.flaggedConcerns,
+      competencyScores: analysis.competencyScores,
+      interviewStage: stage,
+    } as any;
+
+    const existingFeedback = await storage.getInterviewFeedback(tenantId, sessionId, stage);
+    if (existingFeedback.length > 0 && existingFeedback[0].evaluatorType === 'ai' && !existingFeedback[0].isFinalized) {
+      await storage.updateInterviewFeedback(tenantId, existingFeedback[0].id, feedbackData);
+    } else {
+      feedbackData.sessionId = sessionId;
+      feedbackData.candidateId = session.candidateId || undefined;
+      await storage.createInterviewFeedback(tenantId, feedbackData);
+    }
+
+    if (stage === 'video') {
+      await storage.updateInterviewSession(tenantId, sessionId, { videoScore: analysis.overallScore } as any);
+    } else {
+      await storage.updateInterviewSession(tenantId, sessionId, { overallScore: analysis.overallScore, feedback: analysis.rationale });
+    }
+
+    console.log(`[Interview] Re-analysis complete for ${sessionId} (${stage || 'all'}) — score: ${analysis.overallScore}`);
+    return analysis;
   }
 
   async getInterviewDetails(tenantId: string, sessionId: string, stage?: 'voice' | 'video'): Promise<{

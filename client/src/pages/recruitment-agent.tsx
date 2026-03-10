@@ -1092,7 +1092,7 @@ export default function RecruitmentAgent() {
             </DialogDescription>
           </DialogHeader>
 
-          <ScrollArea className="max-h-[65vh] pr-4">
+          <div className="max-h-[65vh] overflow-y-auto overflow-x-hidden pr-2">
             {(() => {
               const shortlisted = candidates
                 ?.filter(c => c.stage === "Shortlisted" && (activeJobId ? c.jobId === activeJobId : true))
@@ -1113,36 +1113,36 @@ export default function RecruitmentAgent() {
               }
 
               return (
-                <div className="space-y-3 py-4">
+                <div className="space-y-3 py-4 overflow-hidden min-w-0">
                   {shortlisted.map((candidate) => {
                     const metadata = candidate.metadata as any;
                     return (
                       <div
                         key={candidate.id}
-                        className="flex items-center gap-4 p-4 rounded-lg border border-border bg-muted/50 hover:border-[#FFCB00]/30 transition-all"
+                        className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/50 hover:border-[#FFCB00]/30 transition-all overflow-hidden w-full min-w-0"
                       >
                         <Avatar className="h-11 w-11 bg-[#0A0A0A] flex-shrink-0">
                           <AvatarFallback className="text-white text-sm font-bold bg-transparent">
                             {candidate.fullName?.split(' ').map(n => n[0]).join('') || '?'}
                           </AvatarFallback>
                         </Avatar>
-                        <div className="flex-1 min-w-0">
+                        <div className="min-w-0 max-w-[35%] overflow-hidden shrink-0">
                           <h4 className="font-semibold truncate">{candidate.fullName}</h4>
                           <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{candidate.role || 'No role specified'}</p>
                           {(candidate.location || metadata?.location) && (
-                            <p className="text-xs text-gray-500 dark:text-gray-500 flex items-center gap-1 mt-0.5">
-                              <MapPin className="h-3 w-3" /> {candidate.location || metadata?.location}
+                            <p className="text-xs text-gray-500 dark:text-gray-500 flex items-center gap-1 mt-0.5 truncate">
+                              <MapPin className="h-3 w-3 shrink-0" /> {candidate.location || metadata?.location}
                             </p>
                           )}
                         </div>
-                        <div className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-sm font-semibold ${getMatchColor(candidate.match || 0)}`}>
-                          {candidate.match || 0}%
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-2 flex-1 justify-end">
+                          <div className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-sm font-semibold shrink-0 ${getMatchColor(candidate.match || 0)}`}>
+                            {candidate.match || 0}%
+                          </div>
                           <Button
                             size="sm"
                             variant="outline"
-                            className="border-border hover:bg-muted h-8 text-xs"
+                            className="border-border hover:bg-muted h-8 text-xs shrink-0"
                             onClick={() => {
                               setShowShortlistDialog(false);
                               handleCandidateClick(candidate);
@@ -1158,7 +1158,7 @@ export default function RecruitmentAgent() {
                               return (
                                 <Button
                                   size="sm"
-                                  className="bg-[#FFCB00] hover:bg-[#E6B800] text-black h-8 text-xs"
+                                  className="bg-[#FFCB00] hover:bg-[#E6B800] text-black h-8 text-xs shrink-0"
                                   data-testid={`ai-interview-${candidate.id}`}
                                   onClick={() => {
                                     setInviteCandidate(candidate);
@@ -1180,7 +1180,7 @@ export default function RecruitmentAgent() {
                               return (
                                 <Button
                                   size="sm"
-                                  className="bg-blue-600 hover:bg-blue-500 text-white h-8 text-xs"
+                                  className="bg-blue-600 hover:bg-blue-500 text-white h-8 text-xs shrink-0"
                                   data-testid={`interest-check-${candidate.id}`}
                                   onClick={() => {
                                     setInterestCheckCandidate(candidate);
@@ -1196,7 +1196,7 @@ export default function RecruitmentAgent() {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="border-red-300 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 h-8 text-xs"
+                            className="border-red-300 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 h-8 text-xs shrink-0"
                             data-testid={`remove-shortlist-${candidate.id}`}
                             onClick={async () => {
                               setRemovingId(String(candidate.id));
@@ -1227,7 +1227,7 @@ export default function RecruitmentAgent() {
                 </div>
               );
             })()}
-          </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
 

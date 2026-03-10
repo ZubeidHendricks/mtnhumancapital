@@ -2223,7 +2223,7 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
         custom_greeting: customGreeting,
         properties: {
           enable_recording: true,
-          apply_greenscreen: true,
+          apply_greenscreen: false,
         }
       };
 
@@ -8685,6 +8685,25 @@ Format your response as JSON:
     } catch (error: any) {
       console.error("Error in re-analysis:", error);
       res.status(500).json({ message: error.message || "Failed to re-analyze" });
+    }
+  });
+
+  // Re-run AI scoring analysis (used when original analysis failed e.g. due to API key issues)
+  app.post("/api/interviews/:sessionId/reanalyze-score", async (req, res) => {
+    try {
+      const { stage } = req.body || {};
+      const result = await interviewOrchestrator.reanalyzeInterview(
+        req.tenant.id,
+        req.params.sessionId,
+        stage
+      );
+      if (!result) {
+        return res.status(404).json({ message: "Session or transcripts not found" });
+      }
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error in score re-analysis:", error);
+      res.status(500).json({ message: error.message || "Failed to re-analyze scores" });
     }
   });
 

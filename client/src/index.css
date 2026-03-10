@@ -237,6 +237,10 @@
   .dark h1, .dark h2 {
     color: #FFCB00;
   }
+  /* Public portal headers: keep black text on yellow banners even in dark mode */
+  .dark .text-black h1, .dark .text-black h2 {
+    color: inherit;
+  }
   strong, b {
     font-weight: 700;
   }

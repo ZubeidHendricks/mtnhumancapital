@@ -432,6 +432,29 @@ export default function InterviewConsole() {
     },
   });
 
+  // Re-analyze scoring when original analysis failed
+  const [isReanalyzing, setIsReanalyzing] = useState(false);
+  const reanalyzeMutation = useMutation({
+    mutationFn: async (stage?: string) => {
+      const response = await fetch(`/api/interviews/${selectedSession}/reanalyze-score`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stage }),
+      });
+      if (!response.ok) throw new Error("Failed to re-analyze");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/interviews", selectedSession] });
+      setIsReanalyzing(false);
+      toast({ title: "Analysis Complete", description: "AI analysis has been updated successfully." });
+    },
+    onError: (error: any) => {
+      setIsReanalyzing(false);
+      toast({ title: "Re-analysis Failed", description: error.message || "Could not complete analysis. Please try again.", variant: "destructive" });
+    },
+  });
+
   // Candidates query for search tab (API returns { data, total, page, limit })
   const { data: candidatesRaw } = useQuery<{ data: CandidateResult[] }>({
     queryKey: ["/api/candidates"],
@@ -583,6 +606,19 @@ export default function InterviewConsole() {
   };
 
   const latestFeedback = details?.feedback?.[0];
+
+  // Auto-trigger re-analysis when failed analysis is detected
+  useEffect(() => {
+    if (
+      latestFeedback?.rationale === "Automated analysis was not available. Please review manually." &&
+      !isReanalyzing &&
+      !reanalyzeMutation.isPending &&
+      selectedSession
+    ) {
+      setIsReanalyzing(true);
+      reanalyzeMutation.mutate(currentStage);
+    }
+  }, [latestFeedback?.rationale, selectedSession, currentStage]);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -1006,9 +1042,29 @@ export default function InterviewConsole() {
                           {latestFeedback.rationale && (
                             <div className="space-y-2">
                               <h4 className="font-semibold">AI Rationale</h4>
-                              <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
-                                {latestFeedback.rationale}
-                              </p>
+                              {latestFeedback.rationale === "Automated analysis was not available. Please review manually." && isReanalyzing ? (
+                                <div className="flex items-center gap-3 text-sm text-muted-foreground bg-muted p-3 rounded-lg">
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                  Re-running AI analysis...
+                                </div>
+                              ) : latestFeedback.rationale === "Automated analysis was not available. Please review manually." ? (
+                                <div className="text-sm text-muted-foreground bg-muted p-3 rounded-lg space-y-2">
+                                  <p>{latestFeedback.rationale}</p>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => { setIsReanalyzing(true); reanalyzeMutation.mutate(currentStage); }}
+                                    disabled={reanalyzeMutation.isPending}
+                                  >
+                                    <RefreshCw className="h-3 w-3 mr-2" />
+                                    Retry Analysis
+                                  </Button>
+                                </div>
+                              ) : (
+                                <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
+                                  {latestFeedback.rationale}
+                                </p>
+                              )}
                             </div>
                           )}
 

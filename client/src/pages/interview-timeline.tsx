@@ -88,6 +88,7 @@ interface SessionData {
 
 // Utility functions
 function formatMs(ms: number): string {
+  if (!isFinite(ms) || isNaN(ms)) return "00:00";
   const totalSec = Math.floor(ms / 1000);
   const min = Math.floor(totalSec / 60);
   const sec = totalSec % 60;
@@ -201,6 +202,7 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
       const firstRecording = recordings[0];
       if (firstRecording.mediaUrl && audioRef.current.src !== window.location.origin + firstRecording.mediaUrl) {
         audioRef.current.src = firstRecording.mediaUrl;
+        audioRef.current.load();
       }
     }
   }, [recordings]);
@@ -367,7 +369,7 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
   }, []);
 
   const handleLoadedMetadata = useCallback(() => {
-    if (audioRef.current) {
+    if (audioRef.current && isFinite(audioRef.current.duration)) {
       setTotalDurationMs(audioRef.current.duration * 1000);
     }
   }, []);
@@ -400,8 +402,12 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
     (t) => (t.startTime || 0) <= currentTimeMs && (t.endTime || Infinity) >= currentTimeMs
   );
 
-  // Duration from session or audio
-  const displayDuration = totalDurationMs || (session?.duration ? session.duration * 1000 : 0);
+  // Duration: prefer audio metadata, then recording DB field, then session field
+  const recordingDurationMs = recordings?.[0]?.duration ? recordings[0].duration * 1000 : 0;
+  const sessionDurationMs = session?.duration ? session.duration * 1000 : 0;
+  const displayDuration = (isFinite(totalDurationMs) && totalDurationMs > 0)
+    ? totalDurationMs
+    : (recordingDurationMs > 0 ? recordingDurationMs : sessionDurationMs);
 
   return (
     <div className={embedded ? "bg-background" : "min-h-screen bg-background"}>
@@ -487,6 +493,7 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
           <div className="border-b p-4 bg-card">
             <audio
               ref={audioRef}
+              preload="metadata"
               onTimeUpdate={handleTimeUpdate}
               onLoadedMetadata={handleLoadedMetadata}
               onEnded={() => setIsPlaying(false)}
@@ -495,7 +502,7 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
               <Button variant="ghost" size="icon" onClick={() => seekTo(Math.max(0, currentTimeMs - 10000))}>
                 <SkipBack className="h-4 w-4" />
               </Button>
-              <Button variant="default" size="icon" onClick={togglePlay}>
+              <Button size="icon" onClick={togglePlay} className="bg-[#FFCB05] hover:bg-[#FFCB05]/90 text-black">
                 {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
               </Button>
               <Button variant="ghost" size="icon" onClick={() => seekTo(currentTimeMs + 10000)}>
@@ -572,7 +579,7 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
                 key={type}
                 variant={tagFilter === type ? "default" : "ghost"}
                 size="sm"
-                className="h-6 text-xs px-2"
+                className={`h-6 text-xs px-2 ${tagFilter === type ? "bg-[#FFCB05] hover:bg-[#FFCB05]/90 text-black" : ""}`}
                 onClick={() => setTagFilter(type)}
               >
                 {type === "all" ? "All" : type.replace("auto_", "").replace("_", " ")}
