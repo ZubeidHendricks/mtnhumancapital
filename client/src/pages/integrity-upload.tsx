@@ -79,16 +79,16 @@ function DocumentCard({
   };
 
   return (
-    <Card className={doc.status === "verified" ? "border-blue-200 bg-blue-50/30" : doc.status === "received" ? "border-green-200 bg-green-50/30" : ""}>
+    <Card className={`${doc.status === "verified" ? "border-blue-200 bg-blue-50/30" : doc.status === "received" ? "border-green-200 bg-green-50/30" : "bg-white"}`}>
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
-              <span className="font-medium text-sm">{doc.description || doc.documentType}</span>
+              <FileText className="w-4 h-4 text-gray-500 shrink-0" />
+              <span className="font-medium text-sm text-gray-900">{doc.description || doc.documentType}</span>
               <StatusBadge status={doc.status} />
             </div>
-            <div className="flex gap-3 mt-1 ml-6 text-xs text-muted-foreground">
+            <div className="flex gap-3 mt-1 ml-6 text-xs text-gray-500">
               {doc.receivedAt && (
                 <span>Received: {format(new Date(doc.receivedAt), "dd MMM yyyy 'at' HH:mm")}</span>
               )}
@@ -108,7 +108,7 @@ function DocumentCard({
                   size="sm"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  className="bg-[#0d9488] hover:bg-[#0d9488]/90 text-white border-[#0d9488]"
+                  className="bg-[#FFCB00] hover:bg-[#E6B800] text-black border-[#FFCB00] font-semibold"
                 >
                   {uploading ? (
                     <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Uploading...</>
@@ -152,7 +152,7 @@ export default function IntegrityUpload() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
-          <p className="mt-3 text-muted-foreground">Loading upload portal...</p>
+          <p className="mt-3 text-gray-500">Loading upload portal...</p>
         </div>
       </div>
     );
@@ -165,8 +165,8 @@ export default function IntegrityUpload() {
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
             <AlertCircle className="w-12 h-12 mx-auto text-destructive mb-3" />
-            <h2 className="text-lg font-semibold mb-2">Unable to Load Portal</h2>
-            <p className="text-muted-foreground text-sm">{message}</p>
+            <h2 className="text-lg font-semibold mb-2 text-gray-900">Unable to Load Portal</h2>
+            <p className="text-gray-500 text-sm">{message}</p>
           </CardContent>
         </Card>
       </div>
@@ -203,8 +203,8 @@ export default function IntegrityUpload() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Upload Progress</span>
-              <span className="text-sm text-muted-foreground">{completedCount} of {documentRequirements.length} documents</span>
+              <span className="text-sm font-medium text-gray-900">Upload Progress</span>
+              <span className="text-sm text-gray-500">{completedCount} of {documentRequirements.length} documents</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2.5">
               <div
@@ -230,7 +230,7 @@ export default function IntegrityUpload() {
 
         {/* Document list */}
         <div>
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
             Required Documents
           </h2>
           <div className="space-y-2">
@@ -246,7 +246,7 @@ export default function IntegrityUpload() {
         </div>
 
         {/* Help text */}
-        <p className="text-xs text-center text-muted-foreground pt-4">
+        <p className="text-xs text-center text-gray-500 pt-4">
           Accepted formats: PDF, JPG, PNG, Word documents (max 10MB).
           If you have questions, please contact HR.
         </p>

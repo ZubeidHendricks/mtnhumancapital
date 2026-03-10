@@ -296,7 +296,7 @@ export class OnboardingAgent {
             : '';
           const uploadButtonHtml = uploadPortalUrl
             ? `<div style="text-align:center;margin:16px 0;">
-        <a href="${uploadPortalUrl}" style="display:inline-block;background:linear-gradient(135deg,#0d9488,#2563eb);color:white;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:bold;">Upload Your Document</a>
+        <a href="${uploadPortalUrl}" style="display:inline-block;background:linear-gradient(135deg,#FFCB00,#E6B800);color:#000000;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;">Upload Your Document</a>
       </div>`
             : '';
           const uploadTextInfo = uploadPortalUrl
@@ -432,7 +432,7 @@ export class OnboardingAgent {
 
         const uploadButtonHtml = uploadPortalUrl
           ? `<div style="text-align:center;margin:16px 0;">
-      <a href="${uploadPortalUrl}" style="display:inline-block;background:linear-gradient(135deg,#0d9488,#2563eb);color:white;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:bold;">Upload Your Documents</a>
+      <a href="${uploadPortalUrl}" style="display:inline-block;background:linear-gradient(135deg,#FFCB00,#E6B800);color:#000000;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;">Upload Your Documents</a>
     </div>`
           : '';
 

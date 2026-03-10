@@ -2959,7 +2959,7 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
 
           const uploadButtonHtml = uploadLink
             ? `<div style="text-align:center;margin:24px 0;">
-                <a href="${uploadLink}" style="display:inline-block;background:linear-gradient(135deg,#0d9488,#2563eb);color:white;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">Upload Your Document</a>
+                <a href="${uploadLink}" style="display:inline-block;background:linear-gradient(135deg,#FFCB00,#E6B800);color:#000000;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:600;">Upload Your Document</a>
               </div>
               <p style="font-size:12px;color:#9ca3af;text-align:center;">This link expires in 14 days. If you need a new link, please contact HR.</p>`
             : '';
@@ -2968,9 +2968,9 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
             to: candidate.email,
             subject: `Document Reminder - ${docName}`,
             html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
-              <div style="background:linear-gradient(135deg,#0d9488,#2563eb);padding:30px;border-radius:12px 12px 0 0;text-align:center;">
-                <h1 style="color:white;margin:0;font-size:24px;">Document Reminder</h1>
-                <p style="color:rgba(255,255,255,0.9);margin:10px 0 0 0;">Background Verification - ${candidate.fullName}</p>
+              <div style="background:linear-gradient(135deg,#FFCB00,#FFD633);padding:30px;border-radius:12px 12px 0 0;text-align:center;">
+                <h1 style="color:#000000;margin:0;font-size:24px;">Document Reminder</h1>
+                <p style="color:rgba(0,0,0,0.7);margin:10px 0 0 0;">Background Verification - ${candidate.fullName}</p>
               </div>
               <div style="background:#ffffff;border:1px solid #e5e7eb;border-top:none;padding:30px;border-radius:0 0 12px 12px;">
                 <p style="font-size:16px;color:#374151;">Dear ${candidate.fullName},</p>
@@ -3193,7 +3193,7 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
       const uploadInstruction = uploadLink ? `\n\nYou can upload your documents here: ${uploadLink}` : "";
       const uploadButtonHtml = uploadLink
         ? `<div style="text-align:center;margin:24px 0;">
-            <a href="${uploadLink}" style="display:inline-block;background:linear-gradient(135deg,#0d9488,#2563eb);color:white;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">Upload Your Documents</a>
+            <a href="${uploadLink}" style="display:inline-block;background:linear-gradient(135deg,#FFCB00,#E6B800);color:#000000;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:600;">Upload Your Documents</a>
           </div>
           <p style="font-size:12px;color:#9ca3af;text-align:center;">This link expires in 14 days. If you need a new link, please contact HR.</p>`
         : '';
@@ -3209,9 +3209,9 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
       const reminderMessage = `Hi ${candidate.fullName},\n\nThis is a friendly reminder that we're still waiting for the following documents to complete your background verification:\n\n${docList}${uploadInstruction}\n\nPlease submit these documents at your earliest convenience.`;
 
       const styledEmailHtml = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
-        <div style="background:linear-gradient(135deg,#0d9488,#2563eb);padding:30px;border-radius:12px 12px 0 0;text-align:center;">
-          <h1 style="color:white;margin:0;font-size:24px;">${isInitialRequest ? "Document Request" : "Document Reminder"}</h1>
-          <p style="color:rgba(255,255,255,0.9);margin:10px 0 0 0;">Background Verification - ${candidate.fullName}</p>
+        <div style="background:linear-gradient(135deg,#FFCB00,#FFD633);padding:30px;border-radius:12px 12px 0 0;text-align:center;">
+          <h1 style="color:#000000;margin:0;font-size:24px;">${isInitialRequest ? "Document Request" : "Document Reminder"}</h1>
+          <p style="color:rgba(0,0,0,0.7);margin:10px 0 0 0;">Background Verification - ${candidate.fullName}</p>
         </div>
         <div style="background:#ffffff;border:1px solid #e5e7eb;border-top:none;padding:30px;border-radius:0 0 12px 12px;">
           <p style="font-size:16px;color:#374151;">Dear ${candidate.fullName},</p>
@@ -4428,7 +4428,7 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
       </table>
     </div>
     <div style="text-align:center;margin:24px 0;">
-      <a href="${uploadPortalUrl}" style="display:inline-block;background:linear-gradient(135deg,#0d9488,#2563eb);color:white;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">Upload Your Documents</a>
+      <a href="${uploadPortalUrl}" style="display:inline-block;background:linear-gradient(135deg,#FFCB00,#E6B800);color:#000000;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:600;">Upload Your Documents</a>
     </div>
     <p style="font-size:12px;color:#9ca3af;text-align:center;">This link expires in 14 days. If you need a new link, please contact HR.</p>` : '';
 
@@ -4482,9 +4482,9 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
           body: `Dear ${candidate.fullName},\n\nWelcome to the team! We're excited to have you join us.\n\n${emailAttachments.length > 0 ? `Please find attached your onboarding documents (${emailAttachments.length} file${emailAttachments.length > 1 ? 's' : ''}). Review them carefully.\n\n` : ''}${docRequests.length > 0 ? `As part of your onboarding, we need the following documents from you:\n\n${docListText}\n\nYou can upload your documents securely using this link:\n${uploadPortalUrl}\n\nThis link expires in 14 days.\n\n` : ''}Best regards,\nHR Team`,
           html: `
 <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
-  <div style="background:linear-gradient(135deg,#0d9488,#2563eb);padding:30px;border-radius:12px 12px 0 0;text-align:center;">
-    <h1 style="color:white;margin:0;font-size:24px;">Welcome to the Team!</h1>
-    <p style="color:rgba(255,255,255,0.9);margin:10px 0 0 0;">${candidate.fullName} - ${candidate.role || 'New Team Member'}</p>
+  <div style="background:linear-gradient(135deg,#FFCB00,#FFD633);padding:30px;border-radius:12px 12px 0 0;text-align:center;">
+    <h1 style="color:#000000;margin:0;font-size:24px;">Welcome to the Team!</h1>
+    <p style="color:rgba(0,0,0,0.7);margin:10px 0 0 0;">${candidate.fullName} - ${candidate.role || 'New Team Member'}</p>
   </div>
   <div style="background:#ffffff;border:1px solid #e5e7eb;border-top:none;padding:30px;border-radius:0 0 12px 12px;">
     <p style="font-size:16px;color:#374151;">Dear ${candidate.fullName},</p>

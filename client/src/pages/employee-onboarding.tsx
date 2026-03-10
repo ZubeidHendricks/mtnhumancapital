@@ -776,17 +776,7 @@ export default function EmployeeOnboarding() {
   const [selectedEmployee, setSelectedEmployee] = useState<string>(savedOnboarding.current?.selectedEmployee || "");
   const [startDate, setStartDate] = useState(savedOnboarding.current?.startDate || "");
 
-  // Listen for cross-tab candidate selection from risk overview
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      if (detail?.candidateId) {
-        setSelectedEmployee(detail.candidateId.toString());
-      }
-    };
-    window.addEventListener('onboarding-select-candidate', handler);
-    return () => window.removeEventListener('onboarding-select-candidate', handler);
-  }, []);
+  // Listen for cross-tab candidate selection from risk overview (moved after workflows query)
   const [requiresIT, setRequiresIT] = useState(savedOnboarding.current?.requiresIT ?? true);
   const [requiresAccess, setRequiresAccess] = useState(savedOnboarding.current?.requiresAccess ?? true);
   const [requiresEquipment, setRequiresEquipment] = useState(savedOnboarding.current?.requiresEquipment ?? true);
@@ -804,6 +794,33 @@ export default function EmployeeOnboarding() {
     queryFn: () => onboardingService.getWorkflows(),
     retry: 1,
   });
+
+  // Listen for cross-tab candidate selection from risk overview
+  useEffect(() => {
+    const handler = async (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.candidateId) {
+        const val = detail.candidateId.toString();
+        setSelectedEmployee(val);
+        // Auto-fill start date (same logic as Select onValueChange)
+        try {
+          const res = await api.get(`/offers/candidate/${val}`);
+          if (res.data?.startDate) {
+            setStartDate(new Date(res.data.startDate).toISOString().split('T')[0]);
+            return;
+          }
+        } catch {}
+        const existingWorkflow = workflows.find((w: OnboardingWorkflow) => w.candidateId === val);
+        if (existingWorkflow?.startDate) {
+          setStartDate(new Date(existingWorkflow.startDate).toISOString().split('T')[0]);
+        } else {
+          setStartDate(new Date().toISOString().split('T')[0]);
+        }
+      }
+    };
+    window.addEventListener('onboarding-select-candidate', handler);
+    return () => window.removeEventListener('onboarding-select-candidate', handler);
+  }, [workflows]);
 
   const { data: candidates = [], isLoading: loadingCandidates, isFetching: fetchingCandidates } = useQuery({
     queryKey: candidatesKey,
