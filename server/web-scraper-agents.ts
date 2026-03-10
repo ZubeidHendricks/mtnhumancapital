@@ -1,6 +1,7 @@
 import Groq from "groq-sdk";
 import puppeteer, { Browser, Page } from "puppeteer";
 import type { Job } from "@shared/schema";
+import { storage } from "./storage";
 import { skillsMatch, extractSkillsFromText } from "./skill-taxonomy";
 import { scraperHealth } from "./scraper-health";
 
@@ -138,9 +139,9 @@ Return [] if no real candidates found.`
 
     if (jsonMatch) {
       const candidates = JSON.parse(jsonMatch[0]);
-      return candidates
+      return await Promise.all(candidates
         .filter((c: any) => c.name && c.name !== "Unknown" && c.name.length > 2)
-        .map((c: any) => ({
+        .map(async (c: any) => ({
           name: c.name,
           title: c.title || undefined,
           skills: Array.isArray(c.skills) ? c.skills : [],
@@ -148,8 +149,8 @@ Return [] if no real candidates found.`
           location: c.location || undefined,
           contact: c.contact || undefined,
           source: source,
-          matchScore: calculateMatchScore(c, job)
-        }));
+          matchScore: await calculateMatchScore(c, job)
+        })));
     }
     return [];
   } catch (error) {
@@ -158,13 +159,25 @@ Return [] if no real candidates found.`
   }
 }
 
-function calculateMatchScore(candidate: any, job: Job): number {
-  // Gather required skills from job.skillsRequired + extracted from description
+async function calculateMatchScore(candidate: any, job: Job): Promise<number> {
+  // Gather required skills from jobSkills DB table + job.skillsRequired + extracted from description
   const jobReqs = ((job as any).skillsRequired || []).map((r: string) => r.toLowerCase());
   const descriptionSkills = extractSkillsFromText(
     `${job.description || ''} ${(job as any).requirements || ''}`
   ).map(s => s.toLowerCase());
-  const allRequired = Array.from(new Set([...jobReqs, ...descriptionSkills]));
+
+  // Pull skills from jobSkills DB table for authoritative skill data
+  let dbSkills: string[] = [];
+  try {
+    if (job.id && (job as any).tenantId) {
+      const jobSkillRows = await storage.getJobSkills((job as any).tenantId, job.id);
+      dbSkills = jobSkillRows.map(js => js.skill.name.toLowerCase());
+    }
+  } catch (e) {
+    // DB lookup is best-effort — fall through to existing sources
+  }
+
+  const allRequired = Array.from(new Set([...dbSkills, ...jobReqs, ...descriptionSkills]));
 
   const candidateSkills = (candidate.skills || []).map((s: string) => s.toLowerCase());
 
@@ -811,7 +824,7 @@ export class PNetScraper extends BaseBrowserScraper {
                 experience: c.experience || undefined,
                 source: this.platform,
                 sourceUrl: c.profileUrl ? (c.profileUrl.startsWith('http') ? c.profileUrl : `https://www.pnet.co.za${c.profileUrl}`) : undefined,
-                matchScore: calculateMatchScore({ skills: c.skills?.split(/[,;|]/) || [], experience: c.experience }, job),
+                matchScore: await calculateMatchScore({ skills: c.skills?.split(/[,;|]/) || [], experience: c.experience }, job),
                 rawText: c.rawText
               });
             }
@@ -2522,9 +2535,9 @@ export class ExecutivePlacementsScraper extends BaseBrowserScraper {
       let candidates: ScrapedCandidate[] = [];
 
       if (tableData.length > 0) {
-        candidates = tableData
+        candidates = await Promise.all(tableData
           .filter(row => row.name && row.name.length > 2 && !row.name.toLowerCase().includes('name') && !row.name.toLowerCase().includes('keyword'))
-          .map(row => ({
+          .map(async row => ({
             name: row.name,
             title: row.title || undefined,
             skills: row.skills ? row.skills.split(/[,;]/).map(s => s.trim()).filter(s => s.length > 1) : [],
@@ -2533,8 +2546,8 @@ export class ExecutivePlacementsScraper extends BaseBrowserScraper {
             contact: undefined,
             source: "Executive Placements",
             sourceUrl: row.link || `https://www.executiveplacements.com`,
-            matchScore: calculateMatchScore({ name: row.name, title: row.title, skills: row.skills?.split(/[,;]/) || [], experience: row.experience }, job)
-          }));
+            matchScore: await calculateMatchScore({ name: row.name, title: row.title, skills: row.skills?.split(/[,;]/) || [], experience: row.experience }, job)
+          })));
       }
 
       if (candidates.length === 0 && resultsText.length > 200) {
