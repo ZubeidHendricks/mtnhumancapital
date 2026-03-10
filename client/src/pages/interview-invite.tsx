@@ -120,7 +120,7 @@ export default function InterviewInvite() {
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isConnected, isVideoActive]);
+  }, [isConnected, isVideoActive, state]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
