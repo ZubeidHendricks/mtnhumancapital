@@ -2223,7 +2223,7 @@ ${results.filter(r => r.status === 'success').map(r => `- ${r.fullName}`).join('
         custom_greeting: customGreeting,
         properties: {
           enable_recording: true,
-          apply_greenscreen: true,
+          apply_greenscreen: false,
         }
       };
 

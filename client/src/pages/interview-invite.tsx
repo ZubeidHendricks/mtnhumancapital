@@ -52,6 +52,11 @@ export default function InterviewInvite() {
   const dailyCallRef = useRef<DailyCall | null>(null);
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const videoTranscriptEndRef = useRef<HTMLDivElement>(null);
+  // Local audio recording for video interviews (mixes candidate mic + Tavus avatar audio)
+  const videoMediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const videoRecordingChunksRef = useRef<Blob[]>([]);
+  const videoRecordingCtxRef = useRef<AudioContext | null>(null);
+  const videoRecordingDestRef = useRef<MediaStreamAudioDestinationNode | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const captureContextRef = useRef<AudioContext | null>(null);
   const playbackContextRef = useRef<AudioContext | null>(null);
@@ -125,7 +130,7 @@ export default function InterviewInvite() {
 
   // ==================== VIDEO INTERVIEW (TAVUS) ====================
 
-  // Once isVideoActive is true and container is rendered, create the Daily frame
+  // Once isVideoActive is true and container is rendered, create the Daily call object
   useEffect(() => {
     if (!pendingVideoUrl || !videoContainerRef.current) return;
     const sessionUrl = pendingVideoUrl;
@@ -133,18 +138,84 @@ export default function InterviewInvite() {
 
     (async () => {
       try {
-        const call = DailyIframe.createFrame(videoContainerRef.current!, {
-          iframeStyle: {
-            width: "100%",
-            height: "100%",
-            border: "none",
-            borderRadius: "1rem",
-          },
-          showLeaveButton: false,
-          showFullscreenButton: true,
-          showLocalVideo: false,
+        // Use createCallObject instead of createFrame — gives us direct access to
+        // media tracks for recording (createFrame uses an iframe that blocks track access)
+        const call = DailyIframe.createCallObject({
+          videoSource: false,
+          audioSource: true,
         });
         dailyCallRef.current = call;
+
+        // Set up recording AudioContext and mixer before joining
+        const recCtx = new AudioContext();
+        if (recCtx.state === "suspended") await recCtx.resume();
+        videoRecordingCtxRef.current = recCtx;
+        const dest = recCtx.createMediaStreamDestination();
+        videoRecordingDestRef.current = dest;
+
+        // Connect candidate mic to the recording mixer
+        const micStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        });
+        const micSource = recCtx.createMediaStreamSource(micStream);
+        micSource.connect(dest);
+        console.log("[Tavus] Mic connected to recording mixer");
+
+        // Track remote audio connections to prevent duplicates
+        const connectedTrackIds = new Set<string>();
+
+        // When a remote participant's track starts, render video and capture audio
+        call.on("track-started", (event: any) => {
+          if (!event?.participant || event.participant.local) return;
+          const track = event.track as MediaStreamTrack;
+          if (!track) return;
+
+          if (track.kind === "video" && videoContainerRef.current) {
+            // Render remote video into the container
+            let videoEl = videoContainerRef.current.querySelector("video") as HTMLVideoElement | null;
+            if (!videoEl) {
+              videoEl = document.createElement("video");
+              videoEl.autoplay = true;
+              videoEl.playsInline = true;
+              videoEl.style.cssText = "width:100%;height:100%;object-fit:cover;border-radius:1rem;";
+              videoContainerRef.current.appendChild(videoEl);
+            }
+            const stream = videoEl.srcObject as MediaStream | null;
+            if (stream) {
+              stream.addTrack(track);
+            } else {
+              videoEl.srcObject = new MediaStream([track]);
+            }
+            console.log("[Tavus] Remote video track rendered");
+          }
+
+          if (track.kind === "audio") {
+            // Play remote audio through a hidden <audio> element
+            const audioEl = document.createElement("audio");
+            audioEl.autoplay = true;
+            audioEl.srcObject = new MediaStream([track]);
+            document.body.appendChild(audioEl);
+
+            // Also pipe remote audio into the recording mixer
+            if (!connectedTrackIds.has(track.id)) {
+              connectedTrackIds.add(track.id);
+              try {
+                const remoteSource = recCtx.createMediaStreamSource(new MediaStream([track]));
+                remoteSource.connect(dest);
+                console.log("[Tavus] Remote audio track connected to recording mixer");
+              } catch (err) {
+                console.warn("[Tavus] Could not connect remote audio to mixer:", err);
+              }
+            }
+          }
+        });
+
+        call.on("left-meeting", () => {
+          console.log("[Tavus] Left meeting event");
+          if (stateRef.current !== "completed" && videoTranscripts.length > 0) {
+            endVideoInterview();
+          }
+        });
 
         call.on("app-message", (event: any) => {
           try {
@@ -167,28 +238,48 @@ export default function InterviewInvite() {
                 setVideoTranscripts(prev => [...prev, { role: "user", text: text.trim(), timestamp: elapsed }]);
               }
             } else if (eventType === "conversation.replica.started_speaking" || eventType === "assistant_message") {
+              // Mute candidate mic while avatar is speaking to prevent echo/interruption
+              call.setLocalAudio(false);
+              console.log("[Tavus] Avatar speaking — mic muted");
               const text = data.properties?.text || data.properties?.speech || data.text || data.speech || "";
               if (text && text.trim()) {
                 const elapsed = startTimeRef.current ? Math.round((Date.now() - startTimeRef.current!) / 1000) : undefined;
                 setVideoTranscripts(prev => [...prev, { role: "ai", text: text.trim(), timestamp: elapsed }]);
               }
+            } else if (eventType === "conversation.replica.stopped_speaking" || eventType === "assistant_end") {
+              // Unmute candidate mic when avatar finishes speaking
+              call.setLocalAudio(true);
+              console.log("[Tavus] Avatar done speaking — mic unmuted");
             }
           } catch (err) {
             console.error("[Tavus] Error processing app-message:", err);
           }
         });
 
-        await call.join({ url: sessionUrl, videoSource: false, audioSource: true });
-        console.log("[Tavus] Joined with Daily.co frame — mic enabled, transcript capture active, local video hidden");
+        await call.join({ url: sessionUrl });
+        console.log("[Tavus] Joined with call object — mic enabled, transcript capture active, recording mixer ready");
+
+        // Start recording the mixed stream (mic + avatar audio)
+        videoRecordingChunksRef.current = [];
+        const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+          ? "audio/webm;codecs=opus"
+          : "audio/webm";
+        const recorder = new MediaRecorder(dest.stream, { mimeType });
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) videoRecordingChunksRef.current.push(e.data);
+        };
+        recorder.start(1000);
+        videoMediaRecorderRef.current = recorder;
+        console.log("[Tavus] Mixed audio recording started (mic + avatar)");
 
         startTimeRef.current = Date.now();
         setState("listening");
         setIsCreatingVideoSession(false);
         toast.success("Video interview started! You'll be speaking with Charles Molapisi, Group CTIO at MTN.");
       } catch (err) {
-        console.error("[Tavus] createFrame failed:", err);
+        console.error("[Tavus] Call setup failed:", err);
         setState("error");
-        setErrorMessage("Failed to initialize video frame. Please refresh and try again.");
+        setErrorMessage("Failed to initialize video call. Please refresh and try again.");
         setIsCreatingVideoSession(false);
       }
     })();
@@ -223,6 +314,29 @@ export default function InterviewInvite() {
   };
 
   const endVideoInterview = async () => {
+    // Stop local audio recording and collect blob
+    let localAudioBlob: Blob | null = null;
+    if (videoMediaRecorderRef.current && videoMediaRecorderRef.current.state !== "inactive") {
+      localAudioBlob = await new Promise<Blob | null>((resolve) => {
+        const rec = videoMediaRecorderRef.current!;
+        rec.onstop = () => {
+          const chunks = videoRecordingChunksRef.current;
+          resolve(chunks.length > 0 ? new Blob(chunks, { type: rec.mimeType || "audio/webm" }) : null);
+        };
+        rec.stop();
+      });
+      // Stop all tracks on the recorder's stream
+      videoMediaRecorderRef.current.stream?.getTracks().forEach(t => t.stop());
+      videoMediaRecorderRef.current = null;
+    }
+    videoRecordingChunksRef.current = [];
+    // Close the recording AudioContext
+    if (videoRecordingCtxRef.current) {
+      try { videoRecordingCtxRef.current.close(); } catch {}
+      videoRecordingCtxRef.current = null;
+      videoRecordingDestRef.current = null;
+    }
+
     // Destroy Daily call
     if (dailyCallRef.current) {
       try { await dailyCallRef.current.leave(); } catch {}
@@ -232,6 +346,10 @@ export default function InterviewInvite() {
     if (videoContainerRef.current) {
       videoContainerRef.current.innerHTML = "";
     }
+    // Remove any hidden audio elements created for remote playback
+    document.querySelectorAll("audio[autoplay]").forEach(el => {
+      try { (el as HTMLAudioElement).srcObject = null; el.remove(); } catch {}
+    });
 
     setIsVideoActive(false);
     setVideoSessionUrl(null);
@@ -245,6 +363,23 @@ export default function InterviewInvite() {
       emotion: t.emotion,
       timestamp: t.timestamp,
     }));
+
+    // Upload local audio recording if available
+    if (localAudioBlob && localAudioBlob.size > 0) {
+      try {
+        const formData = new FormData();
+        formData.append("recording", localAudioBlob, "recording.webm");
+        formData.append("duration", String(interviewDuration));
+        formData.append("sourceType", "local_mixed");
+        await axios.post(`/api/public/interview-session/${token}/upload-recording`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+          timeout: 300000,
+        });
+        console.log("[Tavus] Local audio recording uploaded successfully");
+      } catch (err) {
+        console.error("[Tavus] Failed to upload local audio recording:", err);
+      }
+    }
 
     try {
       await axios.post(`/api/public/interview-session/${token}/complete`, {
@@ -844,8 +979,8 @@ CLOSING (CRITICAL):
                       <span className="text-sm text-foreground">Interview scored successfully</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Loader2 className="h-5 w-5 text-blue-400 animate-spin" />
-                      <span className="text-sm text-muted-foreground">Video recording being saved in background</span>
+                      <CheckCircle2 className="h-5 w-5 text-green-400" />
+                      <span className="text-sm text-foreground">Recording saved</span>
                     </div>
                   </div>
                 )}

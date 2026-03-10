@@ -692,7 +692,7 @@ app.post("/api/public/interview-session/:token/video-session", async (req, res) 
       custom_greeting: customGreeting,
       properties: {
         enable_recording: true,
-        apply_greenscreen: true,
+        apply_greenscreen: false,
       }
     };
 
