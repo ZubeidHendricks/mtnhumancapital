@@ -819,10 +819,6 @@ CLOSING (CRITICAL):
                     <Loader2 className="h-5 w-5 text-blue-400 animate-spin" />
                     <span className="text-sm text-foreground">Scoring technical skills, communication & culture fit...</span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30" />
-                    <span className="text-sm text-muted-foreground">Video recording processing in background</span>
-                  </div>
                 </div>
               </motion.div>
             )}
