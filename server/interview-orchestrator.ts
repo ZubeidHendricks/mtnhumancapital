@@ -95,7 +95,7 @@ export class InterviewOrchestrator {
     const updated = await storage.updateInterviewSession(tenantId, sessionId, {
       videoToken,
       videoStatus: 'pending',
-      videoPrompt: prompt || this.getDefaultPrompt(session.jobTitle || 'the position'),
+      videoPrompt: prompt || this.getTavusPrompt(session.jobTitle || 'the position'),
       videoSentAt: new Date(),
       videoExpiresAt,
       status: 'video_pending',
