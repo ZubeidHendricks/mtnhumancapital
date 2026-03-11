@@ -12428,20 +12428,14 @@ Format your response as JSON:
         try {
           const { whatsappService } = await import("./whatsapp-service");
 
-          // Get or create conversation
-          const existingConvs = await storage.getWhatsappConversationsByCandidateId(req.tenant.id, candidateId);
-          let conversationId: string;
-          if (existingConvs.length > 0) {
-            conversationId = existingConvs[0].id;
-          } else {
-            const newConv = await storage.createWhatsappConversation(req.tenant.id, {
-              candidateId,
-              phoneNumber: phone,
-              candidateName: candidate.fullName || "Candidate",
-              status: "active",
-            });
-            conversationId = newConv.id;
-          }
+          // Get or create conversation (using same pattern as all other WhatsApp senders)
+          const waId = phone.replace(/\D/g, "");
+          const conversation = await whatsappService.getOrCreateConversation(
+            req.tenant.id, phone, waId,
+            candidate.fullName || "Candidate",
+            candidateId, "interest_check"
+          );
+          const conversationId = conversation.id;
 
           // Send text message with link
           const message = `Dear ${candidate.fullName || "Candidate"},
