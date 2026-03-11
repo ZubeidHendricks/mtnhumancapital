@@ -319,10 +319,19 @@ export default function RecruitmentAgent() {
       );
       return { previous };
     },
+    onSuccess: (updatedCandidate, { id }) => {
+      // Write server response into cache so polling refetches can't overwrite with stale data
+      queryClient.setQueryData<Candidate[]>(candidatesKey, (old) =>
+        old?.map((c) => (String(c.id) === id ? { ...c, ...updatedCandidate } : c))
+      );
+    },
     onError: (_err, _vars, context) => {
       if (context?.previous) {
         queryClient.setQueryData(candidatesKey, context.previous);
       }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: candidatesKey });
     },
   });
 
