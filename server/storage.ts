@@ -452,12 +452,13 @@ export interface IStorage {
   updateModelTrainingEvent(tenantId: string, id: string, updates: Partial<InsertModelTrainingEvent>): Promise<ModelTrainingEvent | undefined>;
 
   // ViTT Timeline Tags
-  getTimelineTags(tenantId: string, sessionId: string): Promise<InterviewTimelineTag[]>;
+  getTimelineTags(tenantId: string, sessionId: string, stage?: string): Promise<InterviewTimelineTag[]>;
   getTimelineTag(tenantId: string, id: string): Promise<InterviewTimelineTag | undefined>;
-  getTimelineTagsByType(tenantId: string, sessionId: string, tagType: string): Promise<InterviewTimelineTag[]>;
+  getTimelineTagsByType(tenantId: string, sessionId: string, tagType: string, stage?: string): Promise<InterviewTimelineTag[]>;
   createTimelineTag(tenantId: string, tag: InsertInterviewTimelineTag): Promise<InterviewTimelineTag>;
   updateTimelineTag(tenantId: string, id: string, updates: Partial<InsertInterviewTimelineTag>): Promise<InterviewTimelineTag | undefined>;
   deleteTimelineTag(tenantId: string, id: string): Promise<void>;
+  clearTimelineTags(tenantId: string, sessionId: string, stage?: string): Promise<number>;
 
   // Transcript Jobs
   getTranscriptJobs(tenantId: string, sessionId: string): Promise<TranscriptJob[]>;
@@ -2132,9 +2133,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ViTT Timeline Tags Implementation
-  async getTimelineTags(tenantId: string, sessionId: string): Promise<InterviewTimelineTag[]> {
+  async getTimelineTags(tenantId: string, sessionId: string, stage?: string): Promise<InterviewTimelineTag[]> {
+    const conditions = [
+      eq(interviewTimelineTags.tenantId, tenantId),
+      eq(interviewTimelineTags.sessionId, sessionId),
+    ];
+    if (stage) {
+      conditions.push(eq(interviewTimelineTags.interviewStage, stage));
+    }
     return await db.select().from(interviewTimelineTags)
-      .where(and(eq(interviewTimelineTags.tenantId, tenantId), eq(interviewTimelineTags.sessionId, sessionId)))
+      .where(and(...conditions))
       .orderBy(interviewTimelineTags.offsetMs);
   }
 
@@ -2144,13 +2152,17 @@ export class DatabaseStorage implements IStorage {
     return tag || undefined;
   }
 
-  async getTimelineTagsByType(tenantId: string, sessionId: string, tagType: string): Promise<InterviewTimelineTag[]> {
+  async getTimelineTagsByType(tenantId: string, sessionId: string, tagType: string, stage?: string): Promise<InterviewTimelineTag[]> {
+    const conditions = [
+      eq(interviewTimelineTags.tenantId, tenantId),
+      eq(interviewTimelineTags.sessionId, sessionId),
+      eq(interviewTimelineTags.tagType, tagType),
+    ];
+    if (stage) {
+      conditions.push(eq(interviewTimelineTags.interviewStage, stage));
+    }
     return await db.select().from(interviewTimelineTags)
-      .where(and(
-        eq(interviewTimelineTags.tenantId, tenantId),
-        eq(interviewTimelineTags.sessionId, sessionId),
-        eq(interviewTimelineTags.tagType, tagType)
-      ))
+      .where(and(...conditions))
       .orderBy(interviewTimelineTags.offsetMs);
   }
 
@@ -2170,6 +2182,20 @@ export class DatabaseStorage implements IStorage {
   async deleteTimelineTag(tenantId: string, id: string): Promise<void> {
     await db.delete(interviewTimelineTags)
       .where(and(eq(interviewTimelineTags.id, id), eq(interviewTimelineTags.tenantId, tenantId)));
+  }
+
+  async clearTimelineTags(tenantId: string, sessionId: string, stage?: string): Promise<number> {
+    const conditions = [
+      eq(interviewTimelineTags.tenantId, tenantId),
+      eq(interviewTimelineTags.sessionId, sessionId),
+    ];
+    if (stage) {
+      conditions.push(eq(interviewTimelineTags.interviewStage, stage));
+    }
+    const result = await db.delete(interviewTimelineTags)
+      .where(and(...conditions))
+      .returning();
+    return result.length;
   }
 
   // Transcript Jobs Implementation

@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import {
   Play, Pause, SkipBack, SkipForward, Volume2, VolumeX,
-  Tag, Bookmark, Flag, MessageSquare, Brain, RefreshCw,
+  Tag, Bookmark, Flag, MessageSquare, Brain,
   Clock, User, Mic, ChevronRight, ChevronDown,
   Loader2, Send, Plus, Trash2, Filter, Download,
   Sparkles, AlertTriangle, ThumbsUp, Search,
@@ -209,9 +209,12 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
 
   // Fetch timeline tags
   const { data: tags = [], isLoading: tagsLoading } = useQuery<TimelineTag[]>({
-    queryKey: ["/api/interviews", sessionId, "timeline-tags"],
+    queryKey: ["/api/interviews", sessionId, "timeline-tags", stage],
     queryFn: async () => {
-      const res = await api.get(`/interviews/${sessionId}/timeline-tags`);
+      const url = stage
+        ? `/interviews/${sessionId}/timeline-tags?stage=${stage}`
+        : `/interviews/${sessionId}/timeline-tags`;
+      const res = await api.get(url);
       return res.data;
     },
     enabled: !!sessionId,
@@ -280,7 +283,7 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
       return res.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/interviews", sessionId, "timeline-tags"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/interviews", sessionId, "timeline-tags", stage] });
       toast({ title: "Auto-tagging complete", description: `Generated ${data.tags?.length || 0} tags` });
     },
     onError: () => {
@@ -288,17 +291,17 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
     },
   });
 
-  const reanalyzeMutation = useMutation({
+  const clearTagsMutation = useMutation({
     mutationFn: async () => {
-      const res = await api.post(`/interviews/${sessionId}/reanalyze`, { stage });
+      const res = await api.delete(`/interviews/${sessionId}/timeline-tags${stage ? `?stage=${stage}` : ""}`);
       return res.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/interviews", sessionId] });
-      toast({ title: "Re-analysis complete" });
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/interviews", sessionId, "timeline-tags", stage] });
+      toast({ title: "Tags cleared", description: `Removed ${data.deleted} tags` });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to re-analyze", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to clear tags", variant: "destructive" });
     },
   });
 
@@ -308,7 +311,7 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
       return res.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/interviews", sessionId, "timeline-tags"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/interviews", sessionId, "timeline-tags", stage] });
       setShowAddTag(false);
       setNewTagLabel("");
       setNewTagNotes("");
@@ -324,7 +327,7 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
       await api.delete(`/interviews/${sessionId}/timeline-tags/${tagId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/interviews", sessionId, "timeline-tags"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/interviews", sessionId, "timeline-tags", stage] });
       toast({ title: "Tag deleted" });
     },
   });
@@ -357,7 +360,7 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
       return res.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/interviews", sessionId, "timeline-tags"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/interviews", sessionId, "timeline-tags", stage] });
     },
   });
 
@@ -444,11 +447,11 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => reanalyzeMutation.mutate()}
-                disabled={reanalyzeMutation.isPending}
+                onClick={() => clearTagsMutation.mutate()}
+                disabled={clearTagsMutation.isPending}
               >
-                {reanalyzeMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <RefreshCw className="h-4 w-4 mr-1" />}
-                Re-Analyze
+                {clearTagsMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Trash2 className="h-4 w-4 mr-1" />}
+                Clear Tags
               </Button>
             </div>
           </div>
@@ -476,11 +479,11 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
               variant="outline"
               size="sm"
               className="h-7 text-xs"
-              onClick={() => reanalyzeMutation.mutate()}
-              disabled={reanalyzeMutation.isPending}
+              onClick={() => clearTagsMutation.mutate()}
+              disabled={clearTagsMutation.isPending}
             >
-              {reanalyzeMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <RefreshCw className="h-3 w-3 mr-1" />}
-              Re-Analyze
+              {clearTagsMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Trash2 className="h-3 w-3 mr-1" />}
+              Clear Tags
             </Button>
           </div>
         </div>
@@ -551,7 +554,7 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
                         </TooltipTrigger>
                         <TooltipContent>
                           <p className="font-medium">{tag.label}</p>
-                          <p className="text-xs text-muted-foreground">{formatSec(tag.offsetMs)}</p>
+                          <p className="text-xs text-muted-foreground">{formatMs(tag.offsetMs)}</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -618,7 +621,7 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
                   >
                     {/* Timestamp */}
                     <div className="text-xs font-mono text-muted-foreground min-w-[48px] pt-0.5">
-                      {formatSec(tag.offsetMs)}
+                      {formatMs(tag.offsetMs)}
                     </div>
 
                     {/* Tag badge */}
@@ -1066,7 +1069,7 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
                         <Clock className="h-3 w-3 mr-2 shrink-0" />
                         <div className="min-w-0">
                           <p className="text-sm truncate">{tag.label}</p>
-                          <p className="text-xs text-muted-foreground">{formatSec(tag.offsetMs)} · Importance: {tag.importance}/10</p>
+                          <p className="text-xs text-muted-foreground">{formatMs(tag.offsetMs)} · Importance: {tag.importance}/10</p>
                         </div>
                       </Button>
                     ))
@@ -1240,6 +1243,7 @@ export default function InterviewTimeline(props: InterviewTimelineProps & Record
                   notes: newTagNotes.trim() || undefined,
                   category: newTagType === "flag" ? "red_flag" : newTagType === "highlight" ? "positive_signal" : undefined,
                   importance: newTagType === "flag" ? 8 : 5,
+                  interviewStage: stage,
                 });
               }}
               disabled={!newTagLabel.trim() || createTagMutation.isPending}

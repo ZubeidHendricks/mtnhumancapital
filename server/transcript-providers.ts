@@ -597,7 +597,8 @@ export class TranscriptProviderManager {
     tenantId: string,
     sessionId: string,
     result: TranscriptResult,
-    recordingId?: string
+    recordingId?: string,
+    interviewStage?: string
   ): Promise<void> {
     const tags: any[] = [];
     const baseTime = new Date();
@@ -693,7 +694,7 @@ export class TranscriptProviderManager {
 
     // Batch create tags
     for (const tag of tags) {
-      await storage.createTimelineTag(tenantId, tag);
+      await storage.createTimelineTag(tenantId, { ...tag, interviewStage });
     }
 
     console.log(`[TranscriptProviders] Generated ${tags.length} timeline tags for session ${sessionId}`);

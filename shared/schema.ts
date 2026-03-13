@@ -1559,6 +1559,7 @@ export const interviewTimelineTags = pgTable("interview_timeline_tags", {
   // Tag classification
   tagType: text("tag_type").notNull(), // 'auto_emotion', 'auto_topic', 'auto_keyword', 'auto_sentiment', 'auto_silence', 'auto_crosstalk', 'manual', 'bookmark', 'flag', 'question', 'answer', 'highlight', 'concern'
   tagSource: text("tag_source").notNull().default("auto"), // 'auto', 'manual', 'ai_reanalysis', 'assemblyai', 'deepgram', 'whisper', 'hume'
+  interviewStage: text("interview_stage"), // 'voice' | 'video' - which interview stage this tag belongs to
   category: text("category"), // 'technical', 'behavioral', 'communication', 'emotion', 'topic_shift', 'red_flag', 'positive_signal'
 
   // Tag content

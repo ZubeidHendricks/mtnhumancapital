@@ -29,7 +29,9 @@ interface QAResult {
 
 interface AutoTagResult {
   tags: {
-    offsetMs: number;
+    offsetSec?: number;
+    endOffsetSec?: number;
+    offsetMs?: number;
     endOffsetMs?: number;
     tagType: string;
     category: string;
@@ -234,9 +236,31 @@ Return ONLY valid JSON.`,
     const transcripts = await storage.getInterviewTranscripts(config.tenantId, config.sessionId, config.stage);
     const session = await storage.getInterviewSession(config.tenantId, config.sessionId);
 
+    // Check if transcripts have real timestamps
+    const hasRealTimestamps = transcripts.some(t => t.startTime != null && t.startTime > 0);
+    const durationSec = session?.duration || 0;
+
+    // If no real timestamps, estimate using same formula as frontend transcript display
+    // (speaking pace ~2.5 words/sec, min 3s per segment) so tag times match transcript view
+    let estimatedTimestamps: number[] = [];
+    if (!hasRealTimestamps) {
+      let cumSec = 0;
+      estimatedTimestamps = transcripts.map(t => {
+        const ts = cumSec;
+        cumSec += Math.max(3, Math.ceil((t.text?.split(/\s+/).length || 5) / 2.5));
+        return ts;
+      });
+      console.log(`[AnalysisAgent] No real timestamps, estimated range: 0s - ${estimatedTimestamps[estimatedTimestamps.length - 1] || 0}s`);
+    }
+
     const transcriptText = transcripts
-      .map(t => `[${t.startTime || 0}s] ${(t.speakerRole || '').toUpperCase()}: ${t.text}`)
+      .map((t, i) => {
+        const ts = hasRealTimestamps ? (t.startTime || 0) : (estimatedTimestamps[i] || 0);
+        return `[${ts}s] ${(t.speakerRole || '').toUpperCase()}: ${t.text}`;
+      })
       .join("\n");
+
+    console.log(`[AnalysisAgent] Auto-tagging session ${config.sessionId}: ${transcripts.length} segments, hasRealTimestamps=${hasRealTimestamps}, duration=${durationSec}s`);
 
     const response = await this.groq.chat.completions.create({
       model: "openai/gpt-oss-120b",
@@ -248,14 +272,14 @@ Return ONLY valid JSON.`,
 Tag types: question, answer, highlight, concern, topic_shift
 Categories: technical, behavioral, communication, emotion, red_flag, positive_signal
 
-For each tag, provide the timestamp (in seconds from the transcript), type, category, and a short label.
+The timestamps in [brackets] are in SECONDS from the start of the interview. Use these exact second values for offsetSec.
 
 Respond in JSON:
 {
   "tags": [
     {
-      "offsetMs": <number from transcript timestamps>,
-      "endOffsetMs": <optional end ms>,
+      "offsetSec": <seconds from transcript timestamps, e.g. 30 means 30 seconds in>,
+      "endOffsetSec": <optional end seconds>,
       "tagType": "question|answer|highlight|concern|topic_shift",
       "category": "technical|behavioral|communication|emotion|red_flag|positive_signal",
       "label": "short label",
@@ -285,17 +309,71 @@ Focus on the most significant 10-15 moments. Return ONLY valid JSON.`,
       } catch {}
     }
 
-    // Save tags to DB
+    // Build a lookup of segment index → timestamp in seconds (real or estimated)
+    const segmentTimestamps = transcripts.map((t, i) => {
+      if (t.startTime != null && t.startTime > 0) return t.startTime;
+      return estimatedTimestamps[i] || 0;
+    });
+
+    // Match AI-generated tags to actual transcript segments by snippet text
+    // Prefers segments that have a real timestamp over those with null/0
+    const findMatchingSegmentIndex = (snippet: string): number => {
+      if (!snippet) return -1;
+      const snippetLower = snippet.toLowerCase().trim();
+
+      // Collect all exact substring matches, prefer ones with real timestamps
+      let bestExact = -1;
+      for (let i = 0; i < transcripts.length; i++) {
+        const tLower = transcripts[i].text.toLowerCase();
+        if (tLower.includes(snippetLower) || snippetLower.includes(tLower)) {
+          // Prefer segment with a real timestamp
+          if (segmentTimestamps[i] > 0) return i;
+          if (bestExact === -1) bestExact = i;
+        }
+      }
+      if (bestExact >= 0) return bestExact;
+
+      // Fuzzy: find segment with most word overlap, prefer real timestamps
+      const snippetWords = new Set(snippetLower.split(/\s+/).filter(w => w.length > 3));
+      let bestIdx = -1;
+      let bestScore = 0;
+      for (let i = 0; i < transcripts.length; i++) {
+        const segWords = transcripts[i].text.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+        const overlap = segWords.filter(w => snippetWords.has(w)).length;
+        let score = snippetWords.size > 0 ? overlap / snippetWords.size : 0;
+        // Boost segments with real timestamps
+        if (score > 0.3 && segmentTimestamps[i] > 0) score += 0.1;
+        if (score > bestScore && score > 0.3) {
+          bestScore = score;
+          bestIdx = i;
+        }
+      }
+      return bestIdx;
+    };
+
+    // Save tags to DB — use matched transcript segment timestamps
     const baseTime = new Date();
     for (const tag of result.tags) {
+      const matchIdx = findMatchingSegmentIndex(tag.snippet);
+      const aiOffsetMs = tag.offsetSec != null ? Math.round(tag.offsetSec * 1000) : (tag.offsetMs || 0);
+
+      // Use matched segment's timestamp (seconds → ms), fall back to AI time
+      const offsetMs = matchIdx >= 0
+        ? segmentTimestamps[matchIdx] * 1000
+        : aiOffsetMs;
+      const endOffsetMs = tag.endOffsetSec != null ? Math.round(tag.endOffsetSec * 1000) : tag.endOffsetMs;
+
+      console.log(`[AnalysisAgent] Tag "${tag.label}": matched segment #${matchIdx} at ${matchIdx >= 0 ? segmentTimestamps[matchIdx] : '?'}s → ${offsetMs}ms`);
+
       await storage.createTimelineTag(config.tenantId, {
         sessionId: config.sessionId,
-        tagTime: new Date(baseTime.getTime() + (tag.offsetMs || 0)),
-        offsetMs: tag.offsetMs || 0,
-        endOffsetMs: tag.endOffsetMs,
-        duration: tag.endOffsetMs ? tag.endOffsetMs - tag.offsetMs : undefined,
+        tagTime: new Date(baseTime.getTime() + offsetMs),
+        offsetMs,
+        endOffsetMs,
+        duration: endOffsetMs ? endOffsetMs - offsetMs : undefined,
         tagType: tag.tagType,
         tagSource: "ai_reanalysis",
+        interviewStage: config.stage,
         category: tag.category,
         label: tag.label,
         description: tag.description,

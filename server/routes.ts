@@ -8124,12 +8124,12 @@ Format your response as JSON:
   // Get timeline tags for a session
   app.get("/api/interviews/:sessionId/timeline-tags", async (req, res) => {
     try {
-      const { tagType } = req.query;
+      const { tagType, stage } = req.query;
       let tags;
       if (tagType) {
-        tags = await storage.getTimelineTagsByType(req.tenant.id, req.params.sessionId, tagType as string);
+        tags = await storage.getTimelineTagsByType(req.tenant.id, req.params.sessionId, tagType as string, stage as string | undefined);
       } else {
-        tags = await storage.getTimelineTags(req.tenant.id, req.params.sessionId);
+        tags = await storage.getTimelineTags(req.tenant.id, req.params.sessionId, stage as string | undefined);
       }
       res.json(tags);
     } catch (error) {
@@ -8179,6 +8179,18 @@ Format your response as JSON:
     }
   });
 
+  // Clear all timeline tags for a session
+  app.delete("/api/interviews/:sessionId/timeline-tags", async (req, res) => {
+    try {
+      const stage = req.query.stage as string | undefined;
+      const count = await storage.clearTimelineTags(req.tenant.id, req.params.sessionId, stage);
+      res.json({ deleted: count });
+    } catch (error) {
+      console.error("Error clearing timeline tags:", error);
+      res.status(500).json({ message: "Failed to clear timeline tags" });
+    }
+  });
+
   // Get transcript jobs for a session
   app.get("/api/interviews/:sessionId/transcript-jobs", async (req, res) => {
     try {
@@ -8193,7 +8205,7 @@ Format your response as JSON:
   // Submit a transcript job for a specific provider
   app.post("/api/interviews/:sessionId/transcript-jobs", async (req, res) => {
     try {
-      const { provider, audioUrl, config } = req.body;
+      const { provider, audioUrl, config, stage } = req.body;
 
       if (!provider || !audioUrl) {
         return res.status(400).json({ message: "Provider and audioUrl are required" });
@@ -8219,7 +8231,8 @@ Format your response as JSON:
             req.tenant.id,
             req.params.sessionId,
             result,
-            job.recordingId || undefined
+            job.recordingId || undefined,
+            stage
           );
         })
         .catch((err) => console.error(`[TranscriptJob] Error: ${err.message}`));
